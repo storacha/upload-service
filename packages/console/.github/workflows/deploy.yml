@@ -1,0 +1,95 @@
+name: Deploy
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+  preview:
+    name: Preview
+    needs:
+      - test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/pnpm
+      - run: pnpm pages:build
+        env:
+          NEXT_PUBLIC_SERVICE_DID: 'did:web:staging.web3.storage'
+          NEXT_PUBLIC_SERVICE_URL: 'https://staging.up.web3.storage'
+      - name: Deploy preview build to Cloudflare Pages
+        uses: mathiasvr/command-output@v1.1.0
+        id: cloudflare
+        with:
+          run: npx wrangler pages deploy --project-name w3up-website-staging --branch "$GITHUB_REF_NAME" --commit-hash "$GITHUB_SHA" .vercel/output/static
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+      - name: Find Cloudflare Pages preview URL
+        uses: mathiasvr/command-output@v1.1.0
+        id: cloudflare_url
+        with:
+          run: egrep -o 'https?://[^ ]+' <(echo "${{ steps.cloudflare.outputs.stdout }}")
+      - name: Find Current Pull Request
+        uses: jwalton/gh-find-current-pr@v1.3.0
+        id: finder
+      - name: Update Preview URLs PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2.2.0
+        with:
+          number: ${{ steps.finder.outputs.pr }}
+          message: |
+            ### Website preview 🔗✨
+            - ⛅️ ${{ steps.cloudflare_url.outputs.stdout }}
+
+            [build log](/${{ github.repository }}/actions/runs/${{ github.run_id }})
+      - name: Add Preview URLs as Job Summary
+        run: |
+          echo "
+          ### Website preview 🔗✨
+            - ⛅️ ${{ steps.cloudflare_url.outputs.stdout }}
+
+            [build log](/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+  changelog:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    name: Changelog
+    runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.tag-release.outputs.releases_created }}
+    steps:
+      - uses: GoogleCloudPlatform/release-please-action@v3
+        id: tag-release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: node
+          monorepo-tags: true
+          changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Other Changes","hidden":false}]'
+  release:
+    name: Release
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changelog.outputs.releases_created) || inputs.force_release
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://w3up.web3.storage
+    needs:
+      - test
+      - preview
+      - changelog
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/pnpm
+      - run: pnpm pages:build
+        env:
+          NEXT_PUBLIC_SERVICE_DID: 'did:web:web3.storage'
+          NEXT_PUBLIC_SERVICE_URL: 'https://up.web3.storage'
+      - name: Deploy preview build to Cloudflare Pages
+        uses: mathiasvr/command-output@v1.1.0
+        id: cloudflare
+        with:
+          run: npx wrangler pages deploy --project-name w3up-website --branch "main" --commit-hash "$GITHUB_SHA" .vercel/output/static
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
