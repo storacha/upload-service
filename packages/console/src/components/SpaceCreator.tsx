@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { useKeyring } from '@w3ui/react-keyring'
 import { ArrowPathIcon } from '@heroicons/react/20/solid'
 import Loader from '../components/Loader'
+import { DID } from '@ucanto/interface'
 
 export function SpaceCreatorCreating (): JSX.Element {
   return (
@@ -35,7 +36,7 @@ export function SpaceCreatorForm ({
       setSubmitted(true)
       try {
         await createSpace(name)
-        await registerSpace(account, { provider: import.meta.env.VITE_W3UP_PROVIDER })
+        await registerSpace(account, { provider: (process.env.NEXT_PUBLIC_W3UP_PROVIDER || 'did:web:web3.storage') as DID<'web'> })
       } catch (error) {
         /* eslint-disable no-console */
         console.error(error)
