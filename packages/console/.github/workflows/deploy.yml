@@ -21,6 +21,7 @@ jobs:
         env:
           NEXT_PUBLIC_SERVICE_DID: 'did:web:staging.web3.storage'
           NEXT_PUBLIC_SERVICE_URL: 'https://staging.up.web3.storage'
+          NEXT_PUBLIC_W3UP_PROVIDER: 'did:web:staging.web3.storage'
       - name: Deploy preview build to Cloudflare Pages
         uses: mathiasvr/command-output@v1.1.0
         id: cloudflare
@@ -85,6 +86,7 @@ jobs:
         env:
           NEXT_PUBLIC_SERVICE_DID: 'did:web:web3.storage'
           NEXT_PUBLIC_SERVICE_URL: 'https://up.web3.storage'
+          NEXT_PUBLIC_W3UP_PROVIDER: 'did:web:web3.storage'
       - name: Deploy preview build to Cloudflare Pages
         uses: mathiasvr/command-output@v1.1.0
         id: cloudflare

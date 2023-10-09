@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useKeyring } from '@w3ui/react-keyring';
 import Loader from './Loader';
+import { DID } from '@ucanto/interface';
 
 export function SpaceRegistrar (): JSX.Element {
   const [{ account }, { registerSpace }] = useKeyring();
@@ -10,7 +11,7 @@ export function SpaceRegistrar (): JSX.Element {
     if (account) {
       setSubmitted(true);
       try {
-        await registerSpace(account, { provider: import.meta.env.VITE_W3UP_PROVIDER });
+        await registerSpace(account, { provider: (process.env.NEXT_PUBLIC_W3UP_PROVIDER || 'did:web:web3.storage') as DID<'web'> });
       } catch (err) {
         console.log(err);
         throw new Error('failed to register', { cause: err });
