@@ -7,9 +7,10 @@ import { Uploader } from './Uploader';
 import { UploadsList } from './UploadsList';
 import { SpaceRegistrar } from './SpaceRegistrar';
 import { DidIcon } from './DidIcon';
+import { DIDKey } from '@ucanto/interface';
 
 interface SpaceSectionProps {
-  viewSpace: (did: string) => void;
+  viewSpace: (did: DIDKey) => void;
   setShare: (share: boolean) => void;
   share: boolean;
 }
