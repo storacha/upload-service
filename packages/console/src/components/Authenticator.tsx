@@ -1,3 +1,5 @@
+'use client'
+
 import {
   Authenticator as AuthCore,
   useAuthenticator

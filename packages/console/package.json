@@ -6,11 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "pnpm lint",
     "lint": "next lint"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
+    "@ucanto/interface": "^9.0.0",
     "@w3ui/react-keyring": "^6.0.1",
     "@w3ui/react-uploader": "^5.0.1",
     "@w3ui/react-uploads-list": "^4.0.1",

@@ -23,7 +23,7 @@ export function SpaceSection (props: SpaceSectionProps): JSX.Element {
   // but it's not clear how all that state should work yet - perhaps
   // we need some sort of state management primitive in the uploads list?
   useEffect(() => {
-    void reload();
+//    void reload();
   }, [space, reload]);
   const registered = Boolean(space?.registered());
   return (

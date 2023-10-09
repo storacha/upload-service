@@ -1,10 +1,9 @@
 import md5 from 'blueimp-md5'
-import Image from 'next/image'
 
 export function DidIcon({ did }: { did: string }): JSX.Element {
   const src = `https://www.gravatar.com/avatar/${md5(did)}?d=identicon`
   return (
-    <Image
+    <img
       title={did}
       alt={`gravatar for did ${did}`}
       src={src}
