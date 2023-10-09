@@ -1,3 +1,5 @@
+'use client'
+
 import {
   Authenticator as AuthCore,
   useAuthenticator
@@ -64,6 +66,7 @@ export function AuthenticationEnsurer ({
   children: JSX.Element | JSX.Element[]
 }): JSX.Element {
   const [{ submitted, account, agent }] = useAuthenticator()
+  console.log("auth", submitted, account, agent)
   const authenticated = !!account
   if (authenticated) {
     return <>{children}</>

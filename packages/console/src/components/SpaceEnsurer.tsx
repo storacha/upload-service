@@ -1,3 +1,5 @@
+'use client'
+
 import { useKeyring } from '@w3ui/react-keyring';
 import { SpaceCreatorForm } from './SpaceCreator';
 
