@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/pnpm
-      - run: pnpm build
+      - run: pnpm pages:build
         env:
           NEXT_PUBLIC_SERVICE_DID: 'did:web:staging.web3.storage'
           NEXT_PUBLIC_SERVICE_URL: 'https://staging.up.web3.storage'
@@ -81,7 +81,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/pnpm
-      - run: pnpm build
+      - run: pnpm pages:build
         env:
           NEXT_PUBLIC_SERVICE_DID: 'did:web:web3.storage'
           NEXT_PUBLIC_SERVICE_URL: 'https://up.web3.storage'

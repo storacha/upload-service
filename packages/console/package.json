@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "test": "pnpm lint",
-    "lint": "next lint"
+    "lint": "next lint",
+    "pages:build": "pnpm dlx @cloudflare/next-on-pages@1",
+    "pages:watch": "pnpm @cloudflare/next-on-pages@1 --watch",
+    "pages:dev": "pnpm wrangler pages dev .vercel/output/static --compatibility-flag=nodejs_compat"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",
@@ -22,14 +25,17 @@
     "react-dom": "latest"
   },
   "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.6.3",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "autoprefixer": "latest",
     "eslint": "latest",
     "eslint-config-next": "latest",
+    "eslint-plugin-next-on-pages": "^1.6.3",
     "postcss": "latest",
     "tailwindcss": "latest",
-    "typescript": "latest"
+    "typescript": "latest",
+    "wrangler": "^3.11.0"
   }
 }
