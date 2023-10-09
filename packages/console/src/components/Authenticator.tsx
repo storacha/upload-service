@@ -76,7 +76,7 @@ export function AuthenticationEnsurer ({
   if (agent) {
     return <AuthenticationForm />
   }
-  return <Loader className='w-12 h-12' />
+  return <Loader className='w-12 h-12 w-full mt-12' />
 }
 
 
