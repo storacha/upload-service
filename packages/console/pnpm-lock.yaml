@@ -11,10 +11,16 @@ dependencies:
   '@heroicons/react':
     specifier: ^2.0.18
     version: 2.0.18(react@18.2.0)
+  '@ipld/car':
+    specifier: ^5.2.4
+    version: 5.2.4
   '@ipld/dag-ucan':
     specifier: ^3.4.0
     version: 3.4.0
   '@ucanto/client':
+    specifier: ^9.0.0
+    version: 9.0.0
+  '@ucanto/core':
     specifier: ^9.0.0
     version: 9.0.0
   '@ucanto/interface':
@@ -533,8 +539,8 @@ packages:
     resolution: {integrity: sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==}
     dev: true
 
-  /@ipld/car@5.2.3:
-    resolution: {integrity: sha512-nU4PF9Iivf/HJJyRRvBDaVeMdMdUqUynFZuK1Vcyk7Qru+MlA9jwH8RTpylW2VlJH/MvFBqMXfqNPUiNG7pfRw==}
+  /@ipld/car@5.2.4:
+    resolution: {integrity: sha512-YoVXE/o5HLXKi/Oqh9Nhcn423sdn9brRFKnbUid68/1D332/XINcoyCTvBluFcCw/9IeiTx+sEAV+onXZ/A4eA==}
     engines: {node: '>=16.0.0', npm: '>=7.0.0'}
     dependencies:
       '@ipld/dag-cbor': 9.0.5
@@ -1022,7 +1028,7 @@ packages:
   /@ucanto/core@8.2.0:
     resolution: {integrity: sha512-Yw1NZySQFS2+JPUuWGlRpq4HMB1npXYq1WBo6B1tINGRabKAujq3HrZ/iidYL2MuoHn0CGfSvCUzlXrcD4obNg==}
     dependencies:
-      '@ipld/car': 5.2.3
+      '@ipld/car': 5.2.4
       '@ipld/dag-cbor': 9.0.5
       '@ipld/dag-ucan': 3.4.0
       '@ucanto/interface': 8.1.0
@@ -1032,7 +1038,7 @@ packages:
   /@ucanto/core@9.0.0:
     resolution: {integrity: sha512-O2c+UOQ5wAvUsuN7BbZR6QAoUgYpWzN0HAAVbNBLT4I8/OUzMcxSYeu08/ph0sNtLGlOPDcPn+ANclTwxc5UcA==}
     dependencies:
-      '@ipld/car': 5.2.3
+      '@ipld/car': 5.2.4
       '@ipld/dag-cbor': 9.0.5
       '@ipld/dag-ucan': 3.4.0
       '@ucanto/interface': 9.0.0
@@ -1082,7 +1088,7 @@ packages:
   /@ucanto/validator@8.0.0:
     resolution: {integrity: sha512-S+cGKUVu074TT1FaoOyZa3mKf3CuEBLHLlE3TU1UoIC5Yp9WnvX+cDOGKIyfJ/HgHHBvAEDxYNOkNZbCATsRdA==}
     dependencies:
-      '@ipld/car': 5.2.3
+      '@ipld/car': 5.2.4
       '@ipld/dag-cbor': 9.0.5
       '@ucanto/core': 8.2.0
       '@ucanto/interface': 8.1.0
@@ -1360,7 +1366,7 @@ packages:
     resolution: {integrity: sha512-ROTg8tkgyT7wXnvzyA/k5L9fOK/26MH9gtmibkz03xsr1wLM8g4w/OuG4uSQ7c50Q91dux58TDCFHw2XsiG3+w==}
     hasBin: true
     dependencies:
-      '@ipld/car': 5.2.3
+      '@ipld/car': 5.2.4
       '@ipld/dag-ucan': 3.4.0
       '@ucanto/client': 8.0.1
       '@ucanto/core': 8.2.0
@@ -1426,7 +1432,7 @@ packages:
   /@web3-storage/upload-client@9.3.0:
     resolution: {integrity: sha512-SHDkJICW4ZC3jznO7xZJoXn5awy0moiIuBeoUej3aB1WiMtkRKZASs8kcKP1r1h+BRSL+X5JI71khUVe33zf/w==}
     dependencies:
-      '@ipld/car': 5.2.3
+      '@ipld/car': 5.2.4
       '@ipld/dag-cbor': 9.0.5
       '@ipld/dag-ucan': 3.4.0
       '@ipld/unixfs': 2.1.2

@@ -15,8 +15,10 @@
   "dependencies": {
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
+    "@ipld/car": "^5.2.4",
     "@ipld/dag-ucan": "^3.4.0",
     "@ucanto/client": "^9.0.0",
+    "@ucanto/core": "^9.0.0",
     "@ucanto/interface": "^9.0.0",
     "@ucanto/transport": "^9.0.0",
     "@w3ui/react-keyring": "^6.0.1",
