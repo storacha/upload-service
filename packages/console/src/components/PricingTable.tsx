@@ -1,7 +1,7 @@
 import { createElement } from 'react'
 import Script from 'next/script'
 
-export default function Plans({className=''}) {
+export default function StripePricingTable({className=''}) {
   return (
     <>
       <Script async src="https://js.stripe.com/v3/pricing-table.js" />
