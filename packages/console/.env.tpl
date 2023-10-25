@@ -1,2 +1,6 @@
 NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID=prctbl_1NzhdvF6A5ufQX5vKNZuRhie
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51LO87hF6A5ufQX5viNsPTbuErzfavdrEFoBuaJJPfoIhzQXdOUdefwL70YewaXA32ZrSRbK4U4fqebC7SVtyeNcz00qmgNgueC
+
+# set these to your upload API service URL and the DID your service is using as its service DID
+NEXT_PUBLIC_W3UP_SERVICE_URL=https://up.web3.storage
+NEXT_PUBLIC_W3UP_SERVICE_DID=did:web:web3.storage
