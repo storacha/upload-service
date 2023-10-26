@@ -59,24 +59,20 @@ export function SpaceCreatorForm ({
           )
           : (
             <form
-              className='flex flex-col space-y-2'
+              className=''
               onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
                 void onSubmit(e)
               }}
             >
               <input
-                className='text-black py-1 px-2 rounded'
+                className='text-black py-1 px-2 rounded block w-full mb-4'
                 placeholder='Name'
                 value={name}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => {
                   setName(e.target.value)
                 }}
               />
-              <input
-                type='submit'
-                className='w3ui-button'
-                value='Create'
-              />
+              <button type='submit' className='w3ui-button'>Create</button>
             </form>
           )
       }

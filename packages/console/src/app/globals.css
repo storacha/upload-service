@@ -3,7 +3,11 @@
 @tailwind utilities;
 
 .w3ui-button {
-  @apply text-white bg-slate-800 hover:bg-blue-800 rounded-md py-2 px-8 text-sm font-medium transition-colors ease-in;
+  @apply text-white bg-slate-800 hover:bg-blue-800 rounded-sm py-2 px-8 text-sm font-medium transition-colors ease-in;
+}
+
+.w3ui-button.active {
+  @apply bg-transparent;
 }
 
 .authenticator {

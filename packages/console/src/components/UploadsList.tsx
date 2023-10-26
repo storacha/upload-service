@@ -3,6 +3,8 @@ import { ChevronLeftIcon, ChevronRightIcon, ArrowPathIcon } from '@heroicons/rea
 import type { UploadListResult } from '@w3ui/uploads-list-core'
 import { UploadsList as UploadsListCore } from '@w3ui/react-uploads-list'
 import { gatewayHost } from '../components/services'
+import { usePathname } from 'next/navigation'
+import Link from 'next/link'
 
 interface UploadsProps {
   uploads?: UploadListResult[]
@@ -10,6 +12,7 @@ interface UploadsProps {
 }
 
 function Uploads ({ uploads, loading }: UploadsProps): JSX.Element {
+  const pathname = usePathname()
   return uploads === undefined || uploads.length === 0
     ? (
       <>
@@ -34,9 +37,9 @@ function Uploads ({ uploads, loading }: UploadsProps): JSX.Element {
               {uploads.map(({ root }) => (
                 <tr key={root.toString()}>
                   <td className="p-2 pl-3 font-mono text-sm overflow-hidden no-wrap text-ellipsis">
-                    <a href={`https://${root.toString()}.ipfs.${gatewayHost}/`}>
+                    <Link href={`${pathname}/root/${root.toString()}`} className='hover:text-blue-400'>
                       {root.toString()}
-                    </a>
+                    </Link>
                   </td>
                 </tr>
               ))}
