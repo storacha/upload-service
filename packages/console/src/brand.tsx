@@ -16,7 +16,7 @@ export const Web3StorageLogoIcon = () => (
 )
 
 export const Web3StorageLogo = ({ className = '' }) => (
-  <Link href='/' className={`${className} font-bold flex flex-row justify-center items-center gap-2`}>
+  <Link href='/' className={`${className} font-mono flex flex-row justify-center items-center gap-2`}>
     <Web3StorageLogoIcon />
     <span>console</span>
   </Link>

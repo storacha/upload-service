@@ -7,7 +7,7 @@ export function DidIcon({ did }: { did: string }): JSX.Element {
       title={did}
       alt={`gravatar for did ${did}`}
       src={src}
-      className='w-10 hover:saturate-200 saturate-0 invert border-solid border-gray-500 border'
+      className='w-10 hover:saturate-200 saturate-0 invert border-solid border-white border'
     />
   )
 }

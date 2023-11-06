@@ -27,7 +27,7 @@ export default function ItemPage ({ params: { cid }}: PageProps): JSX.Element {
       </div>
       <H2>URL</H2>
       <div className="pb-5">
-        <a href={url} className="font-mono text-sm text-blue-400 m-0 p-0 block">{url}</a>
+        <a href={url} className="font-mono text-sm underline m-0 p-0 block">{url}</a>
       </div>
       <H2>Shards</H2>
       <div className=''>

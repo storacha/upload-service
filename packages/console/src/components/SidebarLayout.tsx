@@ -24,20 +24,20 @@ interface SidebarComponentProps {
 }
 
 function Sidebar ({ sidebar = <div></div> }: SidebarComponentProps): JSX.Element {
-  const [{ space, spaces }, { setCurrentSpace }] = useKeyring()
+  const [{space, spaces}] = useKeyring()
   const router = useRouter()
   const pathname = usePathname()
   const goToSpace = (s: Space) => {
     router.push(`/space/${s.did()}`)
   }
   return (
-    <nav className='flex-none w-64 bg-gray-900 text-white px-4 pb-4 border-r border-gray-800 h-screen'>
+    <nav className='flex-none w-64 bg-gray-900 lg:bg-gray-900/60 text-white px-4 pb-4 border-r border-gray-800 h-screen'>
       <div className='flex flex-col justify-between h-full'>
         <div>
           <header className='opacity-0 lg:opacity-100'>
             <Logo className='py-8' />
           </header>
-          <H2>Spaces</H2>
+          <H2 className='text-white'>Spaces</H2>
           <SpaceFinder spaces={spaces} selected={space} setSelected={goToSpace} />
         </div>
         {sidebar}
@@ -97,18 +97,17 @@ export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.
                     </div>
                   </Dialog>
                 </Transition.Root>
-
                 {/* static sidebar for wide browsers */}
                 <div className='hidden lg:block'>
                   <Sidebar />
                 </div>
-                <div className='w-full h-screen overflow-scroll'>
+                <div className='w-full h-screen overflow-scroll text-white'>
                   {/* top nav bar for narrow browsers, mainly to have a place to put the hamburger */}
                   <div className='lg:hidden flex justify-between pt-4 px-4'>
                     <Bars3Icon className='w-6 h-6' onClick={() => setSidebarOpen(true)} />
                     <Logo className='w-full' />
                   </div>
-                  <main className='grow bg-gray-dark text-white p-4'>
+                  <main className='grow text-black p-4'>
                     {children}
                   </main>
                 </div>

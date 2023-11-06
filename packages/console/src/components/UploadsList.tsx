@@ -17,53 +17,51 @@ function Uploads ({ uploads, loading }: UploadsProps): JSX.Element {
   return uploads === undefined || uploads.length === 0
     ? (
       <>
-        <div className='text-zinc-600'>No uploads</div>
+        <div>No uploads</div>
         <nav className='flex flex-row justify-center'>
-          <UploadsListCore.ReloadButton className='w3ui-button'>
-            <ArrowPathIcon className={`h-6 w-6  ${loading ? 'animate-spin' : ''}`}/>
+          <UploadsListCore.ReloadButton className='inline-block bg-zinc-950 hover:outline text-white font-bold text-sm px-6 py-2 rounded-full whitespace-nowrap'>
+            <ArrowPathIcon className={`h-5 w-5  ${loading ? 'animate-spin' : ''} inline-block mr-1 align-middle`}/> Reload
           </UploadsListCore.ReloadButton>
         </nav>
       </>
       )
     : (
       <div className='max-w-4xl'>
-        <div className='rounded-md border border-zinc-600'>
+        <div className='shadow rounded-md border border-gray-900/60 overflow-hidden'>
           <table className='border-collapse table-fixed w-full divide-y divide-zinc-600'>
-            <thead className='text-left'>
+            <thead className='bg-gray-900/60 text-xs font-bold text-left text-white'>
               <tr>
-                <th className='p-2 pl-3 text-xs font-bold text-gray-400'>
-                  Root CID
-                </th>
-                <th className='p-2 pl-2 text-xs font-bold text-gray-400 text-left w-40'>
-                  Timestamp
-                </th>
+                <th className='p-2 pl-3 w-full'>Root CID</th>
+                <th className='p-2 pl-2 w-40'>Timestamp</th>
               </tr>
             </thead>
             <tbody>
-              {uploads.map((upload) => (
-                <tr key={upload.root.toString()} className='border-b border-zinc-700'>
+              {uploads.map((upload, i) => (
+                <tr key={upload.root.toString()} className={` hover:bg-white/40 ${i % 2 == 0 ? 'bg-gray-900/10' : ''}`}>
                   <td className='w-full'>
-                    <Link href={`${pathname}/root/${upload.root.toString()}`} className='hover:text-blue-400 block p-2 pl-3 font-mono text-xs overflow-hidden no-wrap text-ellipsis'>
+                    <Link href={`${pathname}/root/${upload.root.toString()}`} className='block p-2 pl-3 font-mono text-xs overflow-hidden no-wrap text-ellipsis'>
                       {upload.root.toString()}
                     </Link>
                   </td>
-                  <td className='text-xs text-gray-500 hover:text-gray-200 text-left pl-2 tabular-nums' title={upload.updatedAt}>
-                    {new Date(upload.updatedAt).toLocaleString()}
+                  <td title={upload.updatedAt}>
+                    <Link href={`${pathname}/root/${upload.root.toString()}`} className='block p-2 text-xs text-left tabular-nums overflow-hidden no-wrap text-ellipsis'>
+                      {new Date(upload.updatedAt).toLocaleString()}
+                    </Link>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <nav className='flex flex-row justify-center space-x-4 my-4'>
-          <UploadsListCore.PrevButton className='w3ui-button'>
-            <ChevronLeftIcon className='h-6 w-6'/>
+        <nav className='flex flex-row justify-between my-4'>
+          <UploadsListCore.PrevButton className='inline-block bg-zinc-950 hover:outline text-white font-bold text-sm pl-3 pr-6 py-2 rounded-full whitespace-nowrap'>
+            <ChevronLeftIcon className='h-5 w-5 inline-block mr-1 align-middle'/> Previous
           </UploadsListCore.PrevButton>
-          <UploadsListCore.ReloadButton className='w3ui-button'>
-            <ArrowPathIcon className={`h-6 w-6  ${loading ? 'animate-spin' : ''}`}/>
+          <UploadsListCore.ReloadButton className='inline-block bg-zinc-950 hover:outline text-white font-bold text-sm px-6 py-2 rounded-full whitespace-nowrap'>
+            <ArrowPathIcon className={`h-5 w-5  ${loading ? 'animate-spin' : ''} inline-block mr-1 align-middle`}/> Reload
           </UploadsListCore.ReloadButton>
-          <UploadsListCore.NextButton className='w3ui-button'>
-            <ChevronRightIcon className='h-6 w-6'/>
+          <UploadsListCore.NextButton className='inline-block bg-zinc-950 hover:outline text-white font-bold text-sm pl-6 pr-3 py-2 rounded-full whitespace-nowrap'>
+            Next <ChevronRightIcon className='h-5 w-5 inline-block ml-1 align-middle'/>
           </UploadsListCore.NextButton>
         </nav>
       </div>

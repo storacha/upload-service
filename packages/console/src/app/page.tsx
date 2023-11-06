@@ -28,11 +28,11 @@ export default function SpacePage (): JSX.Element {
 
 function Item ({space}: {space: Space}) {
   return (
-    <Link href={`/space/${space.did()}`} className='flex flex-row items-start gap-2 p-3 text-left hover:bg-gray-800 border-b border-zinc-700'>
+    <Link href={`/space/${space.did()}`} className='flex flex-row items-start gap-2 p-3 text-white text-left bg-gray-900/30 hover:bg-gray-900/60 border-b last:border-0 border-zinc-700'>
       <DidIcon did={space.did()} />
-      <div className='grow overflow-hidden whitespace-nowrap text-ellipsis text-gray-500'>
-        <span className='text-md font-semibold leading-5 text-white m-0'>
-          {space.name() ?? 'Untitled'}
+      <div className='grow overflow-hidden whitespace-nowrap text-ellipsis'>
+        <span className='text-md font-semibold leading-5 m-0'>
+          {space.name() || 'Untitled'}
         </span>
         <span className='font-mono text-xs block'>
           {space.did()}

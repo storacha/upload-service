@@ -53,7 +53,7 @@ export function SpaceCreatorForm ({
     }
   }
 
-  if (created) {
+  if (created && space) {
     return (
       <div className={className}>
         <SpacePreview did={space.did()} name={space.name()} />
@@ -73,14 +73,15 @@ export function SpaceCreatorForm ({
     <div className={className}>
       <form className='' onSubmit={(e: React.FormEvent<HTMLFormElement>) => { void onSubmit(e) }}>
         <input
-          className='text-black py-1 px-2 rounded block w-full mb-4'
+          className='text-black py-2 px-2 rounded block w-full mb-4 border border-gray-800'
           placeholder='Name'
           value={name}
           onChange={(e: ChangeEvent<HTMLInputElement>) => {
             setName(e.target.value)
           }}
+          required={true}
         />
-        <button type='submit' className='w3ui-button'>Create</button>
+        <button type='submit' className='inline-block bg-zinc-950 hover:outline text-white font-bold text-sm px-6 py-2 rounded-full whitespace-nowrap'>Create</button>
       </form>
     </div>
   )
@@ -116,7 +117,7 @@ export function SpaceCreator ({
 
 export function SpacePreview ({ did, name }: { did: DIDKey, name?: string }) {
   return (
-    <figure className='p-4 flex flex-row items-start gap-2'>
+    <figure className='p-4 flex flex-row items-start gap-2 bg-zinc-950/10 hover:bg-white/10 rounded'>
       <Link href={`/space/${did}`} className='block'>
         <DidIcon did={did} />
       </Link>
@@ -125,13 +126,13 @@ export function SpacePreview ({ did, name }: { did: DIDKey, name?: string }) {
           <span className='block text-lg font-semibold leading-5 mb-1'>
             { name ?? 'Untitled'}
           </span>
-          <span className='block font-mono text-xs text-gray-500 truncate'>
+          <span className='block font-mono text-xs truncate'>
             {did}
           </span>
         </Link>
       </figcaption>
       <div>
-        <Link href={`/space/${did}`} className='text-sm font-semibold align-[-8px] hover:text-blue-400'>
+        <Link href={`/space/${did}`} className='text-sm font-semibold align-[-8px] hover:underline'>
           View
         </Link>
       </div>

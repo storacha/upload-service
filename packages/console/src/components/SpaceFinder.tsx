@@ -22,7 +22,7 @@ export function SpaceFinder ({
     query === ''
       ? spaces
       : spaces.filter((space: Space) =>
-        (space.name() ?? space.did())
+        (space.name() || space.did())
           .toLowerCase()
           .replace(/\s+/g, '')
           .includes(query.toLowerCase().replace(/\s+/g, ''))
@@ -39,7 +39,7 @@ export function SpaceFinder ({
           <div className='relative w-full overflow-hidden rounded-md bg-white text-left shadow-md'>
             <Combobox.Input
               className='w-full border-none py-2 pl-3 pr-10 text-sm text-gray-900'
-              displayValue={(space: Space) => space.name() ?? space.did()}
+              displayValue={(space: Space) => space.name() || space.did()}
               onChange={(event) => { setQuery(event.target.value) }}
             />
             <Combobox.Button className='absolute inset-y-0 right-0 flex items-center pl-1 pr-2'>
@@ -72,7 +72,7 @@ export function SpaceFinder ({
                     key={space.did()}
                     className={({ active }) =>
                       `relative select-none py-2 pl-10 pr-4 ${
-                        active ? 'text-white bg-teal-600' : 'text-gray-400'
+                        active ? 'text-white bg-grad' : 'text-gray-800'
                       }`
                     }
                     value={space}
@@ -84,19 +84,16 @@ export function SpaceFinder ({
                             selected ? 'font-medium' : ''
                           }`}
                         >
-                          {space.name() ?? space.did()}
+                          {space.name() || space.did()}
                         </span>
                         {selected
                           ? (
                           <span
                             className={`absolute inset-y-0 left-0 flex items-center pl-3 ${
-                              active ? 'text-white' : 'text-teal-600'
+                              active ? 'text-white' : 'text-grad'
                             }`}
                           >
-                            <CheckIcon
-                              className='h-5 w-5'
-                              aria-hidden='true'
-                            />
+                            ⁂
                           </span>
                             )
                           : null}

@@ -11,5 +11,26 @@
 }
 
 .authenticator {
-  @apply bg-gray-900 bg-logo bg-center bg-no-repeat w-full h-screen flex flex-col justify-center items-center;
+  @apply bg-zinc-950 w-full h-screen flex flex-col justify-center items-center;
+}
+
+@keyframes bgPosDrift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@layer utilities {
+  .bg-grad {
+    background-color: rgb(244 244 245);
+    background-image: linear-gradient(225deg, #ff149296 0%, #00ffff96 100%);
+    background-size: 400% 400%;
+    animation: bgPosDrift 60s ease infinite;
+  }
+  .text-grad {
+    background: linear-gradient(92deg, #B507DC 0.82%, #2F0FDB 26.77%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
 }

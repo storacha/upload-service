@@ -5,7 +5,6 @@ import type {
   CARMetadata,
   CID
 } from '@w3ui/react-uploader'
-
 import { CloudArrowUpIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 import {
   Status,
@@ -106,8 +105,8 @@ const UploaderForm = (): JSX.Element => {
   return (
     <>
       <UploaderCore.Form>
-        <div className={`relative h-52 p-8 rounded-md bg-white/5 hover:bg-white/10 border-2 border-dashed border-gray-600 flex flex-col justify-center items-center text-center`}>
-          {hasFile ? '' : <span className='mb-5'><CloudArrowUpIcon className='w-8 h-8 text-gray-600' /></span>}
+        <div className={`relative shadow h-52 p-8 rounded-md bg-white/5 hover:bg-white/20 border-2 border-dotted border-zinc-950 flex flex-col justify-center items-center text-center`}>
+          {hasFile ? '' : <span className='mb-5'><img src='/icon-tray.svg' /></span>}
           <label className={`${hasFile ? 'hidden' : 'block h-px w-px overflow-hidden absolute whitespace-nowrap'}`}>File:</label>
           <UploaderCore.Input className={`${hasFile ? 'hidden' : 'block absolute inset-0 cursor-pointer w-full opacity-0'}`} />
           <UploaderContents />

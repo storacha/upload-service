@@ -6,7 +6,7 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'w3up console',
-  description: 'web3.storage file uploader',
+  description: 'web3.storage management console',
 }
 
 export default function RootLayout ({
@@ -16,7 +16,7 @@ export default function RootLayout ({
 }) {
   return (
     <html lang="en">
-      <body className='bg-gray-dark min-h-screen'>
+      <body className='bg-grad min-h-screen'>
         <SidebarLayout>
           {/* <H2 explain='a decentralised bucket identified by a DID'>
             <Link href='/'>Space</Link>

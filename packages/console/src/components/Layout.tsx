@@ -81,7 +81,7 @@ export function DefaultLayout ({ sidebar = <div></div>, children }: LayoutCompon
           <Bars3Icon className='w-6 h-6' onClick={() => setSidebarOpen(true)} />
           <a href='/'><Logo className='w-36 mb-2' /></a>
         </div>
-        <main className='grow bg-gray-dark text-white p-4'>
+        <main className='grow bg-gray-dark text-black p-4'>
           {children}
         </main>
       </div>

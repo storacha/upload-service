@@ -7,12 +7,13 @@ import { importDAG } from '@ucanto/core/delegation'
 import type { PropsWithChildren } from 'react'
 import type { Delegation, DIDKey } from '@ucanto/interface'
 import { SpacePreview } from './components/SpaceCreator'
+import { H2 } from '@/components/Text'
 
 function Header(props: PropsWithChildren): JSX.Element {
   return (
-    <h3 className='font-semibold text-xs font-mono uppercase tracking-wider mb-4 text-gray-400'>
+    <H2 as='h3'>
       {props.children}
-    </h3>
+    </H2>
   )
 }
 
@@ -88,7 +89,7 @@ export function ShareSpace (): JSX.Element {
 
   return (
     <div className='pt-4'>
-      <div className=''>
+      <div className='max-w-xl'>
         <Header>Share your space</Header>
         <p className='mb-4'>
           Ask your friend for their Decentralized Identifier (DID) and paste it
@@ -100,15 +101,16 @@ export function ShareSpace (): JSX.Element {
           }}
         >
           <input
-            className='text-black px-2 py-2 rounded block mb-4 w-full max-w-4xl font-mono text-sm'
+            className='text-black py-2 px-2 rounded block w-full mb-4 border border-gray-800'
             type='pattern'
             pattern='did:.+'
             placeholder='did:'
             value={value}
             onChange={onChange}
+            required={true}
           />
           <a
-            className='w3ui-button text-center block w-52'
+            className='inline-block bg-zinc-950 hover:outline text-white font-bold text-sm px-6 py-2 rounded-full whitespace-nowrap'
             style={{ opacity: downloadUrl !== '' ? '1' : '0.2' }}
             href={downloadUrl ?? ''}
             download={downloadName(downloadUrl !== '', value)}
@@ -146,11 +148,11 @@ export function ImportSpace () {
   return (
     <>
     <p className='mt-4 mb-8'>Send your DID to your friend, and click import to use the UCAN they send you.</p>
-    <div className='bg-opacity-10 bg-white font-mono text-sm py-2 px-3 rounded break-words max-w-4xl'>
+    <div className='bg-opacity-50 bg-white font-mono text-sm py-5 px-5 rounded break-words max-w-4xl shadow-inner'>
       {agent?.did()}
     </div>
     <div className='mt-8'>
-      <label className='w3ui-button text-center block w-52'>
+      <label className='inline-block bg-zinc-950 hover:outline text-white font-bold text-sm px-6 py-2 rounded-full whitespace-nowrap cursor-pointer'>
         Import UCAN
         <input
           type='file'
