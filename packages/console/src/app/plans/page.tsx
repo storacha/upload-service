@@ -1,3 +1,5 @@
+'use client'
+
 import PricingTable from '@/components/PricingTable'
 
 export default function Plans () {
