@@ -46,7 +46,7 @@ export default function Layout ({children, params}: LayoutProps): JSX.Element {
           </div>
         </div>
       </header>
-      <Nav className='mb-8'>
+      <Nav className='mb-8 mt-7'>
         <NavLink href={`/space/${space.did()}`}>List</NavLink>
         <NavLink href={`/space/${space.did()}/share`}>Share</NavLink>
         <NavLink href={`/space/${space.did()}/upload`}>Upload</NavLink>

@@ -6,8 +6,7 @@ import { CarReader } from '@ipld/car/reader'
 import { importDAG } from '@ucanto/core/delegation'
 import type { PropsWithChildren } from 'react'
 import type { Delegation, DIDKey } from '@ucanto/interface'
-import { DidIcon } from './components/DidIcon'
-import { H2 } from './components/Text'
+import { SpacePreview } from './components/SpaceCreator'
 
 function Header(props: PropsWithChildren): JSX.Element {
   return (
@@ -45,7 +44,7 @@ export async function toDelegation(car: Blob): Promise<Delegation> {
 }
 
 export function ShareSpace (): JSX.Element {
-  const [{ createDelegation }] = useKeyring()
+  const [, { createDelegation }] = useKeyring()
   const [value, setValue] = useState('')
   const [downloadUrl, setDownloadUrl] = useState('')
 
@@ -66,7 +65,7 @@ export function ShareSpace (): JSX.Element {
       const url = URL.createObjectURL(blob)
       setDownloadUrl(url)
     } catch (err) {
-      throw new Error('failed to register', { cause: err })
+      throw new Error(err.message ?? err, { cause: err })
     }
   }
 
@@ -122,11 +121,7 @@ export function ShareSpace (): JSX.Element {
   )
 }
 
-export function ImportSpace ({
-  viewSpace,
-}: {
-  viewSpace: (did: DIDKey) => void
-}) {
+export function ImportSpace () {
   const [{ agent }, { addSpace }] = useKeyring()
   const [proof, setProof] = useState<Delegation>()
 
@@ -150,7 +145,7 @@ export function ImportSpace ({
 
   return (
     <>
-    <p className='mb-2'>Send your DID to your friend, and click import to use the UCAN they send you.</p>
+    <p className='mt-4 mb-8'>Send your DID to your friend, and click import to use the UCAN they send you.</p>
     <div className='bg-opacity-10 bg-white font-mono text-sm py-2 px-3 rounded break-words max-w-4xl'>
       {agent?.did()}
     </div>
@@ -172,32 +167,7 @@ export function ImportSpace ({
         <Header>Added</Header>
         <div className='max-w-3xl border border-gray-700 shadow-xl'>
           {proof.capabilities.map((cap, i) => (
-            <figure className='p-4 flex flex-row items-start gap-2' key={i}>
-              <DidIcon did={cap.with} />
-              <figcaption className='grow'>
-                <a
-                  href='#'
-                  onClick={() => viewSpace(cap.with)}
-                  className='block'
-                >
-                  <span className='block text-xl font-semibold leading-5 mb-1'>
-                    {proof.facts.at(i)?.space.name ?? 'Untitled Space'}
-                  </span>
-                  <span className='block font-mono text-xs text-gray-500 truncate'>
-                    {cap.with}
-                  </span>
-                </a>
-              </figcaption>
-              <div>
-                <a
-                  href='#'
-                  className='font-sm font-semibold align-[-8px]'
-                  onClick={() => viewSpace(cap.with)}
-                >
-                  View
-                </a>
-              </div>
-            </figure>
+            <SpacePreview did={cap.with} name={proof.facts.at(i)?.space.name} key={cap.with} />
           ))}
         </div>
       </div>

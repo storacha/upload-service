@@ -18,9 +18,9 @@ export default function RootLayout ({
     <html lang="en">
       <body className='bg-gray-dark min-h-screen'>
         <SidebarLayout>
-          <H2 explain='a decentralised bucket identified by a DID'>
+          {/* <H2 explain='a decentralised bucket identified by a DID'>
             <Link href='/'>Space</Link>
-          </H2>
+          </H2> */}
           {children}
         </SidebarLayout>
       </body>

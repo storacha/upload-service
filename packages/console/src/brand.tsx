@@ -1,13 +1,9 @@
-import Image from "next/image"
+import Link from "next/link"
 
 export const serviceName = 'w3up.web3.storage'
 export const tosUrl = 'https://web3.storage/terms'
 export const Web3StorageLogoIcon = () => (
-  <svg
-    width='30'
-    viewBox='0 0 27.2 27.18'
-    xmlns='http://www.w3.org/2000/svg'
-  >
+  <svg width='30' viewBox='0 0 27.2 27.18' xmlns='http://www.w3.org/2000/svg'>
     <path
       d='M13.6 27.18A13.59 13.59 0 1127.2 13.6a13.61 13.61 0 01-13.6 13.58zM13.6 2a11.59 11.59 0 1011.6 11.6A11.62 11.62 0 0013.6 2z'
       fill='currentColor'
@@ -20,10 +16,10 @@ export const Web3StorageLogoIcon = () => (
 )
 
 export const Web3StorageLogo = ({ className = '' }) => (
-  <div className={`${className} font-bold flex flex-row justify-center items-center gap-2`}>
+  <Link href='/' className={`${className} font-bold flex flex-row justify-center items-center gap-2`}>
     <Web3StorageLogoIcon />
     <span>console</span>
-  </div>
+  </Link>
 )
 
 export const Logo = Web3StorageLogo

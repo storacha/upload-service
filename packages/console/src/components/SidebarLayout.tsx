@@ -4,10 +4,13 @@ import { Logo } from '../brand'
 import { Fragment, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
-import { Authenticator } from '@w3ui/react-keyring'
+import { Authenticator, useKeyring, Space } from '@w3ui/react-keyring'
 import { AuthenticationEnsurer } from '../components/Authenticator'
 import { SpaceEnsurer } from '../components/SpaceEnsurer'
 import { W3APIProvider } from '@/components/W3API'
+import { SpaceFinder } from './SpaceFinder'
+import { usePathname, useRouter } from 'next/navigation'
+import { H2 } from './Text'
 
 const navLinks = [
   { name: 'Terms', href: '/terms' },
@@ -20,12 +23,24 @@ interface SidebarComponentProps {
 }
 
 function Sidebar ({ sidebar = <div></div> }: SidebarComponentProps): JSX.Element {
+  const [{space, spaces}, { setCurrentSpace }] = useKeyring()
+  const router = useRouter()
+  const pathname = usePathname()  
+  const goToSpace = (s: Space) => {
+    router.push(`/space/${s.did()}`)
+  }
   return (
     <nav className='flex-none w-64 bg-gray-900 text-white px-4 pb-4 border-r border-gray-800 h-screen'>
       <div className='flex flex-col justify-between h-full'>
+        <div>
+          <header className='opacity-0 lg:opacity-100'>
+            <Logo className='py-8' />
+          </header>
+          <H2>Spaces</H2>
+          <SpaceFinder spaces={spaces} selected={space} setSelected={goToSpace} />
+        </div>
         {sidebar}
         <div className='flex flex-col items-center'>
-          <a href='/'><Logo className='w-36 mb-2' /></a>
           <div className='flex flex-row space-x-2'>
             {navLinks.map((link, i) => (
               <a key={i} className='text-xs block text-center mt-2' href={link.href}>{link.name}</a>
@@ -89,7 +104,7 @@ export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.
                 {/* top nav bar for narrow browsers, mainly to have a place to put the hamburger */}
                 <div className='lg:hidden flex justify-between pt-4 px-4'>
                   <Bars3Icon className='w-6 h-6' onClick={() => setSidebarOpen(true)} />
-                  <a href='/'><Logo className='w-36 mb-2' /></a>
+                  <Logo className='w-full' />
                 </div>
                 <main className='grow bg-gray-dark text-white p-4'>
                   {children}

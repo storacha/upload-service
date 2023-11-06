@@ -36,13 +36,13 @@ export function SpaceFinder ({
         by={(a, b) => a?.sameAs(b)}
       >
         <div className='relative mt-1'>
-          <div className='relative w-full overflow-hidden rounded-lg bg-white text-left shadow-md'>
+          <div className='relative w-full overflow-hidden rounded-md bg-white text-left shadow-md'>
             <Combobox.Input
               className='w-full border-none py-2 pl-3 pr-10 text-sm text-gray-900'
               displayValue={(space: Space) => space.name() ?? space.did()}
               onChange={(event) => { setQuery(event.target.value) }}
             />
-            <Combobox.Button className='absolute inset-y-0 right-0 flex items-center pl-2'>
+            <Combobox.Button className='absolute inset-y-0 right-0 flex items-center pl-1 pr-2'>
               <ChevronUpDownIcon
                 className='h-5 w-5 text-gray-400'
                 aria-hidden='true'
