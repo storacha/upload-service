@@ -20,6 +20,17 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/pnpm
+      - name: create .env from .env.tpl setting env variables used by `pnpm run build`
+        run: |
+          # set env vars from template
+
+          # omit these because they are added manually in the next step          
+          function excludeDefaultServiceVariables() {
+            cat - | grep -v NEXT_PUBLIC_SERVICE_ | grep -v NEXT_PUBLIC_W3UP_PROVIDER
+          }
+
+          # set .env from .env.tpl with exclusions
+          cat .env.tpl | excludeDefaultServiceVariables > .env
       - run: pnpm pages:build
         env:
           NEXT_PUBLIC_SERVICE_DID: 'did:web:staging.web3.storage'
