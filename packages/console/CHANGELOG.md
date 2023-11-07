@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/web3-storage/console/compare/w3up-website-v1.1.0...w3up-website-v1.1.1) (2023-11-07)
+
+
+### Other Changes
+
+* add line to README to trigger/test a new release ([#28](https://github.com/web3-storage/console/issues/28)) ([0e18073](https://github.com/web3-storage/console/commit/0e18073d177d2121fe8c3569c7404d9ed9f24d05))
+
 ## [1.1.0](https://github.com/web3-storage/console/compare/w3up-website-v1.0.0...w3up-website-v1.1.0) (2023-11-06)
 
 
