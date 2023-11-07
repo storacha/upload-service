@@ -95,7 +95,6 @@ jobs:
       url: https://w3up.web3.storage
     needs:
       - test
-      - preview
       - changelog
     steps:
       - uses: actions/checkout@v3
