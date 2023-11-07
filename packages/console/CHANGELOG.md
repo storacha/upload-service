@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/web3-storage/console/compare/w3up-website-v1.1.1...w3up-website-v1.1.2) (2023-11-07)
+
+
+### Other Changes
+
+* add line to README.md to trigger deploy ([df63608](https://github.com/web3-storage/console/commit/df63608aafbd48d2d056c36bdd3b323c6a93a624))
+
 ## [1.1.1](https://github.com/web3-storage/console/compare/w3up-website-v1.1.0...w3up-website-v1.1.1) (2023-11-07)
 
 
