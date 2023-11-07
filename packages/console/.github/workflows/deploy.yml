@@ -39,16 +39,15 @@ jobs:
       # as long as this uses https://github.com/cloudflare/next-on-pages/blob/dc529d7efa8f8568ea8f71b5cdcf78df89be6c12/packages/next-on-pages/bin/index.js,
       # env vars won't get passed through to wrangler, so if wrangler will need them, write them to .env like the previous step
       - run: pnpm pages:build
-      - run: cat .env
-      - run: grep -o ".\{0,50\}staging.web3.storage.\{0,50\}" -R .vercel
       - name: Deploy preview build to Cloudflare Pages
         uses: mathiasvr/command-output@v1.1.0
         id: cloudflare
         with:
-          run: npx wrangler pages deploy --project-name w3up-website-staging --branch "$GITHUB_REF_NAME" --commit-hash "$GITHUB_SHA" .vercel/output/static
+          run: npx wrangler pages deploy --project-name "$CLOUDFLARE_PAGES_PROJECT_NAME" --branch "$GITHUB_REF_NAME" --commit-hash "$GITHUB_SHA" .vercel/output/static
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CLOUDFLARE_PAGES_PROJECT_NAME: ${{ (github.ref_name == 'main') && 'console-web3-storage-staging' || 'console-web3-storage-preview'
       - name: Find Cloudflare Pages preview URL
         uses: mathiasvr/command-output@v1.1.0
         id: cloudflare_url
@@ -110,7 +109,7 @@ jobs:
         uses: mathiasvr/command-output@v1.1.0
         id: cloudflare
         with:
-          run: npx wrangler pages deploy --project-name w3up-website --branch "main" --commit-hash "$GITHUB_SHA" .vercel/output/static
+          run: npx wrangler pages deploy --project-name console-web3-storage --branch "main" --commit-hash "$GITHUB_SHA" .vercel/output/static
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
