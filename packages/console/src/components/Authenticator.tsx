@@ -30,12 +30,7 @@ export function AuthenticationForm (): JSX.Element {
         </div>
       </AuthCore.Form>
       <p className='text-xs text-white/80 italic max-w-xs text-left mt-6'>
-        By registering with {serviceName} w3up beta, you agree to the <a className='underline' href={tosUrl}>Terms of Service</a>.
-        If you have an existing non-w3up beta account with {serviceName} and register for
-        the w3up beta version of {serviceName} using the same email, then at the end of the
-        beta period, these accounts will be combined. Until the beta period is over and this
-        migration occurs, uploads to w3up will not appear in your {serviceName} account
-        (and vice versa), even if you register with the same email.
+        By registering with {serviceName} web3.storage, you agree to the web3.storage <a className='underline' href='https://web3.storage/terms/'>Terms of Service</a>.
       </p>
     </div >
   )
