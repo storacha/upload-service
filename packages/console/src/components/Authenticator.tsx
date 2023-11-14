@@ -30,7 +30,7 @@ export function AuthenticationForm (): JSX.Element {
         </div>
       </AuthCore.Form>
       <p className='text-xs text-white/80 italic max-w-xs text-center mt-6'>
-        By registering with web3.storage, you agree to the web3.storage <a className='underline' href='https://web3.storage/terms/'>Terms of Service</a>.
+        By registering with web3.storage, you agree to the web3.storage <a className='underline' href='https://web3.storage/docs/terms/'>Terms of Service</a>.
       </p>
     </div >
   )

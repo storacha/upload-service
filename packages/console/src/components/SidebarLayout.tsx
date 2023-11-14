@@ -14,9 +14,9 @@ import { usePathname, useRouter } from 'next/navigation'
 import { H2 } from './Text'
 
 const navLinks = [
-  { name: 'Terms', href: '/terms' },
-  { name: 'Docs', href: '/docs' },
-  { name: 'Support', href: 'https://github.com/web3-storage/w3ui/issues' },
+  { name: 'Terms', href: 'https://web3.storage/docs/terms' },
+  { name: 'Docs', href: 'https://web3.storage/docs' },
+  { name: 'Support', href: 'mailto:support@web3.storage' },
 ]
 
 interface SidebarComponentProps {
@@ -44,7 +44,7 @@ function Sidebar ({ sidebar = <div></div> }: SidebarComponentProps): JSX.Element
         <div className='flex flex-col items-center'>
           <div className='flex flex-row space-x-2'>
             {navLinks.map((link, i) => (
-              <a key={i} className='text-xs block text-center mt-2' href={link.href}>{link.name}</a>
+              <a key={i} className='text-xs block text-center mt-2 px-1' href={link.href}>{link.name}</a>
             ))}
           </div>
         </div>
