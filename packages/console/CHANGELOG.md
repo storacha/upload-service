@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.2.0](https://github.com/web3-storage/console/compare/w3up-website-v1.1.2...w3up-website-v1.2.0) (2023-11-14)
+
+
+### Features
+
+* add placeholder for storage providers ([48716a6](https://github.com/web3-storage/console/commit/48716a659bcdcd520ca4ef610872d90c287cf99c))
+* add stripe pricing table config ([#41](https://github.com/web3-storage/console/issues/41)) ([f9c772e](https://github.com/web3-storage/console/commit/f9c772e1cb262d85b3788c225eda29282d42b8ba))
+* plan gate styles ([#40](https://github.com/web3-storage/console/issues/40)) ([88823ca](https://github.com/web3-storage/console/commit/88823cab87c54571a2d0f67815c24cd4d602cf34))
+* usage bar ([#39](https://github.com/web3-storage/console/issues/39)) ([9db653c](https://github.com/web3-storage/console/commit/9db653c68a9a15ec04d7f3a416e20080732d7466))
+
+
+### Bug Fixes
+
+* links ([f66dd6d](https://github.com/web3-storage/console/commit/f66dd6d5b04c3f7461a8e196f4a359fddcb6f19c))
+
+
+### Other Changes
+
+* fix prod env url to be console.web3.storage ([#34](https://github.com/web3-storage/console/issues/34)) ([aadb538](https://github.com/web3-storage/console/commit/aadb5384d7d9176fb2f6971de7ac431ea2dc7719))
+
 ## [1.1.2](https://github.com/web3-storage/console/compare/w3up-website-v1.1.1...w3up-website-v1.1.2) (2023-11-07)
 
 
