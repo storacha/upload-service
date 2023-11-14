@@ -30,9 +30,11 @@ export default function ItemPage ({ params: { cid }}: PageProps): JSX.Element {
         <a href={url} className="font-mono text-sm underline m-0 p-0 block">{url}</a>
       </div>
       <H2>Shards</H2>
-      <div className=''>
+      <div className='pb-5'>
          { item.shards?.map(link => <Shard cid={link.toString()} key={link.toString()} />) }
       </div>
+      <H2>Storage Providers</H2>
+      <p className='font-mono text-sm'>Aggregating...</p>
     </div>
   )
 }
