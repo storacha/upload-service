@@ -27,7 +27,7 @@ jobs:
 
           # omit these because they are added manually in the next step          
           function excludeDefaultServiceVariables() {
-            cat - | grep -v NEXT_PUBLIC_W3UP_SERVICE_
+            cat - | grep -v NEXT_PUBLIC_W3UP_SERVICE_ | grep -v NEXT_PUBLIC_STRIPE
           }
 
           # set .env from .env.tpl with exclusions
@@ -37,6 +37,8 @@ jobs:
           echo "NEXT_PUBLIC_W3UP_SERVICE_DID=did:web:staging.web3.storage" >> .env
           echo "NEXT_PUBLIC_W3UP_SERVICE_URL=https://staging.up.web3.storage" >> .env
           echo "NEXT_PUBLIC_W3UP_PROVIDER=did:web:staging.web3.storage" >> .env
+          echo "NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID=prctbl_1NzhdvF6A5ufQX5vKNZuRhie" >> .env
+          echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51LO87hF6A5ufQX5viNsPTbuErzfavdrEFoBuaJJPfoIhzQXdOUdefwL70YewaXA32ZrSRbK4U4fqebC7SVtyeNcz00qmgNgueC" >> .env
       # as long as this uses https://github.com/cloudflare/next-on-pages/blob/dc529d7efa8f8568ea8f71b5cdcf78df89be6c12/packages/next-on-pages/bin/index.js,
       # env vars won't get passed through to wrangler, so if wrangler will need them, write them to .env like the previous step
       - run: pnpm pages:build
@@ -108,7 +110,7 @@ jobs:
 
           # omit these because they are added manually in the next step          
           function excludeDefaultServiceVariables() {
-            cat - | grep -v NEXT_PUBLIC_W3UP_SERVICE_
+            cat - | grep -v NEXT_PUBLIC_W3UP_SERVICE_ | grep -v NEXT_PUBLIC_STRIPE
           }
 
           # set .env from .env.tpl with exclusions
@@ -118,6 +120,8 @@ jobs:
           echo "NEXT_PUBLIC_W3UP_SERVICE_DID=did:web:web3.storage" >> .env
           echo "NEXT_PUBLIC_W3UP_SERVICE_URL=https://up.web3.storage" >> .env
           echo "NEXT_PUBLIC_W3UP_PROVIDER=did:web:web3.storage" >> .env
+          echo "NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID=prctbl_1OCJ1qF6A5ufQX5vM5DWg4rA" >> .env
+          echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_51LO87hF6A5ufQX5vQTO5BHyz8y9ybJp4kg1GsBjYuqwluuwtQTkbeZzkoQweFQDlv7JaGjuIdUWAyuwXp3tmCfsM005lJK9aS8" >> .env
       - run: pnpm pages:build
         # as long as this uses https://github.com/cloudflare/next-on-pages/blob/dc529d7efa8f8568ea8f71b5cdcf78df89be6c12/packages/next-on-pages/bin/index.js,
         # env vars won't get passed through to wrangler, so if wrangler will need them, write them to .env like the previous step
