@@ -7,7 +7,7 @@ import Link from "next/link"
 export function Nav ({ children, ...rest}: PropsWithChildren & { className?: string }) {
   return (
     <nav {...rest}>
-      <div className="inline-flex rounded-md  mt-2 font-semibold text-white overflow-hidden">
+      <div className="inline-flex rounded-md font-semibold text-white overflow-hidden">
         {children}
       </div>
     </nav>

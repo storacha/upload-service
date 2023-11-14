@@ -1,7 +1,6 @@
 import { PropsWithChildren } from 'react'
-import { H2 } from '@/components/Text'
-import Link from 'next/link'
 import { Nav, NavLink } from '@/components/Nav'
+import { UsageBar } from '@/components/UsageBar'
 
 export const runtime = 'edge'
 
@@ -29,11 +28,16 @@ export function SpacesNav () {
           Pick a space to see what's in it, or create a new one.
         </p>
       </div> */}
-      <Nav className='mb-8'>
-        <NavLink href='/'>List</NavLink>
-        <NavLink href='/space/import'>Import</NavLink>
-        <NavLink href='/space/create'>Create</NavLink>
-      </Nav>
+      <div className='lg:flex items-center place-items-center justify-between mt-2 mb-8'>
+        <div className='lg:w-2/6 order-last'>
+          <UsageBar />
+        </div>
+        <Nav>
+          <NavLink href='/'>List</NavLink>
+          <NavLink href='/space/import'>Import</NavLink>
+          <NavLink href='/space/create'>Create</NavLink>
+        </Nav>
+      </div>
     </>
   )
 }
