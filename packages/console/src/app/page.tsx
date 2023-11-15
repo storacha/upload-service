@@ -16,11 +16,9 @@ export default function SpacePage (): JSX.Element {
   return (
     <>
       <SpacesNav />
-      <div>
-        <H2>Pick a Space</H2>
-        <div className='max-w-lg border rounded-md border-zinc-700'>
-          { spaces.map(s => <Item space={s} key={s.did()} /> ) }
-        </div>
+      <H2>Pick a Space</H2>
+      <div className='max-w-lg border rounded-md border-zinc-700'>
+        { spaces.map(s => <Item space={s} key={s.did()} /> ) }
       </div>
     </>
   )

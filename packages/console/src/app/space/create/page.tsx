@@ -8,8 +8,8 @@ export default function CreateSpacePage (): JSX.Element {
   return (
     <>
       <SpacesNav />
+      <H2>Create a new Space</H2>
       <div className='max-w-xl'>
-        <H2>Create a new Space</H2>
         <SpaceCreatorForm />
       </div>
       <div className='mt-12 max-w-xl text-sm leading-6'>
