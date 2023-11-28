@@ -5,8 +5,18 @@ import { DidIcon } from '@/components/DidIcon'
 import Link from 'next/link'
 import { SpacesNav } from './space/layout'
 import { H2 } from '@/components/Text'
+import SidebarLayout from '@/components/SidebarLayout'
+import { ReactNode } from 'react'
 
-export default function SpacePage (): JSX.Element {
+export default function HomePage () {
+  return (
+    <SidebarLayout>
+      <SpacePage />
+    </SidebarLayout>
+  )
+}
+
+function SpacePage (): ReactNode {
   const [{ spaces }] = useKeyring()
 
   if (spaces.length === 0) {

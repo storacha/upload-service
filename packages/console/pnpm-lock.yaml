@@ -30,8 +30,8 @@ dependencies:
     specifier: ^9.0.0
     version: 9.0.0
   '@w3ui/react-keyring':
-    specifier: ^6.2.0
-    version: 6.2.0(@types/react@18.2.32)(react-dom@18.2.0)(react@18.2.0)
+    specifier: ^6.2.1
+    version: 6.2.1(@types/react@18.2.32)(react-dom@18.2.0)(react@18.2.0)
   '@w3ui/react-uploader':
     specifier: ^5.2.0
     version: 5.2.0(@types/react@18.2.32)(react-dom@18.2.0)(react@18.2.0)
@@ -1269,8 +1269,8 @@ packages:
       '@web3-storage/did-mailto': 2.0.2
     dev: false
 
-  /@w3ui/react-keyring@6.2.0(@types/react@18.2.32)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-vSM1dv7lCTMBhFB+1Z1HZiHcuGscgz6P0n+CkrrOQgoBsmFn/v+6fOnfeZ4MUHGdkLYx0FFibXiA+DX2W07jEA==}
+  /@w3ui/react-keyring@6.2.1(@types/react@18.2.32)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-ORXxtepWjQ7nHW5DE0pmMA9ulMCmU1+7LSMZtW31CF5AfnE2ceSzG8XYZFQCZS3HAvekwGw/0ccN0zTCjvPWxQ==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
     dependencies:
@@ -1288,7 +1288,7 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
     dependencies:
-      '@w3ui/react-keyring': 6.2.0(@types/react@18.2.32)(react-dom@18.2.0)(react@18.2.0)
+      '@w3ui/react-keyring': 6.2.1(@types/react@18.2.32)(react-dom@18.2.0)(react@18.2.0)
       '@w3ui/uploader-core': 6.1.0
       '@web3-storage/capabilities': 11.1.0
       ariakit-react-utils: 0.17.0-next.27(@types/react@18.2.32)(react@18.2.0)
@@ -1304,7 +1304,7 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
     dependencies:
-      '@w3ui/react-keyring': 6.2.0(@types/react@18.2.32)(react-dom@18.2.0)(react@18.2.0)
+      '@w3ui/react-keyring': 6.2.1(@types/react@18.2.32)(react-dom@18.2.0)(react@18.2.0)
       '@w3ui/uploads-list-core': 4.1.0
       '@web3-storage/capabilities': 11.1.0
       ariakit-react-utils: 0.17.0-next.27(@types/react@18.2.32)(react@18.2.0)

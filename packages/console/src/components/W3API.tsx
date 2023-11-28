@@ -1,4 +1,6 @@
-import { useMemo } from 'react'
+'use client'
+
+import { ReactNode, useMemo } from 'react'
 import {
   useUploader,
   UploaderContextValue,
@@ -10,6 +12,7 @@ import {
   UploadsListProvider
 } from '@w3ui/react-uploads-list'
 import {
+  Authenticator,
   useKeyring,
   KeyringContextValue,
   KeyringProvider
@@ -23,19 +26,21 @@ export interface W3APIContextValue {
 }
 
 export interface W3APIProviderProps {
-  children: JSX.Element | JSX.Element[]
+  children: ReactNode
   uploadsListPageSize?: number
 }
 
 export function W3APIProvider ({
   children,
   uploadsListPageSize
-}: W3APIProviderProps): JSX.Element {
+}: W3APIProviderProps): ReactNode {
   return (
     <KeyringProvider servicePrincipal={servicePrincipal} connection={serviceConnection}>
       <UploaderProvider servicePrincipal={servicePrincipal} connection={serviceConnection}>
         <UploadsListProvider servicePrincipal={servicePrincipal} connection={serviceConnection} size={uploadsListPageSize}>
-          <>{children}</>
+          <Authenticator>
+            {children}
+          </Authenticator>
         </UploadsListProvider>
       </UploaderProvider>
     </KeyringProvider>
