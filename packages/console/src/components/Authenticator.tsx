@@ -3,8 +3,8 @@
 import {
   Authenticator as AuthCore,
   useAuthenticator
-} from '@w3ui/react-keyring'
-import { serviceName, tosUrl, Logo } from '../brand'
+} from '@w3ui/react'
+import { Logo } from '../brand'
 import Loader from './Loader'
 
 export function AuthenticationForm (): JSX.Element {
@@ -12,7 +12,7 @@ export function AuthenticationForm (): JSX.Element {
   return (
     <div className='authenticator'>
       <AuthCore.Form className='text-zinc-950 bg-grad rounded-xl shadow-md px-10 pt-8 pb-8'>
-        <div className='flex flex-row gap-4 mb-8 flex justify-center gap-4'>
+        <div className='flex flex-row gap-4 mb-8 justify-center'>
           <Logo className='w-36' />
         </div>
         <div>
@@ -62,18 +62,18 @@ export function AuthenticationEnsurer ({
 }: {
   children: JSX.Element | JSX.Element[]
 }): JSX.Element {
-  const [{ submitted, account, agent }] = useAuthenticator()
-  const authenticated = !!account
+  const [{ submitted, accounts, client }] = useAuthenticator()
+  const authenticated = !!accounts.length
   if (authenticated) {
     return <>{children}</>
   }
   if (submitted) {
     return <AuthenticationSubmitted />
   }
-  if (agent) {
+  if (client) {
     return <AuthenticationForm />
   }
-  return <Loader className='w-12 h-12 w-full mt-12' />
+  return <Loader className='h-12 w-full mt-12' />
 }
 
 

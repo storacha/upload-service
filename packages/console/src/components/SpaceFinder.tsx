@@ -1,8 +1,9 @@
-import type { Space } from '@w3ui/react-keyring'
+import type { Space } from '@w3ui/react'
 
 import React, { Fragment, useState } from 'react'
 import { Combobox, Transition } from '@headlessui/react'
-import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid'
+import { ChevronUpDownIcon } from '@heroicons/react/20/solid'
+import { shortenDID } from '@/lib'
 
 interface SpaceFinderProps {
   spaces: Space[]
@@ -22,7 +23,7 @@ export function SpaceFinder ({
     query === ''
       ? spaces
       : spaces.filter((space: Space) =>
-        (space.name() || space.did())
+        (space.name || space.did())
           .toLowerCase()
           .replace(/\s+/g, '')
           .includes(query.toLowerCase().replace(/\s+/g, ''))
@@ -33,13 +34,13 @@ export function SpaceFinder ({
       <Combobox
         value={selected}
         onChange={setSelected}
-        by={(a, b) => a?.sameAs(b)}
+        by={(a, b) => a?.did() === b?.did()}
       >
         <div className='relative mt-1'>
           <div className='relative w-full overflow-hidden rounded-md bg-white text-left shadow-md'>
             <Combobox.Input
               className='w-full border-none py-2 pl-3 pr-10 text-sm text-gray-900'
-              displayValue={(space: Space) => space.name() || space.did()}
+              displayValue={(space: Space) => space.name || shortenDID(space.did())}
               onChange={(event) => { setQuery(event.target.value) }}
             />
             <Combobox.Button className='absolute inset-y-0 right-0 flex items-center pl-1 pr-2'>
@@ -71,7 +72,7 @@ export function SpaceFinder ({
                   <Combobox.Option
                     key={space.did()}
                     className={({ active }) =>
-                      `relative select-none py-2 pl-10 pr-4 ${
+                      `relative select-none py-2 pl-9 pr-4 ${
                         active ? 'text-white bg-grad' : 'text-gray-800'
                       }`
                     }
@@ -84,7 +85,7 @@ export function SpaceFinder ({
                             selected ? 'font-medium' : ''
                           }`}
                         >
-                          {space.name() || space.did()}
+                          {space.name || shortenDID(space.did())}
                         </span>
                         {selected
                           ? (

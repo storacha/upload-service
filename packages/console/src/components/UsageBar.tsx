@@ -1,66 +1,73 @@
 'use client'
 
-import { ReactNode, useEffect, useState } from 'react'
-import { useKeyring, Plan } from '@w3ui/react-keyring'
+import { ReactNode } from 'react'
+import { useW3, PlanGetSuccess, SpaceDID } from '@w3ui/react'
+import useSWR from 'swr'
+import { GB, TB, filesize } from '@/lib'
 
-const B = 1024
-const MB = 1024 * B
-const GB = 1024 * MB
-const TB = 1024 * GB
 const BarHeight = 10
 
-const PlanLimit: Record<`did:${string}`, number> = {
-  'did:web:starter.web3.storage': 5 * GB,
-  'did:web:lite.web3.storage': 100 * GB,
-  'did:web:business.web3.storage': 2 * TB
-}
-
-const PlanNames: Record<`did:${string}`, string> = {
-  'did:web:starter.web3.storage': 'Starter',
-  'did:web:lite.web3.storage': 'Lite',
-  'did:web:business.web3.storage': 'Business'
+const Plans: Record<`did:${string}`, { name: string, limit: number }> = {
+  'did:web:starter.web3.storage': { name: 'Starter', limit: 5 * GB },
+  'did:web:lite.web3.storage': { name: 'Lite', limit: 100 * GB },
+  'did:web:business.web3.storage': { name: 'Business', limit: 2 * TB }
 }
 
 export function UsageBar (): ReactNode {
-  const [{ account }, { getPlan }] = useKeyring()
-  const [plan, setPlan] = useState<Plan>()
-  const [usage, setUsage] = useState<Record<string, number>>()
+  const [{ client, accounts }] = useW3()
+  // TODO: introduce account switcher
+  const account = accounts[0]
 
-  useEffect(() => {
-    if (!account) return
-    (async () => {
-      if (account) {
-        try {
-          const result = await getPlan(account as `${string}@${string}`)
-          if (result.error) throw new Error('getting plan', { cause: result.error })
-          setPlan(result.ok)
-        } catch (err) {
-          console.error(err)
+  const { data: plan } = useSWR<PlanGetSuccess|undefined>(`/plan/${account?.did() ?? ''}`, {
+    fetcher: async () => {
+      if (!account) return
+      const result = await account.plan.get()
+      if (result.error) throw new Error('getting plan', { cause: result.error })
+      return result.ok
+    },
+    onError: err => console.error(err.message, err.cause)
+  })
+
+  const { data: usage } = useSWR<Record<SpaceDID, number>|undefined>(`/usage/${account ?? ''}`, {
+    fetcher: async () => {
+      const usage: Record<SpaceDID, number> = {}
+      if (!account || !client) return
+
+      const now = new Date()
+      const period = {
+        // we may not have done a snapshot for this month _yet_, so get report
+        // from last month -> now
+        from: startOfLastMonth(now),
+        to: now,
+      }
+
+      const subscriptions = await client.capability.subscription.list(account.did())
+      for (const { consumers } of subscriptions.results) {
+        for (const space of consumers) {
+          try {
+            const result = await client.capability.usage.report(space, period)
+            for (const [, report] of Object.entries(result)) {
+              usage[report.space] = report.size.final
+            }
+          } catch (err) {
+            // TODO: figure out why usage/report cannot be used on old spaces 
+            console.error(err)
+          }
         }
       }
-    })()
-  }, [account, getPlan])
-
-  useEffect(() => {
-    if (!account) return
-    // TODO: get usage by space
-  }, [account])
-
-  // if (!plan) setPlan({ product: 'did:web:starter.web3.storage' })
-  // if (!usage) setUsage({
-  //   'did:key:z6MkjCoKJcunQgzihb4tXBYDd9xunhpGNoC14HEypgAe5cNW': 500_000_000,
-  //   'did:key:z6MketbAFtbeqDeVHxSzSSDH2PfMTquQ3vzZCcPFweXBGe3R': 200_000_000,
-  //   'did:key:z6MkoEBnTj96thGj7H7c1DrdNHF4AiA9VPDRVqTmp4teYd6B': 78_000_000,
-  // })
-
+      return usage
+    },
+    onError: err => console.error(err.message, err.cause)
+  })
+  
   const allocated = Object.values(usage ?? {}).reduce((total, n) => total + n, 0)
-  const limit = plan?.product ? PlanLimit[plan.product] : null
+  const limit = plan?.product ? Plans[plan.product]?.limit : null
 
   return (
     <div className='w-full'>
       {plan?.product ? (
         <div className='lg:text-right text-xs tracking-wider font-mono'>
-          Plan: <strong>{PlanNames[plan.product] ?? plan.product}</strong> <a className='underline' href='mailto:support@web3.storage?subject=How%20to%20change%20my%20payment%20plan?' title='Automated support for switching plans is currently in progress. to change your plan, please email support@web3.storage.'>change</a>
+          Plan: <strong>{Plans[plan.product]?.name ?? plan.product}</strong> <a className='underline' href='mailto:support@web3.storage?subject=How%20to%20change%20my%20payment%20plan?' title='Automated support for switching plans is currently in progress. to change your plan, please email support@web3.storage.'>change</a>
         </div>
       ) : null}
       {usage && limit ? (
@@ -87,9 +94,18 @@ export function UsageBar (): ReactNode {
   )
 }
 
-function filesize (bytes: number) {
-  if (bytes < B / 2) return `${bytes}B` // avoid 0.0KB
-  if (bytes < MB / 2) return `${(bytes / 1024).toFixed(1)}KB` // avoid 0.0MB
-  if (bytes < GB / 2) return `${(bytes / 1024 / 1024).toFixed(1)}MB` // avoid 0.0GB
-  return `${(bytes / 1024 / 1024 / 1024).toFixed(1)}GB`
+const startOfMonth = (now: string|number|Date) => {
+  const d = new Date(now)
+  d.setUTCDate(1)
+  d.setUTCHours(0)
+  d.setUTCMinutes(0)
+  d.setUTCSeconds(0)
+  d.setUTCMilliseconds(0)
+  return d
+}
+
+const startOfLastMonth = (now: string|number|Date) => {
+  const d = startOfMonth(now)
+  d.setUTCMonth(d.getUTCMonth() - 1)
+  return d
 }

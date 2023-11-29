@@ -1,8 +1,7 @@
 'use client'
 
 import { PropsWithChildren } from 'react'
-import { DIDKey } from '@ucanto/interface'
-import { useKeyring } from '@w3ui/react-keyring'
+import { useW3 } from '@w3ui/react'
 import { DidIcon } from '@/components/DidIcon'
 import { Nav, NavLink } from '@/components/Nav'
 
@@ -13,21 +12,17 @@ interface LayoutProps extends PropsWithChildren {
 }
 
 export default function Layout ({children, params}: LayoutProps): JSX.Element {
-  const [{ space }, { setCurrentSpace }] = useKeyring()
+  const [{ spaces }] = useW3()
   
   if (!params.did) {
     return <h1>NO SPACE?</h1>
   }
 
-  const did = decodeDidKey(params.did)
-
-  if (space && space?.did() !== did) {
-    setCurrentSpace(did)
-    return <div></div>
-  }
-
+  const spaceDID = decodeURIComponent(params.did)
+  const space = spaces.find(s => s.did() === spaceDID)
   if (!space) {
-    return <div></div>
+    console.warn(`not a known space to this agent: ${spaceDID}`)
+    return <div />
   }
 
   return (
@@ -37,7 +32,7 @@ export default function Layout ({children, params}: LayoutProps): JSX.Element {
           <DidIcon did={space.did()} />
           <div className='grow overflow-hidden whitespace-nowrap text-ellipsis text-black'>
             <h1 className='text-lg font-semibold leading-5 text-black'>
-              {space.name() || 'Untitled'}
+              {space.name || 'Untitled'}
             </h1>
             <label className='font-mono text-xs'>
               {space.did()}
@@ -55,11 +50,4 @@ export default function Layout ({children, params}: LayoutProps): JSX.Element {
       </div>
     </section>
   )
-}
-
-function decodeDidKey (str: string): DIDKey | undefined {
-  if (!str) return
-  const did = decodeURIComponent(str)
-  if (!did.startsWith('did:key:')) return
-  return did as DIDKey
 }

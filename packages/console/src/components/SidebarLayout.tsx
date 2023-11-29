@@ -4,14 +4,14 @@ import { Logo } from '../brand'
 import { Fragment, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
-import { useKeyring, Space } from '@w3ui/react-keyring'
+import { Authenticator, useW3, Space, Provider } from '@w3ui/react'
 import { AuthenticationEnsurer } from '../components/Authenticator'
 import { SpaceEnsurer } from '../components/SpaceEnsurer'
 import { MaybePlanGate } from './PlanGate'
 import { SpaceFinder } from './SpaceFinder'
 import { usePathname, useRouter } from 'next/navigation'
 import { H2 } from './Text'
-import Link from 'next/link'
+import { serviceConnection, servicePrincipal } from './services'
 
 const navLinks = [
   { name: 'Terms', href: 'https://web3.storage/docs/terms' },
@@ -26,9 +26,12 @@ interface SidebarComponentProps {
 const footerLinkClasses = 'text-xs block text-center mt-2 px-1'
 
 function Sidebar ({ sidebar = <div></div> }: SidebarComponentProps): JSX.Element {
-  const [{space, spaces}] = useKeyring()
+  const [{ spaces }] = useW3()
   const router = useRouter()
   const pathname = usePathname()
+  const spaceDID = pathname.startsWith('/space/') ? pathname.split('/')[2] : undefined
+  const space = spaces.find(s => s.did() === spaceDID)
+
   const goToSpace = (s: Space) => {
     router.push(`/space/${s.did()}`)
   }
@@ -66,7 +69,7 @@ export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className='h-full'>
+    <Authenticator className='h-full' as='div'>
       <AuthenticationEnsurer>
         <SpaceEnsurer>
           <MaybePlanGate>
@@ -119,6 +122,6 @@ export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.
           </MaybePlanGate>
         </SpaceEnsurer>
       </AuthenticationEnsurer>
-    </div>
+    </Authenticator>
   )
 }

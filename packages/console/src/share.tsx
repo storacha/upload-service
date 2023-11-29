@@ -1,11 +1,11 @@
 import { ChangeEvent, useState } from 'react'
-import { useKeyring } from '@w3ui/react-keyring'
+import { useW3 } from '@w3ui/react'
 import * as DID from '@ipld/dag-ucan/did'
 import { CarWriter } from '@ipld/car/writer'
 import { CarReader } from '@ipld/car/reader'
 import { importDAG } from '@ucanto/core/delegation'
 import type { PropsWithChildren } from 'react'
-import type { Delegation, DIDKey } from '@ucanto/interface'
+import type { Delegation } from '@ucanto/interface'
 import { SpacePreview } from './components/SpaceCreator'
 import { H2 } from '@/components/Text'
 
@@ -45,11 +45,13 @@ export async function toDelegation(car: Blob): Promise<Delegation> {
 }
 
 export function ShareSpace (): JSX.Element {
-  const [, { createDelegation }] = useKeyring()
+  const [{ client }] = useW3()
   const [value, setValue] = useState('')
   const [downloadUrl, setDownloadUrl] = useState('')
 
   async function makeDownloadLink(input: string): Promise<void> {
+    if (!client) return
+
     let audience
     try {
       audience = DID.parse(input.trim())
@@ -59,7 +61,7 @@ export function ShareSpace (): JSX.Element {
     }
 
     try {
-      const delegation = await createDelegation(audience, ['*'], {
+      const delegation = await client.createDelegation(audience, ['*'], {
         expiration: Infinity,
       })
       const blob = await toCarBlob(delegation)
@@ -124,12 +126,12 @@ export function ShareSpace (): JSX.Element {
 }
 
 export function ImportSpace () {
-  const [{ agent }, { addSpace }] = useKeyring()
+  const [{ client }] = useW3()
   const [proof, setProof] = useState<Delegation>()
 
   async function onImport(e: ChangeEvent<HTMLInputElement>): Promise<void> {
     const input = e.target.files?.[0]
-    if (input === undefined) return
+    if (!client || input === undefined) return
     let delegation
     try {
       delegation = await toDelegation(input)
@@ -138,7 +140,7 @@ export function ImportSpace () {
       return
     }
     try {
-      await addSpace(delegation)
+      await client.addSpace(delegation)
       setProof(delegation)
     } catch (err) {
       console.log(err)
@@ -149,7 +151,7 @@ export function ImportSpace () {
     <>
     <p className='mt-4 mb-8'>Send your DID to your friend, and click import to use the UCAN they send you.</p>
     <div className='bg-opacity-50 bg-white font-mono text-sm py-5 px-5 rounded break-words max-w-4xl shadow-inner'>
-      {agent?.did()}
+      {client?.did()}
     </div>
     <div className='mt-8'>
       <label className='inline-block bg-zinc-950 hover:outline text-white font-bold text-sm px-6 py-2 rounded-full whitespace-nowrap cursor-pointer'>

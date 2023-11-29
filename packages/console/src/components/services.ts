@@ -1,5 +1,4 @@
-import type { Service as AccessService } from '@w3ui/react-keyring'
-import type { Service as UploadService } from '@w3ui/react-uploader'
+import type { Service } from '@w3ui/react'
 import { connect } from '@ucanto/client'
 import { CAR, HTTP } from '@ucanto/transport'
 import * as DID from '@ipld/dag-ucan/did'
@@ -14,7 +13,7 @@ export const servicePrincipal = DID.parse(
   process.env.NEXT_PUBLIC_W3UP_SERVICE_DID ?? 'did:web:web3.storage'
 )
 
-export const serviceConnection = connect<AccessService & UploadService>({
+export const serviceConnection = connect<Service>({
   id: servicePrincipal,
   codec: CAR.outbound,
   channel: HTTP.open<any>({

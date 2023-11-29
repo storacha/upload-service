@@ -1,8 +1,7 @@
 import type { ChangeEvent } from 'react'
 
 import React, { useState } from 'react'
-import { useKeyring } from '@w3ui/react-keyring'
-import { ArrowPathIcon } from '@heroicons/react/20/solid'
+import { Space, useW3 } from '@w3ui/react'
 import Loader from '../components/Loader'
 import { DID, DIDKey } from '@ucanto/interface'
 import { DidIcon } from './DidIcon'
@@ -24,10 +23,11 @@ interface SpaceCreatorFormProps {
 export function SpaceCreatorForm ({
   className = ''
 }: SpaceCreatorFormProps): JSX.Element {
-  const [{ account, space }, { createSpace, registerSpace }] = useKeyring()
+  const [{ client, accounts }] = useW3()
   const [submitted, setSubmitted] = useState(false)
   const [created, setCreated] = useState(false)
   const [name, setName] = useState('')
+  const [space, setSpace] = useState<Space>()
 
   function resetForm (): void {
     setName('')
@@ -35,28 +35,42 @@ export function SpaceCreatorForm ({
 
   async function onSubmit (e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault()
-    if (account) {
-      setSubmitted(true)
-      try {
-        const did = await createSpace(name)
-        await registerSpace(account, { provider: (process.env.NEXT_PUBLIC_W3UP_PROVIDER || 'did:web:web3.storage') as DID<'web'> })
-        setCreated(true)
-        resetForm()
-      } catch (error) {
-        /* eslint-disable no-console */
-        console.error(error)
-        /* eslint-enable no-console */
-        throw new Error('failed to register', { cause: error })
-      }
-    } else {
+    if (!client) return
+    // TODO: account selection
+    const account = accounts[0]
+    if (!account) {
       throw new Error('cannot create space, no account found, have you authorized your email?')
+    }
+
+    const { ok: plan } = await account.plan.get()
+    if (!plan) {
+      throw new Error('a payment plan is required on account to provision a new space.')
+    }
+
+    setSubmitted(true)
+    try {
+      const space = await client.createSpace(name)
+
+      const provider = (process.env.NEXT_PUBLIC_W3UP_PROVIDER || 'did:web:web3.storage') as DID<'web'>
+      await account.provision(space.did(), { provider })
+
+      await space.createRecovery(account.did())
+      await space.save()
+
+      setSpace(client.spaces().find(s => s.did() === space.did()))
+      setCreated(true)
+      resetForm()
+    } catch (error) {
+      /* eslint-disable-next-line no-console */
+      console.error(error)
+      throw new Error('failed to create space', { cause: error })
     }
   }
 
   if (created && space) {
     return (
       <div className={className}>
-        <SpacePreview did={space.did()} name={space.name()} />
+        <SpacePreview did={space.did()} name={space.name} />
       </div>
     )
   }
