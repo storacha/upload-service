@@ -5,3 +5,5 @@ export default function DefaultLoader({ className = '' }: { className?: string }
     <ArrowPathIcon className={`animate-spin ${className}`} />
   )
 }
+
+export const TopLevelLoader = () => <DefaultLoader className='h-12 w-full mt-12 text-white' />

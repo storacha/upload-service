@@ -1,38 +1,18 @@
 'use client'
 
-import { ReactNode, useEffect, useState } from 'react'
-import { useW3, PlanGetSuccess } from '@w3ui/react'
+import { ReactNode, useState } from 'react'
+import { useW3 } from '@w3ui/react'
 import StripePricingTable from './PricingTable';
-import DefaultLoader from './Loader';
+import { TopLevelLoader } from './Loader';
 import { Web3StorageLogo } from '@/brand';
+import { usePlan } from '@/hooks';
 
 export function PlanGate ({ children }: { children: ReactNode }): ReactNode {
   const [error, setError] = useState<any>()
   const [{ accounts }] = useW3()
-  const [plan, setPlan] = useState<PlanGetSuccess>()
-  useEffect(function () {
-    (async function () {
-      if (accounts.length) {
-        try {
-          // TODO: account selection
-          const account = accounts[0]
-          const result = await account.plan.get()
-          if (result.ok) {
-            setPlan(result.ok)
-          } else {
-            setError(result.error)
-          }
-        } catch (err) {
-          console.error("CAUGHT ERROR", err)
-          setError(err)
-        }
-      } else {
-        setPlan(undefined)
-      }
-    })()
-  }, [accounts])
+  const { data: plan } = usePlan(accounts[0])
   if (!plan && !error) {
-    return <DefaultLoader className='w-12 h-12 text-white' />
+    return <TopLevelLoader />
   }
 
   if (!plan?.product) {

@@ -1,9 +1,10 @@
 'use client'
 
 import { ReactNode } from 'react'
-import { useW3, PlanGetSuccess, SpaceDID } from '@w3ui/react'
+import { useW3, SpaceDID } from '@w3ui/react'
 import useSWR from 'swr'
 import { GB, TB, filesize } from '@/lib'
+import { usePlan } from '@/hooks'
 
 const BarHeight = 10
 
@@ -18,17 +19,9 @@ export function UsageBar (): ReactNode {
   // TODO: introduce account switcher
   const account = accounts[0]
 
-  const { data: plan } = useSWR<PlanGetSuccess|undefined>(`/plan/${account?.did() ?? ''}`, {
-    fetcher: async () => {
-      if (!account) return
-      const result = await account.plan.get()
-      if (result.error) throw new Error('getting plan', { cause: result.error })
-      return result.ok
-    },
-    onError: err => console.error(err.message, err.cause)
-  })
+  const { data: plan } = usePlan(account)
 
-  const { data: usage } = useSWR<Record<SpaceDID, number>|undefined>(`/usage/${account ?? ''}`, {
+  const { data: usage } = useSWR<Record<SpaceDID, number> | undefined>(`/usage/${account ?? ''}`, {
     fetcher: async () => {
       const usage: Record<SpaceDID, number> = {}
       if (!account || !client) return
@@ -59,7 +52,7 @@ export function UsageBar (): ReactNode {
     },
     onError: err => console.error(err.message, err.cause)
   })
-  
+
   const allocated = Object.values(usage ?? {}).reduce((total, n) => total + n, 0)
   const limit = plan?.product ? Plans[plan.product]?.limit : null
 
@@ -77,7 +70,7 @@ export function UsageBar (): ReactNode {
               return (
                 <div
                   key={space}
-                  style={{ width: `${total/limit * 100}%`, height: BarHeight }}
+                  style={{ width: `${total / limit * 100}%`, height: BarHeight }}
                   className='bg-white/80 hover:bg-white bg-clip-padding inline-block border-r last:border-r-0 border-transparent'
                   title={`${space}: ${filesize(total)}`}
                 />
@@ -94,7 +87,7 @@ export function UsageBar (): ReactNode {
   )
 }
 
-const startOfMonth = (now: string|number|Date) => {
+const startOfMonth = (now: string | number | Date) => {
   const d = new Date(now)
   d.setUTCDate(1)
   d.setUTCHours(0)
@@ -104,7 +97,7 @@ const startOfMonth = (now: string|number|Date) => {
   return d
 }
 
-const startOfLastMonth = (now: string|number|Date) => {
+const startOfLastMonth = (now: string | number | Date) => {
   const d = startOfMonth(now)
   d.setUTCMonth(d.getUTCMonth() - 1)
   return d

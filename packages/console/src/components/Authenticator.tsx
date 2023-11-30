@@ -5,7 +5,7 @@ import {
   useAuthenticator
 } from '@w3ui/react'
 import { Logo } from '../brand'
-import Loader from './Loader'
+import { TopLevelLoader } from './Loader'
 
 export function AuthenticationForm (): JSX.Element {
   const [{ submitted }] = useAuthenticator()
@@ -73,7 +73,7 @@ export function AuthenticationEnsurer ({
   if (client) {
     return <AuthenticationForm />
   }
-  return <Loader className='h-12 w-full mt-12' />
+  return <TopLevelLoader />
 }
 
 
