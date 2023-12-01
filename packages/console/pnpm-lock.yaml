@@ -30,8 +30,8 @@ dependencies:
     specifier: ^9.0.0
     version: 9.0.0
   '@w3ui/react':
-    specifier: ^1.0.1
-    version: 1.0.1(@types/react@18.2.32)(react-dom@18.2.0)(react@18.2.0)
+    specifier: ^1.1.0
+    version: 1.1.0(@types/react@18.2.32)(react-dom@18.2.0)(react@18.2.0)
   '@web3-storage/content-claims':
     specifier: ^3.2.1
     version: 3.2.1
@@ -985,8 +985,8 @@ packages:
     resolution: {integrity: sha512-qelS/Ra6sacc4loe/3MSjXNL1dNQ/GjxNHVzuChwMfmk7HuycRLVQN2qNY3XahK+fZc5E2szqQSKUyAF0E+2bg==}
     dev: true
 
-  /@types/node@20.10.0:
-    resolution: {integrity: sha512-D0WfRmU9TQ8I9PFx9Yc+EBHw+vSpIub4IDvQivcp26PtPrdMGAq5SDcpXEo/epqa/DXotVpekHiLNTg3iaKXBQ==}
+  /@types/node@20.10.1:
+    resolution: {integrity: sha512-T2qwhjWwGH81vUEx4EXmBKsTJRXFXNZTL4v0gi01+zyBmCwzE6TyHszqX01m+QHTEq+EZNo13NeJIdEqf+Myrg==}
     dependencies:
       undici-types: 5.26.5
     dev: false
@@ -1338,29 +1338,29 @@ packages:
       ts-morph: 12.0.0
     dev: true
 
-  /@w3ui/core@1.0.1:
-    resolution: {integrity: sha512-rZO6dEbZvDD1tZEqpRzPq1RrFEUnCpfPfYB1oa3QTBfm8vsn6JwzZ4rdO4UkEBYBFYJf2lIzbr1c9XBRqRJPrQ==}
+  /@w3ui/core@1.1.0:
+    resolution: {integrity: sha512-nvLFagzB+1BvdPV1GuHmuOe7XBMbAQxp8z9MG6lw/I/hLWRHx/SRZAfu/6fvrMu3SUl7SjusfaMyP8zKhhs6Dw==}
     dependencies:
       '@ipld/dag-ucan': 3.4.0
       '@ucanto/client': 9.0.0
       '@ucanto/interface': 9.0.0
       '@ucanto/principal': 9.0.0
       '@ucanto/transport': 9.0.0
-      '@web3-storage/access': 18.0.3
+      '@web3-storage/access': 18.0.5
       '@web3-storage/did-mailto': 2.1.0
       '@web3-storage/w3up-client': 11.2.0
     transitivePeerDependencies:
       - encoding
     dev: false
 
-  /@w3ui/react@1.0.1(@types/react@18.2.32)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-BeOi0hH+uTywKV4yTv6sc/ykPZ/Gzr5SeVhv0gRga12/2mEJBOsX7zbwh9E4USxz9TP799AwIh5hP7mUlFOw2A==}
+  /@w3ui/react@1.1.0(@types/react@18.2.32)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-opMlLDejtHJdI/ekweSYCgKG6fU58lKxF5wMONnAOQ7acy0f0s2c+D8BW/fy+ZTy3wXCMT4Zje/mCYhpJE8DIw==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
     dependencies:
       '@ariakit/react': 0.3.7(react-dom@18.2.0)(react@18.2.0)
       '@ariakit/react-core': 0.3.7(react-dom@18.2.0)(react@18.2.0)
-      '@w3ui/core': 1.0.1
+      '@w3ui/core': 1.1.0
       ariakit-react-utils: 0.17.0-next.27(@types/react@18.2.32)(react@18.2.0)
       react: 18.2.0
     transitivePeerDependencies:
@@ -1373,29 +1373,6 @@ packages:
     resolution: {integrity: sha512-tsz4Y0WNDgFA5jwLSeV7/UV5rfMIlj0cPsSLVfTihjaVW0OJPd5NxJ3le1B3yLyqqzRpeG5OAfJAADLc4VoGTA==}
     dependencies:
       web-streams-polyfill: 3.2.1
-    dev: false
-
-  /@web3-storage/access@18.0.3:
-    resolution: {integrity: sha512-cKxOimmUtKjkwsw+naa7sB9U+e67+bHJb+/KC4Q/d8b+rAmYY0UwlcPCC207w9c7+Ne/cdOuuJd7BH6LfcdX1w==}
-    dependencies:
-      '@ipld/car': 5.2.4
-      '@ipld/dag-ucan': 3.4.0
-      '@scure/bip39': 1.2.1
-      '@ucanto/client': 9.0.0
-      '@ucanto/core': 9.0.1
-      '@ucanto/interface': 9.0.0
-      '@ucanto/principal': 9.0.0
-      '@ucanto/transport': 9.0.0
-      '@ucanto/validator': 9.0.1
-      '@web3-storage/capabilities': 12.0.3
-      '@web3-storage/did-mailto': 2.1.0
-      bigint-mod-arith: 3.3.1
-      conf: 11.0.2
-      multiformats: 12.1.3
-      one-webcrypto: github.com/web3-storage/one-webcrypto/5148cd14d5489a8ac4cd38223870e02db15a2382
-      p-defer: 4.0.0
-      type-fest: 3.13.1
-      uint8arrays: 4.0.9
     dev: false
 
   /@web3-storage/access@18.0.5:
@@ -1419,17 +1396,6 @@ packages:
       p-defer: 4.0.0
       type-fest: 3.13.1
       uint8arrays: 4.0.9
-    dev: false
-
-  /@web3-storage/capabilities@12.0.3:
-    resolution: {integrity: sha512-H9XCLTgCsw6FAOPeyfzcj5NHQPLvUmq+F5U5LboJxjVXgLiOjPjGocVeK3wDrsaj1cFo96MLO83F1IwQcfB2eg==}
-    dependencies:
-      '@ucanto/core': 9.0.1
-      '@ucanto/interface': 9.0.0
-      '@ucanto/principal': 9.0.0
-      '@ucanto/transport': 9.0.0
-      '@ucanto/validator': 9.0.1
-      '@web3-storage/data-segment': 3.2.0
     dev: false
 
   /@web3-storage/capabilities@12.1.0:
@@ -4698,7 +4664,7 @@ packages:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.0
-      '@types/node': 20.10.0
+      '@types/node': 20.10.1
       long: 5.2.3
     dev: false
 
