@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/web3-storage/console/compare/w3console-v1.0.0...w3console-v1.1.0) (2023-12-01)
+
+
+### Features
+
+* extract usePlan and use it to chill our plan/get game ([#51](https://github.com/web3-storage/console/issues/51)) ([51c51aa](https://github.com/web3-storage/console/commit/51c51aab6e71c1e638ccc0af326d9a998c17e6c9))
+
+
+### Bug Fixes
+
+* get logout page working again ([#50](https://github.com/web3-storage/console/issues/50)) ([eb2a3aa](https://github.com/web3-storage/console/commit/eb2a3aaa425b7a0ff19eb55aa2b8a1f756824c13))
+
 ## 1.0.0 (2023-11-29)
 
 
