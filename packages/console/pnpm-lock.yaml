@@ -38,6 +38,9 @@ dependencies:
   '@web3-storage/data-segment':
     specifier: ^5.0.0
     version: 5.0.0
+  archy:
+    specifier: ^1.0.0
+    version: 1.0.0
   ariakit-utils:
     specifier: 0.17.0-next.27
     version: 0.17.0-next.27
@@ -64,6 +67,9 @@ devDependencies:
   '@cloudflare/next-on-pages':
     specifier: ^1.6.3
     version: 1.6.3(vercel@32.4.1)(wrangler@3.11.0)
+  '@types/archy':
+    specifier: ^0.0.36
+    version: 0.0.36
   '@types/blueimp-md5':
     specifier: ^2.18.0
     version: 2.18.0
@@ -616,8 +622,8 @@ packages:
       multiformats: 12.1.3
     dev: false
 
-  /@ipld/dag-json@10.1.4:
-    resolution: {integrity: sha512-Vgm739qPQ7P8cstna60oYx19tzJzep+Uy7yWi80dzIOygibfVaaRZ07M6qbHP+C9BJl81GNFaXy2Plr0y7poBA==}
+  /@ipld/dag-json@10.1.5:
+    resolution: {integrity: sha512-AIIDRGPgIqVG2K1O42dPDzNOfP0YWV/suGApzpF+YWZLwkwdGVsxjmXcJ/+rwOhRGdjpuq/xQBKPCu1Ao6rdOQ==}
     engines: {node: '>=16.0.0', npm: '>=7.0.0'}
     dependencies:
       cborg: 4.0.3
@@ -635,7 +641,7 @@ packages:
     resolution: {integrity: sha512-sW4R43w3DbEdoGWWJZCwsblwXa600HCanG9p2w1MJPVBNTNjhvqc3XI0uEqKhT2oqKWrND7uInVtcPmZme7hhA==}
     dependencies:
       '@ipld/dag-cbor': 9.0.5
-      '@ipld/dag-json': 10.1.4
+      '@ipld/dag-json': 10.1.5
       multiformats: 11.0.2
     dev: false
 
@@ -953,6 +959,10 @@ packages:
 
   /@tsconfig/node16@1.0.4:
     resolution: {integrity: sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==}
+    dev: true
+
+  /@types/archy@0.0.36:
+    resolution: {integrity: sha512-toTRTGD8trLtJsOaYbReoU/fyvRF1a4C5WtqjDZ3NnT/zvO807opSBRBJBr5VhD66JnY3BUz2UvnY5/KMAt6mw==}
     dev: true
 
   /@types/blueimp-md5@2.18.0:
@@ -1595,6 +1605,10 @@ packages:
   /aproba@2.0.0:
     resolution: {integrity: sha512-lYe4Gx7QT+MKGbDsA+Z+he/Wtef0BiwDOlK/XkBrdfsh9J/jPPXbX0tE9x9cl27Tmu5gg3QUbUrQYa/y+KOHPQ==}
     dev: true
+
+  /archy@1.0.0:
+    resolution: {integrity: sha512-Xg+9RwCg/0p32teKdGMPTPnVXKD0w3DfHnFTficozsAgsvq2XenPJq/MYpzzQ/v8zrOyJn6Ds39VA4JIDwFfqw==}
+    dev: false
 
   /are-we-there-yet@2.0.0:
     resolution: {integrity: sha512-Ci/qENmwHnsYo9xKIcUJN5LeDKdJ6R1Z1j9V/J5wyq8nh/mYPEpIKJbBZXtZjG04HiK7zV/p6Vs9952MrMeUIw==}

@@ -6,11 +6,19 @@ import useSWR from 'swr'
 import { parse as parseLink } from 'multiformats/link'
 import DefaultLoader from '@/components/Loader'
 import * as Claims from '@web3-storage/content-claims/client'
-import { Piece, PieceLink } from '@web3-storage/data-segment'
+import { Aggregate, MerkleTreeNode, Piece, PieceLink, PieceView, Proof, ProofData } from '@web3-storage/data-segment'
 import CopyIcon from '@/components/CopyIcon'
 import { EqualsClaim } from '@web3-storage/content-claims/client/api'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { filesize } from '@/lib'
+import archy from 'archy'
+import QuestionIcon from '@/components/QuestionIcon'
+import ExpandIcon from '@/components/ExpandIcon'
+import { useState } from 'react'
+import AggregateIcon from '@/components/AggregateIcon'
+import PieceIcon from '@/components/PieceIcon'
+
+type ProofStyle = 'mini'|'midi'|'maxi'
 
 interface PageProps {
   params: {
@@ -67,10 +75,13 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
       if (out.error) {
         throw new Error('failed to get filecoin info', { cause: out.error })
       }
+
       return out.ok
     },
     onError: err => console.error(err.message, err.cause)
   })
+
+  const [proofStyle, setProofStyle] = useState<ProofStyle>('mini')
 
   if (!space) {
     return <h1>Space not found</h1>
@@ -83,43 +94,64 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
         {shard.toString()}
         <CopyIcon text={shard.toString()} />
       </div>
-      <H2>Piece CID</H2>
+      <H2>Piece CID<PieceIcon /></H2>
       <div className='pb-5 font-mono text-sm overflow-hidden no-wrap text-ellipsis'>
         {claim.isLoading
-          ? <DefaultLoader className='w-5 h-5 inline-block' />
+          ? <DefaultLoader className='w-6 h-6 inline-block' />
           : claim.data
-            ? <>{claim.data.equals.toString()}<CopyIcon text={String(claim.data.equals)} /></>
+            ? <><span className='border-blue-600 border-b-2 border-dotted'>{claim.data.equals.toString()}</span><CopyIcon text={String(claim.data.equals)} /></>
             : 'Unknown'}
       </div>
       <H2>Size</H2>
       <div className='pb-5 font-mono text-sm overflow-hidden no-wrap text-ellipsis'>
         {store.isLoading
-          ? <DefaultLoader className='w-5 h-5 inline-block' />
+          ? <DefaultLoader className='w-6 h-6 inline-block' />
           : store.data
             ? filesize(store.data.size)
             : 'Unknown'}
       </div>
-      <H2>Aggregate CID</H2>
+      <H2>Aggregate CID<AggregateIcon /></H2>
       <div className='pb-5 font-mono text-sm overflow-hidden no-wrap text-ellipsis'>
         {claim.isLoading || filecoinInfo.isLoading
-          ? <DefaultLoader className='w-5 h-5 inline-block' />
-          : filecoinInfo.data?.aggregates.length
-            ? filecoinInfo.data?.aggregates.map(({ aggregate }) => {
+          ? <DefaultLoader className='w-6 h-6 inline-block' />
+          : filecoinInfo.data && filecoinInfo.data.aggregates.length
+            ? filecoinInfo.data.aggregates.map(({ aggregate, inclusion }) => {
+                const piece = filecoinInfo.data?.piece
+                if (!piece) return <div />
+                const pieceInfo = Piece.fromLink(aggregate).toInfo()
                 return (
                   <div key={aggregate.toString()}>
-                    {aggregate.toString()}<CopyIcon text={aggregate.toString()} />
-                    <br/>
-                    <span className='font-sans opacity-60'>aka </span>
-                    {Piece.fromLink(aggregate).toInfo().link.toString()}<CopyIcon text={aggregate.toString()} />
+                    <span className='opacity-60'>v1: </span>
+                    {pieceInfo.link.toString()}<CopyIcon text={aggregate.toString()} />
+                    <div className='pl-10'>
+                      └── Height: {pieceInfo.height}
+                      <QuestionIcon title='Height is encoded in v2 piece CID' />
+                    </div>
+                    <span className='opacity-60'>v2: </span>
+                    <span className='border-purple-500 border-b-2 border-dotted'>{aggregate.toString()}</span>
+                    <CopyIcon text={aggregate.toString()} />
+                    <H2 className='mt-5'>
+                      Inclusion Proof
+                      <ExpandIcon open={proofStyle === 'maxi'} onToggle={() => setProofStyle(proofStyle === 'mini' ? 'midi' : proofStyle === 'midi' ? 'maxi' : 'mini')} />
+                    </H2>
+                    <InclusionProof proof={inclusion.subtree} piece={Piece.fromLink(piece)} style={proofStyle} />
                   </div>
                 )
               })
             : 'Unknown'}
       </div>
+      {claim.isLoading || filecoinInfo.isLoading
+          ? <>
+              <H2>Inclusion Proof</H2>
+              <div className='pb-5 font-mono text-sm overflow-hidden no-wrap text-ellipsis'>
+                <DefaultLoader className='w-6 h-6 inline-block' />
+              </div>
+            </>
+          : null}
       <H2>Storage Providers</H2>
       <div className='pb-5 font-mono text-sm overflow-hidden no-wrap text-ellipsis'>
         {claim.isLoading || filecoinInfo.isLoading
-            ? <DefaultLoader className='w-5 h-5 inline-block' />
+            ? <DefaultLoader className='w-6 h-6 inline-block' />
             : filecoinInfo.data && filecoinInfo.data.deals.length
               ? (
                   <ol className='list-decimal list-inside'>
@@ -145,4 +177,97 @@ function isPieceLink(link: any): link is PieceLink {
   } catch {
     return false
   }
+}
+
+const MAX_DEPTH = 63
+
+// Adapted from https://github.com/web3-storage/data-segment/blob/e9cdcbf76232e5b92ae1d13f6cf973ec9ab657ef/src/proof.js#L62-L86
+function InclusionProof ({ proof, piece, style }: { proof: ProofData, piece: PieceView, style: ProofStyle }): JSX.Element {
+  if (Proof.depth(proof) > MAX_DEPTH) {
+    throw new RangeError('merkle proofs with depths greater than 63 are not supported')
+  }
+
+  let position = BigInt(Proof.offset(proof))
+  if (position >> BigInt(Proof.depth(proof)) !== 0n) {
+    throw new RangeError('offset greater than width of the tree')
+  }
+
+  const { root } = piece
+  let nodes: archy.Data['nodes'] = []
+  let top = root
+  let right = 0n
+  let height = piece.height
+
+  for (const node of Proof.path(proof)) {
+    right =  position & 1n
+    position = position >> 1n
+
+    const label = top === root
+      ? Piece.toLink(piece).toString()
+      : Piece.toLink({ root: top, height: height + 1, padding: 0n }).toString()
+    const otherLabel = Piece.toLink({ root: node, height, padding: 0n }).toString()
+
+    if (style === 'midi' || style === 'maxi') {
+      if (right === 1n) {
+        nodes = [{
+          label: otherLabel,
+          nodes: style === 'maxi' ? ['...', '...'] : []
+        }, {
+          label: `*${label}`,
+          nodes
+        }]
+      } else {
+        nodes = [{
+          label: `*${label}`,
+          nodes
+        }, {
+          label: otherLabel,
+          nodes: style === 'maxi' ? ['...', '...'] : []
+        }]
+      }
+    } else {
+      nodes = [{ label: `*${label}`, nodes }]
+    }
+    top = right === 1n ? Proof.computeNode(node, top) : Proof.computeNode(top, node)
+    height++
+  }
+
+  const aggregate = Aggregate.toLink({ root: top, height })
+  const data = { label: aggregate.toString(), nodes }
+
+  return (
+    <div className='font-mono whitespace-nowrap overflow-x-scroll'>
+      {archy(data).split('\n').map(line => {
+        if (!line) return <div />
+        if (line.indexOf(' ') === -1) {
+          return (
+            <div key={line}>
+              <span className='border-purple-500 border-b-2 border-dotted'>{line}</span>
+              <AggregateIcon className='opacity-60' />
+              <span className='text-sm opacity-60'>Aggregate CID</span>
+            </div>
+          )
+        }
+        const index = line.lastIndexOf(' ')
+        const tree = line.slice(0, index)
+        let label = line.slice(index + 1)
+        let isPath = false
+        if (label.startsWith('*')) {
+          isPath = true
+          label = label.slice(1)
+        }
+        const isPiece = label === Piece.toLink(piece).toString()
+
+        return (
+          <div key={line}>
+            <pre className='inline-block'>{tree}</pre>&nbsp;
+            <span className={`${isPath ? 'opacity-100' : 'opacity-30'} ${isPiece ? 'border-blue-600 border-b-2 border-dotted' : ''}`}>
+              {label}
+            </span>
+            {isPiece && <><PieceIcon className='opacity-60' /><span className='text-sm opacity-60'>Piece CID</span></>}
+          </div>
+        )
+      })}
+    </div>
+  )
 }

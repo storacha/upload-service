@@ -24,6 +24,7 @@
     "@w3ui/react": "^1.1.0",
     "@web3-storage/content-claims": "^3.2.1",
     "@web3-storage/data-segment": "^5.0.0",
+    "archy": "^1.0.0",
     "ariakit-utils": "0.17.0-next.27",
     "blueimp-md5": "^2.19.0",
     "multiformats": "^12.1.3",
@@ -34,6 +35,7 @@
   },
   "devDependencies": {
     "@cloudflare/next-on-pages": "^1.6.3",
+    "@types/archy": "^0.0.36",
     "@types/blueimp-md5": "^2.18.0",
     "@types/node": "latest",
     "@types/react": "latest",
