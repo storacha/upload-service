@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/web3-storage/console/compare/w3console-v1.1.0...w3console-v1.2.0) (2023-12-05)
+
+
+### Features
+
+* simple visualization of inclusion proof ([#53](https://github.com/web3-storage/console/issues/53)) ([499a38c](https://github.com/web3-storage/console/commit/499a38cab99ddd7c7b91f2aa0a4b44f77a9e4e82))
+
 ## [1.1.0](https://github.com/web3-storage/console/compare/w3console-v1.0.0...w3console-v1.1.0) (2023-12-01)
 
 
