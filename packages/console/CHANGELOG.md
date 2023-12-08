@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/web3-storage/console/compare/w3console-v1.2.1...w3console-v1.2.2) (2023-12-08)
+
+
+### Bug Fixes
+
+* delegate space recovery after creation ([#58](https://github.com/web3-storage/console/issues/58)) ([31a4a35](https://github.com/web3-storage/console/commit/31a4a35cd9b2957988bf1fc913a5dadef25f615d))
+
 ## [1.2.1](https://github.com/web3-storage/console/compare/w3console-v1.2.0...w3console-v1.2.1) (2023-12-08)
 
 
