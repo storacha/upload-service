@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/web3-storage/console/compare/w3console-v1.2.0...w3console-v1.2.1) (2023-12-08)
+
+
+### Bug Fixes
+
+* get plan gate working again ([#55](https://github.com/web3-storage/console/issues/55)) ([8a8f4d8](https://github.com/web3-storage/console/commit/8a8f4d8502de45ffcfb0386e4c33a58d5d22331c))
+
 ## [1.2.0](https://github.com/web3-storage/console/compare/w3console-v1.1.0...w3console-v1.2.0) (2023-12-05)
 
 
