@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/web3-storage/console/compare/w3console-v1.2.3...w3console-v1.3.0) (2023-12-08)
+
+
+### Features
+
+* upgrade to new access client to fix safari ([#65](https://github.com/web3-storage/console/issues/65)) ([dc2aef3](https://github.com/web3-storage/console/commit/dc2aef3977538a233ca9dbe55b7bb572d9bcf104))
+
 ## [1.2.3](https://github.com/web3-storage/console/compare/w3console-v1.2.2...w3console-v1.2.3) (2023-12-08)
 
 
