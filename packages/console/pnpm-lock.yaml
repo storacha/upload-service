@@ -1,4 +1,4 @@
-lockfileVersion: '6.1'
+lockfileVersion: '6.0'
 
 settings:
   autoInstallPeers: true
@@ -30,8 +30,8 @@ dependencies:
     specifier: ^9.0.0
     version: 9.0.0
   '@w3ui/react':
-    specifier: ^1.1.0
-    version: 1.1.0(@types/react@18.2.42)(react-dom@18.2.0)(react@18.2.0)
+    specifier: ^1.3.0
+    version: 1.3.0(@types/react@18.2.42)(react-dom@18.2.0)(react@18.2.0)
   '@web3-storage/content-claims':
     specifier: ^3.2.1
     version: 3.2.1
@@ -1351,29 +1351,29 @@ packages:
       ts-morph: 12.0.0
     dev: true
 
-  /@w3ui/core@1.1.0:
-    resolution: {integrity: sha512-nvLFagzB+1BvdPV1GuHmuOe7XBMbAQxp8z9MG6lw/I/hLWRHx/SRZAfu/6fvrMu3SUl7SjusfaMyP8zKhhs6Dw==}
+  /@w3ui/core@1.1.1:
+    resolution: {integrity: sha512-428LhUDm+HiwZ97pz3tAdHuarL7RF+bj4p15t64W6UxtqOMjLKSh3yakQzPppH29lFTr7lhpyi4PbQkqJNB2yA==}
     dependencies:
       '@ipld/dag-ucan': 3.4.0
       '@ucanto/client': 9.0.0
       '@ucanto/interface': 9.0.0
       '@ucanto/principal': 9.0.0
       '@ucanto/transport': 9.0.0
-      '@web3-storage/access': 18.0.5
+      '@web3-storage/access': 18.0.6
       '@web3-storage/did-mailto': 2.1.0
-      '@web3-storage/w3up-client': 11.2.0
+      '@web3-storage/w3up-client': 11.2.1
     transitivePeerDependencies:
       - encoding
     dev: false
 
-  /@w3ui/react@1.1.0(@types/react@18.2.42)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-opMlLDejtHJdI/ekweSYCgKG6fU58lKxF5wMONnAOQ7acy0f0s2c+D8BW/fy+ZTy3wXCMT4Zje/mCYhpJE8DIw==}
+  /@w3ui/react@1.3.0(@types/react@18.2.42)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-SJnqjapMMbWdo//cYSp6YfaYykvi9Sp6bAfj98frnPrYVXA+1YjgJl5zDsvy0fpkMBuafvb9c8fvx109c2FDYw==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
     dependencies:
       '@ariakit/react': 0.3.7(react-dom@18.2.0)(react@18.2.0)
       '@ariakit/react-core': 0.3.7(react-dom@18.2.0)(react@18.2.0)
-      '@w3ui/core': 1.1.0
+      '@w3ui/core': 1.1.1
       ariakit-react-utils: 0.17.0-next.27(@types/react@18.2.42)(react@18.2.0)
       react: 18.2.0
     transitivePeerDependencies:
@@ -1388,8 +1388,8 @@ packages:
       web-streams-polyfill: 3.2.1
     dev: false
 
-  /@web3-storage/access@18.0.5:
-    resolution: {integrity: sha512-dTojMu7UWb7esbnX3F18eTC+hwlYkDhxBZAogmHX7legRGRK5MwwoRMpk8qz6zI6ImUmkApWFYrF2U8OaGC0bQ==}
+  /@web3-storage/access@18.0.6:
+    resolution: {integrity: sha512-IuzqkqRp53ILoSeALsyXmZO7zPn6syJGM6X1a+hsmbCGoVG1821i2WWMRz5aCsdgfJxl6Ge0rec+gCMfPx5h8Q==}
     dependencies:
       '@ipld/car': 5.2.4
       '@ipld/dag-ucan': 3.4.0
@@ -1400,7 +1400,7 @@ packages:
       '@ucanto/principal': 9.0.0
       '@ucanto/transport': 9.0.0
       '@ucanto/validator': 9.0.1
-      '@web3-storage/capabilities': 12.1.0
+      '@web3-storage/capabilities': 13.0.0
       '@web3-storage/did-mailto': 2.1.0
       bigint-mod-arith: 3.3.1
       conf: 11.0.2
@@ -1413,6 +1413,17 @@ packages:
 
   /@web3-storage/capabilities@12.1.0:
     resolution: {integrity: sha512-SlYdPqCokDHb55zlZOvh+n8uEMOrEU413Z1MzQ8HvULpbzfcEtGyOiDgrAhdNEZtPnWHqaUEtU7o829Yw2Ra5w==}
+    dependencies:
+      '@ucanto/core': 9.0.1
+      '@ucanto/interface': 9.0.0
+      '@ucanto/principal': 9.0.0
+      '@ucanto/transport': 9.0.0
+      '@ucanto/validator': 9.0.1
+      '@web3-storage/data-segment': 3.2.0
+    dev: false
+
+  /@web3-storage/capabilities@13.0.0:
+    resolution: {integrity: sha512-SSviDXFweCu8FhaQ7BjsK1WDPBdwoduJhfD2DFRKkZT/V25vdBkqtW4qVc6tfO5IhTVxRpnn62PmbIbbcHzBRQ==}
     dependencies:
       '@ucanto/core': 9.0.1
       '@ucanto/interface': 9.0.0
@@ -1485,8 +1496,8 @@ packages:
       - encoding
     dev: false
 
-  /@web3-storage/w3up-client@11.2.0:
-    resolution: {integrity: sha512-ZHXoca1mj32Q2SbNzRtjG/YRIYaA5q6si7PQfv1/5cUgZx60XqD9uBpSB88fCJhzIPHWwPBvDNVFQPL0ASy4cA==}
+  /@web3-storage/w3up-client@11.2.1:
+    resolution: {integrity: sha512-04/OfMKUjPoF+l87VjItYFb1wBaljiV8YJbBMlNm9Zf7gazWPDxjfuSWYUMYb8UAPhxQZnV2uGrqUaNqPlUqUg==}
     dependencies:
       '@ipld/dag-ucan': 3.4.0
       '@ucanto/client': 9.0.0
@@ -1494,7 +1505,7 @@ packages:
       '@ucanto/interface': 9.0.0
       '@ucanto/principal': 9.0.0
       '@ucanto/transport': 9.0.0
-      '@web3-storage/access': 18.0.5
+      '@web3-storage/access': 18.0.6
       '@web3-storage/capabilities': 12.1.0
       '@web3-storage/did-mailto': 2.1.0
       '@web3-storage/filecoin-client': 3.2.0
@@ -2139,7 +2150,7 @@ packages:
       supports-color:
         optional: true
     dependencies:
-      ms: 2.1.1
+      ms: 2.1.3
     dev: true
 
   /debug@4.3.4:
