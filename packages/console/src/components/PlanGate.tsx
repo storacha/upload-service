@@ -8,9 +8,8 @@ import { Web3StorageLogo } from '@/brand';
 import { usePlan } from '@/hooks';
 
 export function PlanGate ({ children }: { children: ReactNode }): ReactNode {
-  const [error, setError] = useState<any>()
   const [{ accounts }] = useW3()
-  const { data: plan } = usePlan(accounts[0])
+  const { data: plan, error } = usePlan(accounts[0])
   if (!plan && !error) {
     return <TopLevelLoader />
   }

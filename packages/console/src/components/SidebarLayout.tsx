@@ -67,12 +67,11 @@ interface LayoutComponentProps extends SidebarComponentProps {
 
 export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.Element {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-
   return (
     <Authenticator className='h-full' as='div'>
       <AuthenticationEnsurer>
-        <SpaceEnsurer>
-          <MaybePlanGate>
+        <MaybePlanGate>
+          <SpaceEnsurer>
             <div className='flex min-h-full w-full text-white'>
               {/* dialog sidebar for narrow browsers */}
               <Transition.Root show={sidebarOpen} >
@@ -119,8 +118,8 @@ export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.
                 </main>
               </div>
             </div>
-          </MaybePlanGate>
-        </SpaceEnsurer>
+          </SpaceEnsurer>
+        </MaybePlanGate>
       </AuthenticationEnsurer>
     </Authenticator>
   )
