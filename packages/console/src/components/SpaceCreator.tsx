@@ -54,8 +54,17 @@ export function SpaceCreatorForm ({
       const provider = (process.env.NEXT_PUBLIC_W3UP_PROVIDER || 'did:web:web3.storage') as DID<'web'>
       await account.provision(space.did(), { provider })
 
-      await space.createRecovery(account.did())
+      // MUST do this before creating recovery, as it creates necessary authorizations
       await space.save()
+
+      // TODO this should have its own UX, like the CLI does, which would allow us to handle errors
+      const recovery = await space.createRecovery(account.did())
+
+      // TODO we are currently ignoring the result of this because we have no good way to handle errors - revamp this ASAP!
+      await client.capability.access.delegate({
+        space: space.did(),
+        delegations: [recovery],
+      })
 
       setSpace(client.spaces().find(s => s.did() === space.did()))
       setCreated(true)
