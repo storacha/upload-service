@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.3](https://github.com/web3-storage/console/compare/w3console-v1.2.2...w3console-v1.2.3) (2023-12-08)
+
+
+### Bug Fixes
+
+* update @web3-storage/upload-client to 12.3.2 to get new memory leak fixes ([#63](https://github.com/web3-storage/console/issues/63)) ([3267da7](https://github.com/web3-storage/console/commit/3267da744c76a972a4c4924e928413d5152441b1))
+
 ## [1.2.2](https://github.com/web3-storage/console/compare/w3console-v1.2.1...w3console-v1.2.2) (2023-12-08)
 
 
