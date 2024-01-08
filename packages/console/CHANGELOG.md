@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/web3-storage/console/compare/w3console-v1.3.0...w3console-v1.3.1) (2024-01-08)
+
+
+### Bug Fixes
+
+* ordering of spaces in usage bar ([#70](https://github.com/web3-storage/console/issues/70)) ([c8b2073](https://github.com/web3-storage/console/commit/c8b20738f1107247e4a89453b19ea8402bc23110))
+
 ## [1.3.0](https://github.com/web3-storage/console/compare/w3console-v1.2.3...w3console-v1.3.0) (2023-12-08)
 
 
