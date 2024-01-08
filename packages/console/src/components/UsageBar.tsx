@@ -66,7 +66,7 @@ export function UsageBar (): ReactNode {
       {usage && limit ? (
         <>
           <div className='rounded-full bg-white/20 overflow-hidden whitespace-nowrap outline outline-white/40 mt-3 mb-3 shadow-inner' style={{ fontSize: 0, height: BarHeight }}>
-            {Object.entries(usage).sort((a, b) => b[1] - a[1]).map(([space, total]) => {
+            {Object.entries(usage).filter(u => u[1] > 0).sort((a, b) => a[1] - b[1]).map(([space, total]) => {
               return (
                 <div
                   key={space}
