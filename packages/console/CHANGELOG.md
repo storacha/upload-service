@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2](https://github.com/web3-storage/console/compare/w3console-v1.3.1...w3console-v1.3.2) (2024-01-10)
+
+
+### Bug Fixes
+
+* do not allow navigate without download URL being set ([#77](https://github.com/web3-storage/console/issues/77)) ([a61690f](https://github.com/web3-storage/console/commit/a61690f8fa4d88b7a8afc4e9ba00c1f331322daf)), closes [#74](https://github.com/web3-storage/console/issues/74)
+
 ## [1.3.1](https://github.com/web3-storage/console/compare/w3console-v1.3.0...w3console-v1.3.1) (2024-01-08)
 
 
