@@ -116,6 +116,7 @@ export function ShareSpace (): JSX.Element {
             style={{ opacity: downloadUrl !== '' ? '1' : '0.2' }}
             href={downloadUrl ?? ''}
             download={downloadName(downloadUrl !== '', value)}
+            onClick={e => downloadUrl === '' && e.preventDefault()}
           >
             Download UCAN
           </a>
