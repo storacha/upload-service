@@ -9,9 +9,12 @@ import { ArrowPathIcon } from '@heroicons/react/24/outline'
 import {
   UploadStatus,
   Uploader as W3Uploader,
+  WrapInDirectoryCheckbox,
   useUploader
 } from '@w3ui/react'
 import { gatewayHost } from '../components/services'
+import { ChangeEvent, useCallback, useState } from 'react'
+import { RadioGroup } from '@headlessui/react'
 
 function StatusLoader ({ progressStatus }: { progressStatus: ProgressStatus }) {
   const { total, loaded, lengthComputable } = progressStatus
@@ -99,18 +102,62 @@ export const Done = ({ dataCID }: DoneProps): JSX.Element => {
   )
 }
 
+enum UploadType {
+  File = 'File',
+  Directory = 'Directory'
+}
+
+function uploadPrompt (uploadType: UploadType) {
+  switch (uploadType) {
+    case UploadType.File: {
+      return 'Drag File or Click to Browse'
+    }
+    case UploadType.Directory: {
+      return 'Drag Directory or Click to Browse'
+    }
+  }
+}
+
 const UploaderForm = (): JSX.Element => {
   const [{ status, file }] = useUploader()
+  const [allowDirectory, setAllowDirectory] = useState(false)
+  const [uploadType, setUploadType] = useState(UploadType.File)
+  function changeUploadType (type: UploadType) {
+    if (type === UploadType.File) {
+      setAllowDirectory(false)
+    } else if (type === UploadType.Directory) {
+      setAllowDirectory(true)
+    }
+    setUploadType(type)
+  }
   const hasFile = file !== undefined
   return (
     <>
       <W3Uploader.Form>
+        <RadioGroup value={uploadType} onChange={changeUploadType} className='flex flex-row items-center text-center my-2'>
+          <RadioGroup.Option value={UploadType.File}>
+            {({ checked }) => (
+              <div className={`${checked ? 'bg-blue-200' : ''} w-24 border p-2 rounded-l`}>File</div>
+            )}
+          </RadioGroup.Option>
+          <RadioGroup.Option value={UploadType.Directory}>
+            {({ checked }) => (
+              <div className={`${checked ? 'bg-blue-200' : ''} w-24 border p-2 rounded-r`}>Directory</div>
+            )}
+          </RadioGroup.Option>
+        </RadioGroup>
+        {uploadType === UploadType.File && (
+          <label className='flex flex-row items-center mb-1'>
+            <WrapInDirectoryCheckbox /> 
+            <span className='text-sm ml-1'>Wrap In Directory</span>
+          </label>
+        )}
         <div className={`relative shadow h-52 p-8 rounded-md bg-white/5 hover:bg-white/20 border-2 border-dotted border-zinc-950 flex flex-col justify-center items-center text-center`}>
           {hasFile ? '' : <span className='mb-5'><img src='/icon-tray.svg' /></span>}
           <label className={`${hasFile ? 'hidden' : 'block h-px w-px overflow-hidden absolute whitespace-nowrap'}`}>File:</label>
-          <W3Uploader.Input className={`${hasFile ? 'hidden' : 'block absolute inset-0 cursor-pointer w-full opacity-0'}`} />
+          <W3Uploader.Input className={`${hasFile ? 'hidden' : 'block absolute inset-0 cursor-pointer w-full opacity-0'}`} allowDirectory={allowDirectory} />
           <UploaderContents />
-          {hasFile ? '' : <span>Drag files or Click to Browse</span>}
+          {hasFile ? '' : <span>{uploadPrompt(uploadType)}</span>}
         </div>
       </W3Uploader.Form>
       <div className='flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4 mt-4 text-center lg:text-left'>
@@ -226,6 +273,7 @@ export const Uploader = ({
     <W3Uploader
       as='div'
       onUploadComplete={onUploadComplete}
+      defaultWrapInDirectory={true}
     >
       <UploaderForm />
     </W3Uploader>
