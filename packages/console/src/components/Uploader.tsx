@@ -104,7 +104,8 @@ export const Done = ({ dataCID }: DoneProps): JSX.Element => {
 
 enum UploadType {
   File = 'File',
-  Directory = 'Directory'
+  Directory = 'Directory',
+  CAR = 'CAR'
 }
 
 function uploadPrompt (uploadType: UploadType) {
@@ -115,18 +116,26 @@ function uploadPrompt (uploadType: UploadType) {
     case UploadType.Directory: {
       return 'Drag Directory or Click to Browse'
     }
+    case UploadType.CAR: {
+      return 'Drag CAR or Click to Browse'
+    }
   }
 }
 
 const UploaderForm = (): JSX.Element => {
-  const [{ status, file }] = useUploader()
+  const [{ file }, { setUploadAsCAR }] = useUploader()
   const [allowDirectory, setAllowDirectory] = useState(false)
   const [uploadType, setUploadType] = useState(UploadType.File)
   function changeUploadType (type: UploadType) {
     if (type === UploadType.File) {
+      setUploadAsCAR(false)
       setAllowDirectory(false)
     } else if (type === UploadType.Directory) {
+      setUploadAsCAR(false)
       setAllowDirectory(true)
+    } else if (type === UploadType.CAR) {
+      setUploadAsCAR(true)
+      setAllowDirectory(false)
     }
     setUploadType(type)
   }
@@ -142,13 +151,18 @@ const UploaderForm = (): JSX.Element => {
           </RadioGroup.Option>
           <RadioGroup.Option value={UploadType.Directory}>
             {({ checked }) => (
-              <div className={`${checked ? 'bg-blue-200' : ''} w-24 border p-2 rounded-r`}>Directory</div>
+              <div className={`${checked ? 'bg-blue-200' : ''} w-24 border p-2`}>Directory</div>
+            )}
+          </RadioGroup.Option>
+          <RadioGroup.Option value={UploadType.CAR}>
+            {({ checked }) => (
+              <div className={`${checked ? 'bg-blue-200' : ''} w-24 border p-2 rounded-r`}>CAR</div>
             )}
           </RadioGroup.Option>
         </RadioGroup>
         {uploadType === UploadType.File && (
           <label className='flex flex-row items-center mb-1'>
-            <WrapInDirectoryCheckbox /> 
+            <WrapInDirectoryCheckbox />
             <span className='text-sm ml-1'>Wrap In Directory</span>
           </label>
         )}
