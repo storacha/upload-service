@@ -59,8 +59,18 @@ export function UsageBar (): ReactNode {
   return (
     <div className='w-full'>
       {plan?.product ? (
-        <div className='lg:text-right text-xs tracking-wider font-mono'>
-          Plan: <strong>{Plans[plan.product]?.name ?? plan.product}</strong> <a className='underline' href='mailto:support@web3.storage?subject=How%20to%20change%20my%20payment%20plan?' title='Automated support for switching plans is currently in progress. to change your plan, please email support@web3.storage.'>change</a>
+        <div className='lg:text-right text-xs tracking-wider font-mono flex flex-row justify-end space-x-2'>
+          <div>Plan: <strong>{Plans[plan.product]?.name ?? plan.product}</strong></div>
+          <a className='underline'
+            href='mailto:support@web3.storage?subject=How%20to%20change%20my%20payment%20plan?'
+            title='Automated support for switching plans is currently in progress. to change your plan, please email support@web3.storage.'>
+            change plan
+          </a>
+          <a className='underline'
+            href={process.env.NEXT_PUBLIC_STRIPE_CUSTOMER_PORTAL_LINK}
+            target='_blank' rel='noopener noreferrer'>
+            update billing
+          </a>
         </div>
       ) : null}
       {usage && limit ? (
