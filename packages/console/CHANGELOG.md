@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.4.0](https://github.com/web3-storage/console/compare/w3console-v1.3.2...w3console-v1.4.0) (2024-01-19)
+
+
+### Features
+
+* add a link to the customer self-service billing portal ([#84](https://github.com/web3-storage/console/issues/84)) ([74be0d7](https://github.com/web3-storage/console/commit/74be0d77797ca671da7c634c27840fc37abf25c1))
+* directory uploads ([#79](https://github.com/web3-storage/console/issues/79)) ([2ded489](https://github.com/web3-storage/console/commit/2ded489573e8e9038848049e63671f672ad7d3c1))
+* support CAR uploads ([#82](https://github.com/web3-storage/console/issues/82)) ([ffa1487](https://github.com/web3-storage/console/commit/ffa14873bd4d06401e27927fb598e3307cae23d0))
+
 ## [1.3.2](https://github.com/web3-storage/console/compare/w3console-v1.3.1...w3console-v1.3.2) (2024-01-10)
 
 
