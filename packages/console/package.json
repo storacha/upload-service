@@ -47,6 +47,7 @@
     "postcss": "latest",
     "tailwindcss": "latest",
     "typescript": "latest",
+    "vercel": "33.2.0",
     "wrangler": "^3.11.0"
   }
 }
