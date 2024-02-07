@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.4.1](https://github.com/web3-storage/console/compare/w3console-v1.4.0...w3console-v1.4.1) (2024-02-07)
+
+
+### Bug Fixes
+
+* add "change plan" page ([#86](https://github.com/web3-storage/console/issues/86)) ([99fc0f4](https://github.com/web3-storage/console/commit/99fc0f432bb6ba8123f6d1c475705358e7adf281))
+
+
+### Other Changes
+
+* pin `vercel` dep ([#88](https://github.com/web3-storage/console/issues/88)) ([4f16a8c](https://github.com/web3-storage/console/commit/4f16a8c703ba9e70ac81c1d6bfe9c6bc22461c98)), closes [#87](https://github.com/web3-storage/console/issues/87)
+
 ## [1.4.0](https://github.com/web3-storage/console/compare/w3console-v1.3.2...w3console-v1.4.0) (2024-01-19)
 
 
