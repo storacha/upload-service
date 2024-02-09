@@ -4,6 +4,7 @@ import { UploadsList } from '@/components/UploadsList'
 import { useW3, UnknownLink, UploadListSuccess } from '@w3ui/react'
 import useSWR from 'swr'
 import { useRouter, usePathname } from 'next/navigation'
+import { createUploadsListKey } from '@/cache'
 
 const pageSize = 20
 
@@ -22,7 +23,7 @@ export default function Page ({ params, searchParams }: PageProps): JSX.Element 
   const spaceDID = decodeURIComponent(params.did)
   const space = spaces.find(s => s.did() === spaceDID)
 
-  const key = `/space/${spaceDID}/uploads?cursor=${searchParams.cursor ?? ''}&pre=${searchParams.pre ?? 'false'}`
+  const key = space ? createUploadsListKey(space.did(), searchParams.cursor, searchParams.pre === 'true') : ''
   const { data: uploads, isLoading, isValidating, mutate } = useSWR<UploadListSuccess|undefined>(key, {
     fetcher: async () => {
       if (!client || !space) return
