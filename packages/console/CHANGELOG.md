@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/web3-storage/console/compare/w3console-v1.4.1...w3console-v1.5.0) (2024-02-09)
+
+
+### Features
+
+* remove upload ([#90](https://github.com/web3-storage/console/issues/90)) ([92aaabf](https://github.com/web3-storage/console/commit/92aaabfa331b3965c828145b267be940d81c5363))
+
 ## [1.4.1](https://github.com/web3-storage/console/compare/w3console-v1.4.0...w3console-v1.4.1) (2024-02-07)
 
 
