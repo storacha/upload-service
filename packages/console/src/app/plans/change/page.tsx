@@ -6,6 +6,7 @@ import { CheckCircleIcon } from '@heroicons/react/24/outline'
 import DefaultLoader from "@/components/Loader"
 import { useState } from "react"
 import SidebarLayout from "@/components/SidebarLayout"
+import { ucantoast } from "@/toaster"
 
 interface PlanSectionProps {
   planID: DID
@@ -38,7 +39,11 @@ function PlanSection ({ planID, planName, flatFee, flatFeeAllotment, perGbFee }:
   async function selectPlan (selectedPlanID: DID) {
     try {
       setIsUpdatingPlan(true)
-      await setPlan(selectedPlanID)
+      await ucantoast(setPlan(selectedPlanID), {
+        loading: "Updating plan...",
+        success: "Plan updated!",
+        error: "Failed to update plan, check the console for more details."
+      })
     } finally {
       setIsUpdatingPlan(false)
     }

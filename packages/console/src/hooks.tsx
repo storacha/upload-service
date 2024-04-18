@@ -11,7 +11,6 @@ type UsePlanResult = SWRResponse<PlanGetSuccess | undefined> & {
 }
 
 export const usePlan = (account: Account) => {
-  const { mutate } = useSWRConfig()
   const result = useSWR<PlanGetSuccess | undefined>(planKey(account), {
     fetcher: async () => {
       if (!account) return
@@ -25,8 +24,9 @@ export const usePlan = (account: Account) => {
   // to avoid calling the getters in SWRResponse when copying values over -
   // I can't think of a cleaner way to do this but open to refactoring
   result.setPlan = async (plan: DID) => {
-    await account.plan.set(plan)
+    const setResult = await account.plan.set(plan)
     await result.mutate()
+    return setResult
   }
   return result as UsePlanResult
 }

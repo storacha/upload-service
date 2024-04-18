@@ -1,6 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import Provider from '@/components/W3UIProvider'
+import Toaster from '@/components/Toaster'
 
 export const metadata: Metadata = {
   title: 'w3up console',
@@ -18,6 +19,7 @@ export default function RootLayout ({
         <Provider>
           <>{children}</>
         </Provider>
+        <Toaster />
       </body>
     </html>
   )
