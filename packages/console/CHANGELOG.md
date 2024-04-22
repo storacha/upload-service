@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.6.0](https://github.com/w3s-project/console/compare/w3console-v1.5.0...w3console-v1.6.0) (2024-04-22)
+
+
+### Features
+
+* add a toaster for notifications and other snacks ([#91](https://github.com/w3s-project/console/issues/91)) ([1906d39](https://github.com/w3s-project/console/commit/1906d39def856ff19fa401ccf7c8386007fe2326))
+
+
+### Bug Fixes
+
+* allow release-please to release ([#97](https://github.com/w3s-project/console/issues/97)) ([cebb599](https://github.com/w3s-project/console/commit/cebb5994eb31eb8e3967d74fdf67261fd991e195))
+
+
+### Other Changes
+
+* migrate repo ([#96](https://github.com/w3s-project/console/issues/96)) ([d79663c](https://github.com/w3s-project/console/commit/d79663cc11b8593134805b6ed68ced0590aee7bb))
+
 ## [1.5.0](https://github.com/web3-storage/console/compare/w3console-v1.4.1...w3console-v1.5.0) (2024-02-09)
 
 
