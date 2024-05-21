@@ -1,7 +1,7 @@
 import { Result } from '@ucanto/interface'
 import { toast } from 'react-hot-toast'
 
-export const ucantoast = async (promise: Promise<Result>, options: any) => {
+export const ucantoast = async (promise: Promise<Result>, options: any = {}) => {
   return toast.promise((async () => {
     const result = await promise
     if (result.ok) {

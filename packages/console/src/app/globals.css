@@ -2,8 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+.w3ui-button-colors {
+  @apply text-white bg-slate-800 hover:bg-blue-800 transition-colors ease-in;
+}
+
+.w3ui-button-size {
+  @apply text-sm font-medium rounded-sm;
+}
+
+.w3ui-button-padding {
+  @apply py-2 px-8;
+}
+
 .w3ui-button {
-  @apply text-white bg-slate-800 hover:bg-blue-800 rounded-sm py-2 px-8 text-sm font-medium transition-colors ease-in;
+  @apply w3ui-button-colors w3ui-button-size w3ui-button-padding;
 }
 
 .w3ui-button.active {

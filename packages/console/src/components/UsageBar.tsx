@@ -65,13 +65,8 @@ export function UsageBar (): ReactNode {
           <Link className='underline'
             href='/plans/change'
             title='Automated support for switching plans is currently in progress. to change your plan, please email support@web3.storage.'>
-            change plan
+            plans and billing
           </Link>
-          <a className='underline'
-            href={process.env.NEXT_PUBLIC_STRIPE_CUSTOMER_PORTAL_LINK}
-            target='_blank' rel='noopener noreferrer'>
-            update billing
-          </a>
         </div>
       ) : null}
       {usage && limit ? (
