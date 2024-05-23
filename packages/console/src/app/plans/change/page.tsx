@@ -184,7 +184,7 @@ function DelegatePlanCreateAdminSessionForm ({ className = '', account }: { clas
   return (
     <form onSubmit={handleSubmit(onSubmit)} className={`flex flex-col space-y-2 ${className}`}>
       <label className='w-full'>
-        <H2>{`Delegate access to ${DidMailto.toEmail(account.did())}'s<br />billing admin portal`}</H2>
+        <H2>Delegate access to {DidMailto.toEmail(account.did())}&apos;s<br />billing admin portal</H2>
         <input className='text-black py-2 px-2 rounded block w-full border border-gray-800'
           placeholder='To Email' type='email'
           {...register('email')} />
