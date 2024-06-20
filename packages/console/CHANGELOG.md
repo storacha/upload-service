@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.7.0](https://github.com/w3s-project/console/compare/w3console-v1.6.0...w3console-v1.7.0) (2024-05-23)
+
+
+### Features
+
+* add delegatable ability to generate a billing customer portal session ([#98](https://github.com/w3s-project/console/issues/98)) ([fcf3bbe](https://github.com/w3s-project/console/commit/fcf3bbebb3151d1d55735b3647bf982a0e7d7626))
+
+
+### Bug Fixes
+
+* don't render escaped &lt;br/&gt; ([#100](https://github.com/w3s-project/console/issues/100)) ([d7c0086](https://github.com/w3s-project/console/commit/d7c0086ce654dbb29145324d5322acdfaabf9bcb))
+
 ## [1.6.0](https://github.com/w3s-project/console/compare/w3console-v1.5.0...w3console-v1.6.0) (2024-04-22)
 
 
