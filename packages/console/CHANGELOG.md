@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.2](https://github.com/storacha-network/console/compare/w3console-v1.8.1...w3console-v1.8.2) (2024-07-02)
+
+
+### Bug Fixes
+
+* open gateway URL in _blank target ([ab570e4](https://github.com/storacha-network/console/commit/ab570e4b738c63988b48a76e648da2c6efab3d26))
+
 ## [1.8.1](https://github.com/storacha-network/console/compare/w3console-v1.8.0...w3console-v1.8.1) (2024-07-02)
 
 
