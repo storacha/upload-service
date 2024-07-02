@@ -70,7 +70,7 @@ export class NFTStorageMigrator {
           shards.push({
             link: Link.parse(p),
             size: async () => {
-              const res = await fetch(`https://w3s.link/ipfs/${p}`, { method: 'HEAD' })
+              const res = await fetch(`https://${p}.ipfs.w3s.link/`, { method: 'HEAD' })
               if (!res.ok) throw new Error(`failed to get size: ${p}`, { cause: { status: res.status } })
               const contentLength = res.headers.get('Content-Length')
               if (!contentLength) throw new Error('missing content length')
