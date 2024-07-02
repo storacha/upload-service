@@ -4,14 +4,14 @@ import { Logo } from '../brand'
 import { Fragment, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
-import { Authenticator, useW3, Space, Provider } from '@w3ui/react'
+import { Authenticator, useW3, Space } from '@w3ui/react'
 import { AuthenticationEnsurer } from '../components/Authenticator'
 import { SpaceEnsurer } from '../components/SpaceEnsurer'
 import { MaybePlanGate } from './PlanGate'
 import { SpaceFinder } from './SpaceFinder'
 import { usePathname, useRouter } from 'next/navigation'
 import { H2 } from './Text'
-import { serviceConnection, servicePrincipal } from './services'
+import { SidebarMigrations } from './SidebarMigrations'
 
 const navLinks = [
   { name: 'Terms', href: 'https://web3.storage/docs/terms' },
@@ -39,11 +39,16 @@ function Sidebar ({ sidebar = <div></div> }: SidebarComponentProps): JSX.Element
     <nav className='flex-none w-64 bg-gray-900 lg:bg-gray-900/60 text-white px-4 pb-4 border-r border-gray-800 h-screen'>
       <div className='flex flex-col justify-between h-full'>
         <div>
-          <header className='opacity-0 lg:opacity-100'>
-            <Logo className='py-8' />
+          <header className='opacity-0 lg:opacity-100 my-11'>
+            <Logo />
           </header>
-          <H2 className='text-white'>Spaces</H2>
-          <SpaceFinder spaces={spaces} selected={space} setSelected={goToSpace} />
+          <div className='my-6'>
+            <H2 className='text-white'>Spaces</H2>
+            <SpaceFinder spaces={spaces} selected={space} setSelected={goToSpace} />
+          </div>
+          <div className='my-6'>
+            <SidebarMigrations />
+          </div>
         </div>
         {sidebar}
         <div className='flex flex-col items-center'>

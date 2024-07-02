@@ -16,6 +16,7 @@
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
     "@ipld/car": "^5.2.4",
+    "@ipld/dag-json": "^10.2.2",
     "@ipld/dag-ucan": "^3.4.0",
     "@ucanto/client": "^9.0.0",
     "@ucanto/core": "^9.0.0",
@@ -33,11 +34,14 @@
     "blueimp-md5": "^2.19.0",
     "multiformats": "^12.1.3",
     "next": "^13.5.4",
+    "nft.storage": "^7.1.1",
+    "p-retry": "^6.2.0",
     "react": "latest",
     "react-dom": "latest",
     "react-hook-form": "^7.51.3",
     "react-hot-toast": "^2.4.1",
-    "swr": "^2.2.4"
+    "swr": "^2.2.4",
+    "web3.storage": "^4.5.5"
   },
   "devDependencies": {
     "@cloudflare/next-on-pages": "^1.6.3",

@@ -2,6 +2,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 import Provider from '@/components/W3UIProvider'
 import Toaster from '@/components/Toaster'
+import { Provider as MigrationsProvider } from '@/components/MigrationsProvider'
 
 export const metadata: Metadata = {
   title: 'w3up console',
@@ -17,7 +18,9 @@ export default function RootLayout ({
     <html lang="en">
       <body className='bg-grad min-h-screen'>
         <Provider>
-          <>{children}</>
+          <MigrationsProvider>
+            {children}
+          </MigrationsProvider>
         </Provider>
         <Toaster />
       </body>
