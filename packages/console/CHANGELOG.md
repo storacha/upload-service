@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.1](https://github.com/storacha-network/console/compare/w3console-v1.8.0...w3console-v1.8.1) (2024-07-02)
+
+
+### Bug Fixes
+
+* avoid double request ([126058e](https://github.com/storacha-network/console/commit/126058e35bbddb394c9530e158980c43bc471679))
+
 ## [1.8.0](https://github.com/storacha-network/console/compare/w3console-v1.7.0...w3console-v1.8.0) (2024-07-02)
 
 
