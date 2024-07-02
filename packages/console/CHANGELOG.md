@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/storacha-network/console/compare/w3console-v1.7.0...w3console-v1.8.0) (2024-07-02)
+
+
+### Features
+
+* migrations ([#101](https://github.com/storacha-network/console/issues/101)) ([4f6068e](https://github.com/storacha-network/console/commit/4f6068e338e1dbe762306d41736243a97610e5b9))
+
 ## [1.7.0](https://github.com/w3s-project/console/compare/w3console-v1.6.0...w3console-v1.7.0) (2024-05-23)
 
 
