@@ -69,7 +69,7 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
       </div>
       <H2>URL</H2>
       <div className="pb-5 overflow-hidden no-wrap text-ellipsis">
-        <a href={url} className="font-mono text-sm underline m-0 p-0">{url}</a>
+        <a href={url} className="font-mono text-sm underline m-0 p-0" target="_blank">{url}</a>
         <CopyIcon text={url} />
       </div>
       <H2>Shards</H2>
