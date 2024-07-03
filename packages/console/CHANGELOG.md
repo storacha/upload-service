@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/storacha-network/console/compare/w3console-v1.8.2...w3console-v1.9.0) (2024-07-03)
+
+
+### Features
+
+* surface migration failures ([#105](https://github.com/storacha-network/console/issues/105)) ([2f552ed](https://github.com/storacha-network/console/commit/2f552ed0c9928f97a51c52e80da1994121c222db))
+
 ## [1.8.2](https://github.com/storacha-network/console/compare/w3console-v1.8.1...w3console-v1.8.2) (2024-07-02)
 
 
