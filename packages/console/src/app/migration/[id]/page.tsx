@@ -6,9 +6,11 @@ import { TrashIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import { H1, H2 } from '@/components/Text'
 import { useMigrations } from '@/components/MigrationsProvider'
 import { DidIcon } from '@/components/DidIcon'
+import CopyIcon from '@/components/CopyIcon'
 import { CheckCircleIcon, ClockIcon, FlagIcon } from '@heroicons/react/20/solid'
 import { Migration, MigrationProgress } from '@/lib/migrations/api'
 import { useRouter } from 'next/navigation'
+import { UnknownLink } from '@w3ui/react'
 
 interface PageProps {
   params: {
@@ -43,7 +45,6 @@ progress::-moz-progress-bar {
 
 export default function MigrationPage ({ params }: PageProps): JSX.Element {
   const [{ migrations, logs }, { removeMigration }] = useMigrations()
-  const [isRemoveConfirmModalOpen, setRemoveConfirmModalOpen] = useState(false)
   const router = useRouter()
   const migration = migrations.find(m => m.id === params.id)
   if (!migration) return <H1>Migration not found</H1>
@@ -54,32 +55,38 @@ export default function MigrationPage ({ params }: PageProps): JSX.Element {
   }
 
   return (
-    <div>
+    <div className='max-w-6xl'>
       <H1>Migrating from {migration.source}</H1>
-      <div className='flex mb-4'>
-        <div className='flex-auto'>
-          <H2>Target</H2>
-          <p className='font-mono text-xs'>
-            <DidIcon did={migration.space} width={5} display='inline-block' /> {migration.space}
-          </p>
+      <div className='bg-white/60 my-4 p-4 rounded-xl shadow'>
+        <div className='flex mb-4'>
+          <div className='flex-auto'>
+            <H2>Target</H2>
+            <p className='font-mono text-xs'>
+              <DidIcon did={migration.space} width={5} display='inline-block' /> {migration.space}
+            </p>
+          </div>
+          <div className='flex-auto'>
+            <H2>Status</H2>
+            <MigrationStatus migration={migration} />
+          </div>
         </div>
-        <div className='flex-auto'>
-          <H2>Status</H2>
-          <MigrationStatus migration={migration} />
-        </div>
+        <H2>Progress</H2>
+        <ProgressBar progress={migration.progress} />
+        <H2>Log</H2>
+        <LogLines lines={logs[migration.id] ?? []} />
+        {
+          migration.progress?.failed.length
+            ? (
+              <>
+                <H2>⚠️ {migration.progress.failed.length} Failures</H2>
+                <p className='text-sm mb-3'>The following uploads must be migrated manually:</p>
+                <FailList items={migration.progress.failed} />
+              </>
+            )
+            : null
+        }
       </div>
-      <H2>Progress</H2>
-      <ProgressBar progress={migration.progress} />
-      <H2>Log</H2>
-      <LogLines lines={logs[migration.id] ?? []} />
-      <button onClick={e => { e.preventDefault(); setRemoveConfirmModalOpen(true) }} className={`inline-block bg-zinc-950 text-white font-bold text-sm pl-4 pr-6 py-2 rounded-full whitespace-nowrap hover:bg-red-700 hover:outline`}>
-        <TrashIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Remove
-      </button>
-      <RemoveConfirmModal
-        isOpen={isRemoveConfirmModalOpen}
-        onConfirm={handleRemove}
-        onCancel={() => setRemoveConfirmModalOpen(false)}
-      />
+      <RemoveButton onRemove={handleRemove} progress={migration.progress} />
     </div>
   )
 }
@@ -90,7 +97,7 @@ const MigrationStatus = ({ migration }: { migration: Migration }) => {
   if (!migration.progress) {
     Icon = FlagIcon
     text = 'Starting'
-  } else if (!migration.progress.pending) {
+  } else if (migration.progress.pending <= 0) {
     Icon = CheckCircleIcon
     text = 'Complete'
   }
@@ -107,7 +114,7 @@ const LogLines = ({ lines }: { lines: string[] }) => {
     ref.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })
   })
   return (
-    <pre className='text-xs p-4 h-96 bg-white/60 overflow-y-auto mb-4'>
+    <pre className='text-xs p-4 h-80 bg-white overflow-y-auto mb-4 rounded shadow-inner'>
       {lines.map(line => `${line}\n`)}
       {lines.length ? '' : 'No logs yet!'}
       <div ref={ref} className='py-2'></div>
@@ -117,6 +124,7 @@ const LogLines = ({ lines }: { lines: string[] }) => {
 
 const ProgressBar = ({ progress }: { progress?: MigrationProgress }) => {
   const attempted = progress ? progress.succeeded + progress.failed.length : 0
+  const failed = progress?.failed.length
   const total = progress ? attempted + progress.pending : 0
   const percentage = progress ? Math.round((attempted / total) * 100) : 0
   return (
@@ -125,9 +133,37 @@ const ProgressBar = ({ progress }: { progress?: MigrationProgress }) => {
       <progress max='100' value={percentage} className='w-full shadow rounded-xl my-2 block'></progress>
       <div className='flex justify-between'>
         <div className='font-mono text-xs'>{progress?.current?.toString() ?? 'No current item'}</div>
-        <div className='text-xs'>{attempted.toLocaleString()} of {total ? total.toLocaleString() : '?'}</div>
+        <div className='text-xs'>
+          {attempted.toLocaleString()} of {total ? total.toLocaleString() : '?'}
+          {failed ? <span className='text-red-700 font-bold ml-2'>{failed.toLocaleString()} failures</span> : ''}
+        </div>
       </div>
     </div>
+  )
+}
+
+const RemoveButton = ({ onRemove, progress }: { onRemove: () => void, progress?: MigrationProgress }) => {
+  const [isRemoveConfirmModalOpen, setRemoveConfirmModalOpen] = useState(false)
+
+  if (progress && progress.pending <= 0) {
+    return (
+      <button type='button' onClick={onRemove} className={`inline-block bg-zinc-950 text-white font-bold text-sm pl-4 pr-6 py-2 rounded-full whitespace-nowrap hover:bg-green-700 hover:outline`}>
+        <CheckCircleIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Close and Remove
+      </button>
+    )
+  }
+
+  return (
+    <>
+      <button type='button' onClick={() => setRemoveConfirmModalOpen(true)} className={`inline-block bg-zinc-950 text-white font-bold text-sm pl-4 pr-6 py-2 rounded-full whitespace-nowrap hover:bg-red-700 hover:outline`}>
+        <TrashIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Remove
+      </button>
+      <RemoveConfirmModal
+        isOpen={isRemoveConfirmModalOpen}
+        onConfirm={onRemove}
+        onCancel={() => setRemoveConfirmModalOpen(false)}
+      />
+    </>
   )
 }
 
@@ -150,9 +186,7 @@ function RemoveConfirmModal ({ isOpen, onConfirm, onCancel }: RemoveConfirmModal
           <Dialog.Description className='py-2'>
             Are you sure you want to remove this migration?
           </Dialog.Description>
-
-          <p className='py-2'>You will have to restart this migration if it has not completed.</p>
-
+          <p className='py-2'>The migration has not yet completed.</p>
           <div className='py-2 text-center'>
             <button onClick={e => { e.preventDefault(); setConfirmed(true); onConfirm() }} className={`inline-block bg-red-700 text-white font-bold text-sm pl-4 pr-6 py-2 mr-3 rounded-full whitespace-nowrap ${confirmed ? 'opacity-50' : 'hover:outline'}`} disabled={confirmed}>
               <TrashIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> {confirmed ? 'Removing...' : 'Remove'}
@@ -164,5 +198,17 @@ function RemoveConfirmModal ({ isOpen, onConfirm, onCancel }: RemoveConfirmModal
         </Dialog.Panel>
       </div>
     </Dialog>
+  )
+}
+
+const FailList = ({ items }: { items: UnknownLink[] }) => {
+  const content = items.join('\n')
+  return (
+    <div className='max-w-lg'>
+      <div className='float-right'><CopyIcon text={content} /></div>
+      <pre className='text-xs p-4 max-h-24 bg-white overflow-y-auto rounded shadow-inner'>
+        {content}
+      </pre>
+    </div>
   )
 }

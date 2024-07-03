@@ -32,6 +32,7 @@
     "archy": "^1.0.0",
     "ariakit-utils": "0.17.0-next.27",
     "blueimp-md5": "^2.19.0",
+    "linkdex": "^3.0.0",
     "multiformats": "^12.1.3",
     "next": "^13.5.4",
     "nft.storage": "^7.1.1",

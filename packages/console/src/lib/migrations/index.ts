@@ -38,7 +38,7 @@ export const migrate = async ({
   onError: (err: Error, upload: Upload, shard?: Shard) => unknown
 }) => {
   for await (const upload of uploads) {
-    let allShardsStored = true
+    let allShardsStored = Boolean(upload.shards.length) // if 0 shards we did not store them
 
     for (const shard of upload.shards) {
       if (signal.aborted) return

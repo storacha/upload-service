@@ -75,7 +75,7 @@ export function Provider ({ children }: ProviderProps): ReactNode {
     if (runningMigrations[id]) return console.warn(`already started: ${id}`)
     if (!client) return console.warn('missing client')
 
-    log(id, 'starting migration...')
+    log(id, migration.progress?.pending ? 'resuming migration...' : 'starting migration...')
 
     const controller = new AbortController()
     runningMigrations[id] = controller
