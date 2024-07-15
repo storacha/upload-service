@@ -152,6 +152,9 @@ export function Provider ({ children }: ProviderProps): ReactNode {
   useEffect(() => {
     if (!client) return
     for (const migration of migrations) {
+      if (migration.progress && migration.progress.pending <= 0) {
+        continue // do not resume if completed :)
+      }
       startMigration(migration.id)
     }
   }, [client])
