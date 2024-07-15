@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.1](https://github.com/storacha-network/console/compare/w3console-v1.9.0...w3console-v1.9.1) (2024-07-15)
+
+
+### Bug Fixes
+
+* do not resume if completed ([95044ad](https://github.com/storacha-network/console/commit/95044ad0879e684ec44fd356169ed3668775d834))
+
 ## [1.9.0](https://github.com/storacha-network/console/compare/w3console-v1.8.2...w3console-v1.9.0) (2024-07-03)
 
 
