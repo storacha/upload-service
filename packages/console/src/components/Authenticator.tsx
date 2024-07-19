@@ -11,17 +11,17 @@ export function AuthenticationForm (): JSX.Element {
   const [{ submitted }] = useAuthenticator()
   return (
     <div className='authenticator'>
-      <AuthCore.Form className='text-zinc-950 bg-grad rounded-xl shadow-md px-10 pt-8 pb-8'>
+      <AuthCore.Form className='text-hot-red bg-white border border-hot-red rounded-2xl shadow-md px-10 pt-8 pb-8'>
         <div className='flex flex-row gap-4 mb-8 justify-center'>
           <Logo className='w-36' />
         </div>
         <div>
-          <label className='block mb-2 uppercase text-xs font-semibold tracking-wider m-1 font-mono' htmlFor='authenticator-email'>Email</label>
-          <AuthCore.EmailInput className='text-black py-2 px-2 rounded block mb-4 border border-gray-800 w-80 shadow-md' id='authenticator-email' required />
+          <label className='block mb-2 uppercase text-xs font-epilogue m-1' htmlFor='authenticator-email'>Email</label>
+          <AuthCore.EmailInput className='text-black py-2 px-2 rounded-xl block mb-4 border border-hot-red w-80' id='authenticator-email' required />
         </div>
         <div className='text-center mt-4'>
           <button
-            className='inline-block bg-zinc-950 hover:outline text-white font-bold text-sm px-6 py-2 rounded-full whitespace-nowrap'
+            className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap'
             type='submit'
             disabled={submitted}
           >
@@ -30,7 +30,7 @@ export function AuthenticationForm (): JSX.Element {
         </div>
       </AuthCore.Form>
       <p className='text-xs text-white/80 italic max-w-xs text-center mt-6'>
-        By registering with web3.storage, you agree to the web3.storage <a className='underline' href='https://web3.storage/docs/terms/'>Terms of Service</a>.
+        By registering with storacha.network, you agree to the storacha.network <a className='underline' href='https://web3.storage/docs/terms/'>Terms of Service</a>.
       </p>
     </div >
   )
@@ -41,15 +41,15 @@ export function AuthenticationSubmitted (): JSX.Element {
 
   return (
     <div className='authenticator'>
-      <div className='text-zinc-950 bg-grad rounded-xl shadow-md px-10 pt-8 pb-8'>
+      <div className='text-hot-red bg-white border border-hot-red rounded-2xl shadow-md px-10 pt-8 pb-8'>
         <div className='flex flex-row gap-4 mb-8 justify-center'>
           <Logo className='w-36' />
         </div>
-        <h1 className='text-xl font-semibold'>Verify your email address!</h1>
+        <h1 className='text-xl font-epilogue'>Verify your email address!</h1>
         <p className='pt-2 pb-4'>
           Click the link in the email we sent to <span className='font-semibold tracking-wide'>{email}</span> to authorize this agent.
         </p>
-        <AuthCore.CancelButton className='inline-block bg-zinc-950 hover:outline text-white font-bold text-sm px-6 py-2 rounded-full whitespace-nowrap' >
+        <AuthCore.CancelButton className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap' >
           Cancel
         </AuthCore.CancelButton>
       </div>

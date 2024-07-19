@@ -7,7 +7,7 @@ export function DidIcon({ did, width = 10, display = 'block' }: { did: string, w
       title={did}
       alt={`gravatar for did ${did}`}
       src={src}
-      className={`w-${width} ${display} hover:saturate-200 saturate-0 invert border-solid border-white border`}
+      className={`w-${width} ${display} grayscale border-solid border-black border rounded-xl`}
     />
   )
 }

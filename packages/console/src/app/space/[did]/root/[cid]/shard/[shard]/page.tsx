@@ -89,82 +89,84 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
   return (
     <div>
       <Breadcrumbs space={space.did()} root={root} shard={shard} />
-      <H2>Shard CID</H2>
-      <div className='pb-5 font-mono text-sm overflow-hidden no-wrap text-ellipsis'>
-        {shard.toString()}
-        <CopyIcon text={shard.toString()} />
-      </div>
-      <H2>Piece CID<PieceIcon /></H2>
-      <div className='pb-5 font-mono text-sm overflow-hidden no-wrap text-ellipsis'>
-        {claim.isLoading
-          ? <DefaultLoader className='w-6 h-6 inline-block' />
-          : claim.data
-            ? <><span className='border-blue-600 border-b-2 border-dotted'>{claim.data.equals.toString()}</span><CopyIcon text={String(claim.data.equals)} /></>
-            : 'Unknown'}
-      </div>
-      <H2>Size</H2>
-      <div className='pb-5 font-mono text-sm overflow-hidden no-wrap text-ellipsis'>
-        {store.isLoading
-          ? <DefaultLoader className='w-6 h-6 inline-block' />
-          : store.data
-            ? filesize(store.data.size)
-            : 'Unknown'}
-      </div>
-      <H2>Aggregate CID<AggregateIcon /></H2>
-      <div className='pb-5 font-mono text-sm overflow-hidden no-wrap text-ellipsis'>
-        {claim.isLoading || filecoinInfo.isLoading
-          ? <DefaultLoader className='w-6 h-6 inline-block' />
-          : filecoinInfo.data && filecoinInfo.data.aggregates.length
-            ? filecoinInfo.data.aggregates.map(({ aggregate, inclusion }) => {
-                const piece = filecoinInfo.data?.piece
-                if (!piece) return <div />
-                const pieceInfo = Piece.fromLink(aggregate).toInfo()
-                return (
-                  <div key={aggregate.toString()}>
-                    <span className='opacity-60'>v1: </span>
-                    {pieceInfo.link.toString()}<CopyIcon text={aggregate.toString()} />
-                    <div className='pl-10'>
-                      └── Height: {pieceInfo.height}
-                      <QuestionIcon title='Height is encoded in v2 piece CID' />
-                    </div>
-                    <span className='opacity-60'>v2: </span>
-                    <span className='border-purple-500 border-b-2 border-dotted'>{aggregate.toString()}</span>
-                    <CopyIcon text={aggregate.toString()} />
-                    <H2 className='mt-5'>
-                      Inclusion Proof
-                      <ExpandIcon open={proofStyle === 'maxi'} onToggle={() => setProofStyle(proofStyle === 'mini' ? 'midi' : proofStyle === 'midi' ? 'maxi' : 'mini')} />
-                    </H2>
-                    <InclusionProof proof={inclusion.subtree} piece={Piece.fromLink(piece)} style={proofStyle} />
-                  </div>
-                )
-              })
-            : 'Unknown'}
-      </div>
-      {claim.isLoading || filecoinInfo.isLoading
-          ? <>
-              <H2>Inclusion Proof</H2>
-              <div className='pb-5 font-mono text-sm overflow-hidden no-wrap text-ellipsis'>
-                <DefaultLoader className='w-6 h-6 inline-block' />
-              </div>
-            </>
-          : null}
-      <H2>Storage Providers</H2>
-      <div className='pb-5 font-mono text-sm overflow-hidden no-wrap text-ellipsis'>
-        {claim.isLoading || filecoinInfo.isLoading
+      <div className='border border-hot-red rounded-2xl bg-white p-5 max-w-4xl'>
+        <H2>Shard CID</H2>
+        <div className='pb-5 font-mono text-sm overflow-hidden no-wrap text-ellipsis'>
+          {shard.toString()}
+          <CopyIcon text={shard.toString()} />
+        </div>
+        <H2>Piece CID<PieceIcon /></H2>
+        <div className='pb-5 font-mono text-sm overflow-hidden no-wrap text-ellipsis'>
+          {claim.isLoading
             ? <DefaultLoader className='w-6 h-6 inline-block' />
-            : filecoinInfo.data && filecoinInfo.data.deals.length
-              ? (
-                  <ol className='list-decimal list-inside'>
-                    {filecoinInfo.data.deals.map(d => (
-                      <li key={d.aux.dataSource.dealID}>
-                        <a href={`https://filfox.info/address/f0${d.provider}`} target='_blank' className='underline'>f0{d.provider}</a>
-                        <span className='text-xs tracking-wider font-bold px-2 text-black font-mono inline-block'>@</span>
-                        <a href={`https://filfox.info/deal/${d.aux.dataSource.dealID}`} target='_blank' className='underline'>{d.aux.dataSource.dealID.toString()}</a>
-                      </li>
-                    ))}
-                  </ol>
-                )
-              : 'None'}
+            : claim.data
+              ? <><span className='border-hot-red border-b-2 border-dotted'>{claim.data.equals.toString()}</span><CopyIcon text={String(claim.data.equals)} /></>
+              : 'Unknown'}
+        </div>
+        <H2>Size</H2>
+        <div className='pb-5 font-mono text-sm overflow-hidden no-wrap text-ellipsis'>
+          {store.isLoading
+            ? <DefaultLoader className='w-6 h-6 inline-block' />
+            : store.data
+              ? filesize(store.data.size)
+              : 'Unknown'}
+        </div>
+        <H2>Aggregate CID<AggregateIcon /></H2>
+        <div className='pb-5 font-mono text-sm overflow-hidden no-wrap text-ellipsis'>
+          {claim.isLoading || filecoinInfo.isLoading
+            ? <DefaultLoader className='w-6 h-6 inline-block' />
+            : filecoinInfo.data && filecoinInfo.data.aggregates.length
+              ? filecoinInfo.data.aggregates.map(({ aggregate, inclusion }) => {
+                  const piece = filecoinInfo.data?.piece
+                  if (!piece) return <div />
+                  const pieceInfo = Piece.fromLink(aggregate).toInfo()
+                  return (
+                    <div key={aggregate.toString()}>
+                      <span className='opacity-60'>v1: </span>
+                      {pieceInfo.link.toString()}<CopyIcon text={aggregate.toString()} />
+                      <div className='pl-10'>
+                        └── Height: {pieceInfo.height}
+                        <QuestionIcon title='Height is encoded in v2 piece CID' />
+                      </div>
+                      <span className='opacity-60'>v2: </span>
+                      <span className='border-hot-yellow border-b-2 border-dotted'>{aggregate.toString()}</span>
+                      <CopyIcon text={aggregate.toString()} />
+                      <H2 className='mt-5'>
+                        Inclusion Proof
+                        <ExpandIcon open={proofStyle === 'maxi'} onToggle={() => setProofStyle(proofStyle === 'mini' ? 'midi' : proofStyle === 'midi' ? 'maxi' : 'mini')} />
+                      </H2>
+                      <InclusionProof proof={inclusion.subtree} piece={Piece.fromLink(piece)} style={proofStyle} />
+                    </div>
+                  )
+                })
+              : 'Unknown'}
+        </div>
+        {claim.isLoading || filecoinInfo.isLoading
+            ? <>
+                <H2>Inclusion Proof</H2>
+                <div className='pb-5 font-mono text-sm overflow-hidden no-wrap text-ellipsis'>
+                  <DefaultLoader className='w-6 h-6 inline-block' />
+                </div>
+              </>
+            : null}
+        <H2>Storage Providers</H2>
+        <div className='pb-5 font-mono text-sm overflow-hidden no-wrap text-ellipsis'>
+          {claim.isLoading || filecoinInfo.isLoading
+              ? <DefaultLoader className='w-6 h-6 inline-block' />
+              : filecoinInfo.data && filecoinInfo.data.deals.length
+                ? (
+                    <ol className='list-decimal list-inside'>
+                      {filecoinInfo.data.deals.map(d => (
+                        <li key={d.aux.dataSource.dealID}>
+                          <a href={`https://filfox.info/address/f0${d.provider}`} target='_blank' className='underline'>f0{d.provider}</a>
+                          <span className='text-xs tracking-wider font-bold px-2 text-black font-mono inline-block'>@</span>
+                          <a href={`https://filfox.info/deal/${d.aux.dataSource.dealID}`} target='_blank' className='underline'>{d.aux.dataSource.dealID.toString()}</a>
+                        </li>
+                      ))}
+                    </ol>
+                  )
+                : 'None'}
+        </div>
       </div>
     </div>
   )
@@ -242,7 +244,7 @@ function InclusionProof ({ proof, piece, style }: { proof: ProofData, piece: Pie
         if (line.indexOf(' ') === -1) {
           return (
             <div key={line}>
-              <span className='border-purple-500 border-b-2 border-dotted'>{line}</span>
+              <span className='border-hot-yellow border-b-2 border-dotted'>{line}</span>
               <AggregateIcon className='opacity-60' />
               <span className='text-sm opacity-60'>Aggregate CID</span>
             </div>
@@ -261,7 +263,7 @@ function InclusionProof ({ proof, piece, style }: { proof: ProofData, piece: Pie
         return (
           <div key={line}>
             <pre className='inline-block'>{tree}</pre>&nbsp;
-            <span className={`${isPath ? 'opacity-100' : 'opacity-30'} ${isPiece ? 'border-blue-600 border-b-2 border-dotted' : ''}`}>
+            <span className={`${isPath ? 'opacity-100' : 'opacity-30'} ${isPiece ? 'border-hot-red border-b-2 border-dotted' : ''}`}>
               {label}
             </span>
             {isPiece && <><PieceIcon className='opacity-60' /><span className='text-sm opacity-60'>Piece CID</span></>}

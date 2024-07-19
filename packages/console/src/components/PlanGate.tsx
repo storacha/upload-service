@@ -4,7 +4,7 @@ import { ReactNode, useState } from 'react'
 import { useW3 } from '@w3ui/react'
 import StripePricingTable from './PricingTable';
 import { TopLevelLoader } from './Loader';
-import { Web3StorageLogo } from '@/brand';
+import { Logo } from '@/brand';
 import { usePlan } from '@/hooks';
 
 export function PlanGate ({ children }: { children: ReactNode }): ReactNode {
@@ -17,7 +17,7 @@ export function PlanGate ({ children }: { children: ReactNode }): ReactNode {
   if (!plan?.product) {
     return (
       <div className="flex flex-col justify-center items-center h-screen">
-        <div className='my-4'><Web3StorageLogo /></div>
+        <div className='my-4'><Logo /></div>
         <div className="max-w-screen-lg text-zinc-950 text-center bg-white/20 rounded-lg px-1 py-1">
           <div className='px-6 py-6 lg:px-24'>
             <h1 className="my-4 font-bold">Welcome {accounts[0]?.toEmail()}!</h1>

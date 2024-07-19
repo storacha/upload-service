@@ -6,7 +6,7 @@ import useSWR from 'swr'
 import { useRouter, usePathname } from 'next/navigation'
 import { createUploadsListKey } from '@/cache'
 
-const pageSize = 20
+const pageSize = 15
 
 interface PageProps {
   params: {

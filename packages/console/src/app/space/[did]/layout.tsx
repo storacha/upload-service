@@ -4,6 +4,7 @@ import { PropsWithChildren } from 'react'
 import { useW3 } from '@w3ui/react'
 import { DidIcon } from '@/components/DidIcon'
 import { Nav, NavLink } from '@/components/Nav'
+import { QueueListIcon, ShareIcon, CloudArrowUpIcon } from '@heroicons/react/24/outline'
 
 interface LayoutProps extends PropsWithChildren {
   params: {
@@ -27,24 +28,27 @@ export default function Layout ({children, params}: LayoutProps): JSX.Element {
 
   return (
     <section>
-      <header className='py-3'>
-        <div className='flex flex-row items-start gap-2'>
-          <DidIcon did={space.did()} />
+      <div className='lg:float-right'>
+        <Nav>
+          <NavLink href={`/space/${space.did()}`} title='List uploads'><QueueListIcon className='w-5 inline-block' /> List</NavLink>
+          <NavLink href={`/space/${space.did()}/share`} title='Share this Space'><ShareIcon className='w-5 inline-block' /> Share</NavLink>
+          <NavLink href={`/space/${space.did()}/upload`} title='Upload a file'><CloudArrowUpIcon className='w-5 inline-block' /> Upload</NavLink>
+        </Nav>
+      </div>
+      <header className='mt-4 mb-10 inline-block'>
+        <div className='flex flex-row items-start gap-4'>
+          <DidIcon did={space.did()} width={10} />
           <div className='grow overflow-hidden whitespace-nowrap text-ellipsis text-black'>
-            <h1 className='text-lg font-semibold leading-5 text-black'>
+            <h1 className='text-2xl leading-5 text-hot-red'>
               {space.name || 'Untitled'}
             </h1>
-            <label className='font-mono text-xs'>
+            <label className='font-mono text-hot-red text-xs'>
               {space.did()}
             </label>
           </div>
         </div>
       </header>
-      <Nav className='mb-8 mt-8'>
-        <NavLink href={`/space/${space.did()}`}>List</NavLink>
-        <NavLink href={`/space/${space.did()}/share`}>Share</NavLink>
-        <NavLink href={`/space/${space.did()}/upload`}>Upload</NavLink>
-      </Nav>
+      
       <div className='max-w-7xl'>
         {children}
       </div>

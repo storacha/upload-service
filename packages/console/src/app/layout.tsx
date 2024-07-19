@@ -5,8 +5,8 @@ import Toaster from '@/components/Toaster'
 import { Provider as MigrationsProvider } from '@/components/MigrationsProvider'
 
 export const metadata: Metadata = {
-  title: 'w3up console',
-  description: 'web3.storage management console',
+  title: 'Storacha console',
+  description: 'Storacha management console',
 }
 
 export default function RootLayout ({
@@ -16,7 +16,12 @@ export default function RootLayout ({
 }) {
   return (
     <html lang="en">
-      <body className='bg-grad min-h-screen'>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin='anonymous' />
+        <link href="https://fonts.googleapis.com/css2?family=Epilogue:ital@0;1&display=swap" rel="stylesheet" />
+      </head>
+      <body className='bg-hot-red-light min-h-screen'>
         <Provider>
           <MigrationsProvider>
             {children}

@@ -36,11 +36,11 @@ function Sidebar ({ sidebar = <div></div> }: SidebarComponentProps): JSX.Element
     router.push(`/space/${s.did()}`)
   }
   return (
-    <nav className='flex-none w-64 bg-gray-900 lg:bg-gray-900/60 text-white px-4 pb-4 border-r border-gray-800 h-screen'>
+    <nav className='flex-none w-64 bg-hot-yellow text-hot-red px-5 pb-5 border-r border-hot-red h-screen'>
       <div className='flex flex-col justify-between h-full'>
         <div>
-          <header className='opacity-0 lg:opacity-100 my-11'>
-            <Logo />
+          <header className='opacity-0 lg:opacity-100 my-8'>
+            <Logo className='pr-4 block' />
           </header>
           <div className='my-6'>
             <H2 className='text-white'>Spaces</H2>
@@ -112,13 +112,13 @@ export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.
               <div className='hidden lg:block'>
                 <Sidebar />
               </div>
-              <div className='w-full h-screen overflow-scroll text-white'>
+              <div className='bg-racha-fire w-full h-screen overflow-scroll text-white'>
                 {/* top nav bar for narrow browsers, mainly to have a place to put the hamburger */}
                 <div className='lg:hidden flex justify-between pt-4 px-4'>
                   <Bars3Icon className='w-6 h-6' onClick={() => setSidebarOpen(true)} />
                   <Logo className='w-full' />
                 </div>
-                <main className='grow text-black p-4'>
+                <main className='grow text-black p-12'>
                   {children}
                 </main>
               </div>

@@ -3,12 +3,12 @@ import { useState } from 'react'
 
 export default function CopyIcon({ text }: { text: string }) {
   const [copied, setCopied] = useState(false)
-  const className = 'w-9 inline-block align-middle mb-1 px-2 py-0'
+  const className = 'w-9 inline-block align-middle mb-1 px-2 py-0 text-hot-red'
   return copied
-    ? <CheckIcon className={`${className} text-white`} title='Copied' />
+    ? <CheckIcon className={className} title='Copied' />
     : (
       <DocumentDuplicateIcon
-        className={`${className} cursor-pointer hover:text-white`}
+        className={`${className} cursor-pointer`}
         title='Copy to clipboard'
         onClick={e => {
           e.preventDefault()

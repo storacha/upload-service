@@ -75,13 +75,13 @@ export function DefaultLayout ({ sidebar = <div></div>, children }: LayoutCompon
       <div className='hidden lg:block'>
         <Sidebar sidebar={sidebar} />
       </div>
-      <div className='w-full h-screen overflow-scroll'>
+      <div className='bg-racha-fire w-full h-screen overflow-scroll'>
         {/* top nav bar for narrow browsers, mainly to have a place to put the hamburger */}
         <div className='lg:hidden flex justify-between pt-4 px-4'>
           <Bars3Icon className='w-6 h-6' onClick={() => setSidebarOpen(true)} />
           <a href='/'><Logo className='w-36 mb-2' /></a>
         </div>
-        <main className='grow bg-gray-dark text-black p-4'>
+        <main className='grow text-black p-4'>
           {children}
         </main>
       </div>

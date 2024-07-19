@@ -21,5 +21,5 @@ export function Breadcrumbs ({ space, root, shard }: { space: SpaceDID, root?: U
     crumbs.push(<span key={shard.toString()} title={`Shard: ${root}`} className='font-mono text-sm'>{shortenCID(shard)}</span>)
   }
 
-  return <div className='mb-6 bg-opacity-30 bg-white py-2 px-2 rounded break-words max-w-4xl shadow-inner'>{crumbs}</div>
+  return <div className='mb-6 bg-opacity-80 bg-white text-hot-red py-2 px-5 rounded-full break-words max-w-4xl shadow-inner'>{crumbs}</div>
 }

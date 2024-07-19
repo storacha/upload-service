@@ -62,33 +62,35 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
   return (
     <div>
       <Breadcrumbs space={space.did()} root={root} />
-      <H2>Root CID</H2>
-      <div className="pb-5 font-mono text-sm overflow-hidden no-wrap text-ellipsis">
-        {root.toString()}
-        <CopyIcon text={root.toString()} />
-      </div>
-      <H2>URL</H2>
-      <div className="pb-5 overflow-hidden no-wrap text-ellipsis">
-        <a href={url} className="font-mono text-sm underline m-0 p-0" target="_blank">{url}</a>
-        <CopyIcon text={url} />
-      </div>
-      <H2>Shards</H2>
-      <div className='pb-5'>
-        {upload.isLoading
-          ? <DefaultLoader className='w-5 h-5 inline-block' />
-          : upload.data?.shards?.map(link => <Shard space={space.did()} root={root} shard={link} key={link.toString()} />)}
-      </div>
+      <div className='border border-hot-red rounded-2xl bg-white p-5 max-w-4xl'>
+        <H2>Root CID</H2>
+        <div className="pb-5 font-mono text-sm overflow-hidden no-wrap text-ellipsis">
+          {root.toString()}
+          <CopyIcon text={root.toString()} />
+        </div>
+        <H2>URL</H2>
+        <div className="pb-5 overflow-hidden no-wrap text-ellipsis">
+          <a href={url} className="font-mono text-sm underline m-0 p-0" target="_blank">{url}</a>
+          <CopyIcon text={url} />
+        </div>
+        <H2>Shards</H2>
+        <div className='pb-5'>
+          {upload.isLoading
+            ? <DefaultLoader className='w-5 h-5 inline-block' />
+            : upload.data?.shards?.map(link => <Shard space={space.did()} root={root} shard={link} key={link.toString()} />)}
+        </div>
 
-      <button onClick={e => { e.preventDefault(); setRemoveConfirmModalOpen(true) }} className={`inline-block bg-zinc-950 text-white font-bold text-sm pl-4 pr-6 py-2 rounded-full whitespace-nowrap hover:bg-red-700 hover:outline`}>
-        <TrashIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Remove
-      </button>
-      <RemoveConfirmModal
-        isOpen={isRemoveConfirmModalOpen}
-        root={root}
-        shards={upload.data?.shards ?? []}
-        onConfirm={handleRemove}
-        onCancel={() => setRemoveConfirmModalOpen(false)}
-      />
+        <button onClick={e => { e.preventDefault(); setRemoveConfirmModalOpen(true) }} className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`}>
+          <TrashIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Remove
+        </button>
+        <RemoveConfirmModal
+          isOpen={isRemoveConfirmModalOpen}
+          root={root}
+          shards={upload.data?.shards ?? []}
+          onConfirm={handleRemove}
+          onCancel={() => setRemoveConfirmModalOpen(false)}
+        />
+      </div>
     </div>
   )
 }
@@ -115,9 +117,9 @@ function RemoveConfirmModal ({ isOpen, root, shards, onConfirm, onCancel }: Remo
   const displayShards = shards.slice(0, 10)
   return (
     <Dialog open={isOpen} onClose={() => { setConfirmed(false); onCancel() }} className='relative z-50'>
-      <div className='fixed inset-0 flex w-screen items-center justify-center bg-black/70' aria-hidden='true'>
-        <Dialog.Panel className='bg-grad p-4 shadow-lg rounded-lg'>
-          <Dialog.Title className='text-lg font-semibold leading-5 text-black text-center my-3'>
+      <div className='fixed inset-0 flex w-screen items-center justify-center bg-black/70 text-white' aria-hidden='true'>
+        <Dialog.Panel className='bg-hot-red p-10 shadow-lg rounded-2xl'>
+          <Dialog.Title className='text-lg font-epilogue uppercase text-center my-3'>
             <ExclamationTriangleIcon className='h-10 w-10 inline-block' /><br/>
             Confirm remove
           </Dialog.Title>
@@ -133,15 +135,15 @@ function RemoveConfirmModal ({ isOpen, root, shards, onConfirm, onCancel }: Remo
 
           {displayShards.length < shards.length ? <p className='py-2'>...and {shards.length - displayShards.length} more.</p> : null}
 
-          <p className='py-2'>
+          <p className='pt-2 pb-5'>
             Any uploads using the same shards as those listed above <em>will</em> be corrputed. This cannot be undone.
           </p>
 
           <div className='py-2 text-center'>
-            <button onClick={e => { e.preventDefault(); setConfirmed(true); onConfirm() }} className={`inline-block bg-red-700 text-white font-bold text-sm pl-4 pr-6 py-2 mr-3 rounded-full whitespace-nowrap ${confirmed ? 'opacity-50' : 'hover:outline'}`} disabled={confirmed}>
+            <button onClick={e => { e.preventDefault(); setConfirmed(true); onConfirm() }} className={`inline-block bg-hot-red-light border border-white hover:bg-white hover:text-hot-red font-epilogue text-hot-red uppercase text-sm px-6 py-2 mr-3 rounded-full whitespace-nowrap ${confirmed ? 'opacity-50' : 'hover:outline'}`} disabled={confirmed}>
               <TrashIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> {confirmed ? 'Removing...' : 'Remove'}
             </button>
-            <button onClick={e => { e.preventDefault(); setConfirmed(false); onCancel() }} className={`inline-block bg-zinc-950 text-white font-bold text-sm px-8 py-2 rounded-full whitespace-nowrap ${confirmed ? 'opacity-50' : 'hover:outline'}`} disabled={confirmed}>
+            <button onClick={e => { e.preventDefault(); setConfirmed(false); onCancel() }} className={`inline-block bg-hot-red border border-white hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 mr-3 rounded-full whitespace-nowrap ${confirmed ? 'opacity-50' : 'hover:outline'}`} disabled={confirmed}>
               Cancel
             </button>
           </div>
