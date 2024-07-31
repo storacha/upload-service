@@ -16,7 +16,7 @@ import { SidebarMigrations } from './SidebarMigrations'
 const navLinks = [
   { name: 'Terms', href: 'https://web3.storage/docs/terms' },
   { name: 'Docs', href: 'https://web3.storage/docs' },
-  { name: 'Support', href: 'mailto:support@web3.storage' },
+  { name: 'Support', href: 'mailto:support@storacha.network' },
 ]
 
 interface SidebarComponentProps {
