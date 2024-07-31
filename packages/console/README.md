@@ -1,6 +1,6 @@
 # Console
 
-> Your dashboard for web3.storage
+> Your dashboard for storacha.network
 
 Upload files & manage your spaces from your browser.
 
