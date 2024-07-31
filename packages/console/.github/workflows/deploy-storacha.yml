@@ -2,7 +2,7 @@ name: Deploy
 on:
   push:
     branches:
-      - feat/storacha-theme
+      - feat/storacha-skin
 jobs:
   release:
     name: Release
@@ -12,7 +12,7 @@ jobs:
       url: https://console.storacha.network
     steps:
       - uses: actions/checkout@v3
-        ref: feat/storacha-theme
+        ref: feat/storacha-skin
       - uses: ./.github/actions/pnpm
       - name: create .env from .env.tpl setting env variables used by `pnpm run pages:build`
         run: |
@@ -41,7 +41,7 @@ jobs:
         uses: mathiasvr/command-output@v1.1.0
         id: cloudflare
         with:
-          run: npx wrangler pages deploy --project-name console-storacha --branch "feat/storacha-theme" --commit-hash "$GITHUB_SHA" .vercel/output/static
+          run: npx wrangler pages deploy --project-name console-storacha --branch "feat/storacha-skin" --commit-hash "$GITHUB_SHA" .vercel/output/static
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
