@@ -32,7 +32,7 @@ export function AuthenticationForm (): JSX.Element {
       <p className='text-xs text-white/80 italic max-w-xs text-center mt-6'>
         By registering with storacha.network, you agree to the storacha.network <a className='underline' href='https://web3.storage/docs/terms/'>Terms of Service</a>.
       </p>
-    </div >
+    </div>
   )
 }
 

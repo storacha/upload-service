@@ -112,7 +112,7 @@ export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.
               <div className='hidden lg:block'>
                 <Sidebar />
               </div>
-              <div className='bg-racha-fire w-full h-screen overflow-scroll text-white'>
+              <div className='bg-racha-fire/50 w-full h-screen overflow-scroll text-white'>
                 {/* top nav bar for narrow browsers, mainly to have a place to put the hamburger */}
                 <div className='lg:hidden flex justify-between pt-4 px-4'>
                   <Bars3Icon className='w-6 h-6' onClick={() => setSidebarOpen(true)} />

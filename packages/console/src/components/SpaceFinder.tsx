@@ -58,7 +58,7 @@ export function SpaceFinder ({
             afterLeave={() => { setQuery('') }}
           >
             <Combobox.Options
-              className='absolute mt-1 max-h-96 w-full bg-white rounded-md pt-1 shadow-lg overflow-scroll'
+              className='absolute mt-1 max-h-96 w-full bg-white rounded-md pt-1 shadow-lg overflow-scroll z-10'
               static
             >
               {filtered.length === 0 && query !== ''
@@ -73,7 +73,7 @@ export function SpaceFinder ({
                     key={space.did()}
                     className={({ active }) =>
                       `relative select-none py-2 pl-9 pr-4 ${
-                        active ? 'text-white bg-grad' : 'text-gray-800'
+                        active ? 'bg-hot-yellow-light cursor-pointer text-hot-red' : 'text-black'
                       }`
                     }
                     value={space}
@@ -91,7 +91,7 @@ export function SpaceFinder ({
                           ? (
                           <span
                             className={`absolute inset-y-0 left-0 flex items-center pl-3 ${
-                              active ? 'text-white' : 'text-grad'
+                              active ? '' : ''
                             }`}
                           >
                             ⁂

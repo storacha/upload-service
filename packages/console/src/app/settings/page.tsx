@@ -1,28 +1,29 @@
 'use client'
 
-import { ReactNode } from 'react'
 import { useW3, SpaceDID } from '@w3ui/react'
 import useSWR from 'swr'
 import Link from 'next/link'
-import { GB, TB, filesize } from '@/lib'
 import { usePlan } from '@/hooks'
-
-const BarHeight = 10
+import { SettingsNav } from './layout'
+import { H1, H2 } from '@/components/Text'
+import { GB, TB, filesize } from '@/lib'
+import DefaultLoader from '@/components/Loader'
 
 const Plans: Record<`did:${string}`, { name: string, limit: number }> = {
   'did:web:starter.web3.storage': { name: 'Starter', limit: 5 * GB },
   'did:web:lite.web3.storage': { name: 'Lite', limit: 100 * GB },
-  'did:web:business.web3.storage': { name: 'Business', limit: 2 * TB }
+  'did:web:business.web3.storage': { name: 'Business', limit: 2 * TB },
+  'did:web:free.web3.storage': { name: 'Free', limit: Infinity },
 }
 
-export function UsageBar (): ReactNode {
+export default function SettingsPage (): JSX.Element {
   const [{ client, accounts }] = useW3()
   // TODO: introduce account switcher
   const account = accounts[0]
 
   const { data: plan } = usePlan(account)
 
-  const { data: usage } = useSWR<Record<SpaceDID, number> | undefined>(`/usage/${account ?? ''}`, {
+  const { data: usage, isLoading } = useSWR<Record<SpaceDID, number> | undefined>(`/usage/${account ?? ''}`, {
     fetcher: async () => {
       const usage: Record<SpaceDID, number> = {}
       if (!account || !client) return
@@ -54,42 +55,47 @@ export function UsageBar (): ReactNode {
     onError: err => console.error(err.message, err.cause)
   })
 
+  const product = plan?.product
+  const planName = product && Plans[product]
+    ? Plans[plan.product].name
+    : 'Unknown'
   const allocated = Object.values(usage ?? {}).reduce((total, n) => total + n, 0)
-  const limit = plan?.product ? Plans[plan.product]?.limit : null
+  const limit = plan?.product ? Plans[plan.product]?.limit : 0
 
   return (
-    <div className='w-full'>
-      {plan?.product ? (
-        <div className='lg:text-right text-xs tracking-wider font-mono flex flex-row justify-end space-x-2 whitespace-nowrap'>
-          <div>Plan: <strong>{Plans[plan.product]?.name ?? plan.product}</strong></div>
-          <Link className='underline'
-            href='/plans/change'
-            title='Automated support for switching plans is currently in progress. to change your plan, please email support@web3.storage.'>
-            plans and billing
+    <>
+      <SettingsNav />
+      <H1>Settings</H1>
+      <div className='border border-hot-red rounded-2xl bg-white p-5 max-w-4xl'>
+        <H2>Plan</H2>
+        <p className='font-epilogue mb-4'>
+          <span className='text-xl mr-2'>{planName}</span>
+          <Link className='underline text-sm'
+            href='/plans/change'>
+            change
           </Link>
-        </div>
-      ) : null}
-      {usage && limit ? (
-        <>
-          <div className='rounded-full bg-white/20 overflow-hidden whitespace-nowrap outline outline-white/40 mt-3 mb-3 shadow-inner' style={{ fontSize: 0, height: BarHeight }}>
-            {Object.entries(usage).filter(u => u[1] > 0).sort((a, b) => a[1] - b[1]).map(([space, total]) => {
-              return (
-                <div
-                  key={space}
-                  style={{ width: `${total / limit * 100}%`, height: BarHeight }}
-                  className='bg-white/80 hover:bg-white bg-clip-padding inline-block border-r last:border-r-0 border-transparent'
-                  title={`${space}: ${filesize(total)}`}
-                />
-              )
-            })}
-          </div>
-          <div className='lg:text-right text-xs tracking-wider uppercase font-bold font-mono'>
-            <big>{filesize(allocated)}</big>
-            <small> of {filesize(limit)}</small>
-          </div>
-        </>
-      ) : null}
-    </div>
+        </p>
+        <H2>Usage</H2>
+        {usage && limit ? (
+          <>
+            <p className='font-epilogue mb-4'>
+              <span className='text-xl'>{filesize(allocated)}</span>
+              <span className='text-sm'> of {limit === Infinity ? 'Unlimited' : filesize(limit)}</span>
+            </p>
+            <table className='border-collapse table-fixed w-full'>
+              {Object.entries(usage).sort((a, b) => b[1] - a[1]).map(([space, total]) => {
+                return (
+                  <tr key={space} className='border-b border-hot-red last:border-b-0'>
+                    <td className='text-xs font-mono py-2'>{space}</td>
+                    <td className='text-xs text-right py-2'>{filesize(total)}</td>
+                  </tr>
+                )
+              })}
+            </table>
+          </>
+        ) : <DefaultLoader className='w-6 h-6 inline-block' />}
+      </div>
+    </>
   )
 }
 

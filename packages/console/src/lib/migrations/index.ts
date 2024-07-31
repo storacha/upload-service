@@ -56,7 +56,7 @@ export const migrate = async ({
             .execute(connection)
 
           if (!receipt.out.ok) {
-            throw receipt.out.error
+            throw new Error('failed to store/add invocation', { cause: receipt.out.error })
           }
           return receipt.out.ok
         }, { onFailedAttempt: console.warn, retries: REQUEST_RETRIES })

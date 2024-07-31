@@ -37,10 +37,10 @@ function SpacePage (): ReactNode {
 
 function Item ({space}: {space: Space}) {
   return (
-    <Link href={`/space/${space.did()}`} className='flex flex-row items-start gap-4 p-4 text-hot-red text-left hover:bg-hot-yellow-light border-b last:border-0 border-hot-red first:rounded-t-2xl last:rounded-b-2xl'>
+    <Link href={`/space/${space.did()}`} className='flex flex-row items-start gap-4 p-4 text-left hover:bg-hot-yellow-light border-b last:border-0 border-hot-red first:rounded-t-2xl last:rounded-b-2xl'>
       <DidIcon did={space.did()} />
       <div className='grow overflow-hidden whitespace-nowrap text-ellipsis'>
-        <span className='font-epilogue text-lg font-semibold leading-5 m-0'>
+        <span className='font-epilogue text-lg text-hot-red leading-5 m-0'>
           {space.name || 'Untitled'}
         </span>
         <span className='font-mono text-xs block'>

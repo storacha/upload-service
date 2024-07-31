@@ -54,23 +54,25 @@ function ChooseSource ({ config, onNext }: WizardProps) {
   }
 
   return (
-    <div>
+    <div className='max-w-4xl'>
       <H1>Create a new migration</H1>
-      <p className='mb-8'>This allows data to be migrated from a previous provider to one of your spaces.</p>
+      <div className='bg-white my-4 p-5 rounded-2xl border border-hot-red font-epilogue'>
+        <p className='mb-8'>This tool allows data to be migrated from a previous provider to one of your spaces.</p>
 
-      <H2>Where from?</H2>
-      <p className='mb-4'>Pick a storage service you want to migrate data from.</p>
-      <div className='mb-4'>
-        <button className={`bg-white/60 rounded-lg shadow-md p-8 hover:outline mr-4 ${source === 'classic.nft.storage' ? 'outline' : ''}`} type='button' onClick={() => setSource('classic.nft.storage')} title='Migrate from NFT.Storage (Classic)'>
-          <img src='/nftstorage-logo.png' width='360' />
-        </button>
-        <button className={`bg-white/60 opacity-60 rounded-lg shadow-md p-8 ${source === 'old.web3.storage' ? 'outline' : ''}`} type='button' onClick={() => setSource('old.web3.storage')} title='COMING SOON! Migrate from Web3.Storage (Old)' disabled={true}>
-          <img src='/web3storage-logo.png' width='360' />
+        <H2>Where from?</H2>
+        <p className='mb-4'>Pick a storage service you want to migrate data from.</p>
+        <div className='mb-4'>
+          <button className={`bg-white/60 rounded-lg shadow-md p-8 hover:outline mr-4 ${source === 'classic.nft.storage' ? 'outline' : ''}`} type='button' onClick={() => setSource('classic.nft.storage')} title='Migrate from NFT.Storage (Classic)'>
+            <img src='/nftstorage-logo.png' width='350' />
+          </button>
+          <button className={`bg-white/60 opacity-60 rounded-lg shadow-md p-8 ${source === 'old.web3.storage' ? 'outline' : ''}`} type='button' onClick={() => setSource('old.web3.storage')} title='COMING SOON! Migrate from Web3.Storage (Old)' disabled={true}>
+            <img src='/web3storage-logo.png' width='350' />
+          </button>
+        </div>
+        <button onClick={handleNextClick} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap ${source ? 'hover:bg-white hover:text-hot-red' : 'opacity-10'}`} disabled={!source}>
+          Next <ChevronRightIcon className='h-5 w-5 inline-block ml-1 align-middle' style={{marginTop: -4}} />
         </button>
       </div>
-      <button onClick={handleNextClick} className={`inline-block bg-zinc-950 text-white font-bold text-sm pl-6 pr-3 py-2 rounded-full whitespace-nowrap hover:outline ${source ? '' : 'opacity-10'}`} disabled={!source}>
-        Next <ChevronRightIcon className='h-5 w-5 inline-block ml-1 align-middle'/>
-      </button>
     </div>
   )
 }
@@ -99,27 +101,29 @@ function AddSourceToken ({ config, onNext, onPrev }: WizardProps) {
     onNext({ ...config, token })
   }
   return (
-    <div>
+    <div className='max-w-4xl'>
       <H1>Add data source token</H1>
-      <p className='mb-8'>Add your <strong>{config.source}</strong> API token. Note: the key never leaves this device, it is for local use only by the migration tool.</p>
-      <H1>API Token</H1>
-      <div className='max-w-xl mb-4'>
-        <input
-          type='password'
-          className='text-black py-2 px-2 rounded block w-full border border-gray-800'
-          placeholder='eyJhb...'
-          value={token ?? ''}
-          onChange={e => setToken(e.target.value)}
-          required={true}
-        />
-        <p className='text-xs text-red-700'>{error}</p>
+      <div className='bg-white my-4 p-5 rounded-2xl border border-hot-red font-epilogue'>
+        <p className='mb-8'>Add your <strong>{config.source}</strong> API token. Note: the key never leaves this device, it is for local use only by the migration tool.</p>
+        <H2>API Token</H2>
+        <div className='max-w-xl mb-4'>
+          <input
+            type='password'
+            className='text-black py-2 px-2 rounded block w-full border border-gray-800'
+            placeholder='eyJhb...'
+            value={token ?? ''}
+            onChange={e => setToken(e.target.value)}
+            required={true}
+          />
+          <p className='text-xs text-red-700'>{error}</p>
+        </div>
+        <button onClick={e => { e.preventDefault(); onPrev() }} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm mr-2 px-6 py-2 rounded-full whitespace-nowrap hover:bg-white hover:text-hot-red`}>
+          <ChevronLeftIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}}/> Previous
+        </button>
+        <button onClick={handleNextClick} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap ${token ? 'hover:bg-white hover:text-hot-red' : 'opacity-10'}`} disabled={!token}>
+          Next <ChevronRightIcon className='h-5 w-5 inline-block ml-1 align-middle' style={{marginTop: -4}}/>
+        </button>
       </div>
-      <button onClick={e => { e.preventDefault(); onPrev() }} className={`inline-block bg-zinc-950 text-white font-bold text-sm pl-3 pr-6 py-2 mr-3 rounded-full whitespace-nowrap hover:outline`}>
-        <ChevronLeftIcon className='h-5 w-5 inline-block mr-1 align-middle'/> Previous
-      </button>
-      <button onClick={handleNextClick} className={`inline-block bg-zinc-950 text-white font-bold text-sm pl-6 pr-3 py-2 rounded-full whitespace-nowrap hover:outline ${token ? '' : 'opacity-10'}`} disabled={!token}>
-        Next <ChevronRightIcon className='h-5 w-5 inline-block ml-1 align-middle'/>
-      </button>
     </div>
   )
 }
@@ -134,20 +138,20 @@ function ChooseTargetSpace ({ config, onNext, onPrev }: WizardProps) {
     onNext({ ...config, space })
   }
   return (
-    <div>
+    <div className='font-epilogue'>
       <H1>Target space</H1>
       <p className='mb-8'>Choose an existing space to migrate data to.</p>
       <H2>Space</H2>
-      <div className='max-w-lg mb-4 border rounded-md border-zinc-700'>
+      <div className='max-w-lg border rounded-2xl border-hot-red bg-white mb-4'>
         {spaces.map(s => (
           <button
             key={s.did()}
             type='button'
-            className={`flex flex-row items-start gap-2 p-3 text-white text-left border-b last:border-0 border-zinc-700 w-full ${s.did() === space ? 'bg-gray-900/60' : 'bg-gray-900/30 hover:bg-gray-900/50'}`}
+            className={`w-full flex flex-row items-start gap-4 p-4 text-left border-b last:border-0 border-hot-red first:rounded-t-2xl last:rounded-b-2xl ${s.did() === space ? 'bg-hot-yellow' : 'hover:bg-hot-yellow-light'}`}
             onClick={() => setSpace(s.did())}>
             <DidIcon did={s.did()} />
             <div className='grow overflow-hidden whitespace-nowrap text-ellipsis'>
-              <span className='text-md font-semibold leading-5 m-0'>
+              <span className='text-lg text-hot-red leading-5 m-0'>
                 {s.name || 'Untitled'}
               </span>
               <span className='font-mono text-xs block'>
@@ -157,11 +161,11 @@ function ChooseTargetSpace ({ config, onNext, onPrev }: WizardProps) {
           </button>
         ))}
       </div>
-      <button onClick={e => { e.preventDefault(); onPrev() }} className={`inline-block bg-zinc-950 text-white font-bold text-sm pl-3 pr-6 py-2 mr-3 rounded-full whitespace-nowrap hover:outline`}>
-        <ChevronLeftIcon className='h-5 w-5 inline-block mr-1 align-middle'/> Previous
+      <button onClick={e => { e.preventDefault(); onPrev() }} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm mr-2 px-6 py-2 rounded-full whitespace-nowrap hover:bg-white hover:text-hot-red`}>
+        <ChevronLeftIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}}/> Previous
       </button>
-      <button onClick={handleNextClick} className={`inline-block bg-zinc-950 text-white font-bold text-sm pl-6 pr-3 py-2 rounded-full whitespace-nowrap hover:outline ${space ? '' : 'opacity-10'}`} disabled={!space}>
-        Next <ChevronRightIcon className='h-5 w-5 inline-block ml-1 align-middle'/>
+      <button onClick={handleNextClick} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap ${space ? 'hover:bg-white hover:text-hot-red' : 'opacity-10'}`} disabled={!space}>
+        Next <ChevronRightIcon className='h-5 w-5 inline-block ml-1 align-middle' style={{marginTop: -4}}/>
       </button>
     </div>
   )
@@ -177,34 +181,36 @@ function Confirmation ({ config, onNext, onPrev }: WizardProps) {
     onNext(config)
   }
   return (
-    <div>
+    <div className='max-w-4xl'>
       <H1>Ready to start!</H1>
-      <p className='mb-8'>Make sure these details are correct before starting the migration.</p>
-      <H2>Source</H2>
-      <div className={`bg-white/60 rounded-lg shadow-md p-8 mb-4 inline-block`} title='Web3.Storage (Old)'>
-        <img src={config.source === 'old.web3.storage' ? '/web3storage-logo.png' : '/nftstorage-logo.png'} width='360' />
-      </div>
-      <H2>Target</H2>
-      <div className='max-w-lg mb-8 border rounded-md border-zinc-700'>
-        <div className={`flex flex-row items-start gap-2 p-3 text-white text-left border-b last:border-0 border-zinc-700 w-full bg-gray-900/30`}>
-          <DidIcon did={space.did()} />
-          <div className='grow overflow-hidden whitespace-nowrap text-ellipsis'>
-            <span className='text-md font-semibold leading-5 m-0'>
-              {space.name || 'Untitled'}
-            </span>
-            <span className='font-mono text-xs block'>
-              {space.did()}
-            </span>
+      <div className='bg-white my-4 p-5 rounded-2xl border border-hot-red font-epilogue'>
+        <p className='mb-8'>Make sure these details are correct before starting the migration.</p>
+        <H2>Source</H2>
+        <div className={`bg-white/60 rounded-lg shadow-md p-8 mb-4 inline-block`} title='Web3.Storage (Old)'>
+          <img src={config.source === 'old.web3.storage' ? '/web3storage-logo.png' : '/nftstorage-logo.png'} width='360' />
+        </div>
+        <H2>Target</H2>
+        <div className='max-w-lg border rounded-2xl border-hot-red bg-white mb-4'>
+          <div className={`flex flex-row items-start gap-4 p-4 text-left border-b last:border-0 border-hot-red first:rounded-t-2xl last:rounded-b-2xl`}>
+            <DidIcon did={space.did()} />
+            <div className='grow overflow-hidden whitespace-nowrap text-ellipsis'>
+              <span className='text-lg text-hot-red leading-5 m-0'>
+                {space.name || 'Untitled'}
+              </span>
+              <span className='font-mono text-xs block'>
+                {space.did()}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <button onClick={e => { e.preventDefault(); onPrev() }} className={`inline-block bg-zinc-950 text-white font-bold text-sm pl-3 pr-6 py-2 mr-3 rounded-full whitespace-nowrap hover:outline`}>
-        <ChevronLeftIcon className='h-5 w-5 inline-block mr-1 align-middle'/> Previous
-      </button>
-      <button onClick={handleNextClick} className={`inline-block bg-zinc-950 text-white font-bold text-sm pl-6 pr-3 py-2 rounded-full whitespace-nowrap hover:outline ${space ? '' : 'opacity-10'}`} disabled={!space}>
-        Start <ChevronRightIcon className='h-5 w-5 inline-block ml-1 align-middle'/>
-      </button>
+        <button onClick={e => { e.preventDefault(); onPrev() }} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm mr-2 px-6 py-2 rounded-full whitespace-nowrap hover:bg-white hover:text-hot-red`}>
+          <ChevronLeftIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}}/> Previous
+        </button>
+        <button onClick={handleNextClick} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap hover:bg-white hover:text-hot-red`}>
+          Start <ChevronRightIcon className='h-5 w-5 inline-block ml-1 align-middle' style={{marginTop: -4}}/>
+        </button>
+      </div>
     </div>
   )
 }

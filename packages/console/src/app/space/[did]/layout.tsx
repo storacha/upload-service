@@ -30,7 +30,7 @@ export default function Layout ({children, params}: LayoutProps): JSX.Element {
     <section>
       <div className='lg:float-right'>
         <Nav>
-          <NavLink href={`/space/${space.did()}`} title='List uploads'><QueueListIcon className='w-5 inline-block' /> List</NavLink>
+          <NavLink href={`/space/${space.did()}`} title='List uploads'><QueueListIcon className='w-5 inline-block' /> Uploads</NavLink>
           <NavLink href={`/space/${space.did()}/share`} title='Share this Space'><ShareIcon className='w-5 inline-block' /> Share</NavLink>
           <NavLink href={`/space/${space.did()}/upload`} title='Upload a file'><CloudArrowUpIcon className='w-5 inline-block' /> Upload</NavLink>
         </Nav>
@@ -42,7 +42,7 @@ export default function Layout ({children, params}: LayoutProps): JSX.Element {
             <h1 className='text-2xl leading-5 text-hot-red'>
               {space.name || 'Untitled'}
             </h1>
-            <label className='font-mono text-hot-red text-xs'>
+            <label className='font-mono text-xs'>
               {space.did()}
             </label>
           </div>

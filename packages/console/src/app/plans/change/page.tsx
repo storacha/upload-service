@@ -2,7 +2,7 @@
 
 import { usePlan } from "@/hooks"
 import { useW3, DID, Client, AccountDID, Account } from "@w3ui/react"
-import { ArrowTopRightOnSquareIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import { ArrowTopRightOnSquareIcon, RocketLaunchIcon, CheckIcon, LinkIcon } from '@heroicons/react/24/outline'
 import DefaultLoader from "@/components/Loader"
 import { useState } from "react"
 import SidebarLayout from "@/components/SidebarLayout"
@@ -17,11 +17,13 @@ import * as Ucanto from "@ucanto/core"
 import { Plan, Access as AccessCaps } from "@web3-storage/capabilities"
 import { H1, H2 } from "@/components/Text"
 import { Ability, Capability, Delegation } from "@ucanto/interface"
+import { SettingsNav } from "@/app/settings/layout"
 
 interface PlanSectionProps {
   account: Account
   planID: DID
   planName: string
+  planLabel: string
   flatFee: number
   flatFeeAllotment: number
   perGbFee: number
@@ -41,7 +43,7 @@ const planRanks: Record<string, number> = {
 
 const buttonText = (currentPlan: string, newPlan: string) => (planRanks[currentPlan] > planRanks[newPlan]) ? 'Downgrade' : 'Upgrade'
 
-function PlanSection ({ account, planID, planName, flatFee, flatFeeAllotment, perGbFee }: PlanSectionProps) {
+function PlanSection ({ account, planID, planName, planLabel, flatFee, flatFeeAllotment, perGbFee }: PlanSectionProps) {
   const { data: plan, setPlan, isLoading } = usePlan(account)
   const currentPlanID = plan?.product
   const isCurrentPlan = currentPlanID === planID
@@ -59,49 +61,37 @@ function PlanSection ({ account, planID, planName, flatFee, flatFeeAllotment, pe
     }
   }
   return (
-    <div className={`flex flex-col items-center rounded border-2 border-solid border-slate-800 w-[21rem] p-6 ${isCurrentPlan ? 'bg-blue-800/10' : 'bg-slate-800/10'}`}>
-      <div className='text-2xl mb-6 flex flex-row justify-between w-full'>
-        <div className='font-bold'>{planName}</div>
-        <div>
-          <span className='font-bold'>${flatFee}</span><span className='text-slate-600'>/mo</span>
+    <div className={`rounded-2xl font-epilogue text-hot-red border border-hot-red w-[21rem] bg-white`}>
+      <div className='uppercase text-md px-5 py-2 flex flex-row justify-between w-full border-b border-hot-red'>
+        <div>{planName}</div>
+        <div>{planLabel}</div>
+      </div>
+      <div className='px-5 py-6'>
+        <p className='text-5xl mt-2 mb-5'>${flatFee}/mo</p>
+        <p className='text-2xl uppercase'>{flatFeeAllotment.toLocaleString()}GB storage</p>
+        <p className='text-xs mb-5'>Additional at ${perGbFee}/GB per month</p>
+        <p className='text-2xl uppercase'>{flatFeeAllotment.toLocaleString()}GB egress</p>
+        <p className='text-sm uppercase'>per month</p>
+        <p className='text-xs mb-5'>Additional at ${perGbFee}/GB per month</p>
+        <div className='text-center'>
+          {
+            (isLoading || isUpdatingPlan || !currentPlanID) ? (
+              <DefaultLoader className='h-6 w-6' />
+            ) : (
+              isCurrentPlan ? (
+                <button className={`inline-block border border-hot-red bg-white text-hot-red font-epilogue uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`} disabled={true}>
+                  <CheckIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Current Plan
+                </button>
+              ) : (
+                <button onClick={() => selectPlan(planID)} className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`} disabled={isCurrentPlan || isLoading}>
+                  <RocketLaunchIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> {currentPlanID && buttonText(currentPlanID, planID)}
+                </button>
+              )
+            )
+          }
         </div>
       </div>
-      <div className='flex flex-row self-start space-x-2 mb-4'>
-        <div className='pt-1'>
-          <CheckCircleIcon className='w-6 h-6 font-bold' />
-        </div>
-        <div className='flex flex-col'>
-          <div className='text-xl font-bold'>{flatFeeAllotment}GB storage</div>
-          <div>Additional at ${perGbFee}/GB per month</div>
-        </div>
-      </div>
-      <div className='flex flex-row self-start space-x-2 mb-8'>
-        <div className='pt-1'>
-          <CheckCircleIcon className='w-6 h-6 font-bold' />
-        </div>
-        <div className='flex flex-col'>
-          <div className='text-xl font-bold'>{flatFeeAllotment}GB egress per month</div>
-          <div>Additional at ${perGbFee}/GB per month</div>
-        </div>
-      </div>
-      <div className='flex-grow'></div>
-      {
-        (isLoading || isUpdatingPlan || !currentPlanID) ? (
-          <DefaultLoader className='h-6 w-6' />
-        ) : (
-          isCurrentPlan ? (
-            <div className='h-7'>
-              {(currentPlanID === planID) && (
-                <h5 className='font-bold'>Current Plan</h5>
-              )}
-            </div>
-          ) : (
-            <button className={`text-white bg-slate-800 hover:bg-blue-800 rounded py-2 px-8 text-sm font-medium transition-colors ease-in`}
-              disabled={isCurrentPlan || isLoading} onClick={() => selectPlan(planID)}>{currentPlanID && buttonText(currentPlanID, planID)}</button>
-          )
-        )
-      }
-    </div >
+    </div>
   )
 }
 
@@ -182,14 +172,14 @@ function DelegatePlanCreateAdminSessionForm ({ className = '', account }: { clas
     }
   }
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className={`flex flex-col space-y-2 ${className}`}>
-      <label className='w-full'>
-        <H2>Delegate access to {DidMailto.toEmail(account.did())}&apos;s<br />billing admin portal</H2>
-        <input className='text-black py-2 px-2 rounded block w-full border border-gray-800'
+    <form onSubmit={handleSubmit(onSubmit)} className={className}>
+      <label className='block mb-4'>
+        <p className='text-black mb-4'>Delegate access to {DidMailto.toEmail(account.did())}&apos;s billing admin portal:</p>
+        <input className='text-black py-2 px-2 rounded-xl block mb-4 border border-hot-red w-80'
           placeholder='To Email' type='email'
           {...register('email')} />
       </label>
-      <input className='w3ui-button' type='submit' value='Delegate' />
+      <input className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm mr-2 px-6 py-2 rounded-full whitespace-nowrap cursor-pointer' type='submit' value='Delegate' />
     </form>
   )
 }
@@ -200,20 +190,17 @@ function CustomerPortalLink ({ did }: { did: AccountDID }) {
     <>
       {customerPortalLink ? (
         <div className='flex flex-row'>
-          <button className='w3ui-button-colors w3ui-button-size p-2 mr-2' onClick={() => generateCustomerPortalLink(did)} disabled={generatingCustomerPortalLink}>
-            <ArrowPathIcon className={`h-5 w-5 text-white ${generatingCustomerPortalLink ? 'animate-spin' : ''}`} />
+          <button className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm mr-2 px-6 py-2 rounded-full whitespace-nowrap' onClick={() => generateCustomerPortalLink(did)} disabled={generatingCustomerPortalLink}>
+            <ArrowPathIcon className={`h-5 w-5 inline-block align-middle ${generatingCustomerPortalLink ? 'animate-spin' : ''}`} />
           </button>
-          <a className='w3ui-button' href={customerPortalLink} target="_blank" rel="noopener noreferrer">
+          <a className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm mr-2 px-6 py-2 rounded-full whitespace-nowrap' href={customerPortalLink} target="_blank" rel="noopener noreferrer">
             Open Billing Portal
             <ArrowTopRightOnSquareIcon className='relative inline h-5 w-4 ml-1 -mt-1' />
           </a>
         </div>
       ) : (
-        <button className='w3ui-button' onClick={() => generateCustomerPortalLink(did)} disabled={generatingCustomerPortalLink}>
-          Generate Link
-          {generatingCustomerPortalLink &&
-            <ArrowPathIcon className='inline ml-2 h-5 w-5 text-white animate-spin' />
-          }
+        <button onClick={() => generateCustomerPortalLink(did)} disabled={generatingCustomerPortalLink} className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap'>
+          {generatingCustomerPortalLink ? <ArrowPathIcon className='h-5 w-5 inline-block mr-1 align-middle animate-spin' style={{marginTop: -4}} /> : <LinkIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} />} Generate Link
         </button>
       )}
     </>
@@ -255,21 +242,23 @@ interface AccountAdminProps {
 function AccountAdmin ({ account, accountNamePrefix = '' }: AccountAdminProps) {
   const canDelegate = account.agent.proofs([{ can: AccessCaps.delegate.can, with: account.did() }]).length > 0
   return (
-    <div className='flex flex-col space-y-2'>
-      <H1>{accountNamePrefix}{DidMailto.toEmail(account.did())}</H1>
-      <div>
-        <H2>Pick a Plan</H2>
-        <div className='flex flex-row xl:space-x-1'>
-          <PlanSection account={account} planID={PLANS['starter']} planName='Starter' flatFee={0} flatFeeAllotment={5} perGbFee={0.15} />
-          <PlanSection account={account} planID={PLANS['lite']} planName='Lite' flatFee={10} flatFeeAllotment={100} perGbFee={0.05} />
-          <PlanSection account={account} planID={PLANS['business']} planName='Business' flatFee={100} flatFeeAllotment={2000} perGbFee={0.03} />
+    <div className='mb-8'>
+      <div className='mb-6 bg-opacity-80 bg-white text-hot-red py-2 px-5 rounded-full break-words max-w-4xl shadow-inner'>
+        <H2>{accountNamePrefix}{DidMailto.toEmail(account.did())}</H2>
+      </div>
+      <div className='max-w-4xl'>
+        <div className='flex flex-row xl:space-x-4 mb-4'>
+          <PlanSection account={account} planID={PLANS['starter']} planName='Starter' planLabel='🌶️' flatFee={0} flatFeeAllotment={5} perGbFee={0.15} />
+          <PlanSection account={account} planID={PLANS['lite']} planName='Lite' planLabel='🌶️🌶️' flatFee={10} flatFeeAllotment={100} perGbFee={0.05} />
+          <PlanSection account={account} planID={PLANS['business']} planName='Business' planLabel='🔥 Best Value 🔥' flatFee={100} flatFeeAllotment={2000} perGbFee={0.03} />
+        </div>
+        <div className='rounded-2xl font-epilogue text-hot-red border border-hot-red bg-white p-5'>
+          <H1 className='mt-0 mb-4'>Billing Administration</H1>
+          <p className='text-black mb-4'>Access Billing Admin Portal</p>
+          <CustomerPortalLink did={account.did()} />
+          {canDelegate && <DelegatePlanCreateAdminSessionForm account={account} className='mt-6' />}
         </div>
       </div>
-      <div>
-        <H2>Access Billing Admin Portal</H2>
-        <CustomerPortalLink did={account.did()} />
-      </div>
-      {canDelegate && <DelegatePlanCreateAdminSessionForm account={account} className='w-96' />}
     </div>
   )
 }
@@ -283,8 +272,9 @@ function Plans () {
   const adminableAccounts: AccountDID[] = Array.from(new Set<AccountDID>([...billingAdminAccounts, ...planAdminAccounts]))
   const hasAdminableAccounts = adminableAccounts.length > 0
   return (
-    <div className='py-8 flex flex-col space-y-12'>
-      <h1 className='text-2xl font-mono font-bold'>Billing</h1>
+    <>
+      <SettingsNav />
+      <H1>Change Plan</H1>
       <AccountAdmin account={account} accountNamePrefix={hasAdminableAccounts ? 'Your Account: ' : ''} />
       {adminableAccounts.map(did => (client && (did !== account.did()) ? (
         <AccountAdmin key={did}
@@ -295,7 +285,7 @@ function Plans () {
             proofs: []
           })} />
       ) : null))}
-    </div>
+    </>
   )
 }
 

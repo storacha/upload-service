@@ -57,7 +57,7 @@ export default function MigrationPage ({ params }: PageProps): JSX.Element {
   return (
     <div className='max-w-6xl'>
       <H1>Migrating from {migration.source}</H1>
-      <div className='bg-white/60 my-4 p-4 rounded-xl shadow'>
+      <div className='bg-white my-4 p-4 rounded-2xl border border-hot-red'>
         <div className='flex mb-4'>
           <div className='flex-auto'>
             <H2>Target</H2>
@@ -114,7 +114,7 @@ const LogLines = ({ lines }: { lines: string[] }) => {
     ref.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })
   })
   return (
-    <pre className='text-xs p-4 h-80 bg-white overflow-y-auto mb-4 rounded shadow-inner'>
+    <pre className='text-xs p-4 h-60 bg-white overflow-y-auto mb-4 rounded shadow-inner border'>
       {lines.map(line => `${line}\n`)}
       {lines.length ? '' : 'No logs yet!'}
       <div ref={ref} className='py-2'></div>
@@ -147,7 +147,7 @@ const RemoveButton = ({ onRemove, progress }: { onRemove: () => void, progress?:
 
   if (progress && progress.pending <= 0) {
     return (
-      <button type='button' onClick={onRemove} className={`inline-block bg-zinc-950 text-white font-bold text-sm pl-4 pr-6 py-2 rounded-full whitespace-nowrap hover:bg-green-700 hover:outline`}>
+      <button type='button' onClick={onRemove} className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap'>
         <CheckCircleIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Close and Remove
       </button>
     )
@@ -155,7 +155,7 @@ const RemoveButton = ({ onRemove, progress }: { onRemove: () => void, progress?:
 
   return (
     <>
-      <button type='button' onClick={() => setRemoveConfirmModalOpen(true)} className={`inline-block bg-zinc-950 text-white font-bold text-sm pl-4 pr-6 py-2 rounded-full whitespace-nowrap hover:bg-red-700 hover:outline`}>
+      <button type='button' onClick={() => setRemoveConfirmModalOpen(true)} className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap'>
         <TrashIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Remove
       </button>
       <RemoveConfirmModal
@@ -178,8 +178,8 @@ function RemoveConfirmModal ({ isOpen, onConfirm, onCancel }: RemoveConfirmModal
   return (
     <Dialog open={isOpen} onClose={() => { setConfirmed(false); onCancel() }} className='relative z-50'>
       <div className='fixed inset-0 flex w-screen items-center justify-center bg-black/70' aria-hidden='true'>
-        <Dialog.Panel className='bg-grad p-4 shadow-lg rounded-lg'>
-          <Dialog.Title className='text-lg font-semibold leading-5 text-black text-center my-3'>
+        <Dialog.Panel className='bg-hot-red p-10 shadow-lg rounded-lg font-epilogue text-white'>
+          <Dialog.Title className='text-lg text-center my-3'>
             <ExclamationTriangleIcon className='h-10 w-10 inline-block' /><br/>
             Confirm remove
           </Dialog.Title>
@@ -188,10 +188,10 @@ function RemoveConfirmModal ({ isOpen, onConfirm, onCancel }: RemoveConfirmModal
           </Dialog.Description>
           <p className='py-2'>The migration has not yet completed.</p>
           <div className='py-2 text-center'>
-            <button onClick={e => { e.preventDefault(); setConfirmed(true); onConfirm() }} className={`inline-block bg-red-700 text-white font-bold text-sm pl-4 pr-6 py-2 mr-3 rounded-full whitespace-nowrap ${confirmed ? 'opacity-50' : 'hover:outline'}`} disabled={confirmed}>
+            <button onClick={e => { e.preventDefault(); setConfirmed(true); onConfirm() }} className={`inline-block bg-hot-red-light border border-white hover:bg-white hover:text-hot-red font-epilogue text-hot-red uppercase text-sm px-6 py-2 mr-3 rounded-full whitespace-nowrap ${confirmed ? 'opacity-50' : 'hover:outline'}`} disabled={confirmed}>
               <TrashIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> {confirmed ? 'Removing...' : 'Remove'}
             </button>
-            <button onClick={e => { e.preventDefault(); setConfirmed(false); onCancel() }} className={`inline-block bg-zinc-950 text-white font-bold text-sm px-8 py-2 rounded-full whitespace-nowrap ${confirmed ? 'opacity-50' : 'hover:outline'}`} disabled={confirmed}>
+            <button onClick={e => { e.preventDefault(); setConfirmed(false); onCancel() }} className={`inline-block bg-hot-red border border-white hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 mr-3 rounded-full whitespace-nowrap ${confirmed ? 'opacity-50' : 'hover:outline'}`} disabled={confirmed}>
               Cancel
             </button>
           </div>
@@ -206,7 +206,7 @@ const FailList = ({ items }: { items: UnknownLink[] }) => {
   return (
     <div className='max-w-lg'>
       <div className='float-right'><CopyIcon text={content} /></div>
-      <pre className='text-xs p-4 max-h-24 bg-white overflow-y-auto rounded shadow-inner'>
+      <pre className='text-xs p-4 max-h-24 bg-white overflow-y-auto rounded shadow-inner border'>
         {content}
       </pre>
     </div>

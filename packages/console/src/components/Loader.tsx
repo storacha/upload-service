@@ -6,4 +6,8 @@ export default function DefaultLoader({ className = '' }: { className?: string }
   )
 }
 
-export const TopLevelLoader = () => <DefaultLoader className='h-12 w-full mt-12 text-white' />
+export const TopLevelLoader = () => (
+  <div className='h-screen flex items-center justify-center'>
+    <DefaultLoader className='h-12 w-12 text-black' />
+  </div>
+)

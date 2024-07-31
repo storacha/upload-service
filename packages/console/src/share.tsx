@@ -1,13 +1,13 @@
 import { ChangeEvent, useState } from 'react'
 import { useW3 } from '@w3ui/react'
 import * as DID from '@ipld/dag-ucan/did'
-import { CarWriter } from '@ipld/car/writer'
-import { CarReader } from '@ipld/car/reader'
-import { importDAG } from '@ucanto/core/delegation'
+import { extract } from '@ucanto/core/delegation'
 import type { PropsWithChildren } from 'react'
 import type { Delegation } from '@ucanto/interface'
 import { SpacePreview } from './components/SpaceCreator'
 import { H2 } from '@/components/Text'
+import CopyButton from './components/CopyButton'
+import { ArrowDownOnSquareStackIcon, CloudArrowDownIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline'
 
 function Header(props: PropsWithChildren): JSX.Element {
   return (
@@ -15,33 +15,6 @@ function Header(props: PropsWithChildren): JSX.Element {
       {props.children}
     </H2>
   )
-}
-
-export async function toCarBlob(delegation: Delegation): Promise<Blob> {
-  const { writer, out } = CarWriter.create()
-  for (const block of delegation.export()) {
-    void writer.put(block)
-  }
-  void writer.close()
-
-  const carParts = []
-  for await (const chunk of out) {
-    carParts.push(chunk)
-  }
-  const car = new Blob(carParts, {
-    type: 'application/vnd.ipld.car',
-  })
-  return car
-}
-
-export async function toDelegation(car: Blob): Promise<Delegation> {
-  const blocks = []
-  const bytes = new Uint8Array(await car.arrayBuffer())
-  const reader = await CarReader.fromBytes(bytes)
-  for await (const block of reader.blocks()) {
-    blocks.push(block)
-  }
-  return importDAG(blocks)
 }
 
 export function ShareSpace (): JSX.Element {
@@ -64,10 +37,14 @@ export function ShareSpace (): JSX.Element {
       const delegation = await client.createDelegation(audience, ['*'], {
         expiration: Infinity,
       })
-      const blob = await toCarBlob(delegation)
+      const archiveRes = await delegation.archive()
+      if (archiveRes.error) {
+        throw new Error('failed to archive delegation', { cause: archiveRes.error })
+      }
+      const blob = new Blob([archiveRes.ok])
       const url = URL.createObjectURL(blob)
       setDownloadUrl(url)
-    } catch (err) {
+    } catch (err: any) {
       throw new Error(err.message ?? err, { cause: err })
     }
   }
@@ -90,12 +67,12 @@ export function ShareSpace (): JSX.Element {
   }
 
   return (
-    <div className='pt-4'>
-      <div className='max-w-xl'>
-        <Header>Share your space</Header>
+    <div className='max-w-4xl'>
+      <Header>Share your space</Header>
+      <div className='bg-white rounded-2xl border border-hot-red p-5 font-epilogue'>
         <p className='mb-4'>
           Ask your friend for their Decentralized Identifier (DID) and paste it
-          in below
+          below:
         </p>
         <form
           onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
@@ -103,7 +80,7 @@ export function ShareSpace (): JSX.Element {
           }}
         >
           <input
-            className='text-black py-2 px-2 rounded block w-full mb-4 border border-gray-800'
+            className='text-black py-2 px-2 rounded-xl block mb-4 border border-hot-red w-11/12'
             type='pattern'
             pattern='did:.+'
             placeholder='did:'
@@ -112,13 +89,12 @@ export function ShareSpace (): JSX.Element {
             required={true}
           />
           <a
-            className='inline-block bg-zinc-950 hover:outline text-white font-bold text-sm px-6 py-2 rounded-full whitespace-nowrap'
-            style={{ opacity: downloadUrl !== '' ? '1' : '0.2' }}
+            className={`inline-block bg-hot-red border border-hot-red ${downloadUrl ? 'hover:bg-white hover:text-hot-red' : 'opacity-20'} font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`}
             href={downloadUrl ?? ''}
             download={downloadName(downloadUrl !== '', value)}
             onClick={e => downloadUrl === '' && e.preventDefault()}
           >
-            Download UCAN
+            <CloudArrowDownIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Download UCAN
           </a>
         </form>
       </div>
@@ -135,7 +111,11 @@ export function ImportSpace () {
     if (!client || input === undefined) return
     let delegation
     try {
-      delegation = await toDelegation(input)
+      const res = await extract(new Uint8Array(await input.arrayBuffer()))
+      if (res.error) {
+        throw new Error('failed to extract delegation', { cause: res.error })
+      }
+      delegation = res.ok
     } catch (err) {
       console.log(err)
       return
@@ -148,35 +128,52 @@ export function ImportSpace () {
     }
   }
 
+  const body = `Please send me a UCAN delegation to access to your space. My agent DID is:\n\n${client?.did()}`
+    .replace(/ /g, '%20')
+    .replace(/\n/g, '%0A')
+
   return (
-    <>
-    <p className='mt-4 mb-8'>Send your DID to your friend, and click import to use the UCAN they send you.</p>
-    <div className='bg-opacity-50 bg-white font-mono text-sm py-5 px-5 rounded break-words max-w-4xl shadow-inner'>
-      {client?.did()}
-    </div>
-    <div className='mt-8'>
-      <label className='inline-block bg-zinc-950 hover:outline text-white font-bold text-sm px-6 py-2 rounded-full whitespace-nowrap cursor-pointer'>
-        Import UCAN
-        <input
-          type='file'
-          accept='.ucan,.car,application/vnd.ipfs.car'
-          className='hidden'
-          onChange={(e: ChangeEvent<HTMLInputElement>) => {
-            void onImport(e)
-          }}
-        />
-      </label>
-    </div>
-    {proof !== undefined && (
-      <div className='mt-4 pt-4'>
-        <Header>Added</Header>
-        <div className='max-w-3xl border border-gray-700 shadow-xl'>
-          {proof.capabilities.map((cap, i) => (
-            <SpacePreview did={cap.with} name={proof.facts.at(i)?.space.name} key={cap.with} />
-          ))}
+    <div className='border border-hot-red rounded-2xl bg-white p-5 max-w-4xl'>
+      <ol className='list-decimal ml-4 text-hot-red'>
+        <li className='mt-4 mb-8'>
+          Send your DID to your friend.
+          <div className='font-mono text-sm text-black break-words my-4'>
+            {client?.did()}
+          </div>
+          <CopyButton text={client?.did() ?? ''}>Copy DID</CopyButton>
+          <a href={`mailto:?subject=Space%20Access%20Request&body=${body}`} className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm ml-2 px-6 py-2 rounded-full whitespace-nowrap`}>
+            <PaperAirplaneIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Email DID
+          </a>
+        </li>
+        <li className='mt-4 my-8'>
+          Import the UCAN they send you.
+          <p className='text-black my-2'>Instruct your friend to use the web console or CLI to create a UCAN, delegating your DID acces to their space.</p>
+          <div className='mt-4'>
+            <label className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap cursor-pointer'>
+              <ArrowDownOnSquareStackIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} />
+              Import UCAN
+              <input
+                type='file'
+                accept='.ucan,.car,application/vnd.ipfs.car'
+                className='hidden'
+                onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                  void onImport(e)
+                }}
+              />
+            </label>
+          </div>
+        </li>
+      </ol>
+      {proof && (
+        <div className='mt-4 pt-4'>
+          <Header>Added</Header>
+          <div className='max-w-3xl border border-hot-red rounded-2xl'>
+            {proof.capabilities.map((cap, i) => (
+              <SpacePreview did={cap.with} name={proof.facts.at(i)?.space.name} key={cap.with} />
+            ))}
+          </div>
         </div>
-      </div>
-    )}
-  </>
+      )}
+    </div>
   )
 }

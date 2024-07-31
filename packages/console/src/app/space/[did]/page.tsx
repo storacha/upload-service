@@ -5,6 +5,7 @@ import { useW3, UnknownLink, UploadListSuccess } from '@w3ui/react'
 import useSWR from 'swr'
 import { useRouter, usePathname } from 'next/navigation'
 import { createUploadsListKey } from '@/cache'
+import { Breadcrumbs } from '@/components/Breadcrumbs'
 
 const pageSize = 15
 
@@ -57,15 +58,18 @@ export default function Page ({ params, searchParams }: PageProps): JSX.Element 
   const handleRefresh = () => mutate()
 
   return (
-    <UploadsList
-      space={space}
-      uploads={uploads?.results ?? []}
-      loading={isLoading}
-      validating={isValidating}
-      onSelect={handleSelect}
-      onNext={handleNext}
-      onPrev={handlePrev}
-      onRefresh={handleRefresh}
-    />
+    <>
+      <Breadcrumbs space={space.did()} />
+      <UploadsList
+        space={space}
+        uploads={uploads?.results ?? []}
+        loading={isLoading}
+        validating={isValidating}
+        onSelect={handleSelect}
+        onNext={handleNext}
+        onPrev={handlePrev}
+        onRefresh={handleRefresh}
+      />
+    </>
   )
 }

@@ -13,8 +13,9 @@ import {
   useUploader
 } from '@w3ui/react'
 import { gatewayHost } from '../components/services'
-import { ChangeEvent, useCallback, useState } from 'react'
+import { useState } from 'react'
 import { RadioGroup } from '@headlessui/react'
+import { H2 } from './Text'
 
 function StatusLoader ({ progressStatus }: { progressStatus: ProgressStatus }) {
   const { total, loaded, lengthComputable } = progressStatus
@@ -141,57 +142,62 @@ const UploaderForm = (): JSX.Element => {
   }
   const hasFile = file !== undefined
   return (
-    <>
+    <div className='max-w-4xl border border-hot-red bg-white p-5 rounded-2xl'>
       <W3Uploader.Form>
-        <RadioGroup value={uploadType} onChange={changeUploadType} className='flex flex-row items-center text-center my-2'>
+        <H2>Type</H2>
+        <RadioGroup value={uploadType} onChange={changeUploadType} className='flex flex-row items-center font-epilogue mb-5'>
           <RadioGroup.Option value={UploadType.File}>
             {({ checked }) => (
-              <div className={`${checked ? 'bg-blue-200' : ''} w-24 border p-2 rounded-l`}>File</div>
+              <label className='mr-4'><input type='radio' checked={checked} /> File</label>
             )}
           </RadioGroup.Option>
           <RadioGroup.Option value={UploadType.Directory}>
             {({ checked }) => (
-              <div className={`${checked ? 'bg-blue-200' : ''} w-24 border p-2`}>Directory</div>
+              <label className='mr-4'><input type='radio' checked={checked} /> Directory</label>
             )}
           </RadioGroup.Option>
           <RadioGroup.Option value={UploadType.CAR}>
             {({ checked }) => (
-              <div className={`${checked ? 'bg-blue-200' : ''} w-24 border p-2 rounded-r`}>CAR</div>
+              <label className='mr-4'><input type='radio' checked={checked} /> CAR</label>
             )}
           </RadioGroup.Option>
         </RadioGroup>
-        {uploadType === UploadType.File && (
-          <label className='flex flex-row items-center mb-1'>
-            <WrapInDirectoryCheckbox />
-            <span className='text-sm ml-1'>Wrap In Directory</span>
-          </label>
-        )}
-        <div className={`relative shadow h-52 p-8 rounded-md bg-white/5 hover:bg-white/20 border-2 border-dotted border-zinc-950 flex flex-col justify-center items-center text-center`}>
-          {hasFile ? '' : <span className='mb-5'><img src='/icon-tray.svg' /></span>}
+        <div className={`relative h-52 mb-5 p-8 rounded-md bg-white/5 hover:border-hot-red border-2 border-dashed border-black flex flex-col justify-center items-center text-center`}>
+          {hasFile ? '' : <span className='mb-5 text-hot-red'><img src='/icon-tray.svg' /></span>}
           <label className={`${hasFile ? 'hidden' : 'block h-px w-px overflow-hidden absolute whitespace-nowrap'}`}>File:</label>
           <W3Uploader.Input className={`${hasFile ? 'hidden' : 'block absolute inset-0 cursor-pointer w-full opacity-0'}`} allowDirectory={allowDirectory} />
           <UploaderContents />
-          {hasFile ? '' : <span>{uploadPrompt(uploadType)}</span>}
+          {hasFile ? '' : <span className='font-epilogue'>{uploadPrompt(uploadType)}</span>}
         </div>
+        {uploadType === UploadType.File && (
+          <>
+            <H2>Options</H2>
+            <label className='flex flex-row items-center mb-5'>
+              <WrapInDirectoryCheckbox />
+              <span className='text-sm ml-1'>Wrap In Directory</span>
+            </label>
+          </>
+        )}
       </W3Uploader.Form>
+      <H2>Explain</H2>
       <div className='flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4 mt-4 text-center lg:text-left'>
-        <div className=''>
-          <h4 className='text-sm mb-2'>🌎&nbsp;&nbsp;Public Data</h4>
+        <div className='w-1/2'>
+          <h4 className='font-epilogue text-sm mb-2'>🌎&nbsp;&nbsp;Public Data</h4>
           <p className='text-xs'>
-            All data uploaded to w3up is available to anyone who requests it using the correct CID.
-            Do not store any private or sensitive information in an unencrypted form using w3up.
+            All data uploaded here will be available to anyone who requests it using the correct CID.
+            Do not upload any private or sensitive information in an unencrypted form.
           </p>
         </div>
-        <div className=''>
-          <h4 className='text-sm mb-2'>♾️&nbsp;&nbsp;Permanent Data</h4>
+        <div className='w-1/2'>
+          <h4 className='font-epilogue text-sm mb-2'>♾️&nbsp;&nbsp;Permanent Data</h4>
           <p className='text-xs'>
-            Removing files from w3up will remove them from the file listing for your account, but that
-            doesn’t prevent nodes on the decentralized storage network from retaining copies of the data
-            indefinitely. Do not use w3up for data that may need to be permanently deleted in the future.
+            Removing files will remove them from the file listing for your account, but that
+            doesn't prevent nodes on the decentralized storage network from retaining copies of the data
+            indefinitely. Do not use this service for data that may need to be permanently deleted in the future.
           </p>
         </div>
       </div>
-    </>
+    </div>
   )
 }
 
@@ -223,12 +229,12 @@ const UploaderContents = (): JSX.Element => {
       ? (
         <>
           <div className='flex flex-row'>
-            <div className='w-12 h-12 py-0.5 flex flex-col justify-center items-center bg-black text-xs uppercase text-center text-ellipsis rounded-xs mr-3' title={file.type}>
+            <div className='w-12 h-12 py-0.5 flex flex-col justify-center items-center bg-hot-red-light text-black text-xs uppercase text-center text-ellipsis rounded-xs mr-4' title={file.type}>
               {pickFileIconLabel(file)}
             </div>
             <div className='flex flex-col justify-around'>
               <span className='text-sm'>{file.name}</span>
-              <span className='text-xs text-white/75 font-mono'>
+              <span className='text-xs opacity-50 font-mono'>
                 {humanFileSize(file.size)}
               </span>
             </div>

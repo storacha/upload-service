@@ -6,11 +6,12 @@ import Loader from '../components/Loader'
 import { DID, DIDKey } from '@ucanto/interface'
 import { DidIcon } from './DidIcon'
 import Link from 'next/link'
+import { FolderPlusIcon } from '@heroicons/react/24/outline'
 
 export function SpaceCreatorCreating (): JSX.Element {
   return (
     <div className='flex flex-col items-center space-y-4'>
-      <h5>Creating Space...</h5>
+      <h5 className='font-epilogue'>Creating Space...</h5>
       <Loader className='w-6' />
     </div>
   )
@@ -79,7 +80,9 @@ export function SpaceCreatorForm ({
   if (created && space) {
     return (
       <div className={className}>
-        <SpacePreview did={space.did()} name={space.name} />
+        <div className='max-w-3xl border border-hot-red rounded-2xl'>
+          <SpacePreview did={space.did()} name={space.name} />
+        </div>
       </div>
     )
   }
@@ -95,8 +98,10 @@ export function SpaceCreatorForm ({
   return (
     <div className={className}>
       <form className='' onSubmit={(e: React.FormEvent<HTMLFormElement>) => { void onSubmit(e) }}>
+        <label className='block mb-2 uppercase text-xs text-hot-red font-epilogue m-1' htmlFor='space-name'>Name</label>
         <input
-          className='text-black py-2 px-2 rounded block w-full mb-4 border border-gray-800'
+          id='space-name'
+          className='text-black py-2 px-2 rounded-xl block mb-4 border border-hot-red w-80'
           placeholder='Name'
           value={name}
           onChange={(e: ChangeEvent<HTMLInputElement>) => {
@@ -104,7 +109,9 @@ export function SpaceCreatorForm ({
           }}
           required={true}
         />
-        <button type='submit' className='inline-block bg-zinc-950 hover:outline text-white font-bold text-sm px-6 py-2 rounded-full whitespace-nowrap'>Create</button>
+        <button type='submit' className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`}>
+          <FolderPlusIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Create
+        </button>
       </form>
     </div>
   )
@@ -140,13 +147,13 @@ export function SpaceCreator ({
 
 export function SpacePreview ({ did, name }: { did: DIDKey, name?: string }) {
   return (
-    <figure className='p-4 flex flex-row items-start gap-2 bg-zinc-950/10 hover:bg-white/10 rounded'>
+    <figure className='p-4 flex flex-row items-start gap-2 rounded'>
       <Link href={`/space/${did}`} className='block'>
         <DidIcon did={did} />
       </Link>
       <figcaption className='grow'>
         <Link href={`/space/${did}`} className='block'>
-          <span className='block text-lg font-semibold leading-5 mb-1'>
+          <span className='font-epilogue text-lg text-hot-red font-semibold leading-5 m-0'>
             { name ?? 'Untitled'}
           </span>
           <span className='block font-mono text-xs truncate'>

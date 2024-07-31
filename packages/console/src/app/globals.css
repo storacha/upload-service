@@ -18,7 +18,11 @@
   font-style: normal;
 }
 .bg-racha-fire {
-  background: var(--hot-red-light) url("/racha-fire.jpg") bottom left;
+  background: var(--hot-red-light) url("/racha-fire.png") bottom left;
+  background-size: cover;
+}
+.bg-racha-fire\/50 {
+  background: transparent url("/racha-fire-opacity-50.png") bottom left;
   background-size: cover;
 }
 .bg-hot-red,

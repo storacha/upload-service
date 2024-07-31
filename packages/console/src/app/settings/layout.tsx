@@ -5,13 +5,7 @@ import { ArrowDownOnSquareStackIcon, QueueListIcon, FolderPlusIcon } from '@hero
 
 export const runtime = 'edge'
 
-interface LayoutProps extends PropsWithChildren {
-  params: {
-    did: string
-  }
-}
-
-export default function Layout ({children}: LayoutProps): ReactNode {
+export default function Layout ({ children }: PropsWithChildren): ReactNode {
   return (
     <SidebarLayout>
       {children}
@@ -19,9 +13,7 @@ export default function Layout ({children}: LayoutProps): ReactNode {
   )
 }
 
-
-
-export function SpacesNav () {
+export function SettingsNav () {
   return (
     <div className='lg:float-right'>
       <Nav>

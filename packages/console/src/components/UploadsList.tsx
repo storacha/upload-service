@@ -16,14 +16,14 @@ interface UploadsProps {
 function Uploads ({ uploads, loading, validating, onSelect, onNext, onPrev, onRefresh }: UploadsProps): JSX.Element {
   return uploads === undefined || uploads.length === 0
     ? (
-      <>
+      <div className='max-w-4xl'>
         {loading ? null : <div className='text-hot-red text-center mb-5'>No uploads</div>}
         <nav className='flex flex-row justify-center'>
           <button onClick={e => { e.preventDefault(); onRefresh() }} className='inline-block bg-white border border-hot-red hover:outline hover:bg-hot-red hover:text-white font-epilogue text-hot-red uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap'>
             <ArrowPathIcon className={`h-5 w-5  ${loading ? 'animate-spin' : ''} inline-block mr-1 align-middle`}/> {loading ? 'Loading' : 'Reload'}
           </button>
         </nav>
-      </>
+      </div>
       )
     : (
       <div className='max-w-4xl'>
@@ -37,14 +37,14 @@ function Uploads ({ uploads, loading, validating, onSelect, onNext, onPrev, onRe
             </thead>
             <tbody>
               {uploads.map((upload, i) => (
-                <tr key={upload.root.toString()} className={`cursor-pointer border-t border-hot-red hover:bg-hot-yellow-light ${i % 2 == 0 ? 'bg-white' : 'bg-white'}`}>
+                <tr key={upload.root.toString()} className={`cursor-pointer border-t border-hot-red hover:bg-hot-yellow-light bg-white`}>
                   <td className='w-full'>
-                    <a href='#' className='block px-4 py-2 font-mono text-hot-red text-xs overflow-hidden no-wrap text-ellipsis' onClick={e => { e.preventDefault(); onSelect(upload.root) }}>
+                    <a href='#' className='block px-4 py-2 font-mono text-xs overflow-hidden no-wrap text-ellipsis' onClick={e => { e.preventDefault(); onSelect(upload.root) }}>
                       {upload.root.toString()}
                     </a>
                   </td>
                   <td title={upload.updatedAt}>
-                    <a href={`./root/${upload.root.toString()}`} className='block p-2 text-hot-red text-xs text-left tabular-nums overflow-hidden no-wrap text-ellipsis' onClick={e => { e.preventDefault(); onSelect(upload.root) }}>
+                    <a href={`./root/${upload.root.toString()}`} className='block p-2 text-xs text-left tabular-nums overflow-hidden no-wrap text-ellipsis' onClick={e => { e.preventDefault(); onSelect(upload.root) }}>
                       {new Date(upload.updatedAt).toLocaleString()}
                     </a>
                   </td>

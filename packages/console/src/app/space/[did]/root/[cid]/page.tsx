@@ -118,8 +118,8 @@ function RemoveConfirmModal ({ isOpen, root, shards, onConfirm, onCancel }: Remo
   return (
     <Dialog open={isOpen} onClose={() => { setConfirmed(false); onCancel() }} className='relative z-50'>
       <div className='fixed inset-0 flex w-screen items-center justify-center bg-black/70 text-white' aria-hidden='true'>
-        <Dialog.Panel className='bg-hot-red p-10 shadow-lg rounded-2xl'>
-          <Dialog.Title className='text-lg font-epilogue uppercase text-center my-3'>
+        <Dialog.Panel className='bg-hot-red p-10 shadow-lg rounded-2xl font-epilogue'>
+          <Dialog.Title className='text-lg uppercase text-center my-3'>
             <ExclamationTriangleIcon className='h-10 w-10 inline-block' /><br/>
             Confirm remove
           </Dialog.Title>
