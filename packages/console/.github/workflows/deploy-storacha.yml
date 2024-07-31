@@ -2,7 +2,7 @@ name: Deploy Storacha
 on:
   push:
     branches:
-      - feat/storacha-skin
+      - 'feat/storacha-skin'
 jobs:
   release:
     name: Release
@@ -12,7 +12,7 @@ jobs:
       url: https://console.storacha.network
     steps:
       - uses: actions/checkout@v3
-        ref: feat/storacha-skin
+        ref: 'feat/storacha-skin'
       - uses: ./.github/actions/pnpm
       - name: create .env from .env.tpl setting env variables used by `pnpm run pages:build`
         run: |
