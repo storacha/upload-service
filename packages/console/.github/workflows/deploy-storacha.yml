@@ -1,0 +1,47 @@
+name: Deploy
+on:
+  push:
+    branches:
+      - feat/storacha-theme
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://console.storacha.network
+    steps:
+      - uses: actions/checkout@v3
+        ref: feat/storacha-theme
+      - uses: ./.github/actions/pnpm
+      - name: create .env from .env.tpl setting env variables used by `pnpm run pages:build`
+        run: |
+          # set env vars from template
+
+          # omit these because they are added manually in the next step          
+          function excludeDefaultServiceVariables() {
+            cat - | grep -v NEXT_PUBLIC_W3UP_SERVICE_ | grep -v NEXT_PUBLIC_STRIPE
+          }
+
+          # set .env from .env.tpl with exclusions
+          cat .env.tpl | excludeDefaultServiceVariables > .env
+
+          # add vars configuring console frontend to use staging w3up as backend
+          echo "NEXT_PUBLIC_W3UP_SERVICE_DID=did:web:web3.storage" >> .env
+          echo "NEXT_PUBLIC_W3UP_SERVICE_URL=https://up.web3.storage" >> .env
+          echo "NEXT_PUBLIC_W3UP_PROVIDER=did:web:web3.storage" >> .env
+          echo "NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID=prctbl_1OCJ1qF6A5ufQX5vM5DWg4rA" >> .env
+          echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_51LO87hF6A5ufQX5vQTO5BHyz8y9ybJp4kg1GsBjYuqwluuwtQTkbeZzkoQweFQDlv7JaGjuIdUWAyuwXp3tmCfsM005lJK9aS8" >> .env
+          echo "NEXT_PUBLIC_STRIPE_CUSTOMER_PORTAL_LINK=https://billing.stripe.com/p/login/cN22aA62U6bO1sA9AA" >> .env
+      - run: pnpm pages:build
+        # as long as this uses https://github.com/cloudflare/next-on-pages/blob/dc529d7efa8f8568ea8f71b5cdcf78df89be6c12/packages/next-on-pages/bin/index.js,
+        # env vars won't get passed through to wrangler, so if wrangler will need them, write them to .env like the previous step
+        env: {}
+      - name: Deploy preview build to Cloudflare Pages
+        uses: mathiasvr/command-output@v1.1.0
+        id: cloudflare
+        with:
+          run: npx wrangler pages deploy --project-name console-storacha --branch "feat/storacha-theme" --commit-hash "$GITHUB_SHA" .vercel/output/static
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
