@@ -5,7 +5,7 @@ import type {
   CARMetadata,
   AnyLink
 } from '@w3ui/react'
-import { ArrowPathIcon } from '@heroicons/react/24/outline'
+import { ArrowPathIcon, CloudArrowUpIcon } from '@heroicons/react/24/outline'
 import {
   UploadStatus,
   Uploader as W3Uploader,
@@ -28,13 +28,13 @@ function StatusLoader ({ progressStatus }: { progressStatus: ProgressStatus }) {
       </div>
     )
   } else {
-    return <ArrowPathIcon className='animate-spin h-4 w-4' />
+    return <ArrowPathIcon className='animate-spin h-5 w-5' />
   }
 }
 
 function Loader ({ uploadProgress }: { uploadProgress: UploadProgress }): JSX.Element {
   return (
-    <div className='flex flex-col'>
+    <div className='flex flex-col my-2'>
       {Object.values(uploadProgress).map(
         status => <StatusLoader progressStatus={status} key={status.url} />
       )}
@@ -52,7 +52,7 @@ export const Uploading = ({
   uploadProgress: UploadProgress
 }): JSX.Element => (
   <div className='flex flex-col items-center w-full'>
-    <h1 className='font-bold text-sm uppercase text-zinc-950'>Uploading {file?.name}</h1>
+    <H2>Uploading {file?.name}</H2>
     <Loader uploadProgress={uploadProgress} />
     {storedDAGShards?.map(({ cid, size }) => (
       <p className='text-xs max-w-full overflow-hidden text-ellipsis' key={cid.toString()}>
@@ -82,21 +82,21 @@ export const Done = ({ dataCID }: DoneProps): JSX.Element => {
   const cid: string = dataCID?.toString() ?? ''
   return (
     <div className='flex flex-col items-center w-full'>
-      <h1 className='font-bold text-sm uppercase text-zinc-950 mb-1 '>Uploaded</h1>
+      <H2>Uploaded</H2>
       <a
         className='font-mono text-xs max-w-full overflow-hidden no-wrap text-ellipsis'
         href={`https://${cid}.ipfs.${gatewayHost}/`}
       >
         {cid}
       </a>
-      <div className='p-4'>
+      <div className='my-4'>
         <button
-          className='w3ui-button'
+          className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap'
           onClick={() => {
             setFile(undefined)
           }}
         >
-          Add More
+          Upload Another
         </button>
       </div>
     </div>
@@ -148,21 +148,27 @@ const UploaderForm = (): JSX.Element => {
         <RadioGroup value={uploadType} onChange={changeUploadType} className='flex flex-row items-center font-epilogue mb-5'>
           <RadioGroup.Option value={UploadType.File}>
             {({ checked }) => (
-              <label className='mr-4'><input type='radio' checked={checked} /> File</label>
+              <label className='mr-4'>
+                <input type='radio' checked={checked} /> File
+              </label>
             )}
           </RadioGroup.Option>
           <RadioGroup.Option value={UploadType.Directory}>
             {({ checked }) => (
-              <label className='mr-4'><input type='radio' checked={checked} /> Directory</label>
+              <label className='mr-4'>
+                <input type='radio' checked={checked} /> Directory
+              </label>
             )}
           </RadioGroup.Option>
           <RadioGroup.Option value={UploadType.CAR}>
             {({ checked }) => (
-              <label className='mr-4'><input type='radio' checked={checked} /> CAR</label>
+              <label className='mr-4'>
+                <input type='radio' checked={checked} /> CAR
+              </label>
             )}
           </RadioGroup.Option>
         </RadioGroup>
-        <div className={`relative h-52 mb-5 p-8 rounded-md bg-white/5 hover:border-hot-red border-2 border-dashed border-black flex flex-col justify-center items-center text-center`}>
+        <div className={`relative h-80 mb-5 p-8 rounded-md bg-white/5 hover:border-hot-red border-2 border-dashed border-black flex flex-col justify-center items-center text-center`}>
           {hasFile ? '' : <span className='mb-5 text-hot-red'><img src='/icon-tray.svg' /></span>}
           <label className={`${hasFile ? 'hidden' : 'block h-px w-px overflow-hidden absolute whitespace-nowrap'}`}>File:</label>
           <W3Uploader.Input className={`${hasFile ? 'hidden' : 'block absolute inset-0 cursor-pointer w-full opacity-0'}`} allowDirectory={allowDirectory} />
@@ -240,12 +246,8 @@ const UploaderContents = (): JSX.Element => {
             </div>
           </div>
           <div className='p-4'>
-            <button
-              type='submit'
-              className='w3ui-button'
-              disabled={file === undefined}
-            >
-              Upload
+            <button type='submit' className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap' disabled={file === undefined}>
+              <CloudArrowUpIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Start Upload
             </button>
           </div>
         </>

@@ -1,6 +1,7 @@
 import React from 'react'
 import { ChevronLeftIcon, ChevronRightIcon, ArrowPathIcon } from '@heroicons/react/20/solid'
 import { Space, UnknownLink, UploadListSuccess } from '@w3ui/react'
+import Link from 'next/link'
 
 interface UploadsProps {
   space: Space
@@ -13,11 +14,11 @@ interface UploadsProps {
   onRefresh: () => void
 }
 
-function Uploads ({ uploads, loading, validating, onSelect, onNext, onPrev, onRefresh }: UploadsProps): JSX.Element {
+function Uploads ({ space, uploads, loading, validating, onSelect, onNext, onPrev, onRefresh }: UploadsProps): JSX.Element {
   return uploads === undefined || uploads.length === 0
     ? (
       <div className='max-w-4xl'>
-        {loading ? null : <div className='text-hot-red text-center mb-5'>No uploads</div>}
+        {loading ? null : <div className='text-hot-red text-center mb-5'>No uploads. <Link href={`/space/${space.did()}/upload`} className='underline'>Upload a file.</Link></div>}
         <nav className='flex flex-row justify-center'>
           <button onClick={e => { e.preventDefault(); onRefresh() }} className='inline-block bg-white border border-hot-red hover:outline hover:bg-hot-red hover:text-white font-epilogue text-hot-red uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap'>
             <ArrowPathIcon className={`h-5 w-5  ${loading ? 'animate-spin' : ''} inline-block mr-1 align-middle`}/> {loading ? 'Loading' : 'Reload'}
