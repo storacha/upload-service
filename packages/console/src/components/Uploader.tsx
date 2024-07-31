@@ -198,7 +198,7 @@ const UploaderForm = (): JSX.Element => {
           <h4 className='font-epilogue text-sm mb-2'>♾️&nbsp;&nbsp;Permanent Data</h4>
           <p className='text-xs'>
             Removing files will remove them from the file listing for your account, but that
-            doesn't prevent nodes on the decentralized storage network from retaining copies of the data
+            doesn&apos;t prevent nodes on the decentralized storage network from retaining copies of the data
             indefinitely. Do not use this service for data that may need to be permanently deleted in the future.
           </p>
         </div>
