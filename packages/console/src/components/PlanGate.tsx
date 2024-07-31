@@ -22,8 +22,8 @@ export function PlanGate ({ children }: { children: ReactNode }): ReactNode {
           <div className='px-6 py-6 lg:px-24'>
             <h1 className="my-4 font-bold">Welcome {accounts[0]?.toEmail()}!</h1>
             <p className='my-4'>
-              To get started with w3up you&apos;ll need to sign up for a subscription. If you choose
-              the free plan we won&apos;t charge your credit card, but we do need a card on file
+              To get started you&apos;ll need to sign up for a subscription. If you choose
+              the starter plan we won&apos;t charge your credit card, but we do need a card on file
               before we will store your bits.
             </p>
             <p className='my-4'>
