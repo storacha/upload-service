@@ -12,7 +12,8 @@ jobs:
       url: https://console.storacha.network
     steps:
       - uses: actions/checkout@v3
-        ref: 'feat/storacha-skin'
+        with:
+          ref: 'feat/storacha-skin'
       - uses: ./.github/actions/pnpm
       - name: create .env from .env.tpl setting env variables used by `pnpm run pages:build`
         run: |
