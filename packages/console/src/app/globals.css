@@ -19,11 +19,15 @@
 }
 .bg-racha-fire {
   background: var(--hot-red-light) url("/racha-fire.png") bottom left;
-  background-size: cover;
+  background-size: 100% auto;
+  background-position: bottom;
+  background-repeat: no-repeat;
 }
 .bg-racha-fire\/50 {
   background: transparent url("/racha-fire-opacity-50.png") bottom left;
-  background-size: cover;
+  background-size: 100% auto;
+  background-position: bottom;
+  background-repeat: no-repeat;
 }
 .bg-hot-red,
 .hover\:bg-hot-red:hover {
@@ -88,7 +92,7 @@
 }
 
 .authenticator {
-  @apply bg-racha-fire w-full h-screen flex flex-col justify-center items-center;
+  @apply bg-racha-fire w-full min-h-screen flex flex-col justify-center items-center py-4;
 }
 
 @keyframes bgPosDrift {

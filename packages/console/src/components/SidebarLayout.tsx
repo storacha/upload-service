@@ -36,7 +36,7 @@ function Sidebar ({ sidebar = <div></div> }: SidebarComponentProps): JSX.Element
     router.push(`/space/${s.did()}`)
   }
   return (
-    <nav className='flex-none w-64 bg-hot-yellow text-hot-red px-5 pb-5 border-r border-hot-red h-screen'>
+    <nav className='flex-none w-64 bg-hot-yellow text-hot-red px-5 pb-5 border-r border-hot-red min-h-screen'>
       <div className='flex flex-col justify-between h-full'>
         <div>
           <header className='opacity-0 lg:opacity-100 my-8'>
@@ -77,7 +77,7 @@ export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.
       <AuthenticationEnsurer>
         <MaybePlanGate>
           <SpaceEnsurer>
-            <div className='flex min-h-full w-full text-white'>
+            <div className='flex min-h-screen w-full text-white'>
               {/* dialog sidebar for narrow browsers */}
               <Transition.Root show={sidebarOpen} >
                 <Dialog onClose={() => setSidebarOpen(false)} as='div' className='relative z-50'>
@@ -112,10 +112,10 @@ export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.
               <div className='hidden lg:block'>
                 <Sidebar />
               </div>
-              <div className='bg-racha-fire/50 w-full h-screen overflow-scroll text-white'>
+              <div className='bg-racha-fire/50 w-full'>
                 {/* top nav bar for narrow browsers, mainly to have a place to put the hamburger */}
                 <div className='lg:hidden flex justify-between pt-4 px-4'>
-                  <Bars3Icon className='w-6 h-6' onClick={() => setSidebarOpen(true)} />
+                  <Bars3Icon className='text-hot-red w-6 h-6' onClick={() => setSidebarOpen(true)} />
                   <Logo className='w-full' />
                 </div>
                 <main className='grow text-black p-12'>
