@@ -20,7 +20,7 @@ export function PlanGate ({ children }: { children: ReactNode }): ReactNode {
         <div className='my-6'><Logo /></div>
         <div className="max-w-screen-lg font-epilogue text-black text-center bg-white border border-hot-red rounded-2xl overflow-hidden p5 mx-4 mb-4">
           <div className='px-6 py-6 lg:px-24'>
-            <h1 className="my-4 font-bold">Welcome {accounts[0]?.toEmail()}!</h1>
+            <h1 className="my-4 font-bold">Welcome, {accounts[0]?.toEmail()}!</h1>
             <p className='my-4'>
               To get started you&apos;ll need to sign up for a subscription. If you choose
               the starter plan we won&apos;t charge your credit card, but we do need a card on file
