@@ -2,10 +2,10 @@ name: Deploy
 on:
   push:
     branches:
-      - main
+      - old-main
   pull_request:
     branches:
-      - main
+      - old-main
 jobs:
   test:
     uses: ./.github/workflows/test.yml
@@ -18,8 +18,8 @@ jobs:
     permissions:
       pull-requests: write
     environment:
-      name: ${{ (github.ref_name == 'main') && 'staging' || format('preview-{0}', github.ref_name) }}
-      url: ${{ (github.ref_name == 'main') && 'https://staging.console.web3.storage/' || steps.cloudflare_url.outputs.stdout }}
+      name: ${{ (github.ref_name == 'old-main') && 'staging' || format('preview-{0}', github.ref_name) }}
+      url: ${{ (github.ref_name == 'old-main') && 'https://staging.console.web3.storage/' || steps.cloudflare_url.outputs.stdout }}
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/pnpm
@@ -53,7 +53,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CLOUDFLARE_PAGES_PROJECT_NAME: ${{ (github.ref_name == 'main') && 'console-web3-storage-staging' || 'console-web3-storage-preview' }}
+          CLOUDFLARE_PAGES_PROJECT_NAME: ${{ (github.ref_name == 'old-main') && 'console-web3-storage-staging' || 'console-web3-storage-preview' }}
       - name: Find Cloudflare Pages preview URL
         uses: mathiasvr/command-output@v1.1.0
         id: cloudflare_url
@@ -80,7 +80,7 @@ jobs:
             [build log](/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
 
   changelog:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/old-main'
     name: Changelog
     runs-on: ubuntu-latest
     permissions:
@@ -99,7 +99,7 @@ jobs:
 
   release:
     name: Release
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changelog.outputs.releases_created) || inputs.force_release
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/old-main' && needs.changelog.outputs.releases_created) || inputs.force_release
     runs-on: ubuntu-latest
     environment:
       name: production
@@ -137,7 +137,7 @@ jobs:
         uses: mathiasvr/command-output@v1.1.0
         id: cloudflare
         with:
-          run: npx wrangler pages deploy --project-name console-web3-storage --branch "main" --commit-hash "$GITHUB_SHA" .vercel/output/static
+          run: npx wrangler pages deploy --project-name console-web3-storage --branch "old-main" --commit-hash "$GITHUB_SHA" .vercel/output/static
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
