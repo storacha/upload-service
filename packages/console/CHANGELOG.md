@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.10.0](https://github.com/storacha/console/compare/w3console-v1.9.1...w3console-v1.10.0) (2024-09-20)
+
+
+### Features
+
+* change email ([7c7beb7](https://github.com/storacha/console/commit/7c7beb7f9f78e25076bf089878d5e058cd52f680))
+* **copy:** Add missing comma ([#115](https://github.com/storacha/console/issues/115)) ([97f1ac3](https://github.com/storacha/console/commit/97f1ac3c455a97df00db2f512a665cd28b241a11))
+* Improved layout styling, and other tales ([#114](https://github.com/storacha/console/issues/114)) ([d0a2208](https://github.com/storacha/console/commit/d0a2208d04432b6f3537f2197238ac10bcc5148a))
+* more styles ([d4e8efa](https://github.com/storacha/console/commit/d4e8efa489974b4fc3603347142e474ac13c60bc))
+* styles for upload page ([6c54798](https://github.com/storacha/console/commit/6c54798b3850e1a7211313012aff7e84d4236b39))
+* trigger deploy ([a8f1089](https://github.com/storacha/console/commit/a8f108939fc8e9b399b58525fb5971b70071642f))
+* wording ([ffe9b1b](https://github.com/storacha/console/commit/ffe9b1b65ceb24ce7b18bfbf1e7a9a5a79868007))
+
+
+### Bug Fixes
+
+* apostrophe ([681b9b8](https://github.com/storacha/console/commit/681b9b8430181ef96544848e87d67481aa625d1a))
+* check ref ([f406ac9](https://github.com/storacha/console/commit/f406ac985419824308b561a39430a4a38c5e43c1))
+* deploy-storacha.yml needs to use the new main branch ([#122](https://github.com/storacha/console/issues/122)) ([65644c8](https://github.com/storacha/console/commit/65644c851272d5920bf1ed22fc6ff4a420f54242))
+* deploy.yml needs to use the old-main branch ([#120](https://github.com/storacha/console/issues/120)) ([713af05](https://github.com/storacha/console/commit/713af05572387fcf12cc34cec0dd1db4df0061ff))
+* quotes ([bcf209b](https://github.com/storacha/console/commit/bcf209bf830a83b71f0f3f9f61919832a3768057))
+* **space-creator:** check provision result before proceeding ([#119](https://github.com/storacha/console/issues/119)) ([5ea5940](https://github.com/storacha/console/commit/5ea59400f274f294e7ffb1aa99efab18ff099a9e))
+* use correct branch name ([f81e090](https://github.com/storacha/console/commit/f81e0907fcbed54323995acbb9c13f2c151f6db7))
+* use main branch ([698974b](https://github.com/storacha/console/commit/698974b36ff3c4cb0275a25aec4384fecb2723d2))
+
+
+### Other Changes
+
+* add storacha deploy action ([39345e6](https://github.com/storacha/console/commit/39345e60e639fd11eb9af44766d16fc71ed73945))
+* Set `packageManager` ([#117](https://github.com/storacha/console/issues/117)) ([c9436fc](https://github.com/storacha/console/commit/c9436fc323799fe1d5e3d0ced2a8789d3d7001f5))
+* update deploy name ([f7c1340](https://github.com/storacha/console/commit/f7c1340858e449e49237c7c40b85cebfa9721a01))
+
 ## [1.9.1](https://github.com/storacha-network/console/compare/w3console-v1.9.0...w3console-v1.9.1) (2024-07-15)
 
 
