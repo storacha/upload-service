@@ -36,7 +36,6 @@ function isEmail(value: string): boolean {
 export function ShareSpace({ spaceDID }: { spaceDID: SpaceDID }): JSX.Element {
   const [{ client }] = useW3()
   const [value, setValue] = useState('')
-  const [downloadUrl, setDownloadUrl] = useState('')
   const [sharedEmails, setSharedEmails] = useState<{ email: string, capabilities: string[] }[]>([])
 
   const updateSharedEmails = (delegations: { email: string, capabilities: string[] }[]) => {
@@ -125,41 +124,42 @@ export function ShareSpace({ spaceDID }: { spaceDID: SpaceDID }): JSX.Element {
     }
   }
 
-  async function makeDownloadLink(input: string): Promise<void> {
-    if (!client) return
-
-    let audience
+  async function makeDownloadLink(did: string): Promise<string> {
     try {
-      audience = DID.parse(input.trim())
-    } catch {
-      setDownloadUrl('')
-      return
-    }
+      if (!client)
+        throw new Error('missing w3up client')
 
-    try {
-      const delegation = await client.createDelegation(audience, ['*'], {
+      const audience = DID.parse(did.trim())
+      const delegation = await client.createDelegation(audience, [
+        'space/*',
+        'store/*',
+        'upload/*',
+        'access/*',
+        'usage/*',
+        // @ts-expect-error (FIXME: https://github.com/storacha/w3up/issues/1554)
+        'filecoin/*',
+      ], {
         expiration: Infinity,
       })
+
       const archiveRes = await delegation.archive()
       if (archiveRes.error) {
         throw new Error('failed to archive delegation', { cause: archiveRes.error })
       }
       const blob = new Blob([archiveRes.ok])
       const url = URL.createObjectURL(blob)
-      setDownloadUrl(url)
+      return url
     } catch (err: any) {
       throw new Error(err.message ?? err, { cause: err })
     }
   }
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>): void {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault()
     if (isDID(value)) {
-      void makeDownloadLink(value)
+      void autoDownload(value)
     } else if (isEmail(value)) {
       void shareViaEmail(value)
-    } else {
-      setDownloadUrl('')
     }
   }
 
@@ -172,6 +172,16 @@ export function ShareSpace({ spaceDID }: { spaceDID: SpaceDID }): JSX.Element {
     if (!ready || inputDid === '') return ''
     const [, method = '', id = ''] = inputDid.split(':')
     return `did-${method}-${id?.substring(0, 10)}.ucan`
+  }
+
+  async function autoDownload(value: string): Promise<void> {
+    const resourceURL = await makeDownloadLink(value)
+    const link = document.createElement('a')
+    link.href = resourceURL
+    link.download = downloadName(true, value)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   return (
@@ -200,18 +210,10 @@ export function ShareSpace({ spaceDID }: { spaceDID: SpaceDID }): JSX.Element {
             className={`inline-block bg-hot-red border border-hot-red ${isEmail(value) || isDID(value) ? 'hover:bg-white hover:text-hot-red' : 'opacity-20'} font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`}
             onClick={async (e) => {
               e.preventDefault()
-
               if (isEmail(value)) {
                 await shareViaEmail(value)
               } else if (isDID(value)) {
-                if (!downloadUrl) await makeDownloadLink(value)
-
-                const link = document.createElement('a')
-                link.href = downloadUrl
-                link.download = downloadName(true, value)
-                document.body.appendChild(link)
-                link.click()
-                document.body.removeChild(link)
+                await autoDownload(value)
               }
             }}
             disabled={!isEmail(value) && !isDID(value)}
