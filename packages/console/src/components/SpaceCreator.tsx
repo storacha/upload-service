@@ -6,9 +6,10 @@ import Loader from '../components/Loader'
 import { DID, DIDKey } from '@ucanto/interface'
 import { DidIcon } from './DidIcon'
 import Link from 'next/link'
-import { FolderPlusIcon } from '@heroicons/react/24/outline'
+import { FolderPlusIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
+import Tooltip from './Tooltip'
 
-export function SpaceCreatorCreating (): JSX.Element {
+export function SpaceCreatorCreating(): JSX.Element {
   return (
     <div className='flex flex-col items-center space-y-4'>
       <h5 className='font-epilogue'>Creating Space...</h5>
@@ -21,7 +22,7 @@ interface SpaceCreatorFormProps {
   className?: string
 }
 
-export function SpaceCreatorForm ({
+export function SpaceCreatorForm({
   className = ''
 }: SpaceCreatorFormProps): JSX.Element {
   const [{ client, accounts }] = useW3()
@@ -30,11 +31,11 @@ export function SpaceCreatorForm ({
   const [name, setName] = useState('')
   const [space, setSpace] = useState<Space>()
 
-  function resetForm (): void {
+  function resetForm(): void {
     setName('')
   }
 
-  async function onSubmit (e: React.FormEvent<HTMLFormElement>): Promise<void> {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault()
     if (!client) return
     // TODO: account selection
@@ -115,7 +116,7 @@ export function SpaceCreatorForm ({
           required={true}
         />
         <button type='submit' className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`}>
-          <FolderPlusIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Create
+          <FolderPlusIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{ marginTop: -4 }} /> Create
         </button>
       </form>
     </div>
@@ -126,7 +127,7 @@ interface SpaceCreatorProps {
   className?: string
 }
 
-export function SpaceCreator ({
+export function SpaceCreator({
   className = ''
 }: SpaceCreatorProps): JSX.Element {
   const [creating, setCreating] = useState(false)
@@ -150,7 +151,13 @@ export function SpaceCreator ({
   /* eslint-enable no-nested-ternary */
 }
 
-export function SpacePreview ({ did, name }: { did: DIDKey, name?: string }) {
+interface SpacePreviewProps {
+  did: DIDKey
+  name?: string
+  capabilities: string[]
+}
+
+export function SpacePreview({ did, name, capabilities }: SpacePreviewProps) {
   return (
     <figure className='p-4 flex flex-row items-start gap-2 rounded'>
       <Link href={`/space/${did}`} className='block'>
@@ -158,8 +165,11 @@ export function SpacePreview ({ did, name }: { did: DIDKey, name?: string }) {
       </Link>
       <figcaption className='grow'>
         <Link href={`/space/${did}`} className='block'>
-          <span className='font-epilogue text-lg text-hot-red font-semibold leading-5 m-0'>
-            { name ?? 'Untitled'}
+          <span className='font-epilogue text-lg text-hot-red font-semibold leading-5 m-0 flex items-center'>
+            {name ?? 'Untitled'}
+            <Tooltip title="Capabilities" text={capabilities}>
+              <InformationCircleIcon className='h-5 w-5 ml-2' />
+            </Tooltip>
           </span>
           <span className='block font-mono text-xs truncate'>
             {did}

@@ -314,16 +314,15 @@ export function ImportSpace() {
           </div>
         </li>
       </ol>
-      {proof && (
+      {proof && proof.capabilities && proof.capabilities.length > 0 && (
         <div className='mt-4 pt-4'>
           <Header>Added</Header>
           <div className='max-w-3xl border border-hot-red rounded-2xl'>
-            {proof.capabilities.map((cap, i) => (
-              <SpacePreview
-                did={cap.with}
-                name={proof.facts.at(i)?.space.name}
-                key={cap.with} />
-            ))}
+            <SpacePreview
+              did={proof.capabilities[0].with}
+              name={proof.facts[0]?.space.name}
+              capabilities={proof.capabilities.map(c => c.can)}
+              key={proof.capabilities[0].with} />
           </div>
         </div>
       )}
