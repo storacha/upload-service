@@ -2,8 +2,8 @@
 
 import { ShareSpace } from '@/share'
 
-export default function SharePage (): JSX.Element {
+export default function SharePage ({params}): JSX.Element {
   return (
-    <ShareSpace />
+    <ShareSpace spaceDID={decodeURIComponent(params.did)}/>
   )
 }

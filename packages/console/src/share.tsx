@@ -1,13 +1,15 @@
-import { ChangeEvent, useState } from 'react'
-import { useW3 } from '@w3ui/react'
-import * as DID from '@ipld/dag-ucan/did'
+import { ChangeEvent, useEffect, useState } from 'react'
+import { SpaceDID, useW3 } from '@w3ui/react'
 import { extract } from '@ucanto/core/delegation'
 import type { PropsWithChildren } from 'react'
 import type { Delegation } from '@ucanto/interface'
 import { SpacePreview } from './components/SpaceCreator'
 import { H2 } from '@/components/Text'
 import CopyButton from './components/CopyButton'
-import { ArrowDownOnSquareStackIcon, CloudArrowDownIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline'
+import Tooltip from './components/Tooltip'
+import { ArrowDownOnSquareStackIcon, CloudArrowDownIcon, PaperAirplaneIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
+import * as DIDMailTo from '@web3-storage/did-mailto'
+import { DID } from '@ucanto/core'
 
 function Header(props: PropsWithChildren): JSX.Element {
   return (
@@ -17,10 +19,111 @@ function Header(props: PropsWithChildren): JSX.Element {
   )
 }
 
-export function ShareSpace (): JSX.Element {
+function isDID(value: string): boolean {
+  try {
+    DID.parse(value.trim())
+    return true
+  } catch {
+    return false
+  }
+}
+
+function isEmail(value: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return !isDID(value) && emailRegex.test(value)
+}
+
+export function ShareSpace({ spaceDID }: { spaceDID: SpaceDID }): JSX.Element {
   const [{ client }] = useW3()
   const [value, setValue] = useState('')
   const [downloadUrl, setDownloadUrl] = useState('')
+  const [sharedEmails, setSharedEmails] = useState<{ email: string, capabilities: string[] }[]>([])
+
+  const updateSharedEmails = (delegations: { email: string, capabilities: string[] }[]) => {
+    setSharedEmails(prev => {
+      const newEmails = delegations.filter(d => !prev.some(item => item.email === d.email))
+      return [...prev, ...newEmails]
+    })
+  }
+
+  useEffect(() => {
+    if (client && spaceDID) {
+      // Find all delegations via email where the spaceDID is present
+      const delegations = client.delegations()
+        .filter(d => d.capabilities.some(c => c.with === spaceDID))
+        .filter(d => d.audience.did().startsWith('did:mailto:'))
+        .map(d => ({
+          email: DIDMailTo.toEmail(DIDMailTo.fromString(d.audience.did())),
+          capabilities: d.capabilities.map(c => c.can)
+        }))
+      updateSharedEmails(delegations)
+    }
+  }, [client, spaceDID])
+
+  async function shareViaEmail(email: string): Promise<void> {
+    if (!client) {
+      throw new Error(`Client not found`)
+    }
+
+    const currentSpace = client.agent.currentSpace()
+    try {
+      const space = client.spaces().find(s => s.did() === spaceDID)
+      if (!space) {
+        throw new Error(`Could not find space to share`)
+      }
+
+      const delegatedEmail = DIDMailTo.email(email)
+
+      // FIXME (fforbeck): enable shareSpace function call after @w3ui/react lib is updated to v2.4.0 and the issue with blobs are solved
+      // const delegation = await client.shareSpace(delegatedEmail, space.did())
+
+      // Make sure the agent is using the shared space before delegating
+      await client.agent.setCurrentSpace(spaceDID)
+
+      // Delegate capabilities to the delegate account to access the **current space**
+      const delegation = await client.createDelegation(
+        {
+          did: () => DIDMailTo.fromEmail(delegatedEmail),
+        },
+        [
+          'space/*',
+          'store/*',
+          'upload/*',
+          'access/*',
+          'usage/*',
+          // @ts-expect-error (FIXME: https://github.com/storacha/w3up/issues/1554)
+          'filecoin/*',
+        ], {
+          expiration: Infinity
+        }
+      )
+
+      const sharingResult = await client.capability.access.delegate({
+        space: spaceDID,
+        delegations: [delegation],
+      })
+
+      if (sharingResult.error) {
+        throw new Error(
+          `failed to share space with ${delegatedEmail}: ${sharingResult.error.message}`,
+          {
+            cause: sharingResult.error,
+          }
+        )
+      }
+
+      const next = { email: delegatedEmail, capabilities: delegation.capabilities.map(c => c.can) }
+      updateSharedEmails([next])
+      setValue('')
+    } catch (err) {
+      console.error(err)
+    } finally {
+      // Reset to the original space if it was different
+      if (currentSpace && currentSpace !== spaceDID) {
+        await client.agent.setCurrentSpace(currentSpace)
+      }
+    }
+  }
 
   async function makeDownloadLink(input: string): Promise<void> {
     if (!client) return
@@ -28,7 +131,7 @@ export function ShareSpace (): JSX.Element {
     let audience
     try {
       audience = DID.parse(input.trim())
-    } catch (err) {
+    } catch {
       setDownloadUrl('')
       return
     }
@@ -51,12 +154,17 @@ export function ShareSpace (): JSX.Element {
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>): void {
     e.preventDefault()
-    void makeDownloadLink(value)
+    if (isDID(value)) {
+      void makeDownloadLink(value)
+    } else if (isEmail(value)) {
+      void shareViaEmail(value)
+    } else {
+      setDownloadUrl('')
+    }
   }
 
   function onChange(e: ChangeEvent<HTMLInputElement>): void {
     const input = e.target.value
-    void makeDownloadLink(input)
     setValue(input)
   }
 
@@ -71,7 +179,7 @@ export function ShareSpace (): JSX.Element {
       <Header>Share your space</Header>
       <div className='bg-white rounded-2xl border border-hot-red p-5 font-epilogue'>
         <p className='mb-4'>
-          Ask your friend for their Decentralized Identifier (DID) and paste it
+          Ask your friend for their Email or Decentralized Identifier (DID) and paste it
           below:
         </p>
         <form
@@ -81,28 +189,68 @@ export function ShareSpace (): JSX.Element {
         >
           <input
             className='text-black py-2 px-2 rounded-xl block mb-4 border border-hot-red w-11/12'
-            type='pattern'
-            pattern='did:.+'
-            placeholder='did:'
+            type='text'
+            placeholder='email or did:'
             value={value}
             onChange={onChange}
             required={true}
           />
-          <a
-            className={`inline-block bg-hot-red border border-hot-red ${downloadUrl ? 'hover:bg-white hover:text-hot-red' : 'opacity-20'} font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`}
-            href={downloadUrl ?? ''}
-            download={downloadName(downloadUrl !== '', value)}
-            onClick={e => downloadUrl === '' && e.preventDefault()}
+          <button
+            type='submit'
+            className={`inline-block bg-hot-red border border-hot-red ${isEmail(value) || isDID(value) ? 'hover:bg-white hover:text-hot-red' : 'opacity-20'} font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`}
+            onClick={async (e) => {
+              e.preventDefault()
+
+              if (isEmail(value)) {
+                await shareViaEmail(value)
+              } else if (isDID(value)) {
+                if (!downloadUrl) await makeDownloadLink(value)
+
+                const link = document.createElement('a')
+                link.href = downloadUrl
+                link.download = downloadName(true, value)
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+              }
+            }}
+            disabled={!isEmail(value) && !isDID(value)}
           >
-            <CloudArrowDownIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Download UCAN
-          </a>
+            {isEmail(value) ? 'Share via Email' : isDID(value) ? (
+              <>
+                <CloudArrowDownIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{ marginTop: -4 }} />
+                {'Download UCAN'}
+              </>
+            ) : 'Enter a valid email or DID'}
+          </button>
         </form>
+
+
       </div>
+      {sharedEmails.length > 0 && (
+        <div className='bg-white rounded-2xl border border-hot-red p-5 mt-5 font-epilogue'>
+          <p className='mb-4'>
+            Shared With:
+          </p>
+          <ul>
+            {sharedEmails.map(({ email, capabilities }) => (
+              <li key={email} className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full mt-1">
+                <span className="flex items-center w-full">
+                  <span className="truncate mt-1">{email}</span>
+                  <Tooltip title="Capabilities" text={capabilities}>
+                    <InformationCircleIcon className='h-5 w-5 ml-1' />
+                  </Tooltip>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }
 
-export function ImportSpace () {
+export function ImportSpace() {
   const [{ client }] = useW3()
   const [proof, setProof] = useState<Delegation>()
 
@@ -117,14 +265,14 @@ export function ImportSpace () {
       }
       delegation = res.ok
     } catch (err) {
-      console.log(err)
+      console.error(err)
       return
     }
     try {
       await client.addSpace(delegation)
       setProof(delegation)
     } catch (err) {
-      console.log(err)
+      console.error(err)
     }
   }
 
@@ -142,7 +290,7 @@ export function ImportSpace () {
           </div>
           <CopyButton text={client?.did() ?? ''}>Copy DID</CopyButton>
           <a href={`mailto:?subject=Space%20Access%20Request&body=${body}`} className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm ml-2 px-6 py-2 rounded-full whitespace-nowrap`}>
-            <PaperAirplaneIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Email DID
+            <PaperAirplaneIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{ marginTop: -4 }} /> Email DID
           </a>
         </li>
         <li className='mt-4 my-8'>
@@ -150,7 +298,7 @@ export function ImportSpace () {
           <p className='text-black my-2'>Instruct your friend to use the web console or CLI to create a UCAN, delegating your DID acces to their space.</p>
           <div className='mt-4'>
             <label className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap cursor-pointer'>
-              <ArrowDownOnSquareStackIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} />
+              <ArrowDownOnSquareStackIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{ marginTop: -4 }} />
               Import UCAN
               <input
                 type='file'
@@ -169,7 +317,10 @@ export function ImportSpace () {
           <Header>Added</Header>
           <div className='max-w-3xl border border-hot-red rounded-2xl'>
             {proof.capabilities.map((cap, i) => (
-              <SpacePreview did={cap.with} name={proof.facts.at(i)?.space.name} key={cap.with} />
+              <SpacePreview
+                did={cap.with}
+                name={proof.facts.at(i)?.space.name}
+                key={cap.with} />
             ))}
           </div>
         </div>

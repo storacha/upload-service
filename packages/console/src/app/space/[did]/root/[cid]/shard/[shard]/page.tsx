@@ -118,7 +118,7 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
             : filecoinInfo.data && filecoinInfo.data.aggregates.length
               ? filecoinInfo.data.aggregates.map(({ aggregate, inclusion }) => {
                   const piece = filecoinInfo.data?.piece
-                  if (!piece) return <div />
+                  if (!piece) return <div key={Math.random()}/>
                   const pieceInfo = Piece.fromLink(aggregate).toInfo()
                   return (
                     <div key={aggregate.toString()}>
@@ -240,7 +240,7 @@ function InclusionProof ({ proof, piece, style }: { proof: ProofData, piece: Pie
   return (
     <div className='font-mono whitespace-nowrap overflow-x-scroll'>
       {archy(data).split('\n').map(line => {
-        if (!line) return <div />
+        if (!line) return <div key={Math.random()} />
         if (line.indexOf(' ') === -1) {
           return (
             <div key={line}>
