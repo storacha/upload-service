@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.11.0](https://github.com/storacha/console/compare/w3console-v1.10.0...w3console-v1.11.0) (2024-09-24)
+
+
+### Features
+
+* share spaces via email ([#123](https://github.com/storacha/console/issues/123)) ([896079b](https://github.com/storacha/console/commit/896079ba93c6b798a4239fa5b317c05654f01435))
+
+
+### Bug Fixes
+
+* import space preview ([#127](https://github.com/storacha/console/issues/127)) ([1f2acf6](https://github.com/storacha/console/commit/1f2acf64acbf2e603eaf4db06ba91ffdd614a1a4))
+* share space via ucan file ([#126](https://github.com/storacha/console/issues/126)) ([ba934a2](https://github.com/storacha/console/commit/ba934a23317aa94703591ef3cb99446aea265b66))
+
 ## [1.10.0](https://github.com/storacha/console/compare/w3console-v1.9.1...w3console-v1.10.0) (2024-09-20)
 
 
