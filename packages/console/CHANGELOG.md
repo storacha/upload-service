@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.0](https://github.com/storacha/console/compare/w3console-v1.11.0...w3console-v1.12.0) (2024-10-02)
+
+
+### Features
+
+* add old web3 storage migrator ([#129](https://github.com/storacha/console/issues/129)) ([ba45a5f](https://github.com/storacha/console/commit/ba45a5fdebb7651e461f8bf55c93d5fcfc3a2204))
+
 ## [1.11.0](https://github.com/storacha/console/compare/w3console-v1.10.0...w3console-v1.11.0) (2024-09-24)
 
 
