@@ -87,7 +87,7 @@ export function SpaceCreatorForm({
     return (
       <div className={className}>
         <div className='max-w-3xl border border-hot-red rounded-2xl'>
-          <SpacePreview did={space.did()} name={space.name} />
+          <SpacePreview did={space.did()} name={space.name} capabilities={['*']} />
         </div>
       </div>
     )

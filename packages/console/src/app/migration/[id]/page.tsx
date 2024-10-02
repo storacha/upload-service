@@ -8,9 +8,10 @@ import { useMigrations } from '@/components/MigrationsProvider'
 import { DidIcon } from '@/components/DidIcon'
 import CopyIcon from '@/components/CopyIcon'
 import { CheckCircleIcon, ClockIcon, FlagIcon } from '@heroicons/react/20/solid'
-import { Migration, MigrationProgress } from '@/lib/migrations/api'
+import { Migration, Progress } from '@/lib/migrations/api'
 import { useRouter } from 'next/navigation'
 import { UnknownLink } from '@w3ui/react'
+import { dataSources } from '@/app/migration/data-sources'
 
 interface PageProps {
   params: {
@@ -49,6 +50,9 @@ export default function MigrationPage ({ params }: PageProps): JSX.Element {
   const migration = migrations.find(m => m.id === params.id)
   if (!migration) return <H1>Migration not found</H1>
 
+  const ds = dataSources.find(({ source }) => source.id === migration.source)
+  if (!ds) return <H1>Unknown data source</H1>
+
   const handleRemove = () => {
     removeMigration(migration.id)
     router.replace('/')
@@ -56,7 +60,7 @@ export default function MigrationPage ({ params }: PageProps): JSX.Element {
 
   return (
     <div className='max-w-6xl'>
-      <H1>Migrating from {migration.source}</H1>
+      <H1>Migrating from {ds.name}</H1>
       <div className='bg-white my-4 p-4 rounded-2xl border border-hot-red'>
         <div className='flex mb-4'>
           <div className='flex-auto'>
@@ -122,7 +126,7 @@ const LogLines = ({ lines }: { lines: string[] }) => {
   )
 }
 
-const ProgressBar = ({ progress }: { progress?: MigrationProgress }) => {
+const ProgressBar = ({ progress }: { progress?: Progress }) => {
   const attempted = progress ? progress.succeeded + progress.failed.length : 0
   const failed = progress?.failed.length
   const total = progress ? attempted + progress.pending : 0
@@ -142,7 +146,7 @@ const ProgressBar = ({ progress }: { progress?: MigrationProgress }) => {
   )
 }
 
-const RemoveButton = ({ onRemove, progress }: { onRemove: () => void, progress?: MigrationProgress }) => {
+const RemoveButton = ({ onRemove, progress }: { onRemove: () => void, progress?: Progress }) => {
   const [isRemoveConfirmModalOpen, setRemoveConfirmModalOpen] = useState(false)
 
   if (progress && progress.pending <= 0) {

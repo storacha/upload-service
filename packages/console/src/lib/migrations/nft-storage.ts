@@ -4,9 +4,10 @@ import { sha256 } from 'multiformats/hashes/sha2'
 import * as Claims from '@web3-storage/content-claims/client'
 import { CarBlockIterator } from '@ipld/car'
 import { LinkIndexer } from 'linkdex'
-import { MigrationSourceConfiguration, Shard, Upload } from './api'
+import { DataSourceConfiguration, Shard, Upload } from './api'
+import { carCode } from './constants'
 
-const carCode = 0x0202
+export const id = 'classic.nft.storage'
 
 export const checkToken = async (token: string) => {
   const client = new NFTStorage({ token })
@@ -41,13 +42,15 @@ interface UploadListItem {
   type: string
 }
 
-export class NFTStorageMigrator {
+export const createReader = (conf: DataSourceConfiguration) => new Reader(conf)
+
+class Reader {
   #token
   #cursor
   #client
   #started
 
-  constructor ({ token, cursor }: MigrationSourceConfiguration) {
+  constructor ({ token, cursor }: DataSourceConfiguration) {
     this.#token = token
     this.#cursor = cursor
     this.#client = new NFTStorage({ token })

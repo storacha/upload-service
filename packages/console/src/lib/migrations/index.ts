@@ -2,18 +2,19 @@ import { ConnectionView, DIDKey, Proof, Service, Signer } from '@w3ui/react'
 import retry, { AbortError } from 'p-retry'
 import * as StoreCapabilities from '@web3-storage/capabilities/store'
 import * as UploadCapabilities from '@web3-storage/capabilities/upload'
-import { UploadsSource, Shard, Upload, MigrationSource, MigrationSourceConfiguration } from './api'
-import { NFTStorageMigrator } from './nft-storage'
+import { Reader, Shard, Upload, DataSourceID, DataSourceConfiguration } from './api'
+import * as NFTStorage from './nft-storage'
+import * as Web3Storage from './web3-storage'
+import * as Web3StoragePSA from './web3-storage-psa'
 
 const REQUEST_RETRIES = 3
 
-export const create = (source: MigrationSource, config: MigrationSourceConfiguration) => {
-  switch (source) {
-    case 'classic.nft.storage':
-      return new NFTStorageMigrator(config)
-    default:
-      throw new Error(`not implemented`)
-  }
+const dataSources = [NFTStorage, Web3Storage, Web3StoragePSA]
+
+export const createReader = (source: DataSourceID, config: DataSourceConfiguration): Reader => {
+  const ds = dataSources.find(m => m.id === source)
+  if (!ds) throw new Error(`not implemented: ${source}`)
+  return ds.createReader(config)
 }
 
 export const migrate = async ({
@@ -25,10 +26,11 @@ export const migrate = async ({
   connection,
   onStoreAdd,
   onUploadAdd,
-  onError
+  onError,
+  onComplete
 }: {
   signal: AbortSignal
-  uploads: UploadsSource
+  uploads: Reader
   issuer: Signer
   space: DIDKey
   proofs: Proof[]
@@ -36,6 +38,7 @@ export const migrate = async ({
   onStoreAdd: (upload: Upload, shard: Shard) => unknown
   onUploadAdd: (upload: Upload) => unknown
   onError: (err: Error, upload: Upload, shard?: Shard) => unknown
+  onComplete: () => unknown
 }) => {
   for await (const upload of uploads) {
     let allShardsStored = Boolean(upload.shards.length) // if 0 shards we did not store them
@@ -62,7 +65,7 @@ export const migrate = async ({
         }, { onFailedAttempt: console.warn, retries: REQUEST_RETRIES })
 
         if (signal.aborted) return
-        onStoreAdd(upload, shard)
+        await onStoreAdd(upload, shard)
 
         if (result.status === 'done') {
           continue
@@ -95,14 +98,21 @@ export const migrate = async ({
         }
       } catch (err: any) {
         if (signal.aborted) return
-        onError(err, upload, shard)
+        await onError(err, upload, shard)
         allShardsStored = false
         break
       }
     }
 
+    // signal that this upload failed if it has no shards
+    if (upload.shards.length === 0) {
+      await onError(new Error('upload has no shards'), upload)
+    }
+
     // do no register an upload if not all the shards uploaded successfully
-    if (!allShardsStored) continue
+    if (!allShardsStored) {
+      continue
+    }
 
     try {
       const receipt = await UploadCapabilities.add.invoke({
@@ -121,10 +131,11 @@ export const migrate = async ({
       }
 
       if (signal.aborted) return
-      onUploadAdd(upload)
+      await onUploadAdd(upload)
     } catch (err: any) {
       if (signal.aborted) return
-      onError(err, upload)
+      await onError(err, upload)
     }
   }
+  await onComplete()
 }
