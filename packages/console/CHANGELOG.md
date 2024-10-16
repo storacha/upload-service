@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.0](https://github.com/storacha/console/compare/w3console-v1.12.0...w3console-v1.13.0) (2024-10-11)
+
+
+### Features
+
+* Use Blob protocol ([#132](https://github.com/storacha/console/issues/132)) ([308837e](https://github.com/storacha/console/commit/308837e10474e4098b65e57913780b26de88c4ad))
+
 ## [1.12.0](https://github.com/storacha/console/compare/w3console-v1.11.0...w3console-v1.12.0) (2024-10-02)
 
 
