@@ -1,10 +1,9 @@
 'use client'
 
-import { CAR } from '@ucanto/transport'
 import { H2 } from '@/components/Text'
-import { useW3, FilecoinInfoSuccess, BlobGetSuccess, CARLink } from '@w3ui/react'
+import { useW3, FilecoinInfoSuccess, StoreGetSuccess } from '@w3ui/react'
 import useSWR from 'swr'
-import { Link, parse as parseLink } from 'multiformats/link'
+import { parse as parseLink } from 'multiformats/link'
 import DefaultLoader from '@/components/Loader'
 import * as Claims from '@web3-storage/content-claims/client'
 import { Aggregate, MerkleTreeNode, Piece, PieceLink, PieceView, Proof, ProofData } from '@web3-storage/data-segment'
@@ -34,38 +33,18 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
   const spaceDID = decodeURIComponent(params.did)
   const space = spaces.find(s => s.did() === spaceDID)
   const root = parseLink(params.cid)
-  const shard = parseLink(params.shard).toV1()
+  const shard = parseLink(params.shard)
 
   const storeKey = `/space/${spaceDID}/store/get?link=${shard}`
-  const store = useSWR<{ size: number } | undefined>(storeKey, {
+  const store = useSWR<StoreGetSuccess|undefined>(storeKey, {
     fetcher: async () => {
-      if (!client || !space || !isCARLink(shard)) return
+      if (!client || !space) return
 
       if (client.currentSpace()?.did() !== space.did()) {
         await client.setCurrentSpace(space.did())
       }
 
-      // First try to get the shard using the Blob protocol, then fall back to
-      // the Store protocol.
-      try {
-        const result = await client.capability.blob.get(shard.multihash)
-        // Note that, oddly, this result is never `error`, but the call may
-        // throw.
-        return result.ok.blob
-      } catch (blobErr) {
-        // Rethrow other errors.
-        if (!isErrorCausedByBlobNotFound(blobErr)) throw blobErr
-
-        // If there was no Blob, try the Store protocol.
-        try {
-          return await client.capability.store.get(shard)
-        } catch (storeErr) {
-          throw new Error(
-            'failed to get shard with either Blob or Store protocols',
-            { cause: [blobErr, storeErr] }
-          )
-        }
-      }
+      return await client.capability.store.get(shard)
     },
     onError: err => console.error(err.message, err.cause)
   })
@@ -193,28 +172,6 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
   )
 }
 
-function isCARLink(link: Link): link is CARLink {
-  return link.code === CAR.codec.code
-}
-
-/**
- * True if the error is caused by a BlobNotFound error. (This is a slightly
- * convoluted signal at the moment; the client could be clearer about signaling
- * this, but this is what it currently throws.)
- * @param exception The thrown value
- */
-function isErrorCausedByBlobNotFound(exception: unknown) {
-  return (
-    exception &&
-    typeof exception === 'object' &&
-    'cause' in exception &&
-    exception.cause &&
-    typeof exception.cause === 'object' &&
-    'name' in exception.cause &&
-    exception.cause.name === 'BlobNotFound'
-  )
-}
-
 function isPieceLink(link: any): link is PieceLink {
   try {
     Piece.fromLink(link)
@@ -283,11 +240,11 @@ function InclusionProof ({ proof, piece, style }: { proof: ProofData, piece: Pie
   return (
     <div className='font-mono whitespace-nowrap overflow-x-scroll'>
       {archy(data).split('\n').map(line => {
-        if (!line) return <div />
+        if (!line) return <div key={Math.random()} />
         if (line.indexOf(' ') === -1) {
           return (
             <div key={line}>
-              <span className='border-purple-500 border-b-2 border-dotted'>{line}</span>
+              <span className='border-hot-yellow border-b-2 border-dotted'>{line}</span>
               <AggregateIcon className='opacity-60' />
               <span className='text-sm opacity-60'>Aggregate CID</span>
             </div>
@@ -306,7 +263,7 @@ function InclusionProof ({ proof, piece, style }: { proof: ProofData, piece: Pie
         return (
           <div key={line}>
             <pre className='inline-block'>{tree}</pre>&nbsp;
-            <span className={`${isPath ? 'opacity-100' : 'opacity-30'} ${isPiece ? 'border-blue-600 border-b-2 border-dotted' : ''}`}>
+            <span className={`${isPath ? 'opacity-100' : 'opacity-30'} ${isPiece ? 'border-hot-red border-b-2 border-dotted' : ''}`}>
               {label}
             </span>
             {isPiece && <><PieceIcon className='opacity-60' /><span className='text-sm opacity-60'>Piece CID</span></>}
