@@ -13,7 +13,7 @@ import {
   useUploader
 } from '@w3ui/react'
 import { gatewayHost } from '../components/services'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { RadioGroup } from '@headlessui/react'
 import { H2 } from './Text'
 
@@ -62,14 +62,23 @@ export const Uploading = ({
   </div>
 )
 
-export const Errored = ({ error }: { error: any }): JSX.Element => (
-  <div className='flex flex-col items-center'>
-    <h1>
-      ⚠️ Error: failed to upload file: {error.message}
-    </h1>
-    <p>Check the browser console for details.</p>
-  </div>
-)
+export const Errored = ({ error }: { error: any }): JSX.Element => {
+  useEffect(() => {
+    if (error != null) {
+      // eslint-disable-next-line no-console
+      console.error('Uploader Error:', error)
+    }
+  }, [error])
+
+  return (
+    (<div className='flex flex-col items-center'>
+      <h1>
+        ⚠️ Error: failed to upload file: {error.message}
+      </h1>
+      <p>Check the browser console for details.</p>
+    </div>)
+  );
+}
 
 interface DoneProps {
   file?: File
