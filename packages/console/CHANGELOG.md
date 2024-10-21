@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.14.0](https://github.com/storacha/console/compare/w3console-v1.13.1...w3console-v1.14.0) (2024-10-21)
+
+
+### Features
+
+* Actually put error in console, as promised ([#131](https://github.com/storacha/console/issues/131)) ([c194463](https://github.com/storacha/console/commit/c194463959830a04562a200b8812fb443f5edb65))
+
+
+### Bug Fixes
+
+* Revert "fix: Revert "feat: Use Blob protocol"" (😩) ([#136](https://github.com/storacha/console/issues/136)) ([c75f3db](https://github.com/storacha/console/commit/c75f3db347874a82d219737eca3bd1c01d2eabfc))
+
 ## [1.13.1](https://github.com/storacha/console/compare/w3console-v1.13.0...w3console-v1.13.1) (2024-10-17)
 
 
