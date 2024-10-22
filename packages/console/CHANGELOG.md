@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.0](https://github.com/storacha/console/compare/w3console-v1.14.0...w3console-v1.15.0) (2024-10-22)
+
+
+### Features
+
+* Use latest `w3ui` to support reloading spaces ([#138](https://github.com/storacha/console/issues/138)) ([0747635](https://github.com/storacha/console/commit/0747635012c3846aa5db8fb5ccd0f44e60771ea8))
+
 ## [1.14.0](https://github.com/storacha/console/compare/w3console-v1.13.1...w3console-v1.14.0) (2024-10-21)
 
 
