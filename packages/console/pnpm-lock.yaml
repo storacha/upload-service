@@ -36,8 +36,8 @@ importers:
         specifier: ^9.0.0
         version: 9.0.0
       '@w3ui/react':
-        specifier: 2.4.0
-        version: 2.4.0(@types/react@18.2.42)(encoding@0.1.13)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+        specifier: 2.5.0
+        version: 2.5.0(@types/react@18.2.42)(encoding@0.1.13)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@web3-storage/access':
         specifier: ^19.0.0
         version: 19.0.0
@@ -914,8 +914,8 @@ packages:
   '@w3ui/core@2.3.1':
     resolution: {integrity: sha512-nA2RkJBavJsy93TdZUjvOQJruWlalT4DJsOo3YYEt9X2iGtdFJTluVcFy4TXJCo4cnw3y7hzkE1YtE+o0vu6Yw==}
 
-  '@w3ui/react@2.4.0':
-    resolution: {integrity: sha512-78ZZvkoCyG9MudzK70uj1mOGuw8AtHUEZX3LIa2wVsW2FCiwOr4Oywk6fmXpGx5cHQ4mz5sAoQj71aA4tyZ4NQ==}
+  '@w3ui/react@2.5.0':
+    resolution: {integrity: sha512-VsFE5UQVcZSGrPSsApb1vJJwEoVgAw3NHdFCHDvhnFzw6dbWmMkxQ1LdQRLfn+si0IXSHTJAN4BNPv/0YB4vSA==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
 
@@ -4688,7 +4688,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@w3ui/react@2.4.0(@types/react@18.2.42)(encoding@0.1.13)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
+  '@w3ui/react@2.5.0(@types/react@18.2.42)(encoding@0.1.13)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
     dependencies:
       '@ariakit/react': 0.3.14(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@ariakit/react-core': 0.3.14(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -4797,13 +4797,13 @@ snapshots:
 
   '@web3-storage/blob-index@1.0.4':
     dependencies:
-      '@ipld/dag-cbor': 9.2.0
+      '@ipld/dag-cbor': 9.2.1
       '@storacha/one-webcrypto': 1.0.1
       '@ucanto/core': 10.0.1
       '@ucanto/interface': 10.0.1
       '@web3-storage/capabilities': 17.3.0
       carstream: 2.2.0
-      multiformats: 13.1.0
+      multiformats: 13.3.0
       uint8arrays: 5.1.0
 
   '@web3-storage/capabilities@16.0.0':
@@ -4904,7 +4904,7 @@ snapshots:
   '@web3-storage/upload-client@17.0.1(encoding@0.1.13)':
     dependencies:
       '@ipld/car': 5.2.4
-      '@ipld/dag-cbor': 9.2.0
+      '@ipld/dag-cbor': 9.2.1
       '@ipld/dag-ucan': 3.4.0
       '@ipld/unixfs': 2.2.0
       '@ucanto/client': 9.0.1
@@ -4913,7 +4913,7 @@ snapshots:
       '@ucanto/transport': 9.1.1
       '@web3-storage/blob-index': 1.0.4
       '@web3-storage/capabilities': 17.3.0
-      '@web3-storage/data-segment': 5.1.0
+      '@web3-storage/data-segment': 5.2.0
       '@web3-storage/filecoin-client': 3.3.3
       ipfs-utils: 9.0.14(encoding@0.1.13)
       multiformats: 12.1.3
@@ -5282,8 +5282,8 @@ snapshots:
 
   carstream@2.2.0:
     dependencies:
-      '@ipld/dag-cbor': 9.2.0
-      multiformats: 13.1.0
+      '@ipld/dag-cbor': 9.2.1
+      multiformats: 13.3.0
       uint8arraylist: 2.4.7
 
   cborg@1.10.2: {}
