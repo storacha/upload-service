@@ -24,17 +24,17 @@ importers:
         specifier: ^3.4.0
         version: 3.4.0
       '@ucanto/client':
-        specifier: ^9.0.0
-        version: 9.0.0
+        specifier: ^9.0.1
+        version: 9.0.1
       '@ucanto/core':
-        specifier: ^9.0.0
-        version: 9.0.0
+        specifier: ^10.0.1
+        version: 10.0.1
       '@ucanto/interface':
-        specifier: ^9.0.0
-        version: 9.0.0
+        specifier: ^10.0.1
+        version: 10.0.1
       '@ucanto/transport':
-        specifier: ^9.0.0
-        version: 9.0.0
+        specifier: ^9.1.1
+        version: 9.1.1
       '@w3ui/react':
         specifier: 2.5.0
         version: 2.5.0(@types/react@18.2.42)(encoding@0.1.13)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -812,17 +812,11 @@ packages:
     resolution: {integrity: sha512-OGznFs0eAQXJsp+xSd6k/O1UbFi/K/L7WjqeRoFE7vadjAF9y0uppXhYNQNEqygjou782maGClOoZwPqF0Drlw==}
     engines: {node: ^16.0.0 || >=18.0.0}
 
-  '@ucanto/client@9.0.0':
-    resolution: {integrity: sha512-Fl8ZGuWoVQygBtLISPlFb5Ej/LKUofghTTAT4kjFNc8WB9bD7AS+yvSPowwd+4uTnxfEOeKWV2lzO1+gRxQF0w==}
-
   '@ucanto/client@9.0.1':
     resolution: {integrity: sha512-cV8w3AnaZaYCdUmyFFICj8YhFckDoy2DvWgAzGDMkPz0WbUW4lw9Tjm4hEE8x5kiP47wYej/pHKWCcoELiU0qw==}
 
   '@ucanto/core@10.0.1':
     resolution: {integrity: sha512-1BfUaJu0/c9Rl/WdZSDbScJJLsPsPe1g4ynl5kubUj3xDD/lyp/Q12PQVQ2X7hDiWwkpwmxCkRMkOxwc70iNKQ==}
-
-  '@ucanto/core@9.0.0':
-    resolution: {integrity: sha512-O2c+UOQ5wAvUsuN7BbZR6QAoUgYpWzN0HAAVbNBLT4I8/OUzMcxSYeu08/ph0sNtLGlOPDcPn+ANclTwxc5UcA==}
 
   '@ucanto/core@9.0.1':
     resolution: {integrity: sha512-SsYvKCO3FD27roTVcg8ASxnixjn+j96sPlijpVq1uBUxq7SmuNxNPYFZqpxXKj2R4gty/Oc8XTse12ebB9Kofg==}
@@ -841,9 +835,6 @@ packages:
 
   '@ucanto/server@9.0.1':
     resolution: {integrity: sha512-EGhgKLjPgvM39j86WxSD7UoR0rr7jpTMclCOcpOEVC9r91sob8BReW2i7cm1zPvhSNFqS8rLjlGEgUIAhdAxmg==}
-
-  '@ucanto/transport@9.0.0':
-    resolution: {integrity: sha512-eN9kkhdp5vC8iYSlT+4YeqyLdV+3g4kYLvuDojdR1lqEcJM2/1W8KjGgmGt6dhE7eBlMqD2hqujS1ePPtY2mKw==}
 
   '@ucanto/transport@9.1.1':
     resolution: {integrity: sha512-3CR17nEemOVaTuMZa6waWgVL4sLxSPcxYvpaNeJ6NZo1rfsqdyRXOtbVV/RcI2BtUL0Cao6JM6P9+gdghfc5ng==}
@@ -4434,11 +4425,6 @@ snapshots:
       '@typescript-eslint/types': 6.13.2
       eslint-visitor-keys: 3.4.3
 
-  '@ucanto/client@9.0.0':
-    dependencies:
-      '@ucanto/core': 9.0.0
-      '@ucanto/interface': 9.0.0
-
   '@ucanto/client@9.0.1':
     dependencies:
       '@ucanto/core': 10.0.1
@@ -4447,23 +4433,15 @@ snapshots:
   '@ucanto/core@10.0.1':
     dependencies:
       '@ipld/car': 5.2.4
-      '@ipld/dag-cbor': 9.2.0
+      '@ipld/dag-cbor': 9.2.1
       '@ipld/dag-ucan': 3.4.0
       '@ucanto/interface': 10.0.1
-      multiformats: 11.0.2
-
-  '@ucanto/core@9.0.0':
-    dependencies:
-      '@ipld/car': 5.2.4
-      '@ipld/dag-cbor': 9.0.5
-      '@ipld/dag-ucan': 3.4.0
-      '@ucanto/interface': 9.0.0
       multiformats: 11.0.2
 
   '@ucanto/core@9.0.1':
     dependencies:
       '@ipld/car': 5.2.4
-      '@ipld/dag-cbor': 9.0.5
+      '@ipld/dag-cbor': 9.2.1
       '@ipld/dag-ucan': 3.4.0
       '@ucanto/interface': 9.0.0
       multiformats: 11.0.2
@@ -4505,11 +4483,6 @@ snapshots:
       '@ucanto/principal': 9.0.0
       '@ucanto/validator': 9.0.1
 
-  '@ucanto/transport@9.0.0':
-    dependencies:
-      '@ucanto/core': 9.0.0
-      '@ucanto/interface': 9.0.0
-
   '@ucanto/transport@9.1.1':
     dependencies:
       '@ucanto/core': 10.0.1
@@ -4526,7 +4499,7 @@ snapshots:
   '@ucanto/validator@9.0.2':
     dependencies:
       '@ipld/car': 5.2.4
-      '@ipld/dag-cbor': 9.2.0
+      '@ipld/dag-cbor': 9.2.1
       '@ucanto/core': 10.0.1
       '@ucanto/interface': 10.0.1
       multiformats: 11.0.2
@@ -4836,9 +4809,9 @@ snapshots:
 
   '@web3-storage/content-claims@3.2.1':
     dependencies:
-      '@ucanto/client': 9.0.0
+      '@ucanto/client': 9.0.1
       '@ucanto/server': 9.0.1
-      '@ucanto/transport': 9.0.0
+      '@ucanto/transport': 9.1.1
       carstream: 1.1.0
       multiformats: 12.1.3
 
