@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.1](https://github.com/storacha/console/compare/w3console-v1.15.0...w3console-v1.15.1) (2024-10-22)
+
+
+### Bug Fixes
+
+* Use Ucanto 10 across the board ([#140](https://github.com/storacha/console/issues/140)) ([3201ebc](https://github.com/storacha/console/commit/3201ebca054341e60c9a16aae13bbbd87b2020be))
+
 ## [1.15.0](https://github.com/storacha/console/compare/w3console-v1.14.0...w3console-v1.15.0) (2024-10-22)
 
 
