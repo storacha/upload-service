@@ -620,10 +620,6 @@ export type AdminUploadInspectResult = Result<
   AdminUploadInspectFailure
 >
 
-export interface StoreInspectSuccess {
-  spaces: Array<{ did: DID; insertedAt: string }>
-}
-
 export interface UploadAddInput {
   space: DID
   root: UnknownLink
