@@ -620,23 +620,6 @@ export type AdminUploadInspectResult = Result<
   AdminUploadInspectFailure
 >
 
-export interface StoreAddInput {
-  space: DID
-  link: CARLink
-  size: number
-  origin?: UnknownLink
-
-  /**
-   * @deprecated - Issuer of the invocation is irrelevant as long as
-   * they have authorization to invoke on subject `space`.
-   */
-  issuer?: DID
-  invocation: UCANLink
-}
-
-export interface StoreAddOutput
-  extends Omit<StoreAddInput, 'space' | 'issuer' | 'invocation'> {}
-
 export interface StoreInspectSuccess {
   spaces: Array<{ did: DID; insertedAt: string }>
 }
@@ -646,7 +629,7 @@ export interface UploadAddInput {
   root: UnknownLink
   shards?: CARLink[]
   issuer: DID
-  invocation: UCANLink
+  cause: UCANLink
 }
 
 export interface UploadInspectSuccess {
