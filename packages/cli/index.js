@@ -135,12 +135,14 @@ export async function upload(firstPath, opts) {
     }
   } else {
     spinner = ora({ text: 'Reading from stdin', isSilent: opts?.json }).start()
-    files = [{
-      name: 'stdin',
-      stream: () =>
-        /** @type {ReadableStream} */
-        (Readable.toWeb(process.stdin))
-    }]
+    files = [
+      {
+        name: 'stdin',
+        stream: () =>
+          /** @type {ReadableStream} */
+          (Readable.toWeb(process.stdin)),
+      },
+    ]
     totalSize = -1
     opts = opts ?? { _: [] }
     opts.wrap = false
@@ -155,26 +157,27 @@ export async function upload(firstPath, opts) {
     : client.uploadDirectory.bind(client, files)
 
   let totalSent = 0
-  const getStoringMessage = () => totalSize == -1
-      // for unknown size, display the amount sent so far
-    ? `Storing ${filesizeMB(totalSent)}`
-      // for known size, display percentage of total size that has been sent
-    : `Storing ${Math.min(Math.round((totalSent / totalSize) * 100), 100)}%`
+  const getStoringMessage = () =>
+    totalSize == -1
+      ? // for unknown size, display the amount sent so far
+        `Storing ${filesizeMB(totalSent)}`
+      : // for known size, display percentage of total size that has been sent
+        `Storing ${Math.min(Math.round((totalSent / totalSize) * 100), 100)}%`
 
   const root = await uploadFn({
     pieceHasher: {
       code: PieceHasher.code,
       name: 'fr32-sha2-256-trunc254-padded-binary-tree-multihash',
-      async digest (input) {
+      async digest(input) {
         const hasher = PieceHasher.create()
         hasher.write(input)
-  
+
         const bytes = new Uint8Array(hasher.multihashByteLength())
         hasher.digestInto(bytes, 0, true)
         hasher.free()
 
         return Digest.decode(bytes)
-      }
+      },
     },
     onShardStored: ({ cid, size, piece }) => {
       totalSent += size
@@ -196,7 +199,7 @@ export async function upload(firstPath, opts) {
     concurrentRequests:
       opts?.['concurrent-requests'] &&
       parseInt(String(opts?.['concurrent-requests'])),
-    receiptsEndpoint: client._receiptsEndpoint.toString()
+    receiptsEndpoint: client._receiptsEndpoint.toString(),
   })
   spinner.stopAndPersist({
     symbol: '⁂',
@@ -278,7 +281,9 @@ export async function addSpace(proofPathOrCid) {
     cid = CID.parse(proofPathOrCid, base64)
   } catch (/** @type {any} */ err) {
     if (err?.message?.includes('Unexpected end of data')) {
-      console.error(`Error: failed to read proof. The string has been truncated.`)
+      console.error(
+        `Error: failed to read proof. The string has been truncated.`
+      )
       process.exit(1)
     }
     /* otherwise, try as path */
@@ -287,7 +292,9 @@ export async function addSpace(proofPathOrCid) {
   let delegation
   if (cid) {
     if (cid.multihash.code !== identity.code) {
-      console.error(`Error: failed to read proof. Must be identity CID. Fetching of remote proof CARs not supported by this command yet`)
+      console.error(
+        `Error: failed to read proof. Must be identity CID. Fetching of remote proof CARs not supported by this command yet`
+      )
       process.exit(1)
     }
     delegation = await readProofFromBytes(cid.multihash.digest)
@@ -386,7 +393,9 @@ export async function createDelegation(audienceDID, opts) {
   const client = await getClient()
 
   if (client.currentSpace() == null) {
-    throw new Error('no current space, use `storacha space register` to create one.')
+    throw new Error(
+      'no current space, use `storacha space register` to create one.'
+    )
   }
   const audience = DID.parse(audienceDID)
 
@@ -603,10 +612,7 @@ export async function usageReport(opts) {
   }
   const failures = []
   let total = 0
-  for await (const result of getSpaceUsageReports(
-    client,
-    period
-  )) {
+  for await (const result of getSpaceUsageReports(client, period)) {
     if ('error' in result) {
       failures.push(result)
     } else {
@@ -637,9 +643,15 @@ export async function usageReport(opts) {
     console.log(`   Total: ${opts?.human ? filesize(total) : total}`)
     if (failures.length) {
       console.warn(``)
-      console.warn(`   WARNING: there were ${failures.length} errors getting usage reports for some spaces.`)
-      console.warn(`   This may happen if your agent does not have usage/report authorization for a space.`)
-      console.warn(`   These spaces were not included in the usage report total:`)
+      console.warn(
+        `   WARNING: there were ${failures.length} errors getting usage reports for some spaces.`
+      )
+      console.warn(
+        `   This may happen if your agent does not have usage/report authorization for a space.`
+      )
+      console.warn(
+        `   These spaces were not included in the usage report total:`
+      )
       for (const fail of failures) {
         console.warn(`   * space: ${fail.space}`)
         // @ts-expect-error error is unknown
@@ -697,7 +709,10 @@ export const reset = async () => {
   if (exportData) {
     let data = AgentData.fromExport(exportData)
     // do not reset the principal
-    data = await AgentData.create({ principal: data.principal, meta: data.meta })
+    data = await AgentData.create({
+      principal: data.principal,
+      meta: data.meta,
+    })
     await store.save(data.export())
   }
   console.log('⁂ Agent reset.')

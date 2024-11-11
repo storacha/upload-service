@@ -101,7 +101,10 @@ export const testAccount = {
 
 export const testSpace = {
   'storacha space create': test(async (assert, context) => {
-    const command = storacha.args(['space', 'create']).env(context.env.alice).fork()
+    const command = storacha
+      .args(['space', 'create'])
+      .env(context.env.alice)
+      .fork()
 
     const line = await command.output.take(1).text()
 
@@ -154,18 +157,20 @@ export const testSpace = {
     await create.terminate().join().catch()
   }),
 
-  'storacha space create my-space --no-recovery': test(async (assert, context) => {
-    const create = storacha
-      .args(['space', 'create', 'home', '--no-recovery'])
-      .env(context.env.alice)
-      .fork()
+  'storacha space create my-space --no-recovery': test(
+    async (assert, context) => {
+      const create = storacha
+        .args(['space', 'create', 'home', '--no-recovery'])
+        .env(context.env.alice)
+        .fork()
 
-    const line = await create.output.lines().take().text()
+      const line = await create.output.lines().take().text()
 
-    assert.match(line, /billing account/, 'no paper recovery')
+      assert.match(line, /billing account/, 'no paper recovery')
 
-    await create.terminate().join().catch()
-  }),
+      await create.terminate().join().catch()
+    }
+  ),
 
   'storacha space create my-space --no-recovery (logged-in)': test(
     async (assert, context) => {
@@ -294,8 +299,8 @@ export const testSpace = {
       )
     }),
 
-  'storacha space create home --no-recovery (blocks until plan is selected)': test(
-    async (assert, context) => {
+  'storacha space create home --no-recovery (blocks until plan is selected)':
+    test(async (assert, context) => {
       const email = 'alice@web.mail'
       await login(context, { email })
 
@@ -312,8 +317,7 @@ export const testSpace = {
 
       assert.match(output, /billing account is set/i)
       assert.match(error, /wait.*plan.*select/i)
-    }
-  ),
+    }),
 
   'storacha space add': test(async (assert, context) => {
     const { env } = context
@@ -346,7 +350,10 @@ export const testSpace = {
     const listNone = await storacha.args(['space', 'ls']).env(env.bob).join()
     assert.ok(!listNone.output.includes(spaceDID))
 
-    const add = await storacha.args(['space', 'add', proofPath]).env(env.bob).join()
+    const add = await storacha
+      .args(['space', 'add', proofPath])
+      .env(env.bob)
+      .join()
     assert.equal(add.output.trim(), spaceDID)
 
     const listSome = await storacha.args(['space', 'ls']).env(env.bob).join()
@@ -366,7 +373,7 @@ export const testSpace = {
         '-c',
         'store/*',
         'upload/*',
-        '--base64'
+        '--base64',
       ])
       .env(env.alice)
       .join()
@@ -374,7 +381,10 @@ export const testSpace = {
     const listNone = await storacha.args(['space', 'ls']).env(env.bob).join()
     assert.ok(!listNone.output.includes(spaceDID))
 
-    const add = await storacha.args(['space', 'add', res.output]).env(env.bob).join()
+    const add = await storacha
+      .args(['space', 'add', res.output])
+      .env(env.bob)
+      .join()
     assert.equal(add.output.trim(), spaceDID)
 
     const listSome = await storacha.args(['space', 'ls']).env(env.bob).join()
@@ -468,7 +478,10 @@ export const testSpace = {
       'old space is still listed'
     )
 
-    await storacha.args(['space', 'use', spaceDID]).env(context.env.alice).join()
+    await storacha
+      .args(['space', 'use', spaceDID])
+      .env(context.env.alice)
+      .join()
     const listSetDefault = await storacha
       .args(['space', 'ls'])
       .env(context.env.alice)
@@ -485,7 +498,10 @@ export const testSpace = {
       'new space is not default'
     )
 
-    await storacha.args(['space', 'use', spaceName]).env(context.env.alice).join()
+    await storacha
+      .args(['space', 'use', spaceName])
+      .env(context.env.alice)
+      .join()
     const listNamedDefault = await storacha
       .args(['space', 'ls'])
       .env(context.env.alice)
@@ -567,7 +583,7 @@ export const testSpace = {
     assert.deepEqual(JSON.parse(infoWithProviderJson.output), {
       did: spaceDID,
       providers: [providerDID],
-      name: 'home'
+      name: 'home',
     })
   }),
 
@@ -597,7 +613,10 @@ export const testSpace = {
 
     assert.match(provision.output, /Billing account is set/)
 
-    const info = await storacha.env(context.env.alice).args(['space', 'info']).join()
+    const info = await storacha
+      .env(context.env.alice)
+      .args(['space', 'info'])
+      .join()
 
     assert.match(
       info.output,
@@ -747,7 +766,10 @@ export const testStorachaUp = {
     // wait a second for invocation to get a different expiry
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    const list1 = await storacha.args(['ls', '--json']).env(context.env.alice).join()
+    const list1 = await storacha
+      .args(['ls', '--json'])
+      .env(context.env.alice)
+      .join()
 
     assert.ok(dagJSON.parse(list1.output))
   }),
@@ -792,10 +814,7 @@ export const testStorachaUp = {
       .catch()
 
     assert.equal(rm.status.code, 1)
-    assert.match(
-      rm.error,
-      /not found/
-    )
+    assert.match(rm.error, /not found/)
   }),
 }
 
@@ -869,7 +888,7 @@ export const testDelegation = {
           'store/add',
           '-c',
           'upload/add',
-          '--base64'
+          '--base64',
         ])
         .env(env)
         .join()
@@ -1057,7 +1076,10 @@ export const testProof = {
     const whoisbob = await storacha.args(['whoami']).env(env.bob).join()
     const bobDID = DID.parse(whoisbob.output.trim()).did()
 
-    const proofPath = path.join(os.tmpdir(), `storacha-cli-test-proof-${Date.now()}`)
+    const proofPath = path.join(
+      os.tmpdir(),
+      `storacha-cli-test-proof-${Date.now()}`
+    )
     await storacha
       .args([
         'delegation',
@@ -1256,7 +1278,10 @@ export const testPlan = {
     // wait a second for invocation to get a different expiry
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    const plan = await storacha.args(['plan', 'get']).env(context.env.alice).join()
+    const plan = await storacha
+      .args(['plan', 'get'])
+      .env(context.env.alice)
+      .join()
     assert.match(plan.output, /did:web:free.web3.storage/)
   }),
 }
@@ -1272,7 +1297,9 @@ export const testKey = {
 export const testBridge = {
   'storacha bridge generate-tokens': test(async (assert, context) => {
     const spaceDID = await loginAndCreateSpace(context)
-    const res = await storacha.args(['bridge', 'generate-tokens', spaceDID]).join()
+    const res = await storacha
+      .args(['bridge', 'generate-tokens', spaceDID])
+      .join()
     assert.match(res.output, /X-Auth-Secret header: u/)
     assert.match(res.output, /Authorization header: u/)
   }),
@@ -1313,7 +1340,11 @@ export const login = async (
  */
 export const selectPlan = async (
   context,
-  { email = 'alice@web.mail', billingID = 'test:cus_alice', plan = 'did:web:free.web3.storage' } = {}
+  {
+    email = 'alice@web.mail',
+    billingID = 'test:cus_alice',
+    plan = 'did:web:free.web3.storage',
+  } = {}
 ) => {
   const customer = DIDMailto.fromEmail(email)
   Result.try(await context.plansStorage.initialize(customer, billingID, plan))

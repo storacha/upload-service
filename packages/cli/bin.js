@@ -76,7 +76,11 @@ cli
   .describe('Store a file(s) to the service and register an upload.')
   .option('-H, --hidden', 'Include paths that start with ".".', false)
   .option('-c, --car', 'File is a CAR file.', false)
-  .option('--wrap', "Wrap single input file in a directory. Has no effect on directory or CAR uploads. Pass --no-wrap to disable.", true)
+  .option(
+    '--wrap',
+    'Wrap single input file in a directory. Has no effect on directory or CAR uploads. Pass --no-wrap to disable.',
+    true
+  )
   .option('--json', 'Format as newline delimited JSON', false)
   .option('--verbose', 'Output more details.', false)
   .option(
@@ -181,7 +185,7 @@ cli
   )
   .action(Coupon.issue)
 
-  cli
+cli
   .command('bridge generate-tokens <did>')
   .option('-c, --can', 'One or more abilities to delegate.')
   .option(
@@ -194,7 +198,6 @@ cli
     'If set, output JSON suitable to spread into the `headers` field of a `fetch` request.'
   )
   .action(Bridge.generateTokens)
-
 
 cli
   .command('delegation create <audience-did>')
@@ -323,13 +326,17 @@ cli
 
 cli
   .command('key create')
-  .describe('Generate and print a new ed25519 key pair. Does not change your current signing key.')
+  .describe(
+    'Generate and print a new ed25519 key pair. Does not change your current signing key.'
+  )
   .option('--json', 'output as json')
   .action(createKey)
 
 cli
   .command('reset')
-  .describe('Remove all proofs/delegations from the store but retain the agent DID.')
+  .describe(
+    'Remove all proofs/delegations from the store but retain the agent DID.'
+  )
   .action(reset)
 
 // show help text if no command provided

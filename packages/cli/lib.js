@@ -61,7 +61,9 @@ export function filesizeMB(bytes) {
 
 /** Get a configured w3up store used by the CLI. */
 export function getStore() {
-  return new StoreConf({ profile: process.env.STORACHA_STORE_NAME ?? 'storacha-cli' })
+  return new StoreConf({
+    profile: process.env.STORACHA_STORE_NAME ?? 'storacha-cli',
+  })
 }
 
 /**
@@ -81,7 +83,7 @@ export function getClient() {
   if (receiptsEndpointString) {
     receiptsEndpoint = new URL(receiptsEndpointString)
   }
-    
+
   let serviceConf
   if (uploadServiceDID && uploadServiceURL) {
     serviceConf =
@@ -180,8 +182,8 @@ export function uploadListResponseToString(res, opts = {}) {
               leaf: shards?.map((s) => s.toString()),
             },
           ],
-        })}
-      )
+        })
+      })
       .join('\n')
   } else {
     return res.results.map(({ root }) => root.toString()).join('\n')
@@ -197,9 +199,7 @@ export function uploadListResponseToString(res, opts = {}) {
  */
 export function blobListResponseToString(res, opts = {}) {
   if (opts.json) {
-    return res.results
-      .map(({ blob }) => dagJSON.stringify({ blob }))
-      .join('\n')
+    return res.results.map(({ blob }) => dagJSON.stringify({ blob })).join('\n')
   } else {
     return res.results
       .map(({ blob }) => {
@@ -212,7 +212,7 @@ export function blobListResponseToString(res, opts = {}) {
 }
 
 /**
- * @param {FilecoinInfoSuccess} res 
+ * @param {FilecoinInfoSuccess} res
  * @param {object} [opts]
  * @param {boolean} [opts.raw]
  * @param {boolean} [opts.json]
@@ -220,12 +220,16 @@ export function blobListResponseToString(res, opts = {}) {
 export function filecoinInfoToString(res, opts = {}) {
   if (opts.json) {
     return res.deals
-      .map(deal => dagJSON.stringify(({
-        aggregate: deal.aggregate.toString(),
-        provider: deal.provider,
-        dealId: deal.aux.dataSource.dealID,
-        inclusion: res.aggregates.find(a => a.aggregate.toString() === deal.aggregate.toString())?.inclusion
-      })))
+      .map((deal) =>
+        dagJSON.stringify({
+          aggregate: deal.aggregate.toString(),
+          provider: deal.provider,
+          dealId: deal.aux.dataSource.dealID,
+          inclusion: res.aggregates.find(
+            (a) => a.aggregate.toString() === deal.aggregate.toString()
+          )?.inclusion,
+        })
+      )
       .join('\n')
   } else {
     if (!res.deals.length) {
@@ -237,11 +241,15 @@ export function filecoinInfoToString(res, opts = {}) {
     // not showing inclusion proof as it would just be bytes
     return `
     Piece CID: ${res.piece.toString()}
-    Deals: ${res.deals.map((deal) => `
+    Deals: ${res.deals
+      .map(
+        (deal) => `
       Aggregate: ${deal.aggregate.toString()}
        Provider: ${deal.provider}
         Deal ID: ${deal.aux.dataSource.dealID}
-    `).join('')}
+    `
+      )
+      .join('')}
     `
   }
 }
@@ -289,10 +297,14 @@ export const startOfLastMonth = (now) => {
 }
 
 /** @param {ReadableStream<Uint8Array>} source */
-export const streamToBlob = async source => {
+export const streamToBlob = async (source) => {
   const chunks = /** @type {Uint8Array[]} */ ([])
-  await source.pipeTo(new WritableStream({
-    write: chunk => { chunks.push(chunk) }
-  }))
+  await source.pipeTo(
+    new WritableStream({
+      write: (chunk) => {
+        chunks.push(chunk)
+      },
+    })
+  )
   return new Blob(chunks)
 }

@@ -161,7 +161,6 @@ class Join {
   }
 }
 
-
 /**
  * @template {string} Channel
  * @param {AsyncIterable<Uint8Array>} source

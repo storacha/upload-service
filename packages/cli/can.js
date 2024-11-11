@@ -37,10 +37,13 @@ export async function blobAdd(blobPath) {
 
   spinner.start('Storing')
   const { digest } = await client.capability.blob.add(blob, {
-    receiptsEndpoint: client._receiptsEndpoint.toString()
+    receiptsEndpoint: client._receiptsEndpoint.toString(),
   })
   const cid = Link.create(raw.code, digest)
-  spinner.stopAndPersist({ symbol: '⁂', text: `Stored ${base58btc.encode(digest.bytes)} (${cid})` })
+  spinner.stopAndPersist({
+    symbol: '⁂',
+    text: `Stored ${base58btc.encode(digest.bytes)} (${cid})`,
+  })
 }
 
 /**
@@ -211,7 +214,9 @@ export async function filecoinInfo(pieceCid, opts) {
   const client = await getClient()
   const info = await client.capability.filecoin.info(pieceInfo.link)
   if (info.out.error) {
-    spinner.fail(`Error: failed to get filecoin info: ${info.out.error.message}`)
+    spinner.fail(
+      `Error: failed to get filecoin info: ${info.out.error.message}`
+    )
     process.exit(1)
   }
   spinner.stop()

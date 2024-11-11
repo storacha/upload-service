@@ -52,10 +52,12 @@ export const generateTokens = async (
   const authorization = base64url.encode(bytes)
 
   if (json) {
-    console.log(JSON.stringify({
-      "X-Auth-Secret": xAuthSecret,
-      "Authorization": authorization
-    }))
+    console.log(
+      JSON.stringify({
+        'X-Auth-Secret': xAuthSecret,
+        Authorization: authorization,
+      })
+    )
   } else {
     console.log(`
 X-Auth-Secret header: ${xAuthSecret}  

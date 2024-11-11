@@ -62,7 +62,8 @@ export const setup = async () => {
   const { server, serverURL, router } = await createHTTPServer({
     '/': context.connection.channel.request.bind(context.connection.channel),
   })
-  const { server: receiptsServer, serverURL: receiptsServerUrl } = await createReceiptsServer()
+  const { server: receiptsServer, serverURL: receiptsServerUrl } =
+    await createReceiptsServer()
 
   return Object.assign(context, {
     server,

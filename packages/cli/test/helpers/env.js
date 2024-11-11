@@ -12,7 +12,7 @@ export function createEnv(options = {}) {
     Object.assign(env, {
       STORACHA_SERVICE_DID: servicePrincipal.did(),
       STORACHA_SERVICE_URL: serviceURL.toString(),
-      STORACHA_RECEIPTS_URL: receiptsEndpoint?.toString()
+      STORACHA_RECEIPTS_URL: receiptsEndpoint?.toString(),
     })
   }
   return env
