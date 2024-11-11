@@ -564,6 +564,9 @@ export const testSpace = {
       provider: providerDID,
     })
 
+    // wait 1 second so we don't get a cached receipt
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
     const infoWithProvider = await storacha
       .args(['space', 'info'])
       .env(context.env.alice)
