@@ -16,14 +16,14 @@ export function blobListProvider(context) {
     }
     return Server.ok({
       ...result.ok,
-      results: result.ok.results.map(r => ({
+      results: result.ok.results.map((r) => ({
         blob: {
           digest: r.blob.digest.bytes,
-          size: r.blob.size
+          size: r.blob.size,
         },
         cause: r.cause,
-        insertedAt: r.insertedAt.toISOString()
-      }))
+        insertedAt: r.insertedAt.toISOString(),
+      })),
     })
   })
 }

@@ -102,8 +102,8 @@ export const poll = async (context, receipt) => {
     cause: allocate.nb.cause,
     blob: {
       digest: Digest.decode(allocate.nb.blob.digest),
-      size: allocate.nb.blob.size
-    }
+      size: allocate.nb.blob.size,
+    },
   })
   if (register.error) {
     // it's ok if there's already a registration of this blob in this space

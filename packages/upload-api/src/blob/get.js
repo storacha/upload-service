@@ -23,10 +23,10 @@ export function blobGetProvider(context) {
     return Server.ok({
       blob: {
         digest: res.ok.blob.digest.bytes,
-        size: res.ok.blob.size
+        size: res.ok.blob.size,
       },
       cause: res.ok.cause,
-      insertedAt: res.ok.insertedAt.toISOString()
+      insertedAt: res.ok.insertedAt.toISOString(),
     })
   })
 }

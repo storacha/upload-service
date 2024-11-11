@@ -10,7 +10,10 @@ import { ed25519 } from '@ucanto/principal'
 import { CAR, HTTP } from '@ucanto/transport'
 import * as Server from '@ucanto/server'
 import { connect } from '@ucanto/client'
-import { AllocatedMemoryNotWrittenError, BlobSizeLimitExceededError } from '../../src/blob.js'
+import {
+  AllocatedMemoryNotWrittenError,
+  BlobSizeLimitExceededError,
+} from '../../src/blob.js'
 
 /**
  * @typedef {{
@@ -61,7 +64,12 @@ const createService = ({
         const digest = Digest.decode(capability.nb.blob.digest)
         const checksum = base64pad.baseEncode(digest.digest)
         if (capability.nb.blob.size > MaxUploadSize) {
-          return error(new BlobSizeLimitExceededError(capability.nb.blob.size, MaxUploadSize))
+          return error(
+            new BlobSizeLimitExceededError(
+              capability.nb.blob.size,
+              MaxUploadSize
+            )
+          )
         }
         if (await contentStore.has(digest)) {
           return ok({ size: 0 })

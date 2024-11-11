@@ -54,7 +54,9 @@ export const test = {
     assert.ok(find1.ok)
     assert.ok(find1.ok?.blob)
     assert.equal(find1.ok?.blob.size, data.length)
-    assert.ok(equals(digest.bytes, find1.ok?.blob.digest.bytes || new Uint8Array()))
+    assert.ok(
+      equals(digest.bytes, find1.ok?.blob.digest.bytes || new Uint8Array())
+    )
     assert.equal(find1.ok?.cause.toString(), cause.toString())
   },
   'should list all blobs in a space': async (assert, context) => {
