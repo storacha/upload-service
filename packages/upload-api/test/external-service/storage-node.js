@@ -323,7 +323,7 @@ export class StorageNode {
 
 /**
  * @param {API.ClaimsClientContext} ctx
- * @param {{ space: API.SpaceDID, digest: API.MultihashDigest, location: API.URI }} params
+ * @param {{ space: Uint8Array, digest: API.MultihashDigest, location: API.URI }} params
  */
 const publishLocationCommitment = async (ctx, { digest, location }) => {
   const { invocationConfig, connection } = ctx.claimsService

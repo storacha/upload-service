@@ -18,7 +18,6 @@ import { content } from './space/blob.js'
 import {
   equalBlob,
   equalWith,
-  SpaceDID,
   and,
   equal,
   checkLink,
@@ -50,7 +49,7 @@ export const allocate = capability({
     /** Link to the add blob task that initiated the allocation. */
     cause: Schema.link({ version: 1 }),
     /** DID of the user space where the allocation takes place. */
-    space: SpaceDID,
+    space: Schema.bytes(),
   }),
   derives: (claimed, delegated) =>
     and(equalWith(claimed, delegated)) ||
@@ -73,7 +72,7 @@ export const accept = capability({
     /** Blob to accept. */
     blob: content,
     /** DID of the user space where allocation took place. */
-    space: SpaceDID,
+    space: Schema.bytes(),
     /** This task is blocked on `http/put` receipt available */
     _put: Await,
   }),
