@@ -16,6 +16,11 @@ const uploadServiceDID = 'did:web:staging.upload.storacha.network'
 const storageProviderDID =
   'did:key:...'
 
+if (!process.argv[2]) {
+  console.error('missing private key arg')
+  process.exit(1)
+}
+
 // @ts-expect-error 
 const delegateIndexingServiceToUploadService = async () => {
   const issuer = ed25519.parse(process.argv[2]).withDID(indexingServiceDID)
@@ -25,8 +30,8 @@ const delegateIndexingServiceToUploadService = async () => {
     issuer,
     audience,
     capabilities: [
-      { can: 'assert/equals', with: issuer.did() },
-      { can: 'assert/index', with: issuer.did() },
+      { can: 'assert/equals', with: issuer.did(), nb: {} },
+      { can: 'assert/index', with: issuer.did(), nb: {} },
     ],
     expiration: Infinity,
   })
@@ -44,8 +49,8 @@ const delegateStorageProviderToUploadService = async () => {
     issuer,
     audience,
     capabilities: [
-      { can: 'blob/allocate', with: issuer.did() },
-      { can: 'blob/accept', with: issuer.did() },
+      { can: 'blob/allocate', with: issuer.did(), nb: {} },
+      { can: 'blob/accept', with: issuer.did(), nb: {} },
     ],
     expiration: Infinity,
   })
@@ -62,7 +67,7 @@ const delegateIndexingServiceToStorageProvider = async () => {
   const delegation = await delegate({
     issuer,
     audience,
-    capabilities: [{ can: 'claim/cache', with: issuer.did() }],
+    capabilities: [{ can: 'claim/cache', with: issuer.did(), nb: {} }],
     expiration: Infinity,
   })
 
