@@ -36,8 +36,8 @@ importers:
         specifier: ^9.1.1
         version: 9.1.1
       '@w3ui/react':
-        specifier: 2.5.0
-        version: 2.5.0(@types/react@18.2.42)(encoding@0.1.13)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+        specifier: 2.5.1
+        version: 2.5.1(@types/react@18.2.42)(encoding@0.1.13)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@web3-storage/access':
         specifier: ^19.0.0
         version: 19.0.0
@@ -902,11 +902,11 @@ packages:
   '@vercel/static-config@3.0.0':
     resolution: {integrity: sha512-2qtvcBJ1bGY0dYGYh3iM7yGKkk971FujLEDXzuW5wcZsPr1GSEjO/w2iSr3qve6nDDtBImsGoDEnus5FI4+fIw==}
 
-  '@w3ui/core@2.3.1':
-    resolution: {integrity: sha512-nA2RkJBavJsy93TdZUjvOQJruWlalT4DJsOo3YYEt9X2iGtdFJTluVcFy4TXJCo4cnw3y7hzkE1YtE+o0vu6Yw==}
+  '@w3ui/core@2.3.2':
+    resolution: {integrity: sha512-Q14yehn4merqRLiYXFkVlJr49n/i0YLVkbK6bwIRTZiflaHFqnhqMkBdTQO4xu03a5ZvQPsaoEhqmHSNarnXZQ==}
 
-  '@w3ui/react@2.5.0':
-    resolution: {integrity: sha512-VsFE5UQVcZSGrPSsApb1vJJwEoVgAw3NHdFCHDvhnFzw6dbWmMkxQ1LdQRLfn+si0IXSHTJAN4BNPv/0YB4vSA==}
+  '@w3ui/react@2.5.1':
+    resolution: {integrity: sha512-ukA5Zf/CMu2DqpLWsoX3QwxFnfD477IG3N/KgP7L68UluzJQ1mWTZxS6QAMDqwieuS3TbePRIWzpgyZl0cEyMw==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
 
@@ -4648,7 +4648,7 @@ snapshots:
       json-schema-to-ts: 1.6.4
       ts-morph: 12.0.0
 
-  '@w3ui/core@2.3.1(encoding@0.1.13)':
+  '@w3ui/core@2.3.2(encoding@0.1.13)':
     dependencies:
       '@ipld/dag-ucan': 3.4.0
       '@ucanto/client': 9.0.1
@@ -4661,11 +4661,11 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@w3ui/react@2.5.0(@types/react@18.2.42)(encoding@0.1.13)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
+  '@w3ui/react@2.5.1(@types/react@18.2.42)(encoding@0.1.13)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
     dependencies:
       '@ariakit/react': 0.3.14(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@ariakit/react-core': 0.3.14(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@w3ui/core': 2.3.1(encoding@0.1.13)
+      '@w3ui/core': 2.3.2(encoding@0.1.13)
       ariakit-react-utils: 0.17.0-next.27(@types/react@18.2.42)(react@18.2.0)
       react: 18.2.0
     transitivePeerDependencies:

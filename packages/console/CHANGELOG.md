@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.2](https://github.com/storacha/console/compare/w3console-v1.15.1...w3console-v1.15.2) (2024-11-25)
+
+
+### Bug Fixes
+
+* add missing receiptsEndpoint to W3UIProvider ([#144](https://github.com/storacha/console/issues/144)) ([eaa7e50](https://github.com/storacha/console/commit/eaa7e50386635723751af1fc7cb4cf4ff5cf6abc))
+
 ## [1.15.1](https://github.com/storacha/console/compare/w3console-v1.15.0...w3console-v1.15.1) (2024-10-22)
 
 
