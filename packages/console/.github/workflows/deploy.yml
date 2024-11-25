@@ -38,6 +38,7 @@ jobs:
           # add vars configuring console frontend to use staging w3up as backend
           echo "NEXT_PUBLIC_W3UP_SERVICE_DID=did:web:staging.web3.storage" >> .env
           echo "NEXT_PUBLIC_W3UP_SERVICE_URL=https://staging.up.web3.storage" >> .env
+          echo "NEXT_PUBLIC_W3UP_RECEIPTS_URL=https://staging.up.web3.storage/receipt/" >> .env
           echo "NEXT_PUBLIC_W3UP_PROVIDER=did:web:staging.web3.storage" >> .env
           echo "NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID=prctbl_1NzhdvF6A5ufQX5vKNZuRhie" >> .env
           echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51LO87hF6A5ufQX5viNsPTbuErzfavdrEFoBuaJJPfoIhzQXdOUdefwL70YewaXA32ZrSRbK4U4fqebC7SVtyeNcz00qmgNgueC" >> .env
@@ -125,6 +126,7 @@ jobs:
           # add vars configuring console frontend to use staging w3up as backend
           echo "NEXT_PUBLIC_W3UP_SERVICE_DID=did:web:web3.storage" >> .env
           echo "NEXT_PUBLIC_W3UP_SERVICE_URL=https://up.web3.storage" >> .env
+          echo "NEXT_PUBLIC_W3UP_RECEIPTS_URL=https://up.web3.storage/receipt/" >> .env
           echo "NEXT_PUBLIC_W3UP_PROVIDER=did:web:web3.storage" >> .env
           echo "NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID=prctbl_1OCJ1qF6A5ufQX5vM5DWg4rA" >> .env
           echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_51LO87hF6A5ufQX5vQTO5BHyz8y9ybJp4kg1GsBjYuqwluuwtQTkbeZzkoQweFQDlv7JaGjuIdUWAyuwXp3tmCfsM005lJK9aS8" >> .env

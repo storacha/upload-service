@@ -26,6 +26,7 @@ By default, this app connects to `https://up.web3.storage`, and uses `did:web:we
 NEXT_PUBLIC_W3UP_SERVICE_URL=https://your.w3up.service
 NEXT_PUBLIC_W3UP_SERVICE_DID=did:your-service-did
 NEXT_PUBLIC_W3UP_PROVIDER=did:your-provider-did
+NEXT_PUBLIC_W3UP_RECEIPTS_URL=https://your.w3up.service/receipt/
 ```
 
 An example `.env.local` file can be found in `.env.tpl`.
