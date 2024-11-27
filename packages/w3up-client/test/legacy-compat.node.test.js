@@ -30,7 +30,7 @@ export const testLegacyCompatibility = {
       { connection, provisionsStorage, agentStore }
     ) => {
       const receiptsServer = createReceiptsServer(agentStore)
-      const receiptsEndpoint = await new Promise(resolve => {
+      const receiptsEndpoint = await new Promise((resolve) => {
         receiptsServer.listen(() => {
           // @ts-expect-error
           resolve(new URL(`http://127.0.0.1:${receiptsServer.address().port}`))

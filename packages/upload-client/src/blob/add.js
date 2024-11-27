@@ -291,9 +291,12 @@ export async function add(
     )
     const ucanConclude = await httpPutConcludeInvocation.execute(conn)
     if (!ucanConclude.out.ok) {
-      throw new Error(`failed ${UCAN.conclude.can} for ${HTTPCapabilities.put.can} invocation`, {
-        cause: result.out.error,
-      })
+      throw new Error(
+        `failed ${UCAN.conclude.can} for ${HTTPCapabilities.put.can} invocation`,
+        {
+          cause: result.out.error,
+        }
+      )
     }
   }
 

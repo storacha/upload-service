@@ -56,7 +56,7 @@ export function blobAddProvider(context) {
         blob,
         space,
         cause: invocation.link(),
-        receipt: allocation.ok.receipt
+        receipt: allocation.ok.receipt,
       })
 
       const delivery = await put({
@@ -81,7 +81,7 @@ export function blobAddProvider(context) {
         blob,
         space,
         delivery: delivery,
-        acceptance: acceptance.ok
+        acceptance: acceptance.ok,
       })
 
       // Create a result describing this invocation workflow
@@ -104,7 +104,7 @@ export function blobAddProvider(context) {
         ...allocationW3s.fx,
         ...delivery.fx,
         ...acceptance.ok.fx,
-        ...acceptanceW3s.fx
+        ...acceptanceW3s.fx,
       ]
       for (const task of fx) {
         result = result.fork(task)
@@ -225,7 +225,7 @@ async function allocateW3s({ context, blob, space, cause, receipt }) {
   const w3sAllocateReceipt = await Receipt.issue({
     issuer: context.id,
     ran: w3sAllocateTask.cid,
-    result: receipt.out
+    result: receipt.out,
   })
 
   const w3sAllocateConclude = createConcludeInvocation(
@@ -237,7 +237,7 @@ async function allocateW3s({ context, blob, space, cause, receipt }) {
   return {
     task: w3sAllocateTask,
     receipt: w3sAllocateReceipt,
-    fx: [await w3sAllocateConclude.delegate()]
+    fx: [await w3sAllocateConclude.delegate()],
   }
 }
 
@@ -436,7 +436,7 @@ async function acceptW3s({ context, blob, space, delivery, acceptance }) {
     w3sAcceptReceipt = await Receipt.issue({
       issuer: context.id,
       ran: w3sAcceptTask,
-      result: acceptance.receipt.out
+      result: acceptance.receipt.out,
     })
   }
 

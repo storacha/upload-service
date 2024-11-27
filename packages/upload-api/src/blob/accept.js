@@ -105,7 +105,7 @@ export const poll = async (context, receipt) => {
     issuer: context.id,
     ran: w3sAcceptTask.cid,
     result: acceptReceipt.out,
-    fx: acceptReceipt.fx
+    fx: acceptReceipt.fx,
   })
 
   // record the invocation and the receipt
