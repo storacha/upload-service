@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.0.2](https://github.com/storacha/upload-service/compare/upload-client-v1.0.1...upload-client-v1.0.2) (2024-12-02)
+
+
+### Fixes
+
+* compatibility with legacy w3up client ([#59](https://github.com/storacha/upload-service/issues/59)) ([7185046](https://github.com/storacha/upload-service/commit/7185046e3186bef9b4f56f9e6c1c94a0c576fc53))
+* jsdoc ([5506c11](https://github.com/storacha/upload-service/commit/5506c11eeda8351dd21f6fff339057e69813eab2))
+* overflow slices ([#1595](https://github.com/storacha/upload-service/issues/1595)) ([949b84a](https://github.com/storacha/upload-service/commit/949b84ac808e6147178a4de693607ebd409388b4))
+* thanks prettier ([11e34b4](https://github.com/storacha/upload-service/commit/11e34b40af2485757f8ba2056c08a100677dc393))
+* trigger release ([f0f9a56](https://github.com/storacha/upload-service/commit/f0f9a56bb28bc50e33845f07c859cd209562a338))
+
+
+### Other Changes
+
+* prettier ([40ebc05](https://github.com/storacha/upload-service/commit/40ebc052b0b2d0d789b254ce0e4ec6e7687f7e41))
+
 ## [1.0.1](https://github.com/storacha/upload-service/compare/upload-client-v1.0.0...upload-client-v1.0.1) (2024-11-12)
 
 
