@@ -10,7 +10,13 @@ const config: Config = {
         'logo': 'url("/w3.svg")'
       },
       colors: {
-        'gray-dark': '#1d2027'
+        'gray-dark': '#1d2027',
+        'hot-red': '#E91315',
+        'hot-red-light': '#EFE3F3',
+        'hot-yellow': '#FFC83F',
+        'hot-yellow-light': '#FFE4AE',
+        'hot-blue': '#0176CE',
+        'hot-blue-light': '#BDE0FF'
       }
     }
   },

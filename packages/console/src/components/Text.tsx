@@ -15,3 +15,12 @@ export function H2 ({ children, className = '', as = 'h2', explain }: { children
     </As>
   )
 }
+
+export function H3 ({ children, className = '', as = 'h3', explain }: { children: React.ReactNode, className?: string, as?: 'h1' | 'h2' | 'h3', explain?: string }) {
+  const As = as
+  return (
+    <As className={`text-hot-red text-xs uppercase font-epilogue my-2 text-black font-mono ${className}`}>
+      {children}{explain ? <span className='opacity-50 normal-case'>: {explain}</span> : null}
+    </As>
+  )
+}

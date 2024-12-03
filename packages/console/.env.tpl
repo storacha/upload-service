@@ -11,3 +11,7 @@ NEXT_PUBLIC_STRIPE_CUSTOMER_PORTAL_LINK=https://billing.stripe.com/p/login/test_
 
 # set this to skip forcing users to pick a Stripe plan
 NEXT_PUBLIC_DISABLE_PLAN_GATE=false
+
+# point these at the marketing website and referrals service 
+NEXT_PUBLIC_REFERRAL_URL=http://localhost:3001/referred
+NEXT_PUBLIC_REFERRALS_SERVICE_URL=http://localhost:4001

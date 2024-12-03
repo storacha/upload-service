@@ -41,8 +41,13 @@ jobs:
           echo "NEXT_PUBLIC_W3UP_RECEIPTS_URL=https://staging.up.storacha.network/receipt/" >> .env
           echo "NEXT_PUBLIC_W3UP_PROVIDER=did:web:staging.web3.storage" >> .env
           echo "NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID=prctbl_1NzhdvF6A5ufQX5vKNZuRhie" >> .env
+          echo "NEXT_PUBLIC_STRIPE_TRIAL_PRICING_TABLE_ID=prctbl_1QIDHGF6A5ufQX5vOK9Xl8Up" >> .env
           echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51LO87hF6A5ufQX5viNsPTbuErzfavdrEFoBuaJJPfoIhzQXdOUdefwL70YewaXA32ZrSRbK4U4fqebC7SVtyeNcz00qmgNgueC" >> .env
           echo "NEXT_PUBLIC_STRIPE_CUSTOMER_PORTAL_LINK=https://billing.stripe.com/p/login/test_6oE29Gff99KO6mk8ww" >> .env
+          
+          # use example.com in preview because we can't predict the preview URL of the storacha.network site          
+          echo "NEXT_PUBLIC_REFERRAL_URL=http://example.com/referred" >> .env
+          echo "NEXT_PUBLIC_REFERRALS_SERVICE_URL=https://staging-referrals.storacha.network" >> .env
       # as long as this uses https://github.com/cloudflare/next-on-pages/blob/dc529d7efa8f8568ea8f71b5cdcf78df89be6c12/packages/next-on-pages/bin/index.js,
       # env vars won't get passed through to wrangler, so if wrangler will need them, write them to .env like the previous step
       - run: pnpm pages:build
@@ -131,8 +136,11 @@ jobs:
           echo "NEXT_PUBLIC_W3UP_RECEIPTS_URL=https://up.storacha.network/receipt/" >> .env
           echo "NEXT_PUBLIC_W3UP_PROVIDER=did:web:web3.storage" >> .env
           echo "NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID=prctbl_1OCJ1qF6A5ufQX5vM5DWg4rA" >> .env
+          echo "NEXT_PUBLIC_STRIPE_TRIAL_PRICING_TABLE_ID=prctbl_1QPYsuF6A5ufQX5vdIGAe54g" >> .env
           echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_51LO87hF6A5ufQX5vQTO5BHyz8y9ybJp4kg1GsBjYuqwluuwtQTkbeZzkoQweFQDlv7JaGjuIdUWAyuwXp3tmCfsM005lJK9aS8" >> .env
           echo "NEXT_PUBLIC_STRIPE_CUSTOMER_PORTAL_LINK=https://billing.stripe.com/p/login/cN22aA62U6bO1sA9AA" >> .env
+          echo "NEXT_PUBLIC_REFERRAL_URL=http://storacha.network/referred" >> .env
+          echo "NEXT_PUBLIC_REFERRALS_SERVICE_URL=https://referrals.storacha.network" >> .env
       - run: pnpm pages:build
         # as long as this uses https://github.com/cloudflare/next-on-pages/blob/dc529d7efa8f8568ea8f71b5cdcf78df89be6c12/packages/next-on-pages/bin/index.js,
         # env vars won't get passed through to wrangler, so if wrangler will need them, write them to .env like the previous step

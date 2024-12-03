@@ -29,48 +29,6 @@
   background-position: bottom;
   background-repeat: no-repeat;
 }
-.bg-hot-red,
-.hover\:bg-hot-red:hover {
-  background-color: var(--hot-red);
-}
-.bg-hot-red-light,
-.hover\:bg-hot-red-light:hover {
-  background-color: var(--hot-red-light);
-}
-.bg-hot-blue-light {
-  background-color: var(--hot-blue-light);
-}
-.bg-hot-yellow {
-  background-color: var(--hot-yellow);
-}
-.hover\:bg-hot-yellow:hover {
-  background-color: var(--hot-yellow);
-}
-.bg-hot-yellow-light,
-.hover\:bg-hot-yellow-light:hover {
-  background-color: var(--hot-yellow-light);
-}
-.border-hot-red,
-.hover\:border-hot-red:hover {
-  border-color: var(--hot-red);
-}
-.border-hot-yellow {
-  border-color: var(--hot-yellow);
-}
-.border-hot-yellow-light {
-  border-color: var(--hot-yellow-light);
-}
-.text-hot-red,
-.hover\:text-hot-red:hover {
-  color: var(--hot-red);
-}
-.text-hot-yellow {
-  color: var(--hot-yellow);
-}
-.text-hot-blue {
-  color: var(--hot-blue);
-}
-
 .w3ui-button-colors {
   @apply text-white bg-slate-800 hover:bg-blue-800 transition-colors ease-in;
 }

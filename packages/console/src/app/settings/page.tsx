@@ -5,9 +5,12 @@ import useSWR from 'swr'
 import Link from 'next/link'
 import { usePlan } from '@/hooks'
 import { SettingsNav } from './layout'
-import { H1, H2 } from '@/components/Text'
+import { H1, H2, H3 } from '@/components/Text'
 import { GB, TB, filesize } from '@/lib'
 import DefaultLoader from '@/components/Loader'
+import { RefcodeLink, ReferralsList, RefcodeCreator } from '../referrals/page'
+import { useReferrals } from '@/lib/referrals/hooks'
+import { useSearchParams } from 'next/navigation'
 
 const Plans: Record<`did:${string}`, { name: string, limit: number }> = {
   'did:web:starter.web3.storage': { name: 'Starter', limit: 5 * GB },
@@ -15,6 +18,9 @@ const Plans: Record<`did:${string}`, { name: string, limit: number }> = {
   'did:web:business.web3.storage': { name: 'Business', limit: 2 * TB },
   'did:web:free.web3.storage': { name: 'Free', limit: Infinity },
 }
+
+const MAX_REFERRALS = 11
+const MAX_CREDITS = 460
 
 export default function SettingsPage (): JSX.Element {
   const [{ client, accounts }] = useW3()
@@ -62,10 +68,50 @@ export default function SettingsPage (): JSX.Element {
   const allocated = Object.values(usage ?? {}).reduce((total, n) => total + n, 0)
   const limit = plan?.product ? Plans[plan.product]?.limit : 0
 
+  const { referrals, referralLink, setReferrerEmail, accountEmail, urlQueryEmail, createRefcode, mutateRefcode, } = useReferrals()
+
+  const referred = referrals?.length || 0
+
+  // TODO: need to calculate these from the referral information that gets added during the TBD cronjob
+  const credits = 0
+  const points = 0
+  const params = useSearchParams()
+  const referralsEnabled = (params.get('referrals') === 'enabled')
   return (
     <>
       <SettingsNav />
       <H1>Settings</H1>
+      {referralsEnabled && (
+        <>
+          <H2>Rewards</H2>
+          <div className='flex flex-row space-x-2 justify-between max-w-4xl mb-4'>
+            <div className='border border-hot-red rounded-2xl bg-white p-5 flex-grow'>
+              <H3>Referred</H3>
+              <span className='text-4xl'>{referred}</span> / {MAX_REFERRALS}
+            </div>
+            <div className='border border-hot-red rounded-2xl bg-white p-5 flex-grow'>
+              <H3>USD Credits</H3>
+              <span className='text-4xl'>{credits}</span> / {MAX_CREDITS}
+            </div>
+            <div className='border border-hot-red rounded-2xl bg-white p-5 flex-grow'>
+              <H3>Racha Points</H3>
+              <span className='text-4xl'>{points}</span>
+            </div>
+          </div>
+          <div className='border border-hot-red rounded-2xl bg-white p-5 max-w-4xl mb-4'>
+            <ReferralsList />
+            {referralLink ? (
+              <RefcodeLink referralLink={referralLink} />
+            ) : (
+              <RefcodeCreator
+                accountEmail={accountEmail}
+                urlQueryEmail={urlQueryEmail}
+                createRefcode={createRefcode}
+                mutateRefcode={mutateRefcode}
+                setReferrerEmail={setReferrerEmail} />)}
+          </div>
+        </>
+      )}
       <div className='border border-hot-red rounded-2xl bg-white p-5 max-w-4xl'>
         <H2>Plan</H2>
         <p className='font-epilogue mb-4'>
