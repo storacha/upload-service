@@ -46,7 +46,7 @@ jobs:
           echo "NEXT_PUBLIC_STRIPE_CUSTOMER_PORTAL_LINK=https://billing.stripe.com/p/login/test_6oE29Gff99KO6mk8ww" >> .env
           
           # use example.com in preview because we can't predict the preview URL of the storacha.network site          
-          echo "NEXT_PUBLIC_REFERRAL_URL=http://example.com/referred" >> .env
+          echo "NEXT_PUBLIC_REFERRAL_URL=http://staging.console.storacha.network/referred" >> .env
           echo "NEXT_PUBLIC_REFERRALS_SERVICE_URL=https://staging-referrals.storacha.network" >> .env
       # as long as this uses https://github.com/cloudflare/next-on-pages/blob/dc529d7efa8f8568ea8f71b5cdcf78df89be6c12/packages/next-on-pages/bin/index.js,
       # env vars won't get passed through to wrangler, so if wrangler will need them, write them to .env like the previous step
