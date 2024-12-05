@@ -14,8 +14,8 @@ import { H2 } from './Text'
 import { SidebarMigrations } from './SidebarMigrations'
 
 const navLinks = [
-  { name: 'Terms', href: 'https://web3.storage/docs/terms' },
-  { name: 'Docs', href: 'https://web3.storage/docs' },
+  { name: 'Terms', href: 'https://docs.storacha.network/terms/' },
+  { name: 'Docs', href: 'https://docs.storacha.network/' },
   { name: 'Support', href: 'mailto:support@storacha.network' },
 ]
 
