@@ -17,7 +17,10 @@ const config: Config = {
         'hot-yellow-light': '#FFE4AE',
         'hot-blue': '#0176CE',
         'hot-blue-light': '#BDE0FF'
-      }
+      },
+      backdropBlur: {
+        tooltip: '60px',
+      }  
     }
   },
   plugins: [],

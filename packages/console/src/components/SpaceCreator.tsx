@@ -8,6 +8,7 @@ import { DidIcon } from './DidIcon'
 import Link from 'next/link'
 import { FolderPlusIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
 import Tooltip from './Tooltip'
+import { H3 } from './Text'
 
 export function SpaceCreatorCreating(): JSX.Element {
   return (
@@ -167,8 +168,12 @@ export function SpacePreview({ did, name, capabilities }: SpacePreviewProps) {
         <Link href={`/space/${did}`} className='block'>
           <span className='font-epilogue text-lg text-hot-red font-semibold leading-5 m-0 flex items-center'>
             {name ?? 'Untitled'}
-            <Tooltip title="Capabilities" text={capabilities}>
-              <InformationCircleIcon className='h-5 w-5 ml-2' />
+            <InformationCircleIcon className={`h-5 w-5 ml-2 space-preview-capability-icon`} />
+            <Tooltip anchorSelect={`.space-preview-capability-icon`}>
+              <H3>Capabilities</H3>
+              {capabilities.map((c, i) => (
+                <p key={i}>{c}</p>
+              ))}
             </Tooltip>
           </span>
           <span className='block font-mono text-xs truncate'>

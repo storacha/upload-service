@@ -27,8 +27,13 @@ export function PlanGate ({ children }: { children: ReactNode }): ReactNode {
                 <h1 className="my-4 font-bold">Welcome, {email}!</h1>
                 <p className='my-4'>
                   Congratulations! You are eligible for a free trial of our Lite or Business subscriptions. That means
-                  we won&apos;t charge you anything today. We do need you to provide a valid credit card before we can start your
+                  we won&apos;t charge you anything today.
+                  If you choose a Lite plan, you will get two months for free! If you choose Business, you will get one month for free!
+                  We do need you to provide a valid credit card before we can start your
                   trial - pick a plan below and complete the checkout flow to get started!
+                </p>
+                <p className='my-4'>
+                  Please note that after your free trial ends, you will be charged 10 USD per month for Lite or 100 USD per month for Business tier.
                 </p>
               </div>
               <StripeTrialPricingTable />

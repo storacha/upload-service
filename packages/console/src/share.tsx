@@ -4,7 +4,7 @@ import { extract } from '@ucanto/core/delegation'
 import type { PropsWithChildren } from 'react'
 import type { Delegation } from '@ucanto/interface'
 import { SpacePreview } from './components/SpaceCreator'
-import { H2 } from '@/components/Text'
+import { H2, H3 } from '@/components/Text'
 import CopyButton from './components/CopyButton'
 import Tooltip from './components/Tooltip'
 import { ArrowDownOnSquareStackIcon, CloudArrowDownIcon, PaperAirplaneIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
@@ -235,12 +235,16 @@ export function ShareSpace({ spaceDID }: { spaceDID: SpaceDID }): JSX.Element {
             Shared With:
           </p>
           <ul>
-            {sharedEmails.map(({ email, capabilities }) => (
+            {sharedEmails.map(({ email, capabilities }, i) => (
               <li key={email} className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full mt-1">
                 <span className="flex items-center w-full">
                   <span className="truncate mt-1">{email}</span>
-                  <Tooltip title="Capabilities" text={capabilities}>
-                    <InformationCircleIcon className='h-5 w-5 ml-1' />
+                  <InformationCircleIcon className={`h-5 w-5 ml-1 share-capabilities-${i}`} />
+                  <Tooltip anchorSelect={`.share-capabilities-${i}`}>
+                    <H3>Capabilities</H3>
+                    {capabilities.map((c, j) => (
+                      <p key={j}>{c}</p>
+                    ))}
                   </Tooltip>
                 </span>
               </li>

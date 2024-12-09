@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import 'react-tooltip/dist/react-tooltip.css';
+
 :root {
   --hot-red: #E91315;
   --hot-red-light: #EFE3F3;
@@ -9,6 +11,7 @@
   --hot-yellow-light: #FFE4AE;
   --hot-blue: #0176CE;
   --hot-blue-light: #BDE0FF;
+  --rt-opacity: 0.97;
 }
 
 .font-epilogue {
