@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.16.0](https://github.com/storacha/console/compare/w3console-v1.15.2...w3console-v1.16.0) (2024-12-09)
+
+
+### Features
+
+* add a PNG version of our logo ([#153](https://github.com/storacha/console/issues/153)) ([2812b27](https://github.com/storacha/console/commit/2812b27a5d2b3b1f12175e2e465784f5a9716186))
+* point staging env referral link at staging marketing site ([3937048](https://github.com/storacha/console/commit/39370485ee11a1c9ffaa6edd10a5beb2ef76a66c))
+* prototype of referral system in console ([#142](https://github.com/storacha/console/issues/142)) ([6f760fe](https://github.com/storacha/console/commit/6f760fe519b2c4456b22a2ccddda57b5c2b979b5))
+* referrals tweaks ([#155](https://github.com/storacha/console/issues/155)) ([7e58678](https://github.com/storacha/console/commit/7e586788ad774e3f1e3468db13ea393ffd096493))
+* update TOS links to point to the Storacha docs ([#148](https://github.com/storacha/console/issues/148)) ([68d09b5](https://github.com/storacha/console/commit/68d09b57832d621c34916f0c127ef5c6c9553cf0))
+
+
+### Bug Fixes
+
+* use the correct referral URL ([#149](https://github.com/storacha/console/issues/149)) ([bc29a2b](https://github.com/storacha/console/commit/bc29a2bcd60b9b45ae0e4ea417b3e6db1b27fc36))
+
 ## [1.15.2](https://github.com/storacha/console/compare/w3console-v1.15.1...w3console-v1.15.2) (2024-11-25)
 
 
