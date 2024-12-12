@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.16.1](https://github.com/storacha/console/compare/w3console-v1.16.0...w3console-v1.16.1) (2024-12-12)
+
+
+### Bug Fixes
+
+* make it possible to skip the plan gate after Stripe checkout ([#162](https://github.com/storacha/console/issues/162)) ([b399b37](https://github.com/storacha/console/commit/b399b372ddbcf850135263a7c7b31b88a4b42256))
+* tweak plan gate query param ([#163](https://github.com/storacha/console/issues/163)) ([0ce071e](https://github.com/storacha/console/commit/0ce071e9805d7b99bd98bb65262b2fe1b2e6e1b6))
+
+
+### Other Changes
+
+* update copy ([#159](https://github.com/storacha/console/issues/159)) ([0253b05](https://github.com/storacha/console/commit/0253b059d6e70f0ef5b83f82e722fc35b66f35d0))
+
 ## [1.16.0](https://github.com/storacha/console/compare/w3console-v1.15.2...w3console-v1.16.0) (2024-12-09)
 
 
