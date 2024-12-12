@@ -102,7 +102,7 @@ export const testAccount = {
 export const testSpace = {
   'storacha space create': test(async (assert, context) => {
     const command = storacha
-      .args(['space', 'create'])
+      .args(['space', 'create', '--no-gateway-authorization'])
       .env(context.env.alice)
       .fork()
 
@@ -115,7 +115,7 @@ export const testSpace = {
 
   'storacha space create home': test(async (assert, context) => {
     const create = storacha
-      .args(['space', 'create', 'home'])
+      .args(['space', 'create', 'home', '--no-gateway-authorization'])
       .env(context.env.alice)
       .fork()
 
@@ -136,7 +136,7 @@ export const testSpace = {
 
   'storacha space create home --no-caution': test(async (assert, context) => {
     const create = storacha
-      .args(['space', 'create', 'home', '--no-caution'])
+      .args(['space', 'create', 'home', '--no-caution', '--no-gateway-authorization'])
       .env(context.env.alice)
       .fork()
 
@@ -160,7 +160,7 @@ export const testSpace = {
   'storacha space create my-space --no-recovery': test(
     async (assert, context) => {
       const create = storacha
-        .args(['space', 'create', 'home', '--no-recovery'])
+        .args(['space', 'create', 'home', '--no-recovery', '--no-gateway-authorization'])
         .env(context.env.alice)
         .fork()
 
@@ -179,7 +179,7 @@ export const testSpace = {
       await selectPlan(context)
 
       const create = storacha
-        .args(['space', 'create', 'home', '--no-recovery'])
+        .args(['space', 'create', 'home', '--no-recovery', '--no-gateway-authorization'])
         .env(context.env.alice)
         .fork()
 
@@ -197,7 +197,7 @@ export const testSpace = {
       await login(context, { email: 'alice@email.me' })
 
       const create = storacha
-        .args(['space', 'create', 'my-space', '--no-recovery'])
+        .args(['space', 'create', 'my-space', '--no-recovery', '--no-gateway-authorization'])
         .env(context.env.alice)
         .fork()
 
@@ -228,6 +228,7 @@ export const testSpace = {
           '--customer',
           'unknown@web.mail',
           '--no-account',
+          '--no-gateway-authorization',
         ])
         .join()
         .catch()
@@ -240,8 +241,6 @@ export const testSpace = {
   'storacha space create home --no-recovery --customer alice@web.mail --no-account':
     test(async (assert, context) => {
       await login(context, { email: 'alice@web.mail' })
-      await login(context, { email: 'alice@email.me' })
-
       await selectPlan(context)
 
       const create = await storacha
@@ -250,6 +249,7 @@ export const testSpace = {
           'create',
           'home',
           '--no-recovery',
+          '--no-gateway-authorization',
           '--customer',
           'alice@web.mail',
           '--no-account',
@@ -279,6 +279,7 @@ export const testSpace = {
           'create',
           'home',
           '--no-recovery',
+          '--no-gateway-authorization',
           '--customer',
           email,
           '--account',
@@ -312,7 +313,7 @@ export const testSpace = {
 
       const { output, error } = await storacha
         .env(context.env.alice)
-        .args(['space', 'create', 'home', '--no-recovery'])
+        .args(['space', 'create', 'home', '--no-recovery', '--no-gateway-authorization'])
         .join()
 
       assert.match(output, /billing account is set/i)
@@ -642,6 +643,7 @@ export const testStorachaUp = {
         'home',
         '--no-recovery',
         '--no-account',
+        '--no-gateway-authorization',
         '--customer',
         email,
       ])
@@ -674,6 +676,7 @@ export const testStorachaUp = {
         'home',
         '--no-recovery',
         '--no-account',
+        '--no-gateway-authorization',
         '--customer',
         email,
       ])
@@ -706,6 +709,7 @@ export const testStorachaUp = {
         'home',
         '--no-recovery',
         '--no-account',
+        '--no-gateway-authorization',
         '--customer',
         email,
       ])
@@ -737,6 +741,7 @@ export const testStorachaUp = {
         'home',
         '--no-recovery',
         '--no-account',
+        '--no-gateway-authorization',
         '--customer',
         email,
       ])
@@ -1371,6 +1376,7 @@ export const createSpace = async (
       name,
       '--no-recovery',
       '--no-account',
+      '--no-gateway-authorization',
       ...(customer ? ['--customer', customer] : ['--no-customer']),
     ])
     .env(env)
