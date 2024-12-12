@@ -7,6 +7,7 @@ import { TopLevelLoader } from './Loader';
 import { Logo } from '@/brand';
 import { usePlan } from '@/hooks';
 import { useRecordRefcode, useReferredBy } from '@/lib/referrals/hooks';
+import { useSearchParams } from 'next/navigation';
 
 export function PlanGate ({ children }: { children: ReactNode }): ReactNode {
   const [{ accounts }] = useW3()
@@ -64,7 +65,8 @@ export function PlanGate ({ children }: { children: ReactNode }): ReactNode {
 }
 
 export function MaybePlanGate ({ children }: { children: ReactNode }): ReactNode {
-  if (process.env.NEXT_PUBLIC_DISABLE_PLAN_GATE == 'true') {
+  const params = useSearchParams()
+  if ((process.env.NEXT_PUBLIC_DISABLE_PLAN_GATE == 'true') || (params.get('checkout') === 'true')) {
     return children
   } else {
     return <PlanGate>{children}</PlanGate>
