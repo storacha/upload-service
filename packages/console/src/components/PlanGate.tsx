@@ -66,7 +66,7 @@ export function PlanGate ({ children }: { children: ReactNode }): ReactNode {
 
 export function MaybePlanGate ({ children }: { children: ReactNode }): ReactNode {
   const params = useSearchParams()
-  if ((process.env.NEXT_PUBLIC_DISABLE_PLAN_GATE == 'true') || (params.get('checkout') === 'true')) {
+  if ((process.env.NEXT_PUBLIC_DISABLE_PLAN_GATE == 'true') || params.get('checkout.session')) {
     return children
   } else {
     return <PlanGate>{children}</PlanGate>
