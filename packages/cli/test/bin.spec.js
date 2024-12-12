@@ -320,6 +320,43 @@ export const testSpace = {
       assert.match(error, /wait.*plan.*select/i)
     }),
 
+  'storacha space create home --no-recovery --customer alice@web.mail --account alice@web.mail --authorize-gateway-services':
+    test(async (assert, context) => {
+      const email = 'alice@web.mail'
+      await login(context, { email })
+      await selectPlan(context, { email })
+
+      const serverId = context.connection.id
+      const serverURL = context.serverURL
+
+      const { output } = await storacha
+        .args([
+          'space',
+          'create',
+          'home',
+          '--no-recovery',
+          '--customer',
+          email,
+          '--account',
+          email,
+          '--authorize-gateway-services',
+          `[{"id":"${serverId}","serviceEndpoint":"${serverURL}"}]`,
+        ])
+        .env(context.env.alice)
+        .join()
+
+      assert.match(output, /account is authorized/i)
+
+      const result = await context.delegationsStorage.find({
+        audience: DIDMailto.fromEmail(email),
+      })
+
+      assert.ok(
+        result.ok?.find((d) => d.capabilities[0].can === '*'),
+        'account has been delegated access to the space'
+      )
+    }),
+
   'storacha space add': test(async (assert, context) => {
     const { env } = context
 
