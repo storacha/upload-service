@@ -104,7 +104,7 @@ export function ReferralsList () {
                 <div>Referred Racha</div>
                 <div className={`referral-${i} rounded-full bg-hot-red-light text-hot-red px-4 py-2 font-mono text-sm`}>In Progress</div>
                 <Tooltip anchorSelect={`.referral-${i}`} place="bottom-start">
-                  <p className="max-w-sm">Your referral was successful! You will receive your reward once the referred user has paid for the requisite period of time.</p>
+                  <p className="max-w-sm">A new Racha has hatched! You will receive your reward once the referred user has paid for the requisite period of time.</p>
                 </Tooltip>
               </div>
             )
