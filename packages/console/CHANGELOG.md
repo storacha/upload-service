@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.2](https://github.com/storacha/console/compare/w3console-v1.16.1...w3console-v1.16.2) (2024-12-13)
+
+
+### Bug Fixes
+
+* remove referrals feature flag ([#161](https://github.com/storacha/console/issues/161)) ([d504602](https://github.com/storacha/console/commit/d50460297983d6fb097721244963fd77aaf68fd1))
+
 ## [1.16.1](https://github.com/storacha/console/compare/w3console-v1.16.0...w3console-v1.16.1) (2024-12-12)
 
 
