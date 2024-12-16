@@ -20,6 +20,21 @@ export function getContentServeMockService(result = { ok: {} }) {
 }
 
 /**
+ * Creates a new Ucanto server with the given options.
+ *
+ * @param {any} id
+ * @param {any} service
+ */
+export function createUcantoServer(id, service) {
+  return Server.create({
+    id: id,
+    service,
+    codec: CAR.inbound,
+    validateAuthorization: () => ({ ok: {} }),
+  })
+}
+
+/**
  * Generic function to create connection to any type of mock service with any type of signer id.
  *
  * @param {any} id
@@ -27,12 +42,7 @@ export function getContentServeMockService(result = { ok: {} }) {
  * @param {string | undefined} [url]
  */
 export function getConnection(id, service, url = undefined) {
-  const server = Server.create({
-    id: id,
-    service,
-    codec: CAR.inbound,
-    validateAuthorization: () => ({ ok: {} }),
-  })
+  const server = createUcantoServer(id, service)
   const connection = Client.connect({
     id: id,
     codec: CAR.outbound,
