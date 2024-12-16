@@ -136,7 +136,13 @@ export const testSpace = {
 
   'storacha space create home --no-caution': test(async (assert, context) => {
     const create = storacha
-      .args(['space', 'create', 'home', '--no-caution', '--no-gateway-authorization'])
+      .args([
+        'space',
+        'create',
+        'home',
+        '--no-caution',
+        '--no-gateway-authorization',
+      ])
       .env(context.env.alice)
       .fork()
 
@@ -160,7 +166,13 @@ export const testSpace = {
   'storacha space create my-space --no-recovery': test(
     async (assert, context) => {
       const create = storacha
-        .args(['space', 'create', 'home', '--no-recovery', '--no-gateway-authorization'])
+        .args([
+          'space',
+          'create',
+          'home',
+          '--no-recovery',
+          '--no-gateway-authorization',
+        ])
         .env(context.env.alice)
         .fork()
 
@@ -179,7 +191,13 @@ export const testSpace = {
       await selectPlan(context)
 
       const create = storacha
-        .args(['space', 'create', 'home', '--no-recovery', '--no-gateway-authorization'])
+        .args([
+          'space',
+          'create',
+          'home',
+          '--no-recovery',
+          '--no-gateway-authorization',
+        ])
         .env(context.env.alice)
         .fork()
 
@@ -197,7 +215,13 @@ export const testSpace = {
       await login(context, { email: 'alice@email.me' })
 
       const create = storacha
-        .args(['space', 'create', 'my-space', '--no-recovery', '--no-gateway-authorization'])
+        .args([
+          'space',
+          'create',
+          'my-space',
+          '--no-recovery',
+          '--no-gateway-authorization',
+        ])
         .env(context.env.alice)
         .fork()
 
@@ -313,7 +337,13 @@ export const testSpace = {
 
       const { output, error } = await storacha
         .env(context.env.alice)
-        .args(['space', 'create', 'home', '--no-recovery', '--no-gateway-authorization'])
+        .args([
+          'space',
+          'create',
+          'home',
+          '--no-recovery',
+          '--no-gateway-authorization',
+        ])
         .join()
 
       assert.match(output, /billing account is set/i)

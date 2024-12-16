@@ -211,7 +211,7 @@ export const provision = async (name = '', options = {}) => {
     const { ok: bytes, error: fetchError } = await fetch(options.coupon)
       .then((response) => response.arrayBuffer())
       .then((buffer) => Result.ok(new Uint8Array(buffer)))
-      .catch((error) => Result.error(/** @type {Error} */(error)))
+      .catch((error) => Result.error(/** @type {Error} */ (error)))
 
     if (fetchError) {
       console.error(`Failed to fetch coupon from ${options.coupon}`)
@@ -247,7 +247,8 @@ export const provision = async (name = '', options = {}) => {
 
     if (result.error) {
       console.error(
-        `⚠️ Failed to set up billing account,\n ${Object(result.error).message ?? ''
+        `⚠️ Failed to set up billing account,\n ${
+          Object(result.error).message ?? ''
         }`
       )
       process.exit(1)
@@ -286,7 +287,7 @@ const chooseSpace = (client, { name }) => {
  * @param {W3Space.Model} space
  * @param {CreateOptions} options
  */
-export const setupEmailRecovery = async (space, options = {}) => { }
+export const setupEmailRecovery = async (space, options = {}) => {}
 
 /**
  * @param {string} email
@@ -348,8 +349,8 @@ const chooseName = async (name, spaces) => {
     name === ''
       ? 'What would you like to call this space?'
       : space
-        ? `Name "${space.name}" is already taken, please choose a different one`
-        : null
+      ? `Name "${space.name}" is already taken, please choose a different one`
+      : null
 
   if (message == null) {
     return name
@@ -416,9 +417,9 @@ export const setupAccount = async (client) => {
 
   return email
     ? await Account.loginWithClient(
-        /** @type {DIDMailto.EmailAddress} */(email),
-      client
-    )
+        /** @type {DIDMailto.EmailAddress} */ (email),
+        client
+      )
     : null
 }
 
