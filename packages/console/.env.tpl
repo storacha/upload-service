@@ -15,3 +15,8 @@ NEXT_PUBLIC_DISABLE_PLAN_GATE=false
 # point these at the marketing website and referrals service 
 NEXT_PUBLIC_REFERRAL_URL=http://localhost:3001/referred
 NEXT_PUBLIC_REFERRALS_SERVICE_URL=http://localhost:4001
+
+# Sentry
+NEXT_PUBLIC_SENTRY_DSN=https://cfd48360703c6ab11a8fa3285986b462@o609598.ingest.us.sentry.io/4508462420393984
+NEXT_PUBLIC_SENTRY_ORG=storacha-it
+NEXT_PUBLIC_SENTRY_PROJECT=console-dev

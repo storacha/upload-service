@@ -19,6 +19,7 @@
     "@ipld/car": "^5.2.4",
     "@ipld/dag-json": "^10.2.2",
     "@ipld/dag-ucan": "^3.4.0",
+    "@sentry/nextjs": "8.35.0",
     "@ucanto/client": "^9.0.1",
     "@ucanto/core": "^10.0.1",
     "@ucanto/interface": "^10.0.1",
