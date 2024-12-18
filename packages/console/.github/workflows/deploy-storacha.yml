@@ -44,13 +44,9 @@ jobs:
           echo "NEXT_PUBLIC_STRIPE_TRIAL_PRICING_TABLE_ID=prctbl_1QIDHGF6A5ufQX5vOK9Xl8Up" >> .env
           echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51LO87hF6A5ufQX5viNsPTbuErzfavdrEFoBuaJJPfoIhzQXdOUdefwL70YewaXA32ZrSRbK4U4fqebC7SVtyeNcz00qmgNgueC" >> .env
           echo "NEXT_PUBLIC_STRIPE_CUSTOMER_PORTAL_LINK=https://billing.stripe.com/p/login/test_6oE29Gff99KO6mk8ww" >> .env
-          echo "NEXT_PUBLIC_SENTRY_DSN=https://22f0c5668da78cb2a1b38efdd3e5b4f9@o609598.ingest.us.sentry.io/4508462417772544" >> .env
-          echo "NEXT_PUBLIC_SENTRY_ORG=storacha-it" >> .env
-          echo "NEXT_PUBLIC_SENTRY_PROJECT=console-staging" >> .env
-          
-          # use example.com in preview because we can't predict the preview URL of the storacha.network site          
           echo "NEXT_PUBLIC_REFERRAL_URL=http://staging.storacha.network/referred" >> .env
           echo "NEXT_PUBLIC_REFERRALS_SERVICE_URL=https://staging-referrals.storacha.network" >> .env
+          echo "NEXT_PUBLIC_SENTRY_ENV=staging" >> .env
       # as long as this uses https://github.com/cloudflare/next-on-pages/blob/dc529d7efa8f8568ea8f71b5cdcf78df89be6c12/packages/next-on-pages/bin/index.js,
       # env vars won't get passed through to wrangler, so if wrangler will need them, write them to .env like the previous step
       - run: pnpm pages:build
@@ -144,9 +140,7 @@ jobs:
           echo "NEXT_PUBLIC_STRIPE_CUSTOMER_PORTAL_LINK=https://billing.stripe.com/p/login/cN22aA62U6bO1sA9AA" >> .env
           echo "NEXT_PUBLIC_REFERRAL_URL=http://storacha.network/referred" >> .env
           echo "NEXT_PUBLIC_REFERRALS_SERVICE_URL=https://referrals.storacha.network" >> .env
-          echo "NEXT_PUBLIC_SENTRY_DSN=https://bf79c216fe3c72328219f04aabeebc99@o609598.ingest.us.sentry.io/4508456692940801" >> .env
-          echo "NEXT_PUBLIC_SENTRY_ORG=storacha-it" >> .env
-          echo "NEXT_PUBLIC_SENTRY_PROJECT=console" >> .env
+          echo "NEXT_PUBLIC_SENTRY_ENV=production" >> .env
       - run: pnpm pages:build
         # as long as this uses https://github.com/cloudflare/next-on-pages/blob/dc529d7efa8f8568ea8f71b5cdcf78df89be6c12/packages/next-on-pages/bin/index.js,
         # env vars won't get passed through to wrangler, so if wrangler will need them, write them to .env like the previous step
