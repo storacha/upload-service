@@ -324,10 +324,7 @@ export class Client extends Base {
         'upload/*',
         'access/*',
         'usage/*',
-        'filecoin/offer',
-        'filecoin/info',
-        'filecoin/accept',
-        'filecoin/submit',
+        'filecoin/*',
       ],
       expiration: Infinity,
     }
