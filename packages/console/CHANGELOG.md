@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.17.0](https://github.com/storacha/console/compare/w3console-v1.16.2...w3console-v1.17.0) (2024-12-18)
+
+
+### Features
+
+* add Sentry error tracking ([#165](https://github.com/storacha/console/issues/165)) ([3e7069a](https://github.com/storacha/console/commit/3e7069ad215481269e4bc7c72ad5903ad25eac16))
+
+
+### Bug Fixes
+
+* use the same Sentry project for different envs ([#167](https://github.com/storacha/console/issues/167)) ([32dd6f8](https://github.com/storacha/console/commit/32dd6f82dd8a9db696513d0c22f27e1cfa33a7b7))
+
 ## [1.16.2](https://github.com/storacha/console/compare/w3console-v1.16.1...w3console-v1.16.2) (2024-12-13)
 
 
