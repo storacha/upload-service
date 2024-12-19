@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.1](https://github.com/storacha/console/compare/w3console-v1.17.0...w3console-v1.17.1) (2024-12-19)
+
+
+### Bug Fixes
+
+* add sentry auth token to enable sourcemap upload ([#168](https://github.com/storacha/console/issues/168)) ([a48c8c4](https://github.com/storacha/console/commit/a48c8c42cbd0dbba7902691f839aebac0b4a04b6))
+
 ## [1.17.0](https://github.com/storacha/console/compare/w3console-v1.16.2...w3console-v1.17.0) (2024-12-18)
 
 
