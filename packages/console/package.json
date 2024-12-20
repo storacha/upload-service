@@ -24,7 +24,7 @@
     "@ucanto/core": "^10.0.1",
     "@ucanto/interface": "^10.0.1",
     "@ucanto/transport": "^9.1.1",
-    "@w3ui/react": "2.5.1",
+    "@w3ui/react": "2.5.3",
     "@web3-storage/access": "^19.0.0",
     "@web3-storage/capabilities": "^17.3.0",
     "@web3-storage/content-claims": "^3.2.1",
