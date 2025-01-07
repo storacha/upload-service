@@ -2,7 +2,7 @@ import { ChangeEvent, useEffect, useState } from 'react'
 import { SpaceDID, useW3 } from '@w3ui/react'
 import { extract } from '@ucanto/core/delegation'
 import type { PropsWithChildren } from 'react'
-import type { Delegation } from '@ucanto/interface'
+import type { Capabilities, Delegation } from '@ucanto/interface'
 import { SpacePreview } from './components/SpaceCreator'
 import { H2, H3 } from '@/components/Text'
 import CopyButton from './components/CopyButton'
@@ -64,64 +64,16 @@ export function ShareSpace({ spaceDID }: { spaceDID: SpaceDID }): JSX.Element {
       throw new Error(`Client not found`)
     }
 
-    const currentSpace = client.agent.currentSpace()
-    try {
-      const space = client.spaces().find(s => s.did() === spaceDID)
-      if (!space) {
-        throw new Error(`Could not find space to share`)
-      }
-
-      const delegatedEmail = DIDMailTo.email(email)
-
-      // FIXME (fforbeck): enable shareSpace function call after @w3ui/react lib is updated to v2.4.0 and the issue with blobs are solved
-      // const delegation = await client.shareSpace(delegatedEmail, space.did())
-
-      // Make sure the agent is using the shared space before delegating
-      await client.agent.setCurrentSpace(spaceDID)
-
-      // Delegate capabilities to the delegate account to access the **current space**
-      const delegation = await client.createDelegation(
-        {
-          did: () => DIDMailTo.fromEmail(delegatedEmail),
-        },
-        [
-          'space/*',
-          'store/*',
-          'upload/*',
-          'access/*',
-          'usage/*',
-          // @ts-expect-error (FIXME: https://github.com/storacha/w3up/issues/1554)
-          'filecoin/*',
-        ], {
-          expiration: Infinity
-        }
-      )
-
-      const sharingResult = await client.capability.access.delegate({
-        space: spaceDID,
-        delegations: [delegation],
-      })
-
-      if (sharingResult.error) {
-        throw new Error(
-          `failed to share space with ${delegatedEmail}: ${sharingResult.error.message}`,
-          {
-            cause: sharingResult.error,
-          }
-        )
-      }
-
-      const next = { email: delegatedEmail, capabilities: delegation.capabilities.map(c => c.can) }
-      updateSharedEmails([next])
-      setValue('')
-    } catch (err) {
-      console.error(err)
-    } finally {
-      // Reset to the original space if it was different
-      if (currentSpace && currentSpace !== spaceDID) {
-        await client.agent.setCurrentSpace(currentSpace)
-      }
+    const space = client.spaces().find(s => s.did() === spaceDID)
+    if (!space) {
+      throw new Error(`Could not find space to share`)
     }
+
+    const delegatedEmail = DIDMailTo.email(email)
+    const delegation: Delegation<Capabilities> = await client.shareSpace(delegatedEmail, space.did())
+    const next = { email: delegatedEmail, capabilities: delegation.capabilities.map(c => c.can) }
+    updateSharedEmails([next])
+    setValue('')
   }
 
   async function makeDownloadLink(did: string): Promise<string> {
