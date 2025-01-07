@@ -1,14 +1,17 @@
 import type { ChangeEvent } from 'react'
 
 import React, { useState } from 'react'
-import { Space, useW3 } from '@w3ui/react'
+import { ContentServeService, Space, useW3 } from '@w3ui/react'
 import Loader from '../components/Loader'
-import { DID, DIDKey } from '@ucanto/interface'
+import { DIDKey } from '@ucanto/interface'
 import { DidIcon } from './DidIcon'
 import Link from 'next/link'
 import { FolderPlusIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
 import Tooltip from './Tooltip'
 import { H3 } from './Text'
+import * as UcantoClient from '@ucanto/client'
+import { HTTP } from '@ucanto/transport'
+import * as CAR from '@ucanto/transport/car'
 
 export function SpaceCreatorCreating(): JSX.Element {
   return (
@@ -50,11 +53,28 @@ export function SpaceCreatorForm({
       throw new Error('a payment plan is required on account to provision a new space.')
     }
 
+    const toWebDID = (input?: string) =>
+      UcantoClient.Schema.DID.match({ method: 'web' }).from(input)
+
     setSubmitted(true)
     try {
-      const space = await client.createSpace(name)
 
-      const provider = (process.env.NEXT_PUBLIC_W3UP_PROVIDER || 'did:web:web3.storage') as DID<'web'>
+      const gatewayId = toWebDID(process.env.NEXT_PUBLIC_W3UP_GATEWAY_ID) || toWebDID('did:web:w3s.link')
+      const gatewayUrl = process.env.NEXT_PUBLIC_W3UP_GATEWAY_HOST || 'https://w3s.link'
+
+      const storachaGateway = UcantoClient.connect({
+        id: {
+          did: () => gatewayId
+        },
+        codec: CAR.outbound,
+        channel: HTTP.open<ContentServeService>({ url: new URL(gatewayUrl) }),
+      })
+
+      const space = await client.createSpace(name, {
+        authorizeGatewayServices: [storachaGateway]
+      })
+
+      const provider = toWebDID(process.env.NEXT_PUBLIC_W3UP_PROVIDER) || toWebDID('did:web:web3.storage')
       const result = await account.provision(space.did(), { provider })
       if (result.error) {
         setSubmitted(false)
