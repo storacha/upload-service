@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.17.2](https://github.com/storacha/console/compare/w3console-v1.17.1...w3console-v1.17.2) (2025-01-09)
+
+
+### Bug Fixes
+
+* create space ([#173](https://github.com/storacha/console/issues/173)) ([597240f](https://github.com/storacha/console/commit/597240f5d843884b656a09a7a5d28780c5c63f68))
+* create space using the latest w3up-client version ([#171](https://github.com/storacha/console/issues/171)) ([600766b](https://github.com/storacha/console/commit/600766b7046b83602c56bbde8ba841eb8920bdc1))
+* **createSpace:** using the latest w3ui with w3up-client ([#176](https://github.com/storacha/console/issues/176)) ([5194dd2](https://github.com/storacha/console/commit/5194dd270f2a53bdf3a25e5aff6623204f7b225e))
+* gateway authorization based on env ([#174](https://github.com/storacha/console/issues/174)) ([0eb122d](https://github.com/storacha/console/commit/0eb122de6923b9abd8a67334f90f5ebc9fb17f4a))
+* set ipfs gateway url based on env var ([#177](https://github.com/storacha/console/issues/177)) ([1defed6](https://github.com/storacha/console/commit/1defed682adfc52d464bcff1edf52fc100edf908))
+
 ## [1.17.1](https://github.com/storacha/console/compare/w3console-v1.17.0...w3console-v1.17.1) (2024-12-19)
 
 
