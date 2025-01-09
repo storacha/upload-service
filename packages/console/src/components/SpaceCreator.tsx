@@ -12,6 +12,7 @@ import { H3 } from './Text'
 import * as UcantoClient from '@ucanto/client'
 import { HTTP } from '@ucanto/transport'
 import * as CAR from '@ucanto/transport/car'
+import { gatewayHost } from './services'
 
 export function SpaceCreatorCreating(): JSX.Element {
   return (
@@ -59,15 +60,14 @@ export function SpaceCreatorForm({
     setSubmitted(true)
     try {
 
-      const gatewayId = toWebDID(process.env.NEXT_PUBLIC_W3UP_GATEWAY_ID) || toWebDID('did:web:w3s.link')
-      const gatewayUrl = process.env.NEXT_PUBLIC_W3UP_GATEWAY_HOST || 'https://w3s.link'
+      const gatewayId = toWebDID(process.env.NEXT_PUBLIC_W3UP_GATEWAY_ID) ?? toWebDID('did:web:w3s.link')
 
       const storachaGateway = UcantoClient.connect({
         id: {
           did: () => gatewayId
         },
         codec: CAR.outbound,
-        channel: HTTP.open<ContentServeService>({ url: new URL(gatewayUrl) }),
+        channel: HTTP.open<ContentServeService>({ url: new URL(gatewayHost) }),
       })
 
       const space = await client.createSpace(name, {

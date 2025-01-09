@@ -50,7 +50,6 @@ class Reader {
       }
 
       const root = Link.parse(raw.cid)
-      // @ts-expect-error not in client types
       const parts: string[] = raw.parts
 
       const shards: Shard[] = []

@@ -101,7 +101,7 @@ class Reader {
             //
             // If so we should be able to get a location claim, and key in the
             // claim should be the CAR CID.
-            const claims = await Claims.read(root)
+            const claims = await Claims.read(root.multihash)
             const locationClaims = []
             for (const c of claims) {
               if (c.type === 'assert/location') {

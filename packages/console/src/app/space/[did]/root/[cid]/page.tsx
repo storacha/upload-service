@@ -13,6 +13,7 @@ import CopyIcon from '@/components/CopyIcon'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { useRouter } from 'next/navigation'
 import { createUploadsListKey } from '@/cache'
+import { ipfsGatewayURL } from '@/components/services'
 
 interface PageProps {
   params: {
@@ -58,7 +59,7 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
     router.replace(`/space/${spaceDID}`)
   }
 
-  const url = `https://${root}.ipfs.w3s.link`
+  const url = ipfsGatewayURL(root)
   return (
     <div>
       <Breadcrumbs space={space.did()} root={root} />
