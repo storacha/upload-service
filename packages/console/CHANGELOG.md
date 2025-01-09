@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.3](https://github.com/storacha/console/compare/w3console-v1.17.2...w3console-v1.17.3) (2025-01-09)
+
+
+### Bug Fixes
+
+* cors preflight issue in production ([#178](https://github.com/storacha/console/issues/178)) ([1b1b79a](https://github.com/storacha/console/commit/1b1b79ad68a7654d84d8dd3f8ed48afa92d5808a))
+
 ## [1.17.2](https://github.com/storacha/console/compare/w3console-v1.17.1...w3console-v1.17.2) (2025-01-09)
 
 
