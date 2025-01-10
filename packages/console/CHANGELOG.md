@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.5](https://github.com/storacha/console/compare/w3console-v1.17.4...w3console-v1.17.5) (2025-01-10)
+
+
+### Other Changes
+
+* trigger deployment ([734d070](https://github.com/storacha/console/commit/734d0709bd124a777cecf0c364050c59e2e1ce5b))
+
 ## [1.17.4](https://github.com/storacha/console/compare/w3console-v1.17.3...w3console-v1.17.4) (2025-01-10)
 
 
