@@ -33,9 +33,4 @@ export const serviceConnection = connect<Service>({
   }),
 })
 
-/**
- * Using freeway.dag.haus/freeway-staging.dag.haus as the gateway host directly without going through w3s.link
- * to avoid the need to avoid access fetch error in production due to the w3s.link CORS policy:
- * - Redirect is not allowed for a preflight request.
- */
-export const gatewayHost = process.env.NEXT_PUBLIC_W3UP_GATEWAY_HOST ?? 'https://freeway.dag.haus'
+export const gatewayHost = process.env.NEXT_PUBLIC_W3UP_GATEWAY_HOST ?? 'https://w3s.link'
