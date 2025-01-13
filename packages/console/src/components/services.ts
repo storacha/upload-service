@@ -33,4 +33,4 @@ export const serviceConnection = connect<Service>({
   }),
 })
 
-export const gatewayHost = process.env.NEXT_PUBLIC_W3UP_GATEWAY_HOST ?? 'https://freeway.dag.haus'
+export const gatewayHost = process.env.NEXT_PUBLIC_W3UP_GATEWAY_HOST ?? 'https://w3s.link'
