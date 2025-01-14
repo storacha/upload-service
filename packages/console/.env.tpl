@@ -6,7 +6,7 @@ NEXT_PUBLIC_W3UP_PROVIDER=did:web:staging.web3.storage
 NEXT_PUBLIC_IPFS_GATEWAY_URL=https://%ROOT_CID%.ipfs-staging.w3s.link
 
 # set these to your gateway service URL and DID 
-NEXT_PUBLIC_W3UP_GATEWAY_HOST=https://freeway-staging.dag.haus
+NEXT_PUBLIC_W3UP_GATEWAY_HOST=https://staging.w3s.link
 NEXT_PUBLIC_W3UP_GATEWAY_ID=did:web:staging.w3s.link
 
 # set these to values from Stripe settings
