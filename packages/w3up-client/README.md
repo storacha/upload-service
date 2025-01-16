@@ -118,13 +118,13 @@ const client = await create({ principal })
 Once initialized, you can access the client's `Agent` with the [`agent` getter][docs-Client#agent].
 
 ##### Pre-built bundle
-You can also import a pre-built bundle, which adds the exports from the client to a _global_ variable `w3up`:
+You can also import a pre-built bundle, which adds the exports from the client to a _global_ variable `StorachaClient`:
 ```html
 <!doctype html>
-<script src="https://cdn.jsdelivr.net/npm/@web3-storage/w3up-client/browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@storacha/client/browser.min.js"></script>
 <script>
   async function main () {
-    const client = await w3up.create()
+    const client = await StorachaClient.create()
     console.log(client.did())
   }
   main()

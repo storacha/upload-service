@@ -126,7 +126,7 @@
     "lint:fix": "tsc --build && eslint '**/*.{js,ts}' --fix && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "build": "npm run build:tsc && npm run build:bundle:browser",
     "build:tsc": "tsc --build",
-    "build:bundle:browser": "esbuild src/index.js --bundle --minify --target=chrome130 --format=iife --global-name=w3up --outfile=browser.min.js",
+    "build:bundle:browser": "esbuild src/index.js --bundle --minify --target=chrome130 --format=iife --global-name=StorachaClient --outfile=browser.min.js",
     "dev": "tsc --build --watch",
     "check": "tsc --build",
     "prepare": "npm run build",
