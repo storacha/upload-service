@@ -13,7 +13,7 @@ export default function CreateSpacePage (): JSX.Element {
         <SpaceCreatorForm className='mb-8' />
         <H2>Explain</H2>
         <p className='font-epilogue'>
-          A space is decentralized bucket. The name you give it is a memorable alias.
+          A space is a decentralized bucket. The name you give it is a memorable alias.
         </p>
         <p className='font-epilogue'>
           It&apos;s true name is a unique DID derived from a key-pair.
