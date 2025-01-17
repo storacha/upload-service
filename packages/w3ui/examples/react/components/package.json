@@ -26,6 +26,7 @@
     "@w3ui/react": "workspace:^"
   },
   "devDependencies": {
+    "clean": "rm -rf dist",
     "bunchee": "^5.5.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "react": "^18.2.0",

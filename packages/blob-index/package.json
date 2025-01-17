@@ -31,6 +31,7 @@
     }
   },
   "scripts": {
+    "clean": "rm -rf dist coverage",
     "attw": "attw --pack .",
     "build": "tsc --build",
     "dev": "tsc --build --watch",

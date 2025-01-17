@@ -181,6 +181,7 @@
     }
   },
   "scripts": {
+    "clean": "rm -rf dist",
     "attw": "attw --pack .",
     "build": "tsc --build",
     "dev": "tsc --build --watch",
