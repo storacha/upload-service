@@ -93,7 +93,7 @@
     "@ucanto/transport": "^9.1.1",
     "@web3-storage/data-segment": "^5.1.0",
     "ipfs-utils": "^9.0.14",
-    "multiformats": "^12.1.2",
+    "multiformats": "^13.3.1",
     "p-retry": "^5.1.2",
     "varint": "^6.0.0"
   },
