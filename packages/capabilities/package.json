@@ -13,14 +13,15 @@
   "types": "dist/src/index.d.ts",
   "main": "src/index.js",
   "scripts": {
-    "attw": "attw --pack .",
-    "lint": "tsc && eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+    "dev": "tsc --build --watch --preserveWatchOutput",
     "build": "tsc --build",
-    "dev": "tsc --build --watch",
-    "check": "tsc --build",
-    "test": "pnpm run test:node && pnpm run test:browser",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --build",
+    "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+    "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "test:node": "mocha 'test/**/*.test.js' -n experimental-vm-modules -n no-warnings",
     "test:browser": "playwright-test",
+    "attw": "attw --pack .",
     "testw": "watch 'pnpm test:node' src test --interval 1",
     "rc": "npm version prerelease --preid rc"
   },
@@ -109,6 +110,7 @@
     "uint8arrays": "^5.0.3"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.17.3",
     "@ipld/dag-ucan": "^3.4.5",
     "@storacha/eslint-config": "workspace:^",
     "@types/assert": "^1.5.6",
