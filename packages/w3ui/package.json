@@ -1,0 +1,8 @@
+{
+  "name": "w3ui",
+  "private": true,
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "hd-scripts": "^4.1.0"
+  }
+}
