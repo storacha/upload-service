@@ -1,5 +1,6 @@
 import * as dagJSON from '@ipld/dag-json'
 import { Migration, MigrationConfiguration, MigrationID } from './api'
+import { logAndCaptureError } from '@/sentry'
 
 export class MigrationsStorage {
   load () {
@@ -13,7 +14,7 @@ export class MigrationsStorage {
         const migration: Migration = dagJSON.parse(localStorage.getItem(`migration.${id}`) ?? '')
         migrations.push(migration)
       } catch (err) {
-        console.error(`failed to load migration: ${id}`, err)
+        logAndCaptureError(new Error(`failed to load migration: ${id}`, {cause: err}))
       }
     }
     return migrations

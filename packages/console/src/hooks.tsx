@@ -1,5 +1,6 @@
 import { Account, DID, PlanGetSuccess, PlanSetSuccess, PlanSetFailure, Result } from '@w3ui/react'
 import useSWR, { SWRResponse, useSWRConfig } from 'swr'
+import { logAndCaptureError } from './sentry'
 
 /**
  * calculate the cache key for a plan's account
@@ -18,7 +19,7 @@ export const usePlan = (account: Account) => {
       if (result.error) throw new Error('getting plan', { cause: result.error })
       return result.ok
     },
-    onError: err => console.error(err.message, err.cause)
+    onError: logAndCaptureError
   })
   // @ts-ignore it's important to assign this into the existing object
   // to avoid calling the getters in SWRResponse when copying values over -

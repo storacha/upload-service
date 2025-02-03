@@ -9,6 +9,7 @@ import { DIDKey, useW3 } from '@w3ui/react'
 import { DidIcon } from '@/components/DidIcon'
 import { MigrationConfiguration, DataSourceID } from '@/lib/migrations/api'
 import { dataSources } from '@/app/migration/data-sources'
+import { logAndCaptureError } from '@/sentry'
 
 interface WizardProps {
   config: Partial<MigrationConfiguration>
@@ -91,7 +92,7 @@ function AddSourceToken ({ config, onNext, onPrev }: WizardProps) {
     try {
       await ds.source.checkToken(token)
     } catch (err: any) {
-      console.error(err)
+      logAndCaptureError(err)
       return setError(`Error using token: ${err.message}`)
     } finally {
       setChecking(false)

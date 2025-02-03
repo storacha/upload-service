@@ -10,6 +10,7 @@ import { GB, TB, filesize } from '@/lib'
 import DefaultLoader from '@/components/Loader'
 import { RefcodeLink, ReferralsList, RefcodeCreator } from '../referrals/page'
 import { useReferrals } from '@/lib/referrals/hooks'
+import { logAndCaptureError } from '@/sentry'
 
 const Plans: Record<`did:${string}`, { name: string, limit: number }> = {
   'did:web:starter.web3.storage': { name: 'Starter', limit: 5 * GB },
@@ -51,13 +52,13 @@ export default function SettingsPage (): JSX.Element {
             }
           } catch (err) {
             // TODO: figure out why usage/report cannot be used on old spaces 
-            console.error(err)
+            logAndCaptureError(err)
           }
         }
       }
       return usage
     },
-    onError: err => console.error(err.message, err.cause)
+    onError: logAndCaptureError
   })
 
   const product = plan?.product

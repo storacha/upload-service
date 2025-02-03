@@ -10,6 +10,7 @@ import Tooltip from './components/Tooltip'
 import { ArrowDownOnSquareStackIcon, CloudArrowDownIcon, PaperAirplaneIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
 import * as DIDMailTo from '@web3-storage/did-mailto'
 import { DID } from '@ucanto/core'
+import { logAndCaptureError } from './sentry'
 
 function Header(props: PropsWithChildren): JSX.Element {
   return (
@@ -223,14 +224,14 @@ export function ImportSpace() {
       }
       delegation = res.ok
     } catch (err) {
-      console.error(err)
+      logAndCaptureError(err)
       return
     }
     try {
       await client.addSpace(delegation)
       setProof(delegation)
     } catch (err) {
-      console.error(err)
+      logAndCaptureError(err)
     }
   }
 

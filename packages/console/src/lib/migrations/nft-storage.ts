@@ -6,6 +6,7 @@ import { CarBlockIterator } from '@ipld/car'
 import { LinkIndexer } from 'linkdex'
 import { DataSourceConfiguration, Shard, Upload } from './api'
 import { carCode } from './constants'
+import { logAndCaptureError } from '@/sentry'
 
 export const id = 'classic.nft.storage'
 
@@ -118,9 +119,9 @@ class Reader {
               }
             }
           } catch (err) {
-            console.error(`failed to read content claims for PSA item: ${root}`, err)
+            logAndCaptureError(new Error(`failed to read content claims for PSA item: ${root}`, { cause: err }))
           }
-        } 
+        }
 
         const shards: Shard[] = []
         for (const p of parts) {
@@ -163,7 +164,7 @@ class Reader {
             const link = Link.create(carCode, await sha256.digest(bytes))
             shards.push({ link, size: async () => bytes.length, bytes: async () => bytes })
           } catch (err) {
-            console.error(`failed to download CAR for item: ${root}`, err)
+            logAndCaptureError(new Error(`failed to download CAR for item: ${root}`, {cause: err}))
           }
         }
 
@@ -191,7 +192,7 @@ async function * paginator (fn: (service: Service, opts: ListOptions) => Promise
   // Iterate through next pages
   while (body && body.value.length) {
     // Get before timestamp with less 1ms
-    const before = (new Date((new Date(body.value[body.value.length-1].created)).getTime() - 1)).toISOString()
+    const before = (new Date((new Date(body.value[body.value.length - 1].created)).getTime() - 1)).toISOString()
     res = await fn(service, { ...opts, before })
     body = await res.json()
     yield body

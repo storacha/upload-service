@@ -13,6 +13,7 @@ import * as UcantoClient from '@ucanto/client'
 import { HTTP } from '@ucanto/transport'
 import * as CAR from '@ucanto/transport/car'
 import { gatewayHost } from './services'
+import { logAndCaptureError } from '@/sentry'
 
 export function SpaceCreatorCreating(): JSX.Element {
   return (
@@ -99,7 +100,7 @@ export function SpaceCreatorForm({
       resetForm()
     } catch (error) {
       /* eslint-disable-next-line no-console */
-      console.error(error)
+      logAndCaptureError(error)
       throw new Error('failed to create space', { cause: error })
     }
   }

@@ -5,6 +5,7 @@ import { DataSourceConfiguration, Shard, Upload } from './api'
 import * as Gateway from './gateway'
 import { Result, Failure } from '@ucanto/interface'
 import { CARLink } from '@w3ui/react'
+import { logAndCaptureError } from '@/sentry'
 
 export const id = 'psa.old.web3.storage'
 
@@ -98,7 +99,7 @@ class Reader {
             }
           })
         } catch (err) {
-          console.error(`determining CAR hash for root: ${root}`, err)
+          logAndCaptureError(new Error(`determining CAR hash for root: ${root}`, {cause: err}))
         }
 
         // Add a synthetic shard that is the entire DAG.
@@ -108,7 +109,7 @@ class Reader {
             const shard = await Gateway.fetchCAR(root)
             shards.push(shard)
           } catch (err) {
-            console.error(`downloading CAR for root: ${root}`, err)
+            logAndCaptureError(new Error(`downloading CAR for root: ${root}`, {cause: err}))
           }
         }
 

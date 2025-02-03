@@ -6,6 +6,7 @@ import { useW3 } from '@w3ui/react'
 import * as Migrations from '@/lib/migrations'
 import { MigrationsStorage } from '@/lib/migrations/store'
 import { serviceConnection } from './services'
+import { logAndCaptureError } from '@/sentry'
 
 const MAX_LOG_LINES = 1000
 
@@ -126,7 +127,7 @@ export function Provider ({ children }: ProviderProps): ReactNode {
         setMigrations(() => migrationsStore.load())
       },
       onError: async (err, upload, shard) => {
-        console.error(err)
+        logAndCaptureError(err)
         log(id, `failed migration ${upload.root}${shard ? ` (shard: ${shard.link})` : ''}: ${err.stack}`)
         const migration = migrationsStore.read(id)
         migration.progress = migration.progress ?? await initProgress()

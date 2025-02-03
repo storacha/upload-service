@@ -6,6 +6,7 @@ import useSWR from 'swr'
 import { useRouter, usePathname } from 'next/navigation'
 import { createUploadsListKey } from '@/cache'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
+import { logAndCaptureError } from '@/sentry'
 
 const pageSize = 15
 
@@ -39,7 +40,7 @@ export default function Page ({ params, searchParams }: PageProps): JSX.Element 
         size: pageSize
       })
     },
-    onError: err => console.error(err.message, err.cause),
+    onError: logAndCaptureError,
     keepPreviousData: true
   })
 

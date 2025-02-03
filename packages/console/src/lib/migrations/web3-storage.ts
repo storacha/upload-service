@@ -1,11 +1,8 @@
 import { Web3Storage } from 'web3.storage'
 import * as Link from 'multiformats/link'
-import { sha256 } from 'multiformats/hashes/sha2'
-import { CarBlockIterator } from '@ipld/car'
-import { LinkIndexer } from 'linkdex'
 import { DataSourceConfiguration, Shard, Upload } from './api'
-import { carCode } from './constants'
 import { fetchCAR } from './gateway'
+import { logAndCaptureError } from '@/sentry'
 
 export const id = 'old.web3.storage'
 
@@ -80,7 +77,7 @@ class Reader {
           const shard = await fetchCAR(root)
           shards.push(shard)
         } catch (err) {
-          console.error(`failed to download CAR for item: ${root}`, err)
+          logAndCaptureError(new Error(`failed to download CAR for item: ${root}`, {cause: err}))
         }
       }
 

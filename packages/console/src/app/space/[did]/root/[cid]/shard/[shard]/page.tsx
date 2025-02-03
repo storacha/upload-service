@@ -18,6 +18,7 @@ import ExpandIcon from '@/components/ExpandIcon'
 import { useState } from 'react'
 import AggregateIcon from '@/components/AggregateIcon'
 import PieceIcon from '@/components/PieceIcon'
+import { logAndCaptureError } from '@/sentry'
 
 type ProofStyle = 'mini'|'midi'|'maxi'
 
@@ -67,7 +68,7 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
         }
       }
     },
-    onError: err => console.error(err.message, err.cause)
+    onError: logAndCaptureError
   })
 
   const claimKey = `/assert/equals?content=${shard}`
@@ -80,7 +81,7 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
         }
       }
     },
-    onError: err => console.error(err.message, err.cause)
+    onError: logAndCaptureError
   })
 
   const filecoinInfoKey = `/filecoin/info?piece=${claim.data?.equals}`
@@ -99,7 +100,7 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
 
       return out.ok
     },
-    onError: err => console.error(err.message, err.cause)
+    onError: logAndCaptureError
   })
 
   const [proofStyle, setProofStyle] = useState<ProofStyle>('mini')
