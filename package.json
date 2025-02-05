@@ -13,6 +13,7 @@
     "@docusaurus/core": "^3.0.0",
     "@docusaurus/preset-classic": "^3.0.0",
     "@nx/js": "^20.3.2",
+    "@nx/next": "20.3.2",
     "docusaurus-plugin-typedoc": "^0.21.0",
     "lint-staged": "^13.2.0",
     "nx": "20.3.2",
@@ -27,6 +28,8 @@
   },
   "dependencies": {
     "depcheck": "^1.4.3",
+    "next": "14.2.16",
+    "react-dom": "18.3.1",
     "typedoc-plugin-missing-exports": "^2.1.0"
   },
   "pnpm": {
