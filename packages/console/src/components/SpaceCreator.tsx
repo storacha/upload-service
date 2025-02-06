@@ -44,22 +44,22 @@ export function SpaceCreatorForm({
   async function onSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault()
     if (!client) return
-    // TODO: account selection
-    const account = accounts[0]
-    if (!account) {
-      throw new Error('cannot create space, no account found, have you authorized your email?')
-    }
-
-    const { ok: plan } = await account.plan.get()
-    if (!plan) {
-      throw new Error('a payment plan is required on account to provision a new space.')
-    }
-
-    const toWebDID = (input?: string) =>
-      UcantoClient.Schema.DID.match({ method: 'web' }).from(input)
-
-    setSubmitted(true)
+    
     try {
+      setSubmitted(true)
+      // TODO: account selection
+      const account = accounts[0]
+      if (!account) {
+        throw new Error('cannot create space, no account found, have you authorized your email?')
+      }
+
+      const { ok: plan } = await account.plan.get()
+      if (!plan) {
+        throw new Error('a payment plan is required on account to provision a new space.')
+      }
+
+      const toWebDID = (input?: string) =>
+        UcantoClient.Schema.DID.match({ method: 'web' }).from(input)
 
       const gatewayId = toWebDID(process.env.NEXT_PUBLIC_W3UP_GATEWAY_ID) ?? toWebDID('did:web:w3s.link')
 
@@ -99,6 +99,9 @@ export function SpaceCreatorForm({
       setCreated(true)
       resetForm()
     } catch (error) {
+      setSubmitted(false)
+      setCreated(false)
+      console.log(error)
       /* eslint-disable-next-line no-console */
       logAndCaptureError(error)
       throw new Error('failed to create space', { cause: error })
