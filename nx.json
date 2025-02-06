@@ -2,11 +2,15 @@
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "targetDefaults": {
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "cache": true
     },
     "typecheck": {
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "cache": true
     },
     "lint": {
@@ -16,15 +20,22 @@
       "cache": true
     },
     "test": {
-      "dependsOn": ["^build", "test:!(watch)"],
+      "dependsOn": [
+        "^build",
+        "test:!(watch)"
+      ],
       "cache": true
     },
     "test:!(watch)": {
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "cache": true
     },
     "test:watch": {
-      "dependsOn": ["^build"]
+      "dependsOn": [
+        "^build"
+      ]
     },
     "testw": {
       "cache": true
@@ -33,11 +44,26 @@
       "cache": true
     },
     "attw": {
-      "dependsOn": ["build"]
+      "dependsOn": [
+        "build"
+      ]
     }
   },
   "defaultBase": "main",
   "release": {
-    "projects": ["packages/*"]
-  }
+    "projects": [
+      "packages/*"
+    ]
+  },
+  "plugins": [
+    {
+      "plugin": "@nx/next/plugin",
+      "options": {
+        "startTargetName": "next:start",
+        "buildTargetName": "next:build",
+        "devTargetName": "next:dev",
+        "serveStaticTargetName": "serve-static"
+      }
+    }
+  ]
 }
