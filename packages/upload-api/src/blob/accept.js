@@ -110,7 +110,7 @@ export const poll = async (context, receipt) => {
 
   // record the invocation and the receipt
   const message = await Message.build({
-    invocations: [configure.ok.invocation],
+    invocations: [configure.ok.invocation, w3sAccept],
     receipts: [acceptReceipt, w3sAcceptReceipt],
   })
   const messageWrite = await context.agentStore.messages.write({
