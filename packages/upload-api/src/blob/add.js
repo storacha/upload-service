@@ -412,6 +412,7 @@ async function acceptW3s({ context, blob, space, delivery, acceptance }) {
       space,
       _put: { 'ucan/await': ['.out.ok', delivery.task.link()] },
     },
+    expiration: Infinity,
   })
   const w3sAcceptTask = await w3sAccept.delegate()
 

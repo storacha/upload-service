@@ -99,6 +99,7 @@ export const poll = async (context, receipt) => {
       space: /** @type {API.DIDKey} */ (DID.decode(allocate.nb.space).did()),
       _put: { 'ucan/await': ['.out.ok', receipt.ran.link()] },
     },
+    expiration: Infinity,
   })
   const w3sAcceptTask = await w3sAccept.delegate()
   const w3sAcceptReceipt = await Receipt.issue({
