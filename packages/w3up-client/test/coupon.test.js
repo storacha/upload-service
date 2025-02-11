@@ -16,10 +16,7 @@ export const testCoupon = Test.withContext({
     const account = await login
 
     // Then we setup a billing for this account
-    await plansStorage.set(
-      account.did(),
-      'did:web:test.up.storacha.network'
-    )
+    await plansStorage.set(account.did(), 'did:web:test.up.storacha.network')
 
     // Then we use the account to issue a coupon for the workshop
     const coupon = await client.coupon.issue({
