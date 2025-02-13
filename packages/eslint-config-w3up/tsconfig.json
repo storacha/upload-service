@@ -1,12 +1,9 @@
 {
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "outDir": "dist"
-  },
-  "include": ["src", "test", "index.js"],
-  "exclude": ["**/node_modules/**", "dist"],
-  "references": [],
-  "typedocOptions": {
-    "entryPoints": ["."]
-  }
+  "extends": "../../tsconfig.base.json",
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.lib.json"
+    }
+  ]
 }

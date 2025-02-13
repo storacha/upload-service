@@ -1,0 +1,36 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+# Needed for nx-set-shas when run on the main branch
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Fetch full history so `nx affected` can determine what to run
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          cache: 'pnpm'
+      - name: Install npm package dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Set the base and head that `nx affected` will use
+      - uses: nrwl/nx-set-shas@v4
+
+      - name: Prepare environment
+        run: pnpm nx affected -t prepare-environment
+
+      # Run CI tasks over all affected projects
+      # TODO: Add `attw` back once fixed.
+      - run: pnpm nx affected -t typecheck lint build test depcheck

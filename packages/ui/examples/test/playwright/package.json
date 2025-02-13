@@ -1,0 +1,26 @@
+{
+  "name": "@storacha/ui-example-test-playwright",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "serve": "serve node_modules/@storacha",
+    "test": "playwright test",
+    "test-debug": "playwright test --project=chromium --headed",
+    "prepare-environment": "playwright install --with-deps"
+  },
+  "author": "olzilla",
+  "license": "Apache-2.0 OR MIT",
+  "devDependencies": {
+    "@playwright/test": "catalog:",
+    "@types/node": "^22.13.1",
+    "serve": "catalog:"
+  },
+  "dependencies": {
+    "@storacha/ui-example-react-components": "workspace:^",
+    "@storacha/ui-example-react-file-upload": "workspace:^",
+    "@storacha/ui-example-react-multi-file-upload": "workspace:^",
+    "@storacha/ui-example-react-sign-up-in": "workspace:^",
+    "@storacha/ui-example-react-uploads-list": "workspace:^"
+  }
+}
