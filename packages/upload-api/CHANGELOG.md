@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.5](https://github.com/storacha/upload-service/compare/upload-api-v1.3.4...upload-api-v1.3.5) (2025-02-15)
+
+
+### Other Changes
+
+* update dependencies and expose new server options ([#157](https://github.com/storacha/upload-service/issues/157)) ([88e99d0](https://github.com/storacha/upload-service/commit/88e99d02be8bdb74d7bf9cd81af9abe62b2cb457))
+
 ## [1.3.4](https://github.com/storacha/upload-service/compare/upload-api-v1.3.3...upload-api-v1.3.4) (2025-02-11)
 
 
