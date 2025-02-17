@@ -160,7 +160,7 @@ async function uploadBlockStream(
               },
             ])
             /** @type {import('./types.js').RequestOptions} */
-            const localOptions = {...options, retries: 20, fetch: async (_input, _init) => new Response(null, { status: 200})}
+            const localOptions = {...options, retries: 20, fetchWithUploadProgress: async (_input, _init) => new Response(null, { status: 200})}
             // Invoke blob/add and write bytes to write target
             await Blob.add(conf, digest, bytes, localOptions)
             const cid = Link.create(CAR.code, digest)
