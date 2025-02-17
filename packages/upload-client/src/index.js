@@ -160,7 +160,7 @@ async function uploadBlockStream(
               },
             ])
             /** @type {import('./types.js').RequestOptions} */
-            const localOptions = {...options, fetch: async (_input, _init) => new Response(null, { status: 200})}
+            const localOptions = {...options, retries: 20, fetch: async (_input, _init) => new Response(null, { status: 200})}
             // Invoke blob/add and write bytes to write target
             await Blob.add(conf, digest, bytes, localOptions)
             const cid = Link.create(CAR.code, digest)
@@ -248,7 +248,7 @@ async function uploadBlockStream(
   ])
 
   // Store the index in the space
-  await Blob.add(blobAddConf, indexDigest, indexBytes.ok, options)
+  await Blob.add(blobAddConf, indexDigest, indexBytes.ok, {...options, retries: 20 })
   // Register the index with the service
   await Index.add(indexAddConf, indexLink, options)
   // Register an upload with the service
