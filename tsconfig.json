@@ -5,6 +5,9 @@
   "files": [], // intentionally empty
   "references": [
     {
+      "path": "./.github/release"
+    },
+    {
       "path": "./packages/eslint-config-w3up"
     },
     {

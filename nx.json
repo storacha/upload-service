@@ -30,11 +30,23 @@
     },
     "attw": {
       "dependsOn": ["build"]
+    },
+    // Build packages before publishing them.
+    "nx-release-publish": {
+      "dependsOn": ["build"]
     }
   },
   "defaultBase": "main",
   "release": {
-    "projects": ["packages/*"]
+    "projectsRelationship": "independent",
+    "versionPlans": true,
+    "version": {
+      "generatorOptions": {
+        // Keep `workspace:^` dependency specifiers during versioning. pnpm will
+        // replace them during publish for the published tarball.
+        "preserveLocalDependencyProtocols": true
+      }
+    }
   },
   "plugins": [
     {
