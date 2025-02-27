@@ -23,24 +23,13 @@ The individual packages may have additional setup instructions, and include spec
 
 ### VS Code config
 
-To install the recommended extensions, if you're not prompted automatically, run
-`Extensions: Show Recommended Extensions`. In particular, make sure you install
-[Workspace
-Config+](https://marketplace.visualstudio.com/items?itemName=Swellaby.workspace-config-plus),
-which merges the shared config with any local config to produce the workspace
-settings.
+To install the recommended extensions, if you're not prompted automatically, run `Extensions: Show Recommended Extensions`. In particular, make sure you install [Workspace Config+](https://marketplace.visualstudio.com/items?itemName=Swellaby.workspace-config-plus), which merges the shared config with any local config to produce the workspace settings.
 
-To override any settings locally, but specifically in this repo, create a
-`.vscode/settings.local.json` file. For more information, see the [`.vscode`
-README](./.vscode/README.md).
+To override any settings locally, but specifically in this repo, create a `.vscode/settings.local.json` file. For more information, see the [`.vscode` README](./.vscode/README.md).
 
 ## Running tasks
 
-Use `nx` to run a task within a project. This ensures that dependency tasks run
-first. `nx` is installed with `pnpm`, so it typically must be run as `pnpm nx`.
-This zsh/bash function will make it work as just `nx`; in a `pnpm` repo it will
-call `pnpm nx`, and elsewhere it will attempt to call the global `nx`. Add it to
-your `.zshrc`/`.bashrc` to use it.
+Use `nx` to run a task within a project. This ensures that dependency tasks run first. `nx` is installed with `pnpm`, so it typically must be run as `pnpm nx`. This zsh/bash function will make it work as just `nx`; in a `pnpm` repo it will call `pnpm nx`, and elsewhere it will attempt to call the global `nx`. Add it to your `.zshrc`/`.bashrc` to use it.
 
 ```sh
 nx() {
