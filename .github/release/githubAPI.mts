@@ -1,3 +1,4 @@
+import { Logger } from 'loglevel'
 import { RequestError, type Octokit } from 'octokit'
 
 type ExistingPullRequestQueryData = {
@@ -13,6 +14,7 @@ type ExistingPullRequestQueryData = {
 
 export const createOrUpdateReleasePR = async ({
   octokit,
+  log,
   owner,
   repo,
   releaseBranchName,
@@ -21,6 +23,7 @@ export const createOrUpdateReleasePR = async ({
   body,
 }: {
   octokit: Octokit
+  log: Logger
   owner: string
   repo: string
   releaseBranchName: string
@@ -28,8 +31,7 @@ export const createOrUpdateReleasePR = async ({
   title: string
   body: string
 }) => {
-  // TK logging
-  console.log('Checking for an existing pull request')
+  log.info('Checking for an existing pull request...')
 
   // GraphQL because the REST API can't correctly find a pull request by head
   // and base. It appears to do a substring match rather than an exact match.
@@ -69,7 +71,7 @@ export const createOrUpdateReleasePR = async ({
   }
 
   if (queryResponse.repository.pullRequests.nodes.length == 0) {
-    console.log('Creating a new pull request')
+    log.info('Creating a new release PR')
     await octokit.graphql(
       /* graphql */ `
       mutation CreatePullRequestMutation(
@@ -101,7 +103,7 @@ export const createOrUpdateReleasePR = async ({
       }
     )
   } else {
-    console.log('Updating the existing pull request')
+    log.info('Updating the existing release PR')
     await octokit.graphql(
       /* graphql */ `
       mutation UpdatePullRequestMutation(
@@ -131,6 +133,7 @@ export const createOrUpdateReleasePR = async ({
 
 export const createOrUpdateRelease = async ({
   octokit,
+  log,
   owner,
   repo,
   tagName,
@@ -138,6 +141,7 @@ export const createOrUpdateRelease = async ({
   prerelease,
 }: {
   octokit: Octokit
+  log: Logger
   owner: string
   repo: string
   tagName: string
@@ -146,6 +150,7 @@ export const createOrUpdateRelease = async ({
 }) => {
   // REST API because the GraphQL API doesn't support releases.
   try {
+    log.info('Checking for an existing GitHub release...')
     const {
       data: { id: existingReleaseId },
     } = await octokit.rest.repos.getReleaseByTag({
@@ -154,7 +159,7 @@ export const createOrUpdateRelease = async ({
       tag: tagName,
     })
 
-    console.log('Updating the existing release')
+    log.info('Updating the existing GitHub release')
     await octokit.rest.repos.updateRelease({
       owner,
       repo,
@@ -166,7 +171,7 @@ export const createOrUpdateRelease = async ({
     })
   } catch (e) {
     if (isGitHubNotFoundError(e)) {
-      console.log('Creating a new release')
+      log.info('Creating a new GitHub release')
       await octokit.rest.repos.createRelease({
         owner,
         repo,

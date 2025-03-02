@@ -93,6 +93,7 @@ if (pendingVersions.length > 0) {
   log.info('Creating/updating release PR.')
   await createOrUpdateReleasePR({
     octokit,
+    log,
     owner: REPO_OWNER,
     repo: REPO_NAME,
     releaseBranchName: RELEASE_BRANCH,
@@ -144,6 +145,7 @@ if (pendingVersions.length > 0) {
       log.info(`Creating/updating ${tagName} release on GitHub.`)
       createOrUpdateRelease({
         octokit,
+        log,
         owner: REPO_OWNER,
         repo: REPO_NAME,
         tagName,
