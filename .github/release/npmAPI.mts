@@ -1,4 +1,4 @@
-import npmFetch from 'npm-registry-fetch';
+import npmFetch from 'npm-registry-fetch'
 
 export async function isVersionPublished(packageName: string, version: string) {
   return await npmFetch(`/${packageName}/${version}`)
@@ -7,12 +7,12 @@ export async function isVersionPublished(packageName: string, version: string) {
     .catch((e: unknown) => {
       if (isNpmNotFoundError(e)) {
         // If the request fails with a 404, the version has not been published yet.
-        return true;
+        return true
       } else {
         // If the request fails with another error, rethrow it.
-        throw e;
+        throw e
       }
-    });
+    })
 }
 function isNpmNotFoundError(e: unknown) {
   return (
@@ -22,5 +22,5 @@ function isNpmNotFoundError(e: unknown) {
     e.name === 'HttpErrorGeneral' &&
     'statusCode' in e &&
     e.statusCode === 404
-  );
+  )
 }

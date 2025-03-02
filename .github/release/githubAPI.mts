@@ -1,15 +1,15 @@
-import { RequestError, type Octokit } from 'octokit';
+import { RequestError, type Octokit } from 'octokit'
 
 type ExistingPullRequestQueryData = {
   repository?: {
-    id: string;
+    id: string
     pullRequests: {
       nodes: {
-        id: string;
-      }[];
-    };
-  };
-};
+        id: string
+      }[]
+    }
+  }
+}
 
 export const createOrUpdateReleasePR = async ({
   octokit,
@@ -20,16 +20,16 @@ export const createOrUpdateReleasePR = async ({
   title,
   body,
 }: {
-  octokit: Octokit;
-  owner: string;
-  repo: string;
-  releaseBranchName: string;
-  mainBranchName: string;
-  title: string;
-  body: string;
+  octokit: Octokit
+  owner: string
+  repo: string
+  releaseBranchName: string
+  mainBranchName: string
+  title: string
+  body: string
 }) => {
   // TK logging
-  console.log('Checking for an existing pull request');
+  console.log('Checking for an existing pull request')
 
   // GraphQL because the REST API can't correctly find a pull request by head
   // and base. It appears to do a substring match rather than an exact match.
@@ -62,14 +62,14 @@ export const createOrUpdateReleasePR = async ({
       headRefName: releaseBranchName,
       baseRefName: mainBranchName,
     }
-  );
+  )
 
   if (!queryResponse.repository) {
-    throw new Error(`Repository ${owner}/${repo} not found!`);
+    throw new Error(`Repository ${owner}/${repo} not found!`)
   }
 
   if (queryResponse.repository.pullRequests.nodes.length == 0) {
-    console.log('Creating a new pull request');
+    console.log('Creating a new pull request')
     await octokit.graphql(
       /* graphql */ `
       mutation CreatePullRequestMutation(
@@ -99,9 +99,9 @@ export const createOrUpdateReleasePR = async ({
         title,
         body,
       }
-    );
+    )
   } else {
-    console.log('Updating the existing pull request');
+    console.log('Updating the existing pull request')
     await octokit.graphql(
       /* graphql */ `
       mutation UpdatePullRequestMutation(
@@ -125,9 +125,9 @@ export const createOrUpdateReleasePR = async ({
         title,
         body,
       }
-    );
+    )
   }
-};
+}
 
 export const createOrUpdateRelease = async ({
   octokit,
@@ -137,12 +137,12 @@ export const createOrUpdateRelease = async ({
   body,
   prerelease,
 }: {
-  octokit: Octokit;
-  owner: string;
-  repo: string;
-  tagName: string;
-  body: string;
-  prerelease: boolean;
+  octokit: Octokit
+  owner: string
+  repo: string
+  tagName: string
+  body: string
+  prerelease: boolean
 }) => {
   // REST API because the GraphQL API doesn't support releases.
   try {
@@ -152,9 +152,9 @@ export const createOrUpdateRelease = async ({
       owner,
       repo,
       tag: tagName,
-    });
+    })
 
-    console.log('Updating the existing release');
+    console.log('Updating the existing release')
     await octokit.rest.repos.updateRelease({
       owner,
       repo,
@@ -163,10 +163,10 @@ export const createOrUpdateRelease = async ({
       tag_name: tagName,
       body,
       prerelease,
-    });
+    })
   } catch (e) {
     if (isGitHubNotFoundError(e)) {
-      console.log('Creating a new release');
+      console.log('Creating a new release')
       await octokit.rest.repos.createRelease({
         owner,
         repo,
@@ -174,13 +174,13 @@ export const createOrUpdateRelease = async ({
         tag_name: tagName,
         body,
         prerelease,
-      });
+      })
     } else {
-      console.error(e);
+      console.error(e)
     }
   }
-};
+}
 
 function isGitHubNotFoundError(e: unknown) {
-  return e instanceof RequestError && e.status === 404;
+  return e instanceof RequestError && e.status === 404
 }
