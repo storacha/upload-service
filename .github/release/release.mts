@@ -111,11 +111,9 @@ if (pendingVersions.length > 0) {
   for (const [project, { currentVersion }] of Object.entries(
     versionResult.projectsVersionData
   )) {
-    const needToPublish = await isVersionPublished(project, currentVersion)
-
     const tagName = `${project}@${currentVersion}`
 
-    if (!needToPublish) {
+    if (await isVersionPublished(project, currentVersion)) {
       log.info(`${tagName} already published to registry; skipping.`)
     } else {
       log.info(`Publishing ${tagName}.`)
