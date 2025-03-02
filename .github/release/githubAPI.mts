@@ -176,7 +176,7 @@ export const createOrUpdateRelease = async ({
         prerelease,
       })
     } else {
-      console.error(e)
+      throw e
     }
   }
 }
