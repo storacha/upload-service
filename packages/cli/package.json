@@ -46,7 +46,6 @@
     "@web3-storage/sigv4": "catalog:",
     "entail": "^2.1.1",
     "multiformats": "^13.1.1",
-    "prettier": "^3.0.3",
     "typescript": "catalog:"
   },
   "dependencies": {

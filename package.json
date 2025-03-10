@@ -6,13 +6,13 @@
   "scripts": {},
   "devDependencies": {
     "@nx/js": "catalog:",
+    "depcheck": "catalog:",
+    "eslint": "catalog:",
     "lint-staged": "catalog:",
     "nx": "catalog:",
-    "prettier": "2.8.3",
+    "prettier": "3.5.3",
     "react": "catalog:",
-    "typescript": "catalog:",
-    "depcheck": "catalog:",
-    "eslint": "catalog:"
+    "typescript": "catalog:"
   },
   "engines": {
     "node": ">=16"
