@@ -41,7 +41,7 @@ export type AuthenticatorContextActions = ContextActions & {
 
 export type AuthenticatorContextValue = [
   state: AuthenticatorContextState,
-  actions: AuthenticatorContextActions
+  actions: AuthenticatorContextActions,
 ]
 
 export const AuthenticatorContextDefaultValue: AuthenticatorContextValue = [

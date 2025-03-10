@@ -959,7 +959,7 @@ export type ServiceAbilityArray = [
   W3sBlobAccept['can'],
   HTTPPut['can'],
   SpaceIndex['can'],
-  SpaceIndexAdd['can']
+  SpaceIndexAdd['can'],
 ]
 
 /**

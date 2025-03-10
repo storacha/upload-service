@@ -103,7 +103,7 @@ export interface UploaderContextActions {
 
 export type UploaderContextValue = [
   state: UploaderContextState,
-  actions: UploaderContextActions
+  actions: UploaderContextActions,
 ]
 
 export const UploaderContextDefaultValue: UploaderContextValue = [
@@ -226,10 +226,10 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
           files.length > 1
             ? await client.uploadDirectory(files, uploadOptions)
             : uploadAsCAR
-            ? await client.uploadCAR(file, uploadOptions)
-            : wrapInDirectory
-            ? await client.uploadDirectory(files, uploadOptions)
-            : await client.uploadFile(file, uploadOptions)
+              ? await client.uploadCAR(file, uploadOptions)
+              : wrapInDirectory
+                ? await client.uploadDirectory(files, uploadOptions)
+                : await client.uploadFile(file, uploadOptions)
 
         setDataCID(cid)
         setStatus(UploadStatus.Succeeded)

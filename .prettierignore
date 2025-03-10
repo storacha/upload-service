@@ -1,0 +1,5 @@
+# Definitely don't format the lockfile.
+pnpm-lock.yaml
+
+# We may want to format our Markdown files someday, but today is not that day.
+*.md

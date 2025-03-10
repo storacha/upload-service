@@ -61,8 +61,8 @@ export const test = (suite) => {
       const define = name.startsWith('only ')
         ? it.only
         : name.startsWith('skip ')
-        ? it.skip
-        : it
+          ? it.skip
+          : it
 
       define(name, () => member(assert))
     } else {

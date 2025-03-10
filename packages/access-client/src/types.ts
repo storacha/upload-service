@@ -245,7 +245,7 @@ export type InvokeOptions<
   R extends Resource,
   CAP extends CapabilityParser<
     Match<{ can: A; with: R & Resource; nb: Caveats }, UnknownMatch>
-  >
+  >,
 > = UCANBasicOptions &
   Omit<InferInvokedCapability<CAP>, 'can' | 'with'> & {
     /**
