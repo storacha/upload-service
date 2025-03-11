@@ -75,7 +75,7 @@
     "@storacha/one-webcrypto": "catalog:",
     "@ucanto/client": "catalog:",
     "@ucanto/core": "catalog:",
-    "@ucanto/interface": "^10.1.1",
+    "@ucanto/interface": "catalog:",
     "@ucanto/principal": "^9.0.2",
     "@ucanto/transport": "catalog:",
     "@ucanto/validator": "catalog:",
