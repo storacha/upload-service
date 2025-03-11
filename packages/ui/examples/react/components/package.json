@@ -10,8 +10,8 @@
   "scripts": {
     "build": "bunchee",
     "clean": "rm -rf dist *.tsbuildinfo",
-    "lint": "echo 'Linting in @storacha/ui-example-react-components is temporarily disabled while we resolve version issues.'",
-    "lint:fix": "echo 'Linting in @storacha/ui-example-react-components is temporarily disabled while we resolve version issues.'"
+    "lint": "eslint '**/*.{js,jsx,ts,tsx}' && prettier --check '**/*.{js,jsx,ts,tsx,yml,json}' --ignore-path ../../../../../.gitignore",
+    "lint:fix": "eslint --fix '**/*.{js,jsx,ts,tsx}' && prettier --write '**/*.{js,jsx,ts,tsx,yml,json}' --ignore-path ../../../../../.gitignore"
   },
   "files": [
     "dist",
@@ -39,7 +39,7 @@
   },
   "eslintConfig": {
     "extends": [
-      "../../../eslint.packages.js"
+      "@storacha/ui"
     ]
   },
   "eslintIgnore": [

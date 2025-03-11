@@ -8,8 +8,8 @@
   "scripts": {
     "dev": "bunchee --watch",
     "clean": "rm -rf dist *.tsbuildinfo",
-    "lint": "echo 'Linting in @storacha/ui-react is temporarily disabled while we resolve version issues.'",
-    "lint:fix": "echo 'Linting in @storacha/ui-react is temporarily disabled while we resolve version issues.'",
+    "lint": "eslint '**/*.{js,jsx,ts,tsx}' && prettier --check '**/*.{js,jsx,ts,tsx,yml,json}' --ignore-path ../../../../.gitignore",
+    "lint:fix": "eslint --fix '**/*.{js,jsx,ts,tsx}' && prettier --write '**/*.{js,jsx,ts,tsx,yml,json}' --ignore-path ../../../../.gitignore",
     "test": "vitest run",
     "test:watch": "vitest watch"
   },
@@ -35,6 +35,7 @@
   },
   "devDependencies": {
     "@ipld/dag-ucan": "^3.2.0",
+    "@storacha/eslint-config-ui": "workspace:^",
     "@testing-library/react": "catalog:",
     "@testing-library/user-event": "catalog:",
     "@types/react": "catalog:",
@@ -57,7 +58,7 @@
   },
   "eslintConfig": {
     "extends": [
-      "@storacha/ui-eslint-config",
+      "@storacha/ui",
       "plugin:react-hooks/recommended"
     ]
   },

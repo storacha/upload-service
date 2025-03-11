@@ -3,9 +3,6 @@
   "files": [],
   "references": [
     {
-      "path": "./tsconfig.spec.json"
-    },
-    {
       "path": "../../react/uploads-list"
     },
     {
@@ -19,6 +16,9 @@
     },
     {
       "path": "../../react/components"
+    },
+    {
+      "path": "./tsconfig.spec.json"
     }
   ]
 }
