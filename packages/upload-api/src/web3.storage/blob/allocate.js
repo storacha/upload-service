@@ -9,14 +9,16 @@ import {
 import { MAX_UPLOAD_SIZE } from './constants.js'
 
 /**
- * @param {API.W3sBlobServiceContext} context
+ * @deprecated
+ * @param {API.LegacyBlobServiceContext} context
  * @returns {API.ServiceMethod<API.W3sBlobAllocate, API.W3sBlobAllocateSuccess, API.W3sBlobAllocateFailure>}
  */
 export const w3sBlobAllocateProvider = (context) =>
   Server.provide(W3sBlob.allocate, (input) => allocate(context, input))
 
 /**
- * @param {API.W3sBlobServiceContext} context
+ * @deprecated
+ * @param {API.LegacyBlobServiceContext} context
  * @param {API.ProviderInput<API.W3sBlobAllocate>} input
  */
 export const allocate = async (context, { capability }) => {

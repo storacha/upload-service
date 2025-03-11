@@ -8,7 +8,7 @@ import { createService as createBlobService } from './blob.js'
 import { createService as createIndexService } from './index.js'
 
 /**
- * @param {API.SpaceServiceContext & API.BlobServiceContext & API.IndexServiceContext & API.UsageServiceContext} ctx
+ * @param {API.SpaceServiceContext & API.BlobServiceContext & API.LegacyBlobServiceContext & API.IndexServiceContext & API.UsageServiceContext} ctx
  */
 export const createService = (ctx) => ({
   info: Provider.provide(Space.info, (input) => info(input, ctx)),

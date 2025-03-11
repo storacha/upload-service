@@ -24,7 +24,7 @@ const conclude = (receipt, issuer, audience = issuer) =>
   createConcludeInvocation(issuer, audience, receipt).delegate()
 
 /**
- * @param {API.BlobServiceContext & API.W3sBlobServiceContext} context
+ * @param {API.BlobServiceContext & API.LegacyBlobServiceContext} context
  * @returns {API.ServiceMethod<API.SpaceBlobAdd, API.SpaceBlobAddSuccess, API.SpaceBlobAddFailure>}
  */
 export function blobAddProvider(context) {
@@ -96,12 +96,11 @@ export function blobAddProvider(context) {
       })
 
       // Create a result describing this invocation workflow
-      let result = Server.ok({
-        /** @type {API.SpaceBlobAddSuccess['site']} */
+      let result = Server.ok(/** @type {API.SpaceBlobAddSuccess} */ ({
         site: {
           'ucan/await': ['.out.ok.site', acceptance.ok.task.link()],
         },
-      })
+      }))
         .fork(allocation.ok.task)
         .fork(allocationW3s.task)
         .fork(delivery.task)

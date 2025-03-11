@@ -218,6 +218,9 @@ export type W3sBlobAcceptSuccess = LegacyUploadAPI.BlobAcceptSuccess
 /** @deprecated */
 export type W3sBlobAcceptFailure = LegacyUploadAPI.BlobAcceptFailure
 
+/** @deprecated */
+export interface LegacyStoreServiceContext extends LegacyUploadAPI.StoreServiceContext {}
+
 export interface Service extends StorefrontService {
   upload: {
     add: ServiceMethod<UploadAdd, UploadAddSuccess, Failure>
@@ -357,7 +360,7 @@ export interface Service extends StorefrontService {
 }
 
 /** @deprecated */
-export type W3sBlobServiceContext = Omit<LegacyUploadAPI.BlobServiceContext, 'allocationsStorage'> & {
+export type LegacyBlobServiceContext = Omit<LegacyUploadAPI.BlobServiceContext, 'allocationsStorage'> & {
   registry: BlobRegistry
 }
 
@@ -404,8 +407,10 @@ export interface CustomerServiceContext {
 export interface AdminServiceContext {
   signer: Signer
   uploadTable: UploadTable
-  storeTable: LegacyUploadAPI.AdminServiceContext['storeTable']
 }
+
+/** @deprecated */
+export interface LegacyAdminServiceContext extends Pick<LegacyUploadAPI.AdminServiceContext, 'storeTable'> {}
 
 export interface ConsoleServiceContext {}
 
@@ -437,7 +442,7 @@ export interface RevocationServiceContext {
 }
 
 /** @deprecated */
-export interface W3sConcludeServiceContext extends Pick<LegacyUploadAPI.ConcludeServiceContext, 'id'|'getServiceConnection'> {
+export interface LegacyConcludeServiceContext extends Pick<LegacyUploadAPI.ConcludeServiceContext, 'id'|'getServiceConnection'> {
   registry: BlobRegistry
 }
 
@@ -452,6 +457,13 @@ export interface ConcludeServiceContext {
   router: RoutingService
 }
 
+export interface UcanServiceContext
+  extends RevocationServiceContext, ConcludeServiceContext {}
+
+/** @deprecated */
+export interface LegacyUcanServiceContext
+  extends LegacyConcludeServiceContext {}
+
 export interface PlanServiceContext {
   plansStorage: PlansStorage
 }
@@ -463,6 +475,7 @@ export interface UsageServiceContext {
 
 export interface ServiceContext
   extends AdminServiceContext,
+    LegacyAdminServiceContext,
     AgentContext,
     AccessServiceContext,
     ConsoleServiceContext,
@@ -471,16 +484,17 @@ export interface ServiceContext
     ProviderServiceContext,
     SpaceServiceContext,
     BlobServiceContext,
-    ConcludeServiceContext,
+    LegacyBlobServiceContext,
     SubscriptionServiceContext,
     RateLimitServiceContext,
-    RevocationServiceContext,
+    UcanServiceContext,
+    LegacyUcanServiceContext,
     PlanServiceContext,
     UploadServiceContext,
     FilecoinServiceContext,
     IndexServiceContext,
     UsageServiceContext,
-    LegacyUploadAPI.StoreServiceContext {}
+    LegacyStoreServiceContext {}
 
 export interface UcantoServerContext
   extends ServiceContext,

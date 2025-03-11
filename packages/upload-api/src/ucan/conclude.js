@@ -5,7 +5,7 @@ import { conclude } from '@storacha/capabilities/ucan'
 import * as BlobAccept from '../blob/accept.js'
 
 /**
- * @param {API.ConcludeServiceContext} context
+ * @param {API.ConcludeServiceContext & API.LegacyConcludeServiceContext} context
  * @returns {API.ServiceMethod<API.UCANConclude, API.UCANConcludeSuccess, API.UCANConcludeFailure>}
  */
 export const ucanConcludeProvider = (context) =>

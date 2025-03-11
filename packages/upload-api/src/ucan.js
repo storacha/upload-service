@@ -3,7 +3,7 @@ import { ucanConcludeProvider } from './ucan/conclude.js'
 import * as API from './types.js'
 
 /**
- * @param {API.UploadServiceContext} context
+ * @param {API.UcanServiceContext & API.LegacyConcludeServiceContext} context
  */
 export const createService = (context) => {
   return {

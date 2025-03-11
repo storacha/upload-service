@@ -10,7 +10,8 @@ import {
 } from './lib.js'
 
 /**
- * @param {API.W3sBlobServiceContext} context
+ * @deprecated
+ * @param {API.LegacyBlobServiceContext} context
  * @returns {API.ServiceMethod<API.W3sBlobAccept, API.W3sBlobAcceptSuccess, API.W3sBlobAcceptFailure>}
  */
 export function w3sBlobAcceptProvider(context) {
@@ -70,8 +71,9 @@ export function w3sBlobAcceptProvider(context) {
 }
 
 /**
+ * @deprecated
  * @param {object} params
- * @param {API.W3sConcludeServiceContext} params.context
+ * @param {API.LegacyConcludeServiceContext} params.context
  * @param {API.Invocation<API.HTTPPut>} params.putTask
  * @param {API.Invocation<API.W3sBlobAllocate>} params.allocateTask
  */

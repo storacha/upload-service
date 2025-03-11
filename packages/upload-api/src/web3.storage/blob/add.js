@@ -15,12 +15,11 @@ const conclude = (receipt, issuer, audience = issuer) =>
   createConcludeInvocation(issuer, audience, receipt).delegate()
 
 /**
- * @param {API.W3sBlobServiceContext} context
+ * @deprecated
+ * @param {API.LegacyBlobServiceContext} context
  */
 export const w3sBlobAddHandler = (context) => {
-  /**
-   * @type {(input: API.ProviderInput<API.SpaceBlobAdd>) => Promise<API.Result<API.SpaceBlobAddSuccess, API.SpaceBlobAddFailure>>}
-   */
+  /** @param {API.ProviderInput<API.SpaceBlobAdd>} input */
   return async ({ capability, invocation }) => {
     const { with: space, nb } = capability
     const { blob } = nb
@@ -45,12 +44,11 @@ export const w3sBlobAddHandler = (context) => {
     })
 
     // Create a result describing the this invocation workflow
-    let result = Server.ok({
-      /** @type {API.SpaceBlobAddSuccess['site']} */
+    let result = Server.ok(/** @type {API.SpaceBlobAddSuccess} */ ({
       site: {
         'ucan/await': ['.out.ok.site', acceptance.task.link()],
       },
-    })
+    }))
       .fork(allocation.task)
       .fork(delivery.task)
       .fork(acceptance.task)
@@ -71,7 +69,7 @@ export const w3sBlobAddHandler = (context) => {
  * an allocation receipt to the store.
  *
  * @param {object} allocate
- * @param {API.W3sBlobServiceContext} allocate.context
+ * @param {API.LegacyBlobServiceContext} allocate.context
  * @param {API.BlobModel} allocate.blob
  * @param {API.DIDKey} allocate.space
  * @param {API.Link} allocate.cause
@@ -193,7 +191,7 @@ async function put({ blob, allocation }) {
  * A accept task can run when `http/put` receipt already exists.
  *
  * @param {object} input
- * @param {API.W3sBlobServiceContext} input.context
+ * @param {API.LegacyBlobServiceContext} input.context
  * @param {API.BlobModel} input.blob
  * @param {API.DIDKey} input.space
  * @param {object} input.delivery

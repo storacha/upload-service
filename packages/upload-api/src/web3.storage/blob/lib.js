@@ -1,7 +1,6 @@
 import { Failure } from '@ucanto/server'
 import * as W3sBlob from '@storacha/capabilities/web3.storage/blob'
 import * as API from '../../types.js'
-import * as LegacyAPI from '@web3-storage/upload-api/types'
 
 export const AllocatedMemoryHadNotBeenWrittenToName =
   'AllocatedMemoryHadNotBeenWrittenTo'
@@ -68,6 +67,6 @@ export const isW3sProvider = s => s.endsWith('web3.storage')
 
 /**
  * @param {API.Invocation} i
- * @returns {i is API.Invocation<LegacyAPI.BlobAllocate>}
+ * @returns {i is API.Invocation<import('@web3-storage/upload-api/types').BlobAllocate>}
  */
 export const isW3sBlobAllocateTask = i => i.capabilities[0].can === W3sBlob.allocate.can
