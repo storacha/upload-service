@@ -1,0 +1,21 @@
+{
+  "extends": [
+    "@storacha/eslint-config"
+  ],
+  "parserOptions": {
+    "project": "./tsconfig.json"
+  },
+  "env": {
+    "es2022": true,
+    "mocha": true,
+    "browser": true,
+    "node": true
+  },
+  "ignorePatterns": [
+    "dist",
+    "docs",
+    "docs-generated",
+    "coverage",
+    "src/types.js"
+  ]
+}

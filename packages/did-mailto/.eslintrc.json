@@ -1,0 +1,13 @@
+{
+  "extends": [
+    "@storacha/eslint-config"
+  ],
+  "env": {
+    "mocha": true
+  },
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "src/types.js"
+  ]
+}

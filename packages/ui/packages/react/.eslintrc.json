@@ -1,0 +1,6 @@
+{
+  "extends": [
+    "./node_modules/@storacha/ui-eslint-config/index.js",
+    "plugin:react-hooks/recommended"
+  ]
+}

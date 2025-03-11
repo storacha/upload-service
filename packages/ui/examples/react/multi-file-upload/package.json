@@ -19,6 +19,7 @@
     "react-dom": "catalog:"
   },
   "devDependencies": {
+    "@storacha/ui-eslint-config": "workspace:^",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
@@ -30,10 +31,5 @@
     "postcss": "catalog:",
     "tailwindcss": "catalog:",
     "vite": "catalog:"
-  },
-  "eslintConfig": {
-    "extends": [
-      "../../../eslint.packages.js"
-    ]
   }
 }

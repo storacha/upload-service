@@ -85,27 +85,6 @@
     "playwright-test": "catalog:",
     "typescript": "catalog:"
   },
-  "eslintConfig": {
-    "extends": [
-      "@storacha/eslint-config"
-    ],
-    "parserOptions": {
-      "project": "./tsconfig.json"
-    },
-    "env": {
-      "es2022": true,
-      "mocha": true,
-      "browser": true,
-      "node": true
-    },
-    "globals": {
-      "AsyncIterator": "readonly"
-    },
-    "ignorePatterns": [
-      "dist",
-      "coverage"
-    ]
-  },
   "depcheck": {
     "specials": [
       "bin"

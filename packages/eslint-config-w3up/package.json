@@ -24,14 +24,5 @@
   },
   "peerDependencies": {
     "eslint": "^8.56.0"
-  },
-  "eslintConfig": {
-    "extends": "./src/index.js",
-    "env": {
-      "node": true
-    },
-    "ignorePatterns": [
-      "dist"
-    ]
   }
 }

@@ -1,0 +1,16 @@
+{
+  "extends": [
+    "@storacha/eslint-config"
+  ],
+  "env": {
+    "es2022": true,
+    "mocha": true,
+    "browser": true,
+    "node": true
+  },
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "src/api.js"
+  ]
+}

@@ -105,20 +105,6 @@
     "typescript": "catalog:",
     "watch": "catalog:"
   },
-  "eslintConfig": {
-    "extends": [
-      "@storacha/eslint-config"
-    ],
-    "env": {
-      "browser": true,
-      "es2022": true,
-      "mocha": true
-    },
-    "ignorePatterns": [
-      "dist",
-      "src/types.js"
-    ]
-  },
   "depcheck": {
     "specials": [
       "bin"

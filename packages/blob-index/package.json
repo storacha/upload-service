@@ -50,22 +50,6 @@
     "entail": "^2.1.2",
     "typescript": "catalog:"
   },
-  "eslintConfig": {
-    "extends": [
-      "@storacha/eslint-config"
-    ],
-    "env": {
-      "es2022": true,
-      "mocha": true,
-      "browser": true,
-      "node": true
-    },
-    "ignorePatterns": [
-      "dist",
-      "coverage",
-      "src/api.js"
-    ]
-  },
   "engines": {
     "node": ">=16.15"
   }

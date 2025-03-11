@@ -29,6 +29,7 @@
     "react": "catalog:"
   },
   "devDependencies": {
+    "@storacha/ui-eslint-config": "workspace:^",
     "@types/react": "catalog:",
     "bunchee": "catalog:",
     "eslint-plugin-react-hooks": "catalog:",
@@ -36,11 +37,6 @@
   },
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0"
-  },
-  "eslintConfig": {
-    "extends": [
-      "../../../eslint.packages.js"
-    ]
   },
   "eslintIgnore": [
     "node_modules",

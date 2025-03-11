@@ -153,26 +153,6 @@
     "mocha": "^10.2.0",
     "typescript": "catalog:"
   },
-  "eslintConfig": {
-    "extends": [
-      "@storacha/eslint-config"
-    ],
-    "env": {
-      "es2022": true,
-      "mocha": true,
-      "browser": true,
-      "node": true
-    },
-    "ignorePatterns": [
-      "dist",
-      "coverage",
-      "src/types.js",
-      "test/types.js"
-    ],
-    "rules": {
-      "@typescript-eslint/no-empty-object-type": "off"
-    }
-  },
   "depcheck": {
     "specials": [
       "bin"
