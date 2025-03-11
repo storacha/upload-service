@@ -42,6 +42,12 @@
       "options": {
         "build": true
       }
+    },
+    {
+      "plugin": "@nx/eslint/plugin",
+      "options": {
+        "targetName": "eslint:lint"
+      }
     }
   ]
 }

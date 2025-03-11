@@ -77,6 +77,10 @@ scripts/nx-watch-run typecheck lint build test
 nx reset
 ```
 
+### Formatting and Linting
+
+Your editor should be able to run Prettier (formatting) and ESLint (linting) for you as you work. [TK: Explain how to run manually with Nx, and how CI checks.]
+
 ## Release Process
 
 _🚧 Under reconstruction 🚧_

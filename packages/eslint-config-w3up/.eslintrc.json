@@ -1,9 +1,0 @@
-{
-  "extends": "./src/index.js",
-  "env": {
-    "node": true
-  },
-  "ignorePatterns": [
-    "dist"
-  ]
-}
