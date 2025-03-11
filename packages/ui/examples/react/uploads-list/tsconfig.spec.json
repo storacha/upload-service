@@ -1,12 +1,12 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["test/**/*"],
+  "include": ["test/**/*", "./*.js"],
   "compilerOptions": {
     "rootDir": "."
   },
   "references": [
     {
-      "path": "./tsconfig.lib.json"
+      "path": "./tsconfig.app.json"
     }
   ]
 }

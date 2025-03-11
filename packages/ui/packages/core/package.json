@@ -41,7 +41,7 @@
   },
   "eslintConfig": {
     "extends": [
-      "@storacha/ui-eslint-config"
+      "@storacha/ui"
     ]
   },
   "eslintIgnore": [
@@ -49,7 +49,7 @@
     "dist"
   ],
   "devDependencies": {
-    "@storacha/ui-eslint-config": "workspace:^",
+    "@storacha/eslint-config-ui": "workspace:^",
     "bunchee": "catalog:",
     "fake-indexeddb": "catalog:",
     "happy-dom": "catalog:",

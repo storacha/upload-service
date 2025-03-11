@@ -1,17 +1,7 @@
 module.exports = {
   extends: ['./node_modules/hd-scripts/eslint/ts.js'],
   parserOptions: {
-    project: [
-      'packages/*/tsconfig.lib.json',
-      'examples/*/*/tsconfig.lib.json',
-      'examples/*/*/tsconfig.app.json',
-      'packages/*/tsconfig.spec.json',
-      'examples/*/*/tsconfig.spec.json',
-    ],
-    tsconfigRootDir: __dirname,
-    ecmaFeatures: {
-      jsx: true,
-    },
+    projectService: true,
   },
   env: {},
   globals: {},
@@ -36,7 +26,7 @@ module.exports = {
     '@typescript-eslint/member-delimiter-style': 'off',
     '@typescript-eslint/restrict-plus-operands': [
       'error',
-      { skipCompoundAssignments: false },
+      { checkCompoundAssignments: true },
     ],
   },
   ignorePatterns: ['dist/', 'vitest.config.ts'],

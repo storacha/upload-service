@@ -39,7 +39,7 @@
     "@types/node": "^22.13.0",
     "@types/update-notifier": "catalog:",
     "@typescript-eslint/eslint-plugin": "catalog:",
-    "@ucanto/interface": "^10.1.1",
+    "@ucanto/interface": "catalog:",
     "@ucanto/principal": "^9.0.2",
     "@ucanto/server": "^10.1.0",
     "@web-std/blob": "catalog:",

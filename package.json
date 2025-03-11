@@ -23,5 +23,13 @@
   },
   "engines": {
     "node": ">=16"
+  },
+  "pnpm": {
+    "overrides": {
+      "hd-scripts>@typescript-eslint/eslint-plugin": "catalog:",
+      "hd-scripts>@typescript-eslint/parser": "catalog:",
+      "eslint-config-standard-with-typescript>@typescript-eslint/eslint-plugin": "catalog:",
+      "eslint-config-standard-with-typescript>@typescript-eslint/parser": "catalog:"
+    }
   }
 }
