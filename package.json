@@ -5,16 +5,32 @@
   "packageManager": "pnpm@10.1.0+sha512.c89847b0667ddab50396bbbd008a2a43cf3b581efd59cf5d9aa8923ea1fb4b8106c041d540d08acb095037594d73ebc51e1ec89ee40c88b30b8a66c0fae0ac1b",
   "scripts": {},
   "devDependencies": {
+    "@nx/eslint": "20.3.2",
     "@nx/js": "catalog:",
+    "depcheck": "catalog:",
+    "eslint": "catalog:",
     "lint-staged": "catalog:",
     "nx": "catalog:",
-    "prettier": "2.8.3",
+    "prettier": "3.5.3",
     "react": "catalog:",
-    "typescript": "catalog:",
-    "depcheck": "catalog:",
-    "eslint": "catalog:"
+    "typescript": "catalog:"
   },
   "engines": {
     "node": ">=16"
+  },
+  "pnpm": {
+    "overrides": {
+      "hd-scripts>@typescript-eslint/eslint-plugin": "^8.26.1",
+      "hd-scripts>@typescript-eslint/parser": "^8.26.1"
+    },
+    "ignoredBuiltDependencies": [
+      "simple-git-hooks"
+    ],
+    "onlyBuiltDependencies": [
+      "@swc/core",
+      "esbuild",
+      "protobufjs",
+      "nx"
+    ]
   }
 }

@@ -12,7 +12,7 @@
   "main": "./src/index.js",
   "scripts": {
     "clean": "rm -rf dist *.tsbuildinfo",
-    "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+    "lint": "eslint '**/*.{js,ts}'",
     "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore"
   },
   "author": "",
@@ -24,14 +24,5 @@
   },
   "peerDependencies": {
     "eslint": "^8.56.0"
-  },
-  "eslintConfig": {
-    "extends": "./src/index.js",
-    "env": {
-      "node": true
-    },
-    "ignorePatterns": [
-      "dist"
-    ]
   }
 }

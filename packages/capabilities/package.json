@@ -15,8 +15,8 @@
   "scripts": {
     "dev": "tsc --build --watch --preserveWatchOutput",
     "clean": "rm -rf dist *.tsbuildinfo",
-    "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
-    "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+    "lint": "eslint '**/*.{js,ts}'",
+    "lint:fix": "eslint --fix '**/*.{js,ts}'",
     "test:node": "mocha 'test/**/*.test.js' -n experimental-vm-modules -n no-warnings",
     "test:browser": "playwright-test",
     "attw": "attw --pack .",
@@ -104,26 +104,6 @@
     "type-fest": "^3.3.0",
     "typescript": "catalog:",
     "watch": "catalog:"
-  },
-  "eslintConfig": {
-    "extends": [
-      "@storacha/eslint-config"
-    ],
-    "env": {
-      "es2022": true,
-      "mocha": true,
-      "browser": true,
-      "node": true
-    },
-    "ignorePatterns": [
-      "dist",
-      "docs",
-      "coverage",
-      "src/types.js"
-    ],
-    "rules": {
-      "@typescript-eslint/no-empty-object-type": "off"
-    }
   },
   "depcheck": {
     "specials": [

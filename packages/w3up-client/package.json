@@ -105,8 +105,8 @@
   "scripts": {
     "dev": "tsc --build --watch --preserveWatchOutput",
     "clean": "rm -rf dist *.tsbuildinfo coverage",
-    "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
-    "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+    "lint": "eslint '**/*.{js,ts}'",
+    "lint:fix": "eslint --fix '**/*.{js,ts}'",
     "test:node": "npm-run-all --parallel --race --npm-path pnpm mock:* 'test-:node'",
     "test-:node": "hundreds -r html -r text mocha 'test/**/!(*.browser).test.js' -n experimental-vm-modules -n no-warnings -n stack-trace-limit=1000 -t 10000 --bail",
     "test:browser": "npm-run-all --parallel --race --npm-path pnpm mock:* 'test-:browser'",
@@ -156,27 +156,6 @@
     "npm-run-all": "catalog:",
     "playwright-test": "catalog:",
     "typescript": "catalog:"
-  },
-  "eslintConfig": {
-    "extends": [
-      "@storacha/eslint-config"
-    ],
-    "parserOptions": {
-      "project": "./tsconfig.json"
-    },
-    "env": {
-      "es2022": true,
-      "mocha": true,
-      "browser": true,
-      "node": true
-    },
-    "ignorePatterns": [
-      "dist",
-      "docs",
-      "docs-generated",
-      "coverage",
-      "src/types.js"
-    ]
   },
   "directories": {
     "test": "test"

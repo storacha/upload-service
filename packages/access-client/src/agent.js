@@ -278,7 +278,7 @@ export class Agent {
     for (const proof of [...authorizations.values()]) {
       const proofsByIssuer = sessions[proof.asCID.toString()] ?? {}
       const sessionProofs = options?.sessionProofIssuer
-        ? proofsByIssuer[options.sessionProofIssuer] ?? []
+        ? (proofsByIssuer[options.sessionProofIssuer] ?? [])
         : Object.values(proofsByIssuer).flat()
       for (const sessionProof of sessionProofs) {
         authorizations.set(sessionProof.cid.toString(), sessionProof)

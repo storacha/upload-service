@@ -46,7 +46,6 @@
     "@web3-storage/sigv4": "catalog:",
     "entail": "^2.1.1",
     "multiformats": "^13.1.1",
-    "prettier": "^3.0.3",
     "typescript": "catalog:"
   },
   "dependencies": {
@@ -74,24 +73,5 @@
     "s-ago": "catalog:",
     "sade": "catalog:",
     "update-notifier": "catalog:"
-  },
-  "eslintConfig": {
-    "extends": [
-      "@storacha/eslint-config"
-    ],
-    "parserOptions": {
-      "project": "./tsconfig.json"
-    },
-    "env": {
-      "es2022": true,
-      "mocha": true,
-      "browser": true,
-      "node": true
-    },
-    "ignorePatterns": [
-      "dist",
-      "coverage",
-      "api.js"
-    ]
   }
 }

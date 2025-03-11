@@ -31,18 +31,13 @@
   "homepage": "https://github.com/web3-storage/w3ui/tree/main/packages/core",
   "dependencies": {
     "@ipld/dag-ucan": "^3.4.0",
+    "@storacha/access": "workspace:^",
+    "@storacha/client": "workspace:^",
+    "@storacha/did-mailto": "workspace:^",
     "@ucanto/client": "catalog:",
     "@ucanto/interface": "^10.0.1",
     "@ucanto/principal": "^9.0.1",
-    "@ucanto/transport": "catalog:",
-    "@storacha/access": "workspace:^",
-    "@storacha/did-mailto": "workspace:^",
-    "@storacha/client": "workspace:^"
-  },
-  "eslintConfig": {
-    "extends": [
-      "@storacha/ui-eslint-config"
-    ]
+    "@ucanto/transport": "catalog:"
   },
   "eslintIgnore": [
     "node_modules",
@@ -51,6 +46,7 @@
   "devDependencies": {
     "@storacha/ui-eslint-config": "workspace:^",
     "bunchee": "catalog:",
+    "eslint-plugin-unicorn": "^45.0.2",
     "fake-indexeddb": "catalog:",
     "happy-dom": "catalog:",
     "vitest": "catalog:"

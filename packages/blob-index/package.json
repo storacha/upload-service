@@ -25,8 +25,8 @@
   "scripts": {
     "dev": "tsc --build --watch --preserveWatchOutput",
     "clean": "rm -rf dist *.tsbuildinfo coverage",
-    "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
-    "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+    "lint": "eslint '**/*.{js,ts}'",
+    "lint:fix": "eslint --fix '**/*.{js,ts}'",
     "test": "entail test/*.spec.js",
     "attw": "attw --profile esm-only --pack .",
     "coverage": "c8 --reporter text --reporter html npm run test"
@@ -49,22 +49,6 @@
     "c8": "^7.14.0",
     "entail": "^2.1.2",
     "typescript": "catalog:"
-  },
-  "eslintConfig": {
-    "extends": [
-      "@storacha/eslint-config"
-    ],
-    "env": {
-      "es2022": true,
-      "mocha": true,
-      "browser": true,
-      "node": true
-    },
-    "ignorePatterns": [
-      "dist",
-      "coverage",
-      "src/api.js"
-    ]
   },
   "engines": {
     "node": ">=16.15"
