@@ -537,10 +537,13 @@ export type SpaceBlobRemove = InferInvokedCapability<
 >
 export type SpaceBlobList = InferInvokedCapability<typeof SpaceBlobCaps.list>
 export type SpaceBlobGet = InferInvokedCapability<typeof SpaceBlobCaps.get>
+/** @deprecated */
 export type W3sBlob = InferInvokedCapability<typeof W3sBlobCaps.blob>
+/** @deprecated */
 export type W3sBlobAllocate = InferInvokedCapability<
   typeof W3sBlobCaps.allocate
 >
+/** @deprecated */
 export type W3sBlobAccept = InferInvokedCapability<typeof W3sBlobCaps.accept>
 
 export interface BlobModel {

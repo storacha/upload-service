@@ -1,14 +1,12 @@
 import * as API from './types.js'
 import * as Server from '@ucanto/server'
-import * as Ucanto from '@ucanto/interface'
 import * as Space from '@storacha/capabilities/space'
 import { ensureRateLimitAbove } from './utils/rate-limits.js'
 
 /**
- *
  * @param {{capability: {with: API.SpaceDID}}} input
  * @param {API.SpaceServiceContext} context
- * @returns {Promise<API.Result<Ucanto.Unit, API.AllocationError>>}
+ * @returns {Promise<API.Result<{ providers: API.ProviderDID[] }, API.AllocationError>>}
  */
 export const allocate = async ({ capability }, context) => {
   const { with: space } = capability
@@ -25,18 +23,21 @@ export const allocate = async ({ capability }, context) => {
       },
     }
   }
-  const result = await context.provisionsStorage.hasStorageProvider(space)
-  if (result.ok) {
-    return { ok: {} }
+  const result = await context.provisionsStorage.getStorageProviders(space)
+  if (result.error) {
+    return result
+  }
+  if (!result.ok.length) {
+    return Server.error(
+      /** @type {API.AllocationError} */
+      ({
+        name: 'InsufficientStorage',
+        message: `${space} has no storage provider`,
+      }),
+    )
   }
 
-  return {
-    /** @type {API.AllocationError} */
-    error: {
-      name: 'InsufficientStorage',
-      message: `${space} has no storage provider`,
-    },
-  }
+  return Server.ok({ providers: result.ok })
 }
 
 /**

@@ -7,13 +7,15 @@ import * as HTTP from '@storacha/capabilities/http'
 import * as DID from '@ipld/dag-ucan/did'
 import * as Digest from 'multiformats/hashes/digest'
 import { AgentMessage } from '../lib.js'
+import { execW3sAccept } from '../web3.storage/blob/accept.js'
+import { isW3sBlobAllocateTask } from '../web3.storage/blob/lib.js'
 
 /**
  * Polls `blob/accept` task whenever we receive a receipt. It may error if passed
  * receipt is for `http/put` task that refers to the `blob/allocate` that we
  * are unable to find.
  *
- * @param {API.ConcludeServiceContext} context
+ * @param {API.ConcludeServiceContext & API.W3sConcludeServiceContext} context
  * @param {API.Receipt} receipt
  * @returns {Promise<API.Result<API.Unit, API.Failure>>}
  */
@@ -49,6 +51,14 @@ export const poll = async (context, receipt) => {
   // problem. Client test could potentially also catch errors.
   if (result.error) {
     return result
+  }
+
+  // if legacy allocation, use legacy accept
+  if (isW3sBlobAllocateTask(result.ok)) {
+    // We do not care about the result we just want receipt to be issued and
+    // stored.
+    await execW3sAccept({ context, putTask: ran.ok, allocateTask: result.ok })
+    return { ok: {} }
   }
 
   const provider = result.ok.audience

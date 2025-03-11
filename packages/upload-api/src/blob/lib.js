@@ -1,5 +1,7 @@
 import { Failure } from '@ucanto/server'
+import { ed25519 } from '@ucanto/principal'
 import { base58btc } from 'multiformats/bases/base58'
+import * as HTTP from '@storacha/capabilities/http'
 import * as API from '../types.js'
 
 export const AwaitErrorName = 'AwaitError'
@@ -114,3 +116,17 @@ export class BlobSizeLimitExceededError extends Failure {
     return `Blob of ${this.size} bytes, exceeds size limit of ${this.max} bytes`
   }
 }
+
+/**
+ * Derives did:key principal from (blob) multihash that can be used to
+ * sign ucan invocations/receipts for the the subject (blob) multihash.
+ *
+ * @param {API.Multihash} multihash
+ */
+export const deriveDID = (multihash) => ed25519.derive(multihash.subarray(-32))
+
+/**
+ * @param {API.Invocation} i
+ * @returns {i is API.Invocation<API.HTTPPut>}
+ */
+export const isHttpPutTask = i => i.capabilities[0].can === HTTP.put.can
