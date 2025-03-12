@@ -1,6 +1,10 @@
 import path from 'node:path'
 import fs from 'node:fs'
-import { releaseVersion, releaseChangelog, releasePublish } from 'nx/release'
+import {
+  releaseVersion,
+  releaseChangelog,
+  releasePublish,
+} from 'nx/release/index.js'
 import { createProjectGraphAsync } from '@nx/devkit'
 import { parseChangelogMarkdown } from 'nx/src/command-line/release/utils/markdown.js'
 import { simpleGit } from 'simple-git'
