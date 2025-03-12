@@ -41,7 +41,7 @@
     "@typescript-eslint/eslint-plugin": "catalog:",
     "@ucanto/interface": "catalog:",
     "@ucanto/principal": "^9.0.2",
-    "@ucanto/server": "^10.1.0",
+    "@ucanto/server": "catalog:",
     "@web-std/blob": "catalog:",
     "@web3-storage/sigv4": "catalog:",
     "entail": "^2.1.1",

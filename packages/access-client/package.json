@@ -97,7 +97,7 @@
     "@types/varint": "catalog:",
     "@types/ws": "catalog:",
     "@typescript-eslint/eslint-plugin": "catalog:",
-    "@ucanto/server": "^10.1.0",
+    "@ucanto/server": "catalog:",
     "assert": "catalog:",
     "mocha": "^10.2.0",
     "playwright-test": "catalog:",

@@ -130,7 +130,7 @@
     "@ucanto/client": "catalog:",
     "@ucanto/interface": "catalog:",
     "@ucanto/principal": "^9.0.2",
-    "@ucanto/server": "^10.2.0",
+    "@ucanto/server": "catalog:",
     "@ucanto/transport": "catalog:",
     "@ucanto/validator": "catalog:",
     "@web3-storage/content-claims": "^5.1.3",

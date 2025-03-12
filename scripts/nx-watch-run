@@ -26,9 +26,11 @@ coproc {
       # (Unfortunately, touching doesn't cut it.)
       mv pnpm-lock.yaml pnpm-lock.yaml-
       mv pnpm-lock.yaml- pnpm-lock.yaml
+    else
+      echo "$line"
     fi
   done
-}
+} >&2
 
 # Run nx watch with --verbose and send the verbose output to the coprocess.
 pnpm nx watch --verbose --all -- \

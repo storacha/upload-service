@@ -143,7 +143,7 @@
     "@types/mocha": "^10.0.1",
     "@types/node": "^20.17.14",
     "@typescript-eslint/eslint-plugin": "catalog:",
-    "@ucanto/server": "^10.2.0",
+    "@ucanto/server": "catalog:",
     "@web3-storage/access": "^20.1.0",
     "@web3-storage/content-claims": "^4.0.4",
     "@web3-storage/data-segment": "^5.0.0",
