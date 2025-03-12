@@ -8,7 +8,7 @@
   "dependencies": {
     "@ipld/dag-ucan": "^3.4.0",
     "@ucanto/core": "^10.0.1",
-    "@ucanto/interface": "^10.0.1",
+    "@ucanto/interface": "catalog:",
     "@ucanto/principal": "^9.0.1",
     "multiformats": "^13.3.1"
   }

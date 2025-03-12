@@ -99,7 +99,7 @@
     "@ucanto/client": "catalog:",
     "@ucanto/core": "catalog:",
     "@ucanto/interface": "catalog:",
-    "@ucanto/server": "^10.2.0",
+    "@ucanto/server": "catalog:",
     "@ucanto/transport": "catalog:",
     "@web3-storage/content-claims": "^5.0.0",
     "@web3-storage/data-segment": "^5.2.0",

@@ -23,11 +23,12 @@ catalog:
   '@types/update-notifier': ^6.0.5
   '@types/varint': ^6.0.1
   '@types/ws': ^8.5.4
-  '@typescript-eslint/eslint-plugin': ^8.23.0
-  '@typescript-eslint/parser': ^8.23.0
+  '@typescript-eslint/eslint-plugin': ^8.26.1
+  '@typescript-eslint/parser': ^8.26.1
   '@ucanto/client': ^9.0.1
   '@ucanto/core': ^10.3.1
   '@ucanto/interface': '^10.2.0'
+  '@ucanto/server': '^10.2.0'
   '@ucanto/transport': ^9.1.1
   '@ucanto/validator': ^9.1.0
   '@vitejs/plugin-react': ^4.2.0
