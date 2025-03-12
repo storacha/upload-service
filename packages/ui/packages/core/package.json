@@ -50,6 +50,7 @@
   ],
   "devDependencies": {
     "@storacha/eslint-config-ui": "workspace:^",
+    "@typescript-eslint/eslint-plugin": "catalog:",
     "bunchee": "catalog:",
     "fake-indexeddb": "catalog:",
     "happy-dom": "catalog:",

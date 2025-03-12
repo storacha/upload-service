@@ -1,0 +1,12 @@
+{
+  "name": "@storacha/patched--eslint-config-standard-with-typescript",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.js",
+  "dependencies": {
+    "@storacha/eslint-config": "workspace:^",
+    "@typescript-eslint/eslint-plugin": "catalog:",
+    "eslint-config-standard-with-typescript": "^30.0.0",
+    "eslint-config-standard": "17.0.0"
+  }
+}

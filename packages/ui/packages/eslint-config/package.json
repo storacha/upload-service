@@ -6,6 +6,18 @@
   ],
   "dependencies": {
     "@typescript-eslint/eslint-plugin": "catalog:",
-    "hd-scripts": "catalog:"
+    "@typescript-eslint/parser": "catalog:",
+    "eslint-config-standard-with-typescript": "workspace:@storacha/patched--eslint-config-standard-with-typescript@*",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-etc": "catalog:",
+    "eslint-plugin-import": "catalog:",
+    "eslint-plugin-jsdoc": "catalog:",
+    "eslint-plugin-n": "catalog:",
+    "eslint-plugin-no-only-tests": "catalog:",
+    "eslint-plugin-promise": "catalog:",
+    "eslint-plugin-react-hooks": "catalog:",
+    "eslint-plugin-react-refresh": "catalog:",
+    "eslint-plugin-react": "catalog:",
+    "eslint-plugin-unicorn": "catalog:"
   }
 }

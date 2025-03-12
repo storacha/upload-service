@@ -29,6 +29,7 @@
     "react": "catalog:"
   },
   "devDependencies": {
+    "@storacha/eslint-config-ui": "workspace:^",
     "@types/react": "catalog:",
     "bunchee": "catalog:",
     "eslint-plugin-react-hooks": "catalog:",

@@ -1,5 +1,6 @@
 packages:
   - packages/**
+  - patches/*
 
 catalog:
   '@arethetypeswrong/cli': ^0.17.3
@@ -49,15 +50,20 @@ catalog:
   crypto-random-string: ^5.0.0
   depcheck: ^1.4.3
   eslint: ^8.53.0
+  eslint-plugin-etc: 2.0.3
+  eslint-plugin-import: ^2.25.2
   eslint-plugin-jsdoc: ^50.6.3
-  eslint-plugin-react: ^7.33.2
+  eslint-plugin-n: ^15.0.0
+  eslint-plugin-no-only-tests: 3.3.0
+  eslint-plugin-promise: ^6.0.0
   eslint-plugin-react-hooks: ^4.6.0
   eslint-plugin-react-refresh: ^0.4.4
+  eslint-plugin-react: ^7.33.2
+  eslint-plugin-unicorn: ^45.0.2
   fake-indexeddb: ^5.0.1
   files-from-path: ^1.0.4
   fr32-sha2-256-trunc254-padded-binary-tree-multihash: ^3.3.0
   happy-dom: ^12.10.3
-  hd-scripts: ^4.1.0
   hundreds: ^0.0.9
   ipfs-unixfs-exporter: ^10.0.0
   ipfs-utils: ^9.0.14
