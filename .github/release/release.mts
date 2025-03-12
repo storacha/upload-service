@@ -138,7 +138,8 @@ if (pendingVersions.length > 0) {
           ?.body ?? ''
 
       log.debug('Creating tag', tagName)
-      git.addAnnotatedTag(tagName, changelogEntry)
+      log.warn(`[This is a dry run, no tag will be created.]`)
+      // git.addAnnotatedTag(tagName, changelogEntry)
 
       log.debug('Release:', {
         tagName,
@@ -147,15 +148,16 @@ if (pendingVersions.length > 0) {
       })
 
       log.info(`Creating/updating ${tagName} release on GitHub.`)
-      createOrUpdateRelease({
-        octokit,
-        log,
-        owner: REPO_OWNER,
-        repo: REPO_NAME,
-        tagName,
-        body: changelogEntry,
-        prerelease: currentVersion.includes('-'),
-      })
+      log.warn(`[This is a dry run, no release will be created on GitHub.]`)
+      // createOrUpdateRelease({
+      //   octokit,
+      //   log,
+      //   owner: REPO_OWNER,
+      //   repo: REPO_NAME,
+      //   tagName,
+      //   body: changelogEntry,
+      //   prerelease: currentVersion.includes('-'),
+      // })
     }
   }
 
@@ -163,7 +165,10 @@ if (pendingVersions.length > 0) {
   git.pushTags('origin')
 
   log.info('Publishing packages.')
-  const publishResult = await releasePublish({})
+  log.warn(`[This is a dry run, no packages will be published.]`)
+  const publishResult = await releasePublish({
+    dryRun: true,
+  })
   log.debug('releasePublish result:', publishResult)
 
   const publishFailures = Object.entries(publishResult).flatMap(
