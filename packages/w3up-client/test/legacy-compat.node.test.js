@@ -29,24 +29,30 @@ const createReceiptsServer = (agentStore) =>
 /** @type {Test.Suite} */
 export const testLegacyCompatibility = {
   uploadFile: Test.withContext({
-    'should upload a file to the service with legacy client':
-      async (assert, context) =>
-        testUploadFile(assert, {
-          ...context,
-          legacy: { client: true, space: false }
-        }),
-    'should upload a file to the service with legacy space':
-      async (assert, context) =>
-        testUploadFile(assert, {
-          ...context,
-          legacy: { client: false, space: true }
-        }),
-    'should upload a file to the service with legacy client and space':
-      async (assert, context) =>
-        testUploadFile(assert, {
-          ...context,
-          legacy: { client: true, space: true }
-        }),
+    'should upload a file to the service with legacy client': async (
+      assert,
+      context
+    ) =>
+      testUploadFile(assert, {
+        ...context,
+        legacy: { client: true, space: false },
+      }),
+    'should upload a file to the service with legacy space': async (
+      assert,
+      context
+    ) =>
+      testUploadFile(assert, {
+        ...context,
+        legacy: { client: false, space: true },
+      }),
+    'should upload a file to the service with legacy client and space': async (
+      assert,
+      context
+    ) =>
+      testUploadFile(assert, {
+        ...context,
+        legacy: { client: true, space: true },
+      }),
   }),
 }
 

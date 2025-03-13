@@ -51,24 +51,28 @@ function parseBlobAddReceiptNext(receipt) {
    */
   // @ts-expect-error read only effect
   const forkInvocations = receipt.fx.fork
-  const allocateTask = forkInvocations.find(
-    (fork) => fork.capabilities[0].can === BlobCapabilities.allocate.can
-  /* c8 ignore next 3 */ // tested by legacy integration test in w3up-client
-  ) ?? forkInvocations.find(
-    (fork) => fork.capabilities[0].can === W3sBlobCapabilities.allocate.can
-  )
+  const allocateTask =
+    forkInvocations.find(
+      (fork) => fork.capabilities[0].can === BlobCapabilities.allocate.can
+      /* c8 ignore next 4 */ // tested by legacy integration test in w3up-client
+    ) ??
+    forkInvocations.find(
+      (fork) => fork.capabilities[0].can === W3sBlobCapabilities.allocate.can
+    )
   const concludefxs = forkInvocations.filter(
     (fork) => fork.capabilities[0].can === UCAN.conclude.can
   )
   const putTask = forkInvocations.find(
     (fork) => fork.capabilities[0].can === HTTPCapabilities.put.can
   )
-  const acceptTask = forkInvocations.find(
-    (fork) => fork.capabilities[0].can === BlobCapabilities.accept.can
-  /* c8 ignore next 3 */ // tested by legacy integration test in w3up-client
-  ) ?? forkInvocations.find(
-    (fork) => fork.capabilities[0].can === W3sBlobCapabilities.accept.can
-  )
+  const acceptTask =
+    forkInvocations.find(
+      (fork) => fork.capabilities[0].can === BlobCapabilities.accept.can
+      /* c8 ignore next 4 */ // tested by legacy integration test in w3up-client
+    ) ??
+    forkInvocations.find(
+      (fork) => fork.capabilities[0].can === W3sBlobCapabilities.accept.can
+    )
 
   /* c8 ignore next 3 */
   if (!allocateTask || !concludefxs.length || !putTask || !acceptTask) {
