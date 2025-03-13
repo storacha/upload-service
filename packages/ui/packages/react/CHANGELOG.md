@@ -1,3 +1,17 @@
+## 2.5.9 (2025-03-13)
+
+### 🩹 Fixes
+
+- Bring UI packages into the monorepo and the `@storacha/` org. ([72a3a97e](https://github.com/storacha/upload-service/commit/72a3a97e))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/ui-core to 2.4.10
+
+### ❤️ Thank You
+
+- Petra Jaros
+
 # Changelog
 
 ## [2.5.5](https://github.com/storacha/w3ui/compare/react-v2.5.4...react-v2.5.5) (2025-01-08)

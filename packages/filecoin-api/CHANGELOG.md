@@ -1,3 +1,18 @@
+## 1.1.3 (2025-03-13)
+
+### 🩹 Fixes
+
+- Start releasing packages with Nx! ([72a3a97e](https://github.com/storacha/upload-service/commit/72a3a97e))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-client to 1.0.3
+- Updated @storacha/capabilities to 1.2.3
+
+### ❤️ Thank You
+
+- Petra Jaros
+
 # Changelog
 
 ## [1.1.2](https://github.com/storacha/upload-service/compare/filecoin-api-v1.1.1...filecoin-api-v1.1.2) (2025-02-11)
