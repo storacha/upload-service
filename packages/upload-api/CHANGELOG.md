@@ -1,4 +1,20 @@
-# Changelog
+## 1.3.6 (2025-03-13)
+
+### 🩹 Fixes
+
+- Start releasing packages with Nx! ([72a3a97e](https://github.com/storacha/upload-service/commit/72a3a97e))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.0.4
+- Updated @storacha/capabilities to 1.2.3
+- Updated @storacha/filecoin-api to 1.1.3
+- Updated @storacha/blob-index to 1.0.2
+- Updated @storacha/did-mailto to 1.0.2
+
+### ❤️ Thank You
+
+- Petra Jaros
 
 ## [1.3.4](https://github.com/storacha/upload-service/compare/upload-api-v1.3.3...upload-api-v1.3.4) (2025-02-11)
 

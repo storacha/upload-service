@@ -1,4 +1,17 @@
-# Changelog
+## 1.0.4 (2025-03-13)
+
+### 🩹 Fixes
+
+- Start releasing packages with Nx! ([72a3a97e](https://github.com/storacha/upload-service/commit/72a3a97e))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/capabilities to 1.2.3
+- Updated @storacha/did-mailto to 1.0.2
+
+### ❤️ Thank You
+
+- Petra Jaros
 
 ## [1.0.3](https://github.com/storacha/upload-service/compare/access-v1.0.2...access-v1.0.3) (2025-02-11)
 

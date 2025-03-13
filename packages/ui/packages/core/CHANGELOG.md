@@ -1,4 +1,18 @@
-# Changelog
+## 2.4.10 (2025-03-13)
+
+### 🩹 Fixes
+
+- Bring UI packages into the monorepo and the `@storacha/` org. ([72a3a97e](https://github.com/storacha/upload-service/commit/72a3a97e))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.0.4
+- Updated @storacha/client to 1.1.7
+- Updated @storacha/did-mailto to 1.0.2
+
+### ❤️ Thank You
+
+- Petra Jaros
 
 ## [2.4.3](https://github.com/storacha/w3ui/compare/core-v2.4.2...core-v2.4.3) (2025-01-08)
 

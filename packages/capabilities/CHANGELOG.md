@@ -1,4 +1,12 @@
-# Changelog
+## 1.2.3 (2025-03-13)
+
+### 🩹 Fixes
+
+- Start releasing packages with Nx! ([72a3a97e](https://github.com/storacha/upload-service/commit/72a3a97e))
+
+### ❤️ Thank You
+
+- Petra Jaros
 
 ## [1.2.2](https://github.com/storacha/upload-service/compare/capabilities-v1.2.1...capabilities-v1.2.2) (2025-02-11)
 

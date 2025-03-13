@@ -1,4 +1,20 @@
-# Changelog
+## 1.1.8 (2025-03-13)
+
+### 🩹 Fixes
+
+- Start releasing packages with Nx! ([72a3a97e](https://github.com/storacha/upload-service/commit/72a3a97e))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.0.4
+- Updated @storacha/capabilities to 1.2.3
+- Updated @storacha/client to 1.1.7
+- Updated @storacha/did-mailto to 1.0.2
+- Updated @storacha/upload-api to 1.3.6
+
+### ❤️ Thank You
+
+- Petra Jaros
 
 ## [1.1.2](https://github.com/storacha/upload-service/compare/cli-v1.1.1...cli-v1.1.2) (2025-02-11)
 
