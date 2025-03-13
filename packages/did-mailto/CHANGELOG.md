@@ -8,8 +8,6 @@
 
 - Petra Jaros
 
-# Changelog
-
 ## [1.0.1](https://github.com/storacha/upload-service/compare/did-mailto-v1.0.0...did-mailto-v1.0.1) (2024-12-19)
 
 

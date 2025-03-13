@@ -8,8 +8,6 @@
 
 - Petra Jaros
 
-# Changelog
-
 ## [1.2.2](https://github.com/storacha/upload-service/compare/capabilities-v1.2.1...capabilities-v1.2.2) (2025-02-11)
 
 

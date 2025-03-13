@@ -12,8 +12,6 @@
 
 - Petra Jaros
 
-# Changelog
-
 ## [1.0.2](https://github.com/storacha/upload-service/compare/filecoin-client-v1.0.1...filecoin-client-v1.0.2) (2025-01-22)
 
 

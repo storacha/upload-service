@@ -16,8 +16,6 @@
 
 - Petra Jaros
 
-# Changelog
-
 ## [1.3.4](https://github.com/storacha/upload-service/compare/upload-api-v1.3.3...upload-api-v1.3.4) (2025-02-11)
 
 

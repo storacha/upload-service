@@ -13,8 +13,6 @@
 
 - Petra Jaros
 
-# Changelog
-
 ## [1.1.2](https://github.com/storacha/upload-service/compare/filecoin-api-v1.1.1...filecoin-api-v1.1.2) (2025-02-11)
 
 

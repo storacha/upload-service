@@ -14,8 +14,6 @@
 
 - Petra Jaros
 
-# Changelog
-
 ## [2.4.3](https://github.com/storacha/w3ui/compare/core-v2.4.2...core-v2.4.3) (2025-01-08)
 
 

@@ -13,8 +13,6 @@
 
 - Petra Jaros
 
-# Changelog
-
 ## [1.0.3](https://github.com/storacha/upload-service/compare/access-v1.0.2...access-v1.0.3) (2025-02-11)
 
 

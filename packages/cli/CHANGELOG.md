@@ -16,8 +16,6 @@
 
 - Petra Jaros
 
-# Changelog
-
 ## [1.1.2](https://github.com/storacha/upload-service/compare/cli-v1.1.1...cli-v1.1.2) (2025-02-11)
 
 

@@ -14,8 +14,6 @@
 
 - Petra Jaros
 
-# Changelog
-
 ## [1.0.5](https://github.com/storacha/upload-service/compare/upload-client-v1.0.4...upload-client-v1.0.5) (2025-02-11)
 
 
