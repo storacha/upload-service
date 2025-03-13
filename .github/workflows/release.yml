@@ -44,4 +44,4 @@ jobs:
           COMMIT_BEFORE: ${{ github.event.before }}
           RELEASE_BRANCH_NAME: release
           LOGLEVEL: ${{ runner.debug && 'debug' || '' }}
-        run: pnpm tsx ./.github/release/release.ts
+        run: pnpm tsx ./.github/release/release.mts
