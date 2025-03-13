@@ -218,9 +218,6 @@ export type W3sBlobAcceptSuccess = LegacyUploadAPI.BlobAcceptSuccess
 /** @deprecated */
 export type W3sBlobAcceptFailure = LegacyUploadAPI.BlobAcceptFailure
 
-/** @deprecated */
-export interface LegacyStoreServiceContext extends LegacyUploadAPI.StoreServiceContext {}
-
 export interface Service extends StorefrontService {
   upload: {
     add: ServiceMethod<UploadAdd, UploadAddSuccess, Failure>
@@ -356,13 +353,41 @@ export interface Service extends StorefrontService {
     report: ServiceMethod<UsageReport, UsageReportSuccess, UsageReportFailure>
   }
   // legacy handlers
-  store: LegacyUploadAPI.Service['store']
+  store: LegacyUploadAPI.Service['store'],
+  ['web3.storage']: {
+    blob: {
+      allocate: ServiceMethod<
+        W3sBlobAllocate,
+        W3sBlobAllocateSuccess,
+        W3sBlobAllocateFailure
+      >
+      accept: ServiceMethod<W3sBlobAccept, W3sBlobAcceptSuccess, W3sBlobAcceptFailure>
+    }
+  }
 }
+
+/** @deprecated */
+export type LegacyStoreServiceContext = LegacyUploadAPI.StoreServiceContext
+
+/** @deprecated */
+export interface LegacyCarStoreBucket extends LegacyUploadAPI.CarStoreBucket {}
+
+/** @deprecated */
+export interface LegacyCarStoreBucketOptions extends LegacyUploadAPI.CarStoreBucketOptions {}
+
+/** @deprecated */
+export interface LegacyStoreTable extends LegacyUploadAPI.StoreTable {}
+
+/** @deprecated */
+export interface LegacyStoreAddInput extends LegacyUploadAPI.StoreAddInput {}
 
 /** @deprecated */
 export type LegacyBlobServiceContext = Omit<LegacyUploadAPI.BlobServiceContext, 'allocationsStorage'> & {
   registry: BlobRegistry
 }
+
+/** @deprecated */
+export interface LegacyBlobsStorage extends LegacyUploadAPI.BlobsStorage {}
 
 export type BlobServiceContext = SpaceServiceContext & {
   /**
@@ -411,6 +436,15 @@ export interface AdminServiceContext {
 
 /** @deprecated */
 export interface LegacyAdminServiceContext extends Pick<LegacyUploadAPI.AdminServiceContext, 'storeTable'> {}
+
+/** @deprecated */
+export type LegacyAdminStoreInspectResult = LegacyUploadAPI.AdminStoreInspectResult
+
+/** @deprecated */
+export type LegacyAdminStoreInspectSuccess = LegacyUploadAPI.AdminStoreInspectSuccess
+
+/** @deprecated */
+export type LegacyAdminStoreInspectFailure = LegacyUploadAPI.AdminStoreInspectFailure
 
 export interface ConsoleServiceContext {}
 
@@ -500,7 +534,7 @@ export interface UcantoServerContext
   extends ServiceContext,
     RevocationChecker,
     PrincipalResolver,
-    AuthorityProver {
+    Partial<AuthorityProver> {
   id: Signer
   audience?: Reader<DID>
   codec?: InboundCodec
@@ -594,6 +628,8 @@ export interface UcantoServerTestContext
 
   grantAccess: (mail: { url: string | URL }) => Promise<void>
 
+  carStoreBucket: LegacyCarStoreBucket & Deactivator
+  blobsStorage: LegacyBlobsStorage & Deactivator
   claimsService: LegacyUploadAPI.ClaimsClientConfig & ClaimReader & Deactivator
   storageProviders: Deactivator[]
 }

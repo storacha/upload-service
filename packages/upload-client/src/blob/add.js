@@ -2,6 +2,7 @@ import { ed25519 } from '@ucanto/principal'
 import * as UCAN from '@storacha/capabilities/ucan'
 import { Delegation, Receipt } from '@ucanto/core'
 import * as BlobCapabilities from '@storacha/capabilities/blob'
+import * as W3sBlobCapabilities from '@storacha/capabilities/web3.storage/blob'
 import * as SpaceBlobCapabilities from '@storacha/capabilities/space/blob'
 import * as HTTPCapabilities from '@storacha/capabilities/http'
 import { SpaceDID } from '@storacha/capabilities/utils'
@@ -52,6 +53,9 @@ function parseBlobAddReceiptNext(receipt) {
   const forkInvocations = receipt.fx.fork
   const allocateTask = forkInvocations.find(
     (fork) => fork.capabilities[0].can === BlobCapabilities.allocate.can
+  /* c8 ignore next 3 */ // tested by legacy integration test in w3up-client
+  ) ?? forkInvocations.find(
+    (fork) => fork.capabilities[0].can === W3sBlobCapabilities.allocate.can
   )
   const concludefxs = forkInvocations.filter(
     (fork) => fork.capabilities[0].can === UCAN.conclude.can
@@ -61,6 +65,9 @@ function parseBlobAddReceiptNext(receipt) {
   )
   const acceptTask = forkInvocations.find(
     (fork) => fork.capabilities[0].can === BlobCapabilities.accept.can
+  /* c8 ignore next 3 */ // tested by legacy integration test in w3up-client
+  ) ?? forkInvocations.find(
+    (fork) => fork.capabilities[0].can === W3sBlobCapabilities.accept.can
   )
 
   /* c8 ignore next 3 */

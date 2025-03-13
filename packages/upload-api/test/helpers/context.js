@@ -64,6 +64,7 @@ export const createContext = async (
     url: new URL('http://localhost:8787'),
     ...serviceStores,
     ...externalServices,
+    getServiceConnection: () => connection,
     ...createRevocationChecker({
       revocationsStorage: serviceStores.revocationsStorage,
     }),
@@ -92,12 +93,7 @@ export const createContext = async (
     },
     // Legacy dependencies.
     // The following dependencies are legacy and will eventually be removed.
-    // @ts-expect-error legacy dependency not used or tested here
-    maxUploadSize: null,
-    // @ts-expect-error legacy dependency not used or tested here
-    storeTable: {},
-    // @ts-expect-error legacy dependency not used or tested here
-    carStoreBucket: {},
+    maxUploadSize: 5_000_000_000,
   }
 
   const connection = connect({
@@ -123,6 +119,8 @@ export const createContext = async (
  */
 export const cleanupContext = (context) =>
   Promise.all([
+    context.carStoreBucket.deactivate(),
+    context.blobsStorage.deactivate(),
     context.claimsService.deactivate(),
     ...context.storageProviders.map((p) => p.deactivate()),
   ])

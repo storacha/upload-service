@@ -149,6 +149,7 @@
     "@typescript-eslint/eslint-plugin": "catalog:",
     "@ucanto/core": "catalog:",
     "@web-std/blob": "catalog:",
+    "@web3-storage/sigv4": "^1.0.2",
     "is-subset": "catalog:",
     "mocha": "^10.2.0",
     "typescript": "catalog:"

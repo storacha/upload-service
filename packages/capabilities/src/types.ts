@@ -646,17 +646,26 @@ export interface RecordNotFound extends Error {
 }
 
 // Store
+/** @deprecated */
 export type Store = InferInvokedCapability<typeof StoreCaps.store>
+/** @deprecated */
 export type StoreAdd = InferInvokedCapability<typeof StoreCaps.add>
+/** @deprecated */
 export type StoreGet = InferInvokedCapability<typeof StoreCaps.get>
+/** @deprecated */
 export type StoreRemove = InferInvokedCapability<typeof StoreCaps.remove>
+/** @deprecated */
 export type StoreList = InferInvokedCapability<typeof StoreCaps.list>
 
+/** @deprecated */
 export type StoreAddSuccess = StoreAddSuccessDone | StoreAddSuccessUpload
 
+/** @deprecated */
 export type StoreAddSuccessStatusUpload = 'upload'
+/** @deprecated */
 export type StoreAddSuccessStatusDone = 'done'
 
+/** @deprecated */
 export interface StoreAddSuccessResult {
   /**
    * Status of the item to store. A "done" status indicates that it is not
@@ -675,30 +684,38 @@ export interface StoreAddSuccessResult {
   link: CARLink
 }
 
+/** @deprecated */
 export interface StoreAddSuccessDone extends StoreAddSuccessResult {
   status: StoreAddSuccessStatusDone
 }
 
+/** @deprecated */
 export interface StoreAddSuccessUpload extends StoreAddSuccessResult {
   status: StoreAddSuccessStatusUpload
   url: ToString<URL>
   headers: Record<string, string>
 }
 
+/** @deprecated */
 export interface StoreRemoveSuccess {
   size: number
 }
 
+/** @deprecated */
 export interface StoreItemNotFound extends Ucanto.Failure {
   name: 'StoreItemNotFound'
 }
 
+/** @deprecated */
 export type StoreRemoveFailure = StoreItemNotFound | Ucanto.Failure
 
+/** @deprecated */
 export type StoreGetSuccess = StoreListItem
 
+/** @deprecated */
 export type StoreGetFailure = StoreItemNotFound | Ucanto.Failure
 
+/** @deprecated */
 export interface StoreListSuccess extends ListResponse<StoreListItem> {}
 
 export interface ListResponse<R> {
@@ -709,6 +726,7 @@ export interface ListResponse<R> {
   results: R[]
 }
 
+/** @deprecated */
 export interface StoreListItem {
   link: CARLink
   size: number

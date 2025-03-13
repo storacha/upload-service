@@ -1316,6 +1316,9 @@ importers:
       '@web-std/blob':
         specifier: 'catalog:'
         version: 3.0.5
+      '@web3-storage/sigv4':
+        specifier: ^1.0.2
+        version: 1.0.2
       is-subset:
         specifier: 'catalog:'
         version: 0.1.1
@@ -1526,8 +1529,8 @@ importers:
         specifier: 'catalog:'
         version: 0.0.9
       mocha:
-        specifier: ^10.8.2
-        version: 10.8.2
+        specifier: ^11.1.0
+        version: 11.1.0
       multiformats:
         specifier: ^13.3.1
         version: 13.3.1
@@ -6154,6 +6157,11 @@ packages:
   mocha@10.8.2:
     resolution: {integrity: sha512-VZlYo/WE8t1tstuRmqgeyBgCbJc/lEdopaa+axcKzTBJ+UIdlAB9XnmvTCAH4pwR4ElNInaedhEBmZD8iCSVEg==}
     engines: {node: '>= 14.0.0'}
+    hasBin: true
+
+  mocha@11.1.0:
+    resolution: {integrity: sha512-8uJR5RTC2NgpY3GrYcgpZrsEd9zKbPDpob1RezyR2upGHRQtHWofmzTMzTMSV6dru3tj5Ukt0+Vnq1qhFEEwAg==}
+    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     hasBin: true
 
   mri@1.2.0:
@@ -12712,7 +12720,7 @@ snapshots:
       it-to-stream: 1.0.0
       merge-options: 3.0.4
       nanoid: 3.3.8
-      native-fetch: 3.0.0(node-fetch@2.7.0(encoding@0.1.13))
+      native-fetch: 3.0.0(node-fetch@2.7.0)
       node-fetch: 2.7.0(encoding@0.1.13)
       react-native-fetch-api: 3.0.0
       stream-to-it: 0.2.4
@@ -13395,6 +13403,29 @@ snapshots:
       yargs-parser: 20.2.9
       yargs-unparser: 2.0.0
 
+  mocha@11.1.0:
+    dependencies:
+      ansi-colors: 4.1.3
+      browser-stdout: 1.3.1
+      chokidar: 3.6.0
+      debug: 4.4.0(supports-color@8.1.1)
+      diff: 5.2.0
+      escape-string-regexp: 4.0.0
+      find-up: 5.0.0
+      glob: 10.4.5
+      he: 1.2.0
+      js-yaml: 4.1.0
+      log-symbols: 4.1.0
+      minimatch: 5.1.6
+      ms: 2.1.3
+      serialize-javascript: 6.0.2
+      strip-json-comments: 3.1.1
+      supports-color: 8.1.1
+      workerpool: 6.5.1
+      yargs: 17.7.2
+      yargs-parser: 21.1.1
+      yargs-unparser: 2.0.0
+
   mri@1.2.0: {}
 
   mrmime@2.0.0: {}
@@ -13433,7 +13464,7 @@ snapshots:
 
   nanoid@5.0.9: {}
 
-  native-fetch@3.0.0(node-fetch@2.7.0(encoding@0.1.13)):
+  native-fetch@3.0.0(node-fetch@2.7.0):
     dependencies:
       node-fetch: 2.7.0(encoding@0.1.13)
 
