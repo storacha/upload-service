@@ -1,0 +1,69 @@
+{
+  "name": "@storacha/ui-react",
+  "version": "2.5.5",
+  "description": "React adapter for w3ui.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "bunchee --watch",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "lint": "echo 'Linting in @storacha/ui-react is temporarily disabled while we resolve version issues.'",
+    "lint:fix": "echo 'Linting in @storacha/ui-react is temporarily disabled while we resolve version issues.'",
+    "test": "vitest run",
+    "test:watch": "vitest watch"
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.js.map"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/web3-storage/w3ui.git"
+  },
+  "author": "Alan Shaw",
+  "license": "Apache-2.0 OR MIT",
+  "bugs": {
+    "url": "https://github.com/storacha/upload-service/issues"
+  },
+  "homepage": "https://github.com/web3-storage/w3ui/tree/main/packages/react",
+  "dependencies": {
+    "@ariakit/react": "catalog:",
+    "@ariakit/react-core": "catalog:",
+    "@storacha/ui-core": "workspace:^",
+    "ariakit-react-utils": "catalog:"
+  },
+  "devDependencies": {
+    "@ipld/dag-ucan": "^3.2.0",
+    "@storacha/eslint-config-ui": "workspace:^",
+    "@testing-library/react": "catalog:",
+    "@testing-library/user-event": "catalog:",
+    "@types/react": "catalog:",
+    "@ucanto/client": "catalog:",
+    "@ucanto/interface": "catalog:",
+    "@ucanto/principal": "^9.0.1",
+    "@ucanto/transport": "catalog:",
+    "bunchee": "catalog:",
+    "eslint-plugin-react-hooks": "catalog:",
+    "fake-indexeddb": "catalog:",
+    "happy-dom": "catalog:",
+    "jsdom": "catalog:",
+    "multiformats": "^13.1.0",
+    "react": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0"
+  },
+  "eslintConfig": {
+    "extends": [
+      "@storacha/ui",
+      "plugin:react-hooks/recommended"
+    ]
+  },
+  "eslintIgnore": [
+    "node_modules",
+    "dist"
+  ]
+}

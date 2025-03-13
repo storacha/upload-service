@@ -1,0 +1,59 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "targetDefaults": {
+    "build": {
+      "dependsOn": ["^build"],
+      "cache": true
+    },
+    "lint": {
+      "cache": true
+    },
+    "lint:fix": {
+      "cache": true
+    },
+    "test": {
+      "dependsOn": ["^build", "test:!(watch)"],
+      "cache": true
+    },
+    "test:!(watch)": {
+      "dependsOn": ["^build"],
+      "cache": true
+    },
+    "test:watch": {
+      "dependsOn": ["^build"]
+    },
+    "testw": {
+      "cache": true
+    },
+    "coverage": {
+      "cache": true
+    },
+    "attw": {
+      "dependsOn": ["build"]
+    },
+    // Build packages before publishing them.
+    "nx-release-publish": {
+      "dependsOn": ["build"]
+    }
+  },
+  "defaultBase": "main",
+  "release": {
+    "projectsRelationship": "independent",
+    "versionPlans": true,
+    "version": {
+      "generatorOptions": {
+        // Keep `workspace:^` dependency specifiers during versioning. pnpm will
+        // replace them during publish for the published tarball.
+        "preserveLocalDependencyProtocols": true
+      }
+    }
+  },
+  "plugins": [
+    {
+      "plugin": "@nx/js/typescript",
+      "options": {
+        "build": true
+      }
+    }
+  ]
+}

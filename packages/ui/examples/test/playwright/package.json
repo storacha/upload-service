@@ -1,0 +1,37 @@
+{
+  "name": "@storacha/ui-example-test-playwright",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "serve": "serve node_modules/@storacha",
+    "test": "playwright test",
+    "test-debug": "playwright test --project=chromium --headed",
+    "prepare-environment": "playwright install --with-deps",
+    "typecheck": "tsc --build --emitDeclarationOnly --pretty --verbose"
+  },
+  "scripts//": {
+    "typecheck": [
+      "This is defined identically to the inferred typecheck task from Nx. For",
+      "some reason, when run through Nx, tsc claims that --build",
+      "--emitDeclarationOnly can't be used together. It doesn't have a problem",
+      "with it in other projects' inferred tasks, nor does it have a problem",
+      "with it when run at the command line or from an npm script. Odd, but we",
+      "can work around it by specifying it explicitly here."
+    ]
+  },
+  "author": "olzilla",
+  "license": "Apache-2.0 OR MIT",
+  "devDependencies": {
+    "@playwright/test": "catalog:",
+    "@types/node": "^22.13.1",
+    "serve": "catalog:"
+  },
+  "dependencies": {
+    "@storacha/ui-example-react-components": "workspace:^",
+    "@storacha/ui-example-react-file-upload": "workspace:^",
+    "@storacha/ui-example-react-multi-file-upload": "workspace:^",
+    "@storacha/ui-example-react-sign-up-in": "workspace:^",
+    "@storacha/ui-example-react-uploads-list": "workspace:^"
+  }
+}

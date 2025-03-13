@@ -1,53 +1,35 @@
 {
-  "name": "w3up",
+  "name": "storacha",
   "version": "0.0.0",
   "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
-  "packageManager": "pnpm@9.8.0+sha256.56a9e76b51796ca7f73b85e44cf83712862091f4d498c0ce4d5b7ecdc6ba18f7",
-  "scripts": {
-    "format": "prettier --write '**/*.{js,ts,yml,json}' --ignore-path .gitignore",
-    "format:check": "prettier --check '**/*.{js,ts,yml,json}' --ignore-path .gitignore",
-    "clean": "rm -rf docs node_modules pnpm-lock.yaml packages/*/{pnpm-lock.yaml,coverage,.nyc_output,dist,node_modules,.next}",
-    "lint": "pnpm -r --if-present run lint",
-    "test": "pnpm -r --if-present run test",
-    "check": "pnpm -r --if-present run check",
-    "build": "pnpm -r --if-present run build",
-    "dev": "pnpm -r --if-present --parallel run dev --preserveWatchOutput",
-    "docs": "pnpm run build && typedoc --plugin typedoc-plugin-missing-exports --out docs",
-    "docs:markdown": "pnpm run build && docusaurus generate-typedoc"
-  },
+  "packageManager": "pnpm@10.1.0+sha512.c89847b0667ddab50396bbbd008a2a43cf3b581efd59cf5d9aa8923ea1fb4b8106c041d540d08acb095037594d73ebc51e1ec89ee40c88b30b8a66c0fae0ac1b",
+  "scripts": {},
   "devDependencies": {
-    "@arethetypeswrong/cli": "^0.15.3",
-    "@docusaurus/core": "^3.0.0",
-    "@docusaurus/preset-classic": "^3.0.0",
-    "docusaurus-plugin-typedoc": "^0.21.0",
-    "lint-staged": "^13.2.0",
+    "@nx/devkit": "^20.4.6",
+    "@nx/js": "catalog:",
+    "@types/npm-registry-fetch": "^8.0.7",
+    "depcheck": "catalog:",
+    "eslint": "catalog:",
+    "lint-staged": "catalog:",
+    "loglevel": "^1.9.2",
+    "npm-registry-fetch": "^18.0.2",
+    "nx": "catalog:",
+    "octokit": "^4.1.2",
     "prettier": "2.8.3",
-    "react": "^18.2.0",
-    "typedoc": "^0.25.3",
-    "typedoc-plugin-markdown": "^3.17.0",
-    "typescript": "5.2.2"
-  },
-  "prettier": {
-    "trailingComma": "es5",
-    "tabWidth": 2,
-    "semi": false,
-    "singleQuote": true
+    "react": "catalog:",
+    "simple-git": "^3.27.0",
+    "tsx": "^4.19.3",
+    "typescript": "catalog:"
   },
   "engines": {
     "node": ">=16"
   },
-  "dependencies": {
-    "depcheck": "^1.4.3",
-    "typedoc-plugin-missing-exports": "^2.1.0"
-  },
   "pnpm": {
-    "peerDependencyRules": {
-      "ignoreMissing": [
-        "react*"
-      ]
+    "overrides": {
+      "hd-scripts>@typescript-eslint/eslint-plugin": "catalog:",
+      "hd-scripts>@typescript-eslint/parser": "catalog:",
+      "eslint-config-standard-with-typescript>@typescript-eslint/eslint-plugin": "catalog:",
+      "eslint-config-standard-with-typescript>@typescript-eslint/parser": "catalog:"
     }
   }
 }

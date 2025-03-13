@@ -1,0 +1,58 @@
+{
+  "name": "@storacha/ui-core",
+  "version": "2.4.3",
+  "description": "w3ui core.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.esm.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "bunchee --watch",
+    "build": "bunchee",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "lint": "echo 'Linting in @storacha/ui-core is temporarily disabled while we resolve version issues.'",
+    "lint:fix": "echo 'Linting in @storacha/ui-core is temporarily disabled while we resolve version issues.'",
+    "test": "vitest run",
+    "test:watch": "vitest watch"
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.js.map"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/web3-storage/w3ui.git"
+  },
+  "author": "Alan Shaw",
+  "license": "Apache-2.0 OR MIT",
+  "bugs": {
+    "url": "https://github.com/storacha/upload-service/issues"
+  },
+  "homepage": "https://github.com/web3-storage/w3ui/tree/main/packages/core",
+  "dependencies": {
+    "@ipld/dag-ucan": "^3.4.0",
+    "@ucanto/client": "catalog:",
+    "@ucanto/interface": "catalog:",
+    "@ucanto/principal": "^9.0.1",
+    "@ucanto/transport": "catalog:",
+    "@storacha/access": "workspace:^",
+    "@storacha/did-mailto": "workspace:^",
+    "@storacha/client": "workspace:^"
+  },
+  "eslintConfig": {
+    "extends": [
+      "@storacha/ui"
+    ]
+  },
+  "eslintIgnore": [
+    "node_modules",
+    "dist"
+  ],
+  "devDependencies": {
+    "@storacha/eslint-config-ui": "workspace:^",
+    "bunchee": "catalog:",
+    "fake-indexeddb": "catalog:",
+    "happy-dom": "catalog:",
+    "vitest": "catalog:"
+  }
+}

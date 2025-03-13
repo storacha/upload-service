@@ -14,77 +14,57 @@
   "types": "dist/src/index.d.ts",
   "main": "src/index.js",
   "scripts": {
-    "attw": "attw --pack .",
+    "dev": "tsc --build --watch --preserveWatchOutput",
+    "clean": "rm -rf dist *.tsbuildinfo",
     "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
-    "build": "tsc --build",
-    "dev": "tsc --build --watch",
-    "test": "npm run test:all",
-    "test:all": "run-s test:browser test:node",
+    "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "test:node": "hundreds -r html -r text mocha 'test/**/!(*.browser).test.js' -n experimental-vm-modules -n no-warnings",
     "test:browser": "playwright-test 'test/**/!(*.node).test.js'",
+    "attw": "attw --pack .",
     "rc": "npm version prerelease --preid rc"
   },
   "exports": {
-    ".": "./dist/src/index.js",
-    "./aggregator": "./dist/src/aggregator.js",
-    "./dealer": "./dist/src/dealer.js",
-    "./storefront": "./dist/src/storefront.js",
-    "./types": "./dist/src/types.js"
-  },
-  "typesVersions": {
-    "*": {
-      "types": [
-        "dist/src/types.d.ts"
-      ],
-      "aggregator": [
-        "dist/src/aggregator.d.ts"
-      ],
-      "dealer": [
-        "dist/src/dealer.d.ts"
-      ],
-      "storefront": [
-        "dist/src/storefront.d.ts"
-      ]
-    }
+    ".": "./dist/index.js",
+    "./aggregator": "./dist/aggregator.js",
+    "./dealer": "./dist/dealer.js",
+    "./storefront": "./dist/storefront.js",
+    "./types": "./dist/types.js"
   },
   "files": [
-    "dist/src/**/*.js",
-    "dist/src/**/*.js.map",
-    "dist/src/**/*.d.ts",
-    "dist/src/**/*.d.ts.map"
+    "dist",
+    "!dist/**/*.js.map"
   ],
   "dependencies": {
     "@ipld/dag-ucan": "^3.4.5",
     "@storacha/capabilities": "workspace:^",
-    "@ucanto/client": "^9.0.1",
-    "@ucanto/core": "^10.3.0",
-    "@ucanto/interface": "^10.2.0",
-    "@ucanto/transport": "^9.1.1"
+    "@ucanto/client": "catalog:",
+    "@ucanto/core": "catalog:",
+    "@ucanto/interface": "catalog:",
+    "@ucanto/transport": "catalog:"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "catalog:",
     "@ipld/dag-json": "^10.1.4",
     "@storacha/eslint-config": "workspace:^",
     "@types/assert": "^1.5.6",
     "@types/mocha": "^10.0.1",
+    "@types/node": "^20.8.4",
+    "@typescript-eslint/eslint-plugin": "catalog:",
     "@ucanto/principal": "^9.0.2",
-    "@ucanto/server": "^10.2.0",
+    "@ucanto/server": "catalog:",
     "@web3-storage/data-segment": "^5.3.0",
-    "assert": "^2.0.0",
+    "assert": "catalog:",
     "c8": "^7.13.0",
-    "hundreds": "^0.0.9",
+    "hundreds": "catalog:",
     "mocha": "^10.2.0",
     "multiformats": "^13.3.1",
-    "npm-run-all": "^4.1.5",
-    "playwright-test": "^12.3.4",
-    "typescript": "5.2.2"
+    "playwright-test": "catalog:",
+    "typescript": "catalog:"
   },
   "eslintConfig": {
     "extends": [
       "@storacha/eslint-config"
     ],
-    "parserOptions": {
-      "project": "./tsconfig.json"
-    },
     "env": {
       "es2022": true,
       "mocha": true,

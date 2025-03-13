@@ -4,144 +4,120 @@
   "description": "Client for the storacha.network w3up api",
   "license": "Apache-2.0 OR MIT",
   "type": "module",
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "*",
-        "dist/*",
-        "dist/src/*",
-        "dist/src/*/index"
-      ],
-      "src/*": [
-        "*",
-        "dist/*",
-        "dist/src/*",
-        "dist/src/*/index"
-      ]
-    }
-  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/src/index.d.ts",
-      "node": "./dist/src/index.node.js",
-      "import": "./dist/src/index.js"
+      "types": "./dist/index.d.ts",
+      "node": "./dist/index.node.js",
+      "import": "./dist/index.js"
     },
     "./account": {
-      "types": "./dist/src/account.d.ts",
-      "import": "./dist/src/account.js"
-    },
-    "./browser.min.js": {
-      "default": "./browser.min.js"
+      "types": "./dist/account.d.ts",
+      "import": "./dist/account.js"
     },
     "./delegation": {
-      "types": "./dist/src/delegation.d.ts",
-      "import": "./dist/src/delegation.js"
+      "types": "./dist/delegation.d.ts",
+      "import": "./dist/delegation.js"
     },
     "./principal": {
-      "types": "./dist/src/principal/index.d.ts",
-      "import": "./dist/src/principal/index.js"
+      "types": "./dist/principal/index.d.ts",
+      "import": "./dist/principal/index.js"
     },
     "./principal/ed25519": {
-      "types": "./dist/src/principal/ed25519.d.ts",
-      "import": "./dist/src/principal/ed25519.js"
+      "types": "./dist/principal/ed25519.d.ts",
+      "import": "./dist/principal/ed25519.js"
     },
     "./principal/rsa": {
-      "types": "./dist/src/principal/rsa.d.ts",
-      "import": "./dist/src/principal/rsa.js"
+      "types": "./dist/principal/rsa.d.ts",
+      "import": "./dist/principal/rsa.js"
     },
     "./proof": {
-      "types": "./dist/src/proof.d.ts",
-      "import": "./dist/src/proof.js"
+      "types": "./dist/proof.d.ts",
+      "import": "./dist/proof.js"
     },
     "./space": {
-      "types": "./dist/src/space.d.ts",
-      "import": "./dist/src/space.js"
+      "types": "./dist/space.d.ts",
+      "import": "./dist/space.js"
     },
     "./result": {
-      "types": "./dist/src/result.d.ts",
-      "import": "./dist/src/result.js"
+      "types": "./dist/result.d.ts",
+      "import": "./dist/result.js"
     },
     "./client": {
-      "types": "./dist/src/client.d.ts",
-      "import": "./dist/src/client.js"
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js"
     },
     "./capability/access": {
-      "types": "./dist/src/capability/access.d.ts",
-      "import": "./dist/src/capability/access.js"
+      "types": "./dist/capability/access.d.ts",
+      "import": "./dist/capability/access.js"
     },
     "./capability/blob": {
-      "types": "./dist/src/capability/blob.d.ts",
-      "import": "./dist/src/capability/blob.js"
+      "types": "./dist/capability/blob.d.ts",
+      "import": "./dist/capability/blob.js"
     },
     "./capability/index": {
-      "types": "./dist/src/capability/index.d.ts",
-      "import": "./dist/src/capability/index.js"
+      "types": "./dist/capability/index.d.ts",
+      "import": "./dist/capability/index.js"
     },
     "./capability/space": {
-      "types": "./dist/src/capability/space.d.ts",
-      "import": "./dist/src/capability/space.js"
+      "types": "./dist/capability/space.d.ts",
+      "import": "./dist/capability/space.js"
     },
     "./capability/subscription": {
-      "types": "./dist/src/capability/subscription.d.ts",
-      "import": "./dist/src/capability/subscription.js"
+      "types": "./dist/capability/subscription.d.ts",
+      "import": "./dist/capability/subscription.js"
     },
     "./capability/upload": {
-      "types": "./dist/src/capability/upload.d.ts",
-      "import": "./dist/src/capability/upload.js"
+      "types": "./dist/capability/upload.d.ts",
+      "import": "./dist/capability/upload.js"
     },
     "./capability/usage": {
-      "types": "./dist/src/capability/usage.d.ts",
-      "import": "./dist/src/capability/usage.js"
+      "types": "./dist/capability/usage.d.ts",
+      "import": "./dist/capability/usage.js"
     },
     "./stores": {
-      "types": "./dist/src/stores/index.d.ts",
-      "import": "./dist/src/stores/index.js"
+      "types": "./dist/stores/index.d.ts",
+      "import": "./dist/stores/index.js"
     },
     "./stores/conf": {
-      "types": "./dist/src/stores/conf.d.ts",
-      "import": "./dist/src/stores/conf.js"
+      "types": "./dist/stores/conf.d.ts",
+      "import": "./dist/stores/conf.js"
     },
     "./stores/indexeddb": {
-      "types": "./dist/src/stores/indexeddb.d.ts",
-      "import": "./dist/src/stores/indexeddb.js"
+      "types": "./dist/stores/indexeddb.d.ts",
+      "import": "./dist/stores/indexeddb.js"
     },
     "./stores/memory": {
-      "types": "./dist/src/stores/memory.d.ts",
-      "import": "./dist/src/stores/memory.js"
+      "types": "./dist/stores/memory.d.ts",
+      "import": "./dist/stores/memory.js"
     },
-    "./types": "./dist/src/types.js"
+    "./types": "./dist/types.js"
   },
   "publishConfig": {
     "access": "public"
   },
   "files": [
     "dist",
-    "*.min.js"
+    "!dist/**/*.js.map"
   ],
+  "// scripts": "The `test-:*` scripts are internal only, to be run by `npm-run-all` in parallel with the mock servers.",
   "scripts": {
-    "attw": "attw --pack .",
-    "lint": "tsc --build && eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
-    "lint:fix": "tsc --build && eslint '**/*.{js,ts}' --fix && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
-    "build": "npm run build:tsc && npm run build:bundle:browser",
-    "build:tsc": "tsc --build",
-    "build:bundle:browser": "esbuild src/index.js --bundle --minify --target=chrome130 --format=iife --global-name=StorachaClient --outfile=browser.min.js",
-    "dev": "tsc --build --watch",
-    "check": "tsc --build",
-    "prepare": "npm run build",
-    "test": "npm-run-all -p -r mock:* test:all",
-    "test:all": "run-s test:node test:browser",
-    "test:node": "hundreds -r html -r text mocha 'test/**/!(*.browser).test.js' -n experimental-vm-modules -n no-warnings -n stack-trace-limit=1000 -t 10000 --bail",
-    "test:browser": "playwright-test --runner mocha 'test/**/!(*.node).test.js'",
-    "mock": "run-p mock:*",
+    "dev": "tsc --build --watch --preserveWatchOutput",
+    "clean": "rm -rf dist *.tsbuildinfo coverage",
+    "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+    "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+    "test:node": "npm-run-all --parallel --race --npm-path pnpm mock:* 'test-:node'",
+    "test-:node": "hundreds -r html -r text mocha 'test/**/!(*.browser).test.js' -n experimental-vm-modules -n no-warnings -n stack-trace-limit=1000 -t 10000 --bail",
+    "test:browser": "npm-run-all --parallel --race --npm-path pnpm mock:* 'test-:browser'",
+    "test-:browser": "playwright-test --runner mocha 'test/**/!(*.node).test.js'",
     "mock:bucket-0-200": "PORT=8989 STATUS=200 node test/helpers/bucket-server.js",
     "mock:bucket-1-200": "PORT=8990 STATUS=200 node test/helpers/bucket-server.js",
     "mock:receipts-server": "PORT=9201 node test/helpers/receipts-server.js",
     "mock:gateway-server": "PORT=5001 node test/helpers/gateway-server.js",
+    "attw": "attw --pack .",
     "coverage": "c8 report -r html && open coverage/index.html",
-    "rc": "npm version prerelease --preid rc",
-    "docs": "npm run build && typedoc --out docs-generated"
+    "rc": "npm version prerelease --preid rc"
   },
   "dependencies": {
     "@ipld/dag-ucan": "^3.4.5",
@@ -151,35 +127,35 @@
     "@storacha/did-mailto": "workspace:^",
     "@storacha/filecoin-client": "workspace:^",
     "@storacha/upload-client": "workspace:^",
-    "@ucanto/client": "^9.0.1",
-    "@ucanto/core": "^10.3.0",
-    "@ucanto/interface": "^10.2.0",
+    "@ucanto/client": "catalog:",
+    "@ucanto/core": "catalog:",
+    "@ucanto/interface": "catalog:",
     "@ucanto/principal": "^9.0.2",
-    "@ucanto/transport": "^9.1.1"
+    "@ucanto/transport": "catalog:"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "catalog:",
     "@ipld/car": "^5.1.1",
-    "@ipld/unixfs": "^3.0.0",
+    "@ipld/unixfs": "catalog:",
     "@storacha/eslint-config": "workspace:^",
     "@storacha/upload-api": "workspace:^",
     "@types/assert": "^1.5.6",
     "@types/mocha": "^10.0.1",
-    "@types/node": "^20.8.4",
-    "@ucanto/server": "^10.2.0",
+    "@types/node": "^20.17.14",
+    "@typescript-eslint/eslint-plugin": "catalog:",
+    "@ucanto/server": "catalog:",
     "@web3-storage/access": "^20.1.0",
     "@web3-storage/content-claims": "^4.0.4",
     "@web3-storage/data-segment": "^5.0.0",
     "@web3-storage/w3up-client": "^16.5.1",
-    "assert": "^2.0.0",
+    "assert": "catalog:",
     "c8": "^7.13.0",
-    "esbuild": "^0.24.0",
-    "hundreds": "^0.0.9",
+    "hundreds": "catalog:",
     "mocha": "^10.8.2",
     "multiformats": "^13.3.1",
-    "npm-run-all": "^4.1.5",
-    "playwright-test": "^12.3.4",
-    "typedoc": "^0.25.3",
-    "typescript": "5.2.2"
+    "npm-run-all": "catalog:",
+    "playwright-test": "catalog:",
+    "typescript": "catalog:"
   },
   "eslintConfig": {
     "extends": [
@@ -199,8 +175,7 @@
       "docs",
       "docs-generated",
       "coverage",
-      "src/types.js",
-      "*.min.js"
+      "src/types.js"
     ]
   },
   "directories": {

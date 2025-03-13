@@ -36,7 +36,12 @@ export { Account, Space }
 import ago from 's-ago'
 
 /**
- *
+ * @import { MultihashDigest } from 'multiformats'
+ * @import { code as pieceHashCode } from '@web3-storage/data-segment/dist/src/multihash'
+ */
+
+/**
+ * Claim the access capability for the current agent.
  */
 export async function accessClaim() {
   const client = await getClient()
@@ -56,9 +61,9 @@ export const getPlan = async (email = '') => {
   if (account) {
     const { ok: plan, error } = await account.plan.get()
     if (plan) {
-      console.log(`⁂ ${plan.product}`)
+      console.log(`🐔 ${plan.product}`)
     } else if (error?.name === 'PlanNotFound') {
-      console.log('⁂ no plan has been selected yet')
+      console.log('🐔 no plan has been selected yet')
     } else {
       console.error(`Failed to get plan - ${error.message}`)
       process.exit(1)
@@ -92,7 +97,7 @@ export async function authorize(email, opts = {}) {
     process.exit(1)
   }
   if (spinner) spinner.stop()
-  console.log(`⁂ agent authorized to use capabilities delegated to ${email}`)
+  console.log(`🐔 agent authorized to use capabilities delegated to ${email}`)
 }
 
 /**
@@ -149,12 +154,12 @@ export async function upload(firstPath, opts) {
   }
 
   spinner.start('Storing')
-  /** @type {(o?: import('@storacha/client/src/types').UploadOptions) => Promise<import('@storacha/client/src/types').AnyLink>} */
+  /** @type {(o?: import('@storacha/client/types').UploadOptions) => Promise<import('@storacha/client/types').AnyLink>} */
   const uploadFn = opts?.car
     ? client.uploadCAR.bind(client, files[0])
     : files.length === 1 && opts?.wrap === false
-    ? client.uploadFile.bind(client, files[0])
-    : client.uploadDirectory.bind(client, files)
+      ? client.uploadFile.bind(client, files[0])
+      : client.uploadDirectory.bind(client, files)
 
   let totalSent = 0
   const getStoringMessage = () =>
@@ -176,7 +181,9 @@ export async function upload(firstPath, opts) {
         hasher.digestInto(bytes, 0, true)
         hasher.free()
 
-        return Digest.decode(bytes)
+        return /** @type {MultihashDigest<typeof pieceHashCode>} */ (
+          Digest.decode(bytes)
+        )
       },
     },
     onShardStored: ({ cid, size, piece }) => {
@@ -191,9 +198,9 @@ export async function upload(firstPath, opts) {
       } else {
         spinner.text = getStoringMessage()
       }
-      opts?.json &&
-        opts?.verbose &&
+      if (opts?.json && opts?.verbose) {
         console.log(dagJSON.stringify({ shard: cid, size, piece }))
+      }
     },
     shardSize: opts?.['shard-size'] && parseInt(String(opts?.['shard-size'])),
     concurrentRequests:
@@ -202,11 +209,13 @@ export async function upload(firstPath, opts) {
     receiptsEndpoint: client._receiptsEndpoint.toString(),
   })
   spinner.stopAndPersist({
-    symbol: '⁂',
+    symbol: '🐔',
     text: `Stored ${files.length} file${files.length === 1 ? '' : 's'}`,
   })
   console.log(
-    opts?.json ? dagJSON.stringify({ root }) : `⁂ https://w3s.link/ipfs/${root}`
+    opts?.json
+      ? dagJSON.stringify({ root })
+      : `🐔 https://w3s.link/ipfs/${root}`
   )
 }
 
@@ -232,8 +241,8 @@ export async function list(opts = {}) {
   } while (res.cursor && res.results.length)
 
   if (count === 0 && !opts.json) {
-    console.log('⁂ No uploads in space')
-    console.log('⁂ Try out `storacha up <path to files>` to upload some')
+    console.log('🐔 No uploads in space')
+    console.log('🐔 Try out `storacha up <path to files>` to upload some')
   }
 }
 /**
@@ -350,7 +359,7 @@ export async function spaceInfo(opts) {
     )
   }
 
-  /** @type {import('@storacha/access/types').SpaceInfoResult} */
+  /** @type {import('@storacha/access/dist/types').SpaceInfoResult} */
   let info
   try {
     info = await client.capability.space.info(spaceDID)
@@ -508,7 +517,7 @@ export async function revokeDelegation(delegationCid, opts) {
     { proofs: proof ? [proof] : [] }
   )
   if (result.ok) {
-    console.log(`⁂ delegation ${delegationCid} revoked`)
+    console.log(`🐔 delegation ${delegationCid} revoked`)
   } else {
     console.error(`Error: revoking ${delegationCid}: ${result.error?.message}`)
     process.exit(1)
@@ -717,5 +726,5 @@ export const reset = async () => {
     })
     await store.save(data.export())
   }
-  console.log('⁂ Agent reset.')
+  console.log('🐔 Agent reset.')
 }

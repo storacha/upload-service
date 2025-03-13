@@ -1,13 +1,18 @@
 {
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "outDir": "dist",
-    "lib": ["ESNext", "DOM"]
-  },
-  "include": ["src", "test", "package.json"],
-  "exclude": ["**/node_modules/**"],
-  "references": [{ "path": "../capabilities" }],
-  "typedocOptions": {
-    "entryPoints": ["./src"]
-  }
+  "extends": "../../tsconfig.base.json",
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    },
+    {
+      "path": "../capabilities"
+    },
+    {
+      "path": "../eslint-config-w3up"
+    }
+  ]
 }

@@ -131,7 +131,7 @@ export const create = async (name, options) => {
     }
   }
 
-  console.log(`⁂ Space created: ${space.did()}`)
+  console.log(`🐔 Space created: ${space.did()}`)
 
   return space
 }
@@ -349,8 +349,8 @@ const chooseName = async (name, spaces) => {
     name === ''
       ? 'What would you like to call this space?'
       : space
-      ? `Name "${space.name}" is already taken, please choose a different one`
-      : null
+        ? `Name "${space.name}" is already taken, please choose a different one`
+        : null
 
   if (message == null) {
     return name

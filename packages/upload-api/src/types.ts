@@ -30,7 +30,7 @@ import type {
   HTTPResponse,
   PrincipalResolver,
   AuthorityProver,
-  Reader
+  Reader,
 } from '@ucanto/interface'
 import type { ProviderInput, ConnectionView } from '@ucanto/server'
 

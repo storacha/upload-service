@@ -1,53 +1,65 @@
+// See README.tsconfigs.md for details on how these work in this repo.
+
 {
-  "compilerOptions": {
-    "strict": true,
-    "outDir": "dist",
-    // project options
-    "allowJs": true,
-    "checkJs": true,
-    "target": "ES2022",
-    "module": "Node16",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "noEmit": false,
-    "noEmitOnError": true,
-    "emitDeclarationOnly": false,
-    "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
-    "incremental": true,
-    "composite": true,
-    "isolatedModules": true,
-    "removeComments": false,
-    // module resolution
-    "esModuleInterop": true,
-    "moduleResolution": "Node16",
-    // linter checks
-    "noImplicitReturns": false,
-    "noFallthroughCasesInSwitch": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": false,
-    // advanced
-    "importsNotUsedAsValues": "remove",
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "stripInternal": true,
-    "resolveJsonModule": true
-  },
-  "typedocOptions": {
-    "entryPointStrategy": "packages",
-    "entryPoints": [
-      "packages/access-client",
-      "packages/blob-index",
-      "packages/capabilities",
-      "packages/upload-client",
-      "packages/filecoin-client",
-      "packages/w3up-client"
-    ],
-    "excludeExternals": true,
-    "darkHighlightTheme": "github-dark",
-    "navigationLinks": {
-      "Github": "https://github.com/storacha/upload-service"
+  "extends": "./tsconfig.base.json",
+  "files": [], // intentionally empty
+  "references": [
+    {
+      "path": "./.github/release"
     },
-    "customCss": "./packages/w3up-typedoc-config/static/docs.css"
-  }
+    {
+      "path": "./packages/eslint-config-w3up"
+    },
+    {
+      "path": "./packages/filecoin-client"
+    },
+    {
+      "path": "./packages/access-client"
+    },
+    {
+      "path": "./packages/upload-client"
+    },
+    {
+      "path": "./packages/capabilities"
+    },
+    {
+      "path": "./packages/filecoin-api"
+    },
+    {
+      "path": "./packages/w3up-client"
+    },
+    {
+      "path": "./packages/blob-index"
+    },
+    {
+      "path": "./packages/did-mailto"
+    },
+    {
+      "path": "./packages/upload-api"
+    },
+    {
+      "path": "./packages/ui/examples/react/multi-file-upload"
+    },
+    {
+      "path": "./packages/ui/examples/react/uploads-list"
+    },
+    {
+      "path": "./packages/ui/examples/react/file-upload"
+    },
+    {
+      "path": "./packages/ui/examples/react/components"
+    },
+    {
+      "path": "./packages/ui/examples/react/sign-up-in"
+    },
+    {
+      "path": "./packages/ui/examples/test/playwright"
+    },
+    {
+      "path": "./packages/ui/packages/react"
+    },
+    {
+      "path": "./packages/ui/packages/core"
+    }
+  ]
 }

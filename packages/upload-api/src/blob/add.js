@@ -78,7 +78,6 @@ export function blobAddProvider(context) {
 
       const acceptanceW3s = await acceptW3s({
         context,
-        provider: allocation.ok.provider,
         blob,
         space,
         delivery,
@@ -252,7 +251,7 @@ async function allocateW3s({ context, blob, space, cause, receipt }) {
  * @param {object} put.allocation
  * @param {API.Receipt<API.BlobAllocateSuccess, API.BlobAllocateFailure>} put.allocation.receipt
  */
-async function put({ blob, allocation }) {
+async function put({ blob, allocation: { receipt: allocationReceipt } }) {
   // Derive the principal that will provide the blob from the blob digest.
   // we do this so that any actor with a blob could issue a receipt for the
   // `http/put` invocation.
@@ -265,13 +264,10 @@ async function put({ blob, allocation }) {
     nb: {
       body: blob,
       url: {
-        'ucan/await': ['.out.ok.address.url', allocation.receipt.ran.link()],
+        'ucan/await': ['.out.ok.address.url', allocationReceipt.ran.link()],
       },
       headers: {
-        'ucan/await': [
-          '.out.ok.address.headers',
-          allocation.receipt.ran.link(),
-        ],
+        'ucan/await': ['.out.ok.address.headers', allocationReceipt.ran.link()],
       },
     },
     // We encode the keys for the blob provider principal that can be used
@@ -292,15 +288,15 @@ async function put({ blob, allocation }) {
   // If allocation failed, error will propagate to the `put` task because
   // it's url and headers await on the successful allocation, which is why
   // we issue a receipt with propagated error when that is the case.
-  if (allocation.receipt.out.error) {
+  if (allocationReceipt.out.error) {
     receipt = await Receipt.issue({
       issuer: blobProvider,
       ran: await put.delegate(),
       result: {
         error: new AwaitError({
-          cause: allocation.receipt.out.error,
+          cause: allocationReceipt.out.error,
           at: '.out.ok.address.url',
-          reference: allocation.receipt.ran.link(),
+          reference: allocationReceipt.ran.link(),
         }),
       },
     })
@@ -308,7 +304,7 @@ async function put({ blob, allocation }) {
   // If allocation was successful, but no address was returned we have a
   // blob in store already and we can issue a receipt for the `http/put`
   // without requiring blob to be provided.
-  else if (allocation.receipt.out.ok.address == null) {
+  else if (allocationReceipt.out.ok.address == null) {
     receipt = await Receipt.issue({
       issuer: blobProvider,
       ran: task,
@@ -337,14 +333,21 @@ async function put({ blob, allocation }) {
  * @param {API.Invocation<API.HTTPPut>} input.delivery.task
  * @param {API.Receipt|null} input.delivery.receipt
  */
-async function accept({ context, provider, blob, space, cause, delivery }) {
+async function accept({
+  context,
+  provider,
+  blob,
+  space,
+  cause,
+  delivery: { task: deliveryTask, receipt: deliveryReceipt },
+}) {
   // 1. Create blob/accept invocation and task
   const cap = Blob.accept.create({
     with: provider.did(),
     nb: {
       blob,
       space: DID.parse(space),
-      _put: { 'ucan/await': ['.out.ok', delivery.task.link()] },
+      _put: { 'ucan/await': ['.out.ok', deliveryTask.link()] },
     },
   })
 
@@ -360,21 +363,21 @@ async function accept({ context, provider, blob, space, cause, delivery }) {
   let receipt = null
 
   // If put has failed, we propagate the error the `blob/accept` receipt
-  if (delivery.receipt?.out.error) {
+  if (deliveryReceipt?.out.error) {
     receipt = await Receipt.issue({
       issuer: context.id,
       ran: task,
       result: {
         error: new AwaitError({
-          cause: delivery.receipt.out.error,
+          cause: deliveryReceipt.out.error,
           at: '.out.ok',
-          reference: delivery.task.link(),
+          reference: deliveryTask.link(),
         }),
       },
     })
   }
   // If put has already succeeded, we can execute `blob/accept` right away.
-  else if (delivery.receipt?.out.ok) {
+  else if (deliveryReceipt?.out.ok) {
     receipt = await configure.ok.invocation.execute(configure.ok.connection)
 
     // record the invocation and the receipt
@@ -390,11 +393,11 @@ async function accept({ context, provider, blob, space, cause, delivery }) {
     if (messageWrite.error) {
       return messageWrite
     }
-  
+
     const register = await context.registry.register({
       space,
       cause,
-      blob: { digest: Digest.decode(blob.digest), size: blob.size }
+      blob: { digest: Digest.decode(blob.digest), size: blob.size },
     })
     if (register.error) {
       // it's ok if there's already a registration of this blob in this space
@@ -420,7 +423,6 @@ async function accept({ context, provider, blob, space, cause, delivery }) {
  *
  * @param {object} input
  * @param {API.BlobServiceContext} input.context
- * @param {API.Principal} input.provider
  * @param {API.BlobModel} input.blob
  * @param {API.DIDKey} input.space
  * @param {object} input.delivery
@@ -429,7 +431,13 @@ async function accept({ context, provider, blob, space, cause, delivery }) {
  * @param {object} input.acceptance
  * @param {API.Receipt|null} input.acceptance.receipt
  */
-async function acceptW3s({ context, blob, space, delivery, acceptance }) {
+async function acceptW3s({
+  context,
+  blob,
+  space,
+  delivery: { task: deliveryTask, receipt: deliveryReceipt },
+  acceptance: { receipt: acceptanceReceipt },
+}) {
   // 1. Create web3.storage/blob/accept invocation and task
   const w3sAccept = W3sBlob.accept.invoke({
     issuer: context.id,
@@ -438,7 +446,7 @@ async function acceptW3s({ context, blob, space, delivery, acceptance }) {
     nb: {
       blob,
       space,
-      _put: { 'ucan/await': ['.out.ok', delivery.task.link()] },
+      _put: { 'ucan/await': ['.out.ok', deliveryTask.link()] },
     },
     expiration: Infinity,
   })
@@ -446,27 +454,27 @@ async function acceptW3s({ context, blob, space, delivery, acceptance }) {
 
   let w3sAcceptReceipt = null
   // If put has failed, we propagate the error to the `blob/accept` receipt.
-  if (delivery.receipt?.out.error) {
+  if (deliveryReceipt?.out.error) {
     w3sAcceptReceipt = await Receipt.issue({
       issuer: context.id,
       ran: w3sAcceptTask,
       result: {
         error: new AwaitError({
-          cause: delivery.receipt.out.error,
+          cause: deliveryReceipt.out.error,
           at: '.out.ok',
-          reference: delivery.task.link(),
+          reference: deliveryTask.link(),
         }),
       },
     })
   }
   // If `blob/accept` receipt is present, we issue a receipt for
   // `web3.storage/blob/accept`.
-  else if (acceptance.receipt) {
+  else if (acceptanceReceipt) {
     w3sAcceptReceipt = await Receipt.issue({
       issuer: context.id,
       ran: w3sAcceptTask,
-      result: acceptance.receipt.out,
-      fx: acceptance.receipt.fx
+      result: acceptanceReceipt.out,
+      fx: acceptanceReceipt.fx,
     })
   }
 

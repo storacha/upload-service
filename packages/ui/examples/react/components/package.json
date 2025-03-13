@@ -1,0 +1,49 @@
+{
+  "name": "@storacha/ui-example-react-components",
+  "private": true,
+  "version": "1.2.0",
+  "description": "Components for React examples",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.esm.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "bunchee",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "lint": "echo 'Linting in @storacha/ui-example-react-components is temporarily disabled while we resolve version issues.'",
+    "lint:fix": "echo 'Linting in @storacha/ui-example-react-components is temporarily disabled while we resolve version issues.'"
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.js.map"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/web3-storage/w3ui.git"
+  },
+  "author": "Travis Vachon",
+  "license": "Apache-2.0 OR MIT",
+  "dependencies": {
+    "@heroicons/react": "catalog:",
+    "@storacha/ui-react": "workspace:^",
+    "react": "catalog:"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "bunchee": "catalog:",
+    "eslint-plugin-react-hooks": "catalog:",
+    "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0"
+  },
+  "eslintConfig": {
+    "extends": [
+      "@storacha/ui"
+    ]
+  },
+  "eslintIgnore": [
+    "node_modules",
+    "dist"
+  ]
+}
