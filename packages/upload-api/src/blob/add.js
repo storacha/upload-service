@@ -49,7 +49,11 @@ export function blobAddProvider(context) {
 
       // if legacy provider, use legacy handler
       if (provisioned.ok.providers.some(isW3sProvider)) {
-        return w3sHandler({ capability, invocation, context: invocationContext })
+        return w3sHandler({
+          capability,
+          invocation,
+          context: invocationContext,
+        })
       }
 
       const allocation = await allocate({
@@ -96,11 +100,13 @@ export function blobAddProvider(context) {
       })
 
       // Create a result describing this invocation workflow
-      let result = Server.ok(/** @type {API.SpaceBlobAddSuccess} */ ({
-        site: {
-          'ucan/await': ['.out.ok.site', acceptance.ok.task.link()],
-        },
-      }))
+      let result = Server.ok(
+        /** @type {API.SpaceBlobAddSuccess} */ ({
+          site: {
+            'ucan/await': ['.out.ok.site', acceptance.ok.task.link()],
+          },
+        })
+      )
         .fork(allocation.ok.task)
         .fork(allocationW3s.task)
         .fork(delivery.task)

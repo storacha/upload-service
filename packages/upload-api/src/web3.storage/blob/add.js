@@ -44,11 +44,13 @@ export const w3sBlobAddHandler = (context) => {
     })
 
     // Create a result describing the this invocation workflow
-    let result = Server.ok(/** @type {API.SpaceBlobAddSuccess} */ ({
-      site: {
-        'ucan/await': ['.out.ok.site', acceptance.task.link()],
-      },
-    }))
+    let result = Server.ok(
+      /** @type {API.SpaceBlobAddSuccess} */ ({
+        site: {
+          'ucan/await': ['.out.ok.site', acceptance.task.link()],
+        },
+      })
+    )
       .fork(allocation.task)
       .fork(delivery.task)
       .fork(acceptance.task)

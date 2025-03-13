@@ -353,7 +353,7 @@ export interface Service extends StorefrontService {
     report: ServiceMethod<UsageReport, UsageReportSuccess, UsageReportFailure>
   }
   // legacy handlers
-  store: LegacyUploadAPI.Service['store'],
+  store: LegacyUploadAPI.Service['store']
   ['web3.storage']: {
     blob: {
       allocate: ServiceMethod<
@@ -361,7 +361,11 @@ export interface Service extends StorefrontService {
         W3sBlobAllocateSuccess,
         W3sBlobAllocateFailure
       >
-      accept: ServiceMethod<W3sBlobAccept, W3sBlobAcceptSuccess, W3sBlobAcceptFailure>
+      accept: ServiceMethod<
+        W3sBlobAccept,
+        W3sBlobAcceptSuccess,
+        W3sBlobAcceptFailure
+      >
     }
   }
 }
@@ -373,7 +377,8 @@ export type LegacyStoreServiceContext = LegacyUploadAPI.StoreServiceContext
 export interface LegacyCarStoreBucket extends LegacyUploadAPI.CarStoreBucket {}
 
 /** @deprecated */
-export interface LegacyCarStoreBucketOptions extends LegacyUploadAPI.CarStoreBucketOptions {}
+export interface LegacyCarStoreBucketOptions
+  extends LegacyUploadAPI.CarStoreBucketOptions {}
 
 /** @deprecated */
 export interface LegacyStoreTable extends LegacyUploadAPI.StoreTable {}
@@ -382,7 +387,10 @@ export interface LegacyStoreTable extends LegacyUploadAPI.StoreTable {}
 export interface LegacyStoreAddInput extends LegacyUploadAPI.StoreAddInput {}
 
 /** @deprecated */
-export type LegacyBlobServiceContext = Omit<LegacyUploadAPI.BlobServiceContext, 'allocationsStorage'> & {
+export type LegacyBlobServiceContext = Omit<
+  LegacyUploadAPI.BlobServiceContext,
+  'allocationsStorage'
+> & {
   registry: BlobRegistry
 }
 
@@ -435,16 +443,20 @@ export interface AdminServiceContext {
 }
 
 /** @deprecated */
-export interface LegacyAdminServiceContext extends Pick<LegacyUploadAPI.AdminServiceContext, 'storeTable'> {}
+export interface LegacyAdminServiceContext
+  extends Pick<LegacyUploadAPI.AdminServiceContext, 'storeTable'> {}
 
 /** @deprecated */
-export type LegacyAdminStoreInspectResult = LegacyUploadAPI.AdminStoreInspectResult
+export type LegacyAdminStoreInspectResult =
+  LegacyUploadAPI.AdminStoreInspectResult
 
 /** @deprecated */
-export type LegacyAdminStoreInspectSuccess = LegacyUploadAPI.AdminStoreInspectSuccess
+export type LegacyAdminStoreInspectSuccess =
+  LegacyUploadAPI.AdminStoreInspectSuccess
 
 /** @deprecated */
-export type LegacyAdminStoreInspectFailure = LegacyUploadAPI.AdminStoreInspectFailure
+export type LegacyAdminStoreInspectFailure =
+  LegacyUploadAPI.AdminStoreInspectFailure
 
 export interface ConsoleServiceContext {}
 
@@ -476,7 +488,11 @@ export interface RevocationServiceContext {
 }
 
 /** @deprecated */
-export interface LegacyConcludeServiceContext extends Pick<LegacyUploadAPI.ConcludeServiceContext, 'id'|'getServiceConnection'> {
+export interface LegacyConcludeServiceContext
+  extends Pick<
+    LegacyUploadAPI.ConcludeServiceContext,
+    'id' | 'getServiceConnection'
+  > {
   registry: BlobRegistry
 }
 
@@ -492,7 +508,8 @@ export interface ConcludeServiceContext {
 }
 
 export interface UcanServiceContext
-  extends RevocationServiceContext, ConcludeServiceContext {}
+  extends RevocationServiceContext,
+    ConcludeServiceContext {}
 
 /** @deprecated */
 export interface LegacyUcanServiceContext

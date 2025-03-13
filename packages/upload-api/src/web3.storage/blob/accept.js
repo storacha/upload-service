@@ -54,7 +54,12 @@ export function w3sBlobAcceptProvider(context) {
       })
 
       // Publish this claim to the content claims service
-      const pubClaim = await publishLocationClaim(context, { space, digest, size: blob.size, location: createUrl.ok })
+      const pubClaim = await publishLocationClaim(context, {
+        space,
+        digest,
+        size: blob.size,
+        location: createUrl.ok,
+      })
       if (pubClaim.error) {
         return pubClaim
       }
@@ -139,7 +144,7 @@ const publishLocationClaim = async (ctx, { digest, size, location }) => {
       nb: {
         content: { digest: digest.bytes },
         location: [location],
-        range: { offset: 0, length: size }
+        range: { offset: 0, length: size },
       },
       expiration: Infinity,
       proofs,

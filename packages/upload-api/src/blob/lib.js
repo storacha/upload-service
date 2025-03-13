@@ -129,4 +129,5 @@ export const deriveDID = (multihash) => ed25519.derive(multihash.subarray(-32))
  * @param {API.Invocation} i
  * @returns {i is API.Invocation<API.HTTPPut>}
  */
-export const isHttpPutTask = i => i.capabilities.some(c => c.can === HTTP.put.can)
+export const isHttpPutTask = (i) =>
+  i.capabilities.some((c) => c.can === HTTP.put.can)

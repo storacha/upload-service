@@ -33,7 +33,7 @@ export const allocate = async ({ capability }, context) => {
       ({
         name: 'InsufficientStorage',
         message: `${space} has no storage provider`,
-      }),
+      })
     )
   }
 
