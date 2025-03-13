@@ -46,6 +46,9 @@
         // replace them during publish for the published tarball.
         "preserveLocalDependencyProtocols": true
       }
+    },
+    "changelog": {
+      "projectChangelogs": true
     }
   },
   "plugins": [
