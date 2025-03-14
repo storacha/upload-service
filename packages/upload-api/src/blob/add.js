@@ -1,7 +1,6 @@
 import * as Server from '@ucanto/server'
 import { Message, Receipt } from '@ucanto/core'
 import * as Transport from '@ucanto/transport/car'
-import { ed25519 } from '@ucanto/principal'
 import * as Blob from '@storacha/capabilities/blob'
 import * as SpaceBlob from '@storacha/capabilities/space/blob'
 import * as W3sBlob from '@storacha/capabilities/web3.storage/blob'
@@ -11,16 +10,10 @@ import * as DID from '@ipld/dag-ucan/did'
 import * as API from '../types.js'
 import { allocate as spaceAllocate } from '../space-allocate.js'
 import { createConcludeInvocation } from '../ucan/conclude.js'
-import { AwaitError } from './lib.js'
+import { AwaitError, deriveDID } from './lib.js'
 import { AgentMessage } from '../lib.js'
-
-/**
- * Derives did:key principal from (blob) multihash that can be used to
- * sign ucan invocations/receipts for the the subject (blob) multihash.
- *
- * @param {API.Multihash} multihash
- */
-export const deriveDID = (multihash) => ed25519.derive(multihash.subarray(-32))
+import * as W3sBlobAdd from '../web3.storage/blob/add.js'
+import { isW3sProvider } from '../web3.storage/blob/lib.js'
 
 /**
  * @param {API.Receipt} receipt
@@ -31,15 +24,37 @@ const conclude = (receipt, issuer, audience = issuer) =>
   createConcludeInvocation(issuer, audience, receipt).delegate()
 
 /**
- * @param {API.BlobServiceContext} context
+ * @param {API.BlobServiceContext & API.LegacyBlobServiceContext} context
  * @returns {API.ServiceMethod<API.SpaceBlobAdd, API.SpaceBlobAddSuccess, API.SpaceBlobAddFailure>}
  */
 export function blobAddProvider(context) {
+  const w3sHandler = W3sBlobAdd.w3sBlobAddHandler(context)
+
   return Server.provideAdvanced({
     capability: SpaceBlob.add,
-    handler: async ({ capability, invocation }) => {
+    handler: async ({ capability, invocation, context: invocationContext }) => {
       const { with: space, nb } = capability
       const { blob } = nb
+
+      // First we check if space has storage provider associated. If it does not
+      // we return `InsufficientStorage` error as storage capacity is considered
+      // to be 0.
+      const provisioned = await spaceAllocate(
+        { capability: { with: space } },
+        context
+      )
+      if (provisioned.error) {
+        return provisioned
+      }
+
+      // if legacy provider, use legacy handler
+      if (provisioned.ok.providers.some(isW3sProvider)) {
+        return w3sHandler({
+          capability,
+          invocation,
+          context: invocationContext,
+        })
+      }
 
       const allocation = await allocate({
         context,
@@ -85,12 +100,13 @@ export function blobAddProvider(context) {
       })
 
       // Create a result describing this invocation workflow
-      let result = Server.ok({
-        /** @type {API.SpaceBlobAddSuccess['site']} */
-        site: {
-          'ucan/await': ['.out.ok.site', acceptance.ok.task.link()],
-        },
-      })
+      let result = Server.ok(
+        /** @type {API.SpaceBlobAddSuccess} */ ({
+          site: {
+            'ucan/await': ['.out.ok.site', acceptance.ok.task.link()],
+          },
+        })
+      )
         .fork(allocation.ok.task)
         .fork(allocationW3s.task)
         .fork(delivery.task)
@@ -126,17 +142,6 @@ export function blobAddProvider(context) {
  * @param {API.Link} allocate.cause
  */
 async function allocate({ context, blob, space, cause }) {
-  // First we check if space has storage provider associated. If it does not
-  // we return `InsufficientStorage` error as storage capacity is considered
-  // to be 0.
-  const provisioned = await spaceAllocate(
-    { capability: { with: space } },
-    context
-  )
-  if (provisioned.error) {
-    return provisioned
-  }
-
   // 1. Create blob/allocate invocation and task
   const { router } = context
   const digest = Digest.decode(blob.digest)

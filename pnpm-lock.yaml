@@ -1489,6 +1489,9 @@ importers:
       '@web-std/blob':
         specifier: 'catalog:'
         version: 3.0.5
+      '@web3-storage/sigv4':
+        specifier: ^1.0.2
+        version: 1.0.2
       is-subset:
         specifier: 'catalog:'
         version: 0.1.1

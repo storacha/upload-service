@@ -29,7 +29,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": false,
     // advanced
-    "importsNotUsedAsValues": "remove",
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "stripInternal": true,

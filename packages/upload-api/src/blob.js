@@ -13,7 +13,7 @@ export {
 } from './blob/lib.js'
 
 /**
- * @param {API.BlobServiceContext} context
+ * @param {API.BlobServiceContext & API.LegacyBlobServiceContext} context
  */
 export function createService(context) {
   return {

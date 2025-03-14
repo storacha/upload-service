@@ -36,11 +36,7 @@ import type { ProviderInput, ConnectionView } from '@ucanto/server'
 
 import { StorefrontService } from '@storacha/filecoin-api/types'
 import { ServiceContext as FilecoinServiceContext } from '@storacha/filecoin-api/storefront/api'
-import {
-  Service as LegacyService,
-  StoreServiceContext as LegacyStoreServiceContext,
-  AdminServiceContext as LegacyAdminServiceContext,
-} from '@web3-storage/upload-api'
+import * as LegacyUploadAPI from '@web3-storage/upload-api'
 import { DelegationsStorage as Delegations } from './types/delegations.js'
 import { ProvisionsStorage as Provisions } from './types/provisions.js'
 import { RateLimitsStorage as RateLimits } from './types/rate-limits.js'
@@ -195,7 +191,6 @@ import { StorageGetError } from './types/storage.js'
 import { Registry as BlobRegistry, RoutingService } from './types/blob.js'
 export type * as BlobAPI from './types/blob.js'
 import { IndexServiceContext } from './types/index.js'
-import { ClaimsClientConfig } from './types/content-claims.js'
 import { Claim } from '@web3-storage/content-claims/client/api'
 export type {
   IndexServiceContext,
@@ -207,8 +202,21 @@ export type {
   ClaimsInvocationConfig,
   ClaimsClientConfig,
   ClaimsClientContext,
-  Service as ClaimsService,
-} from './types/content-claims.js'
+  ClaimsService,
+} from '@web3-storage/upload-api'
+
+/** @deprecated */
+export type W3sBlobAllocate = LegacyUploadAPI.BlobAllocate
+/** @deprecated */
+export type W3sBlobAllocateSuccess = LegacyUploadAPI.BlobAllocateSuccess
+/** @deprecated */
+export type W3sBlobAllocateFailure = LegacyUploadAPI.BlobAllocateFailure
+/** @deprecated */
+export type W3sBlobAccept = LegacyUploadAPI.BlobAccept
+/** @deprecated */
+export type W3sBlobAcceptSuccess = LegacyUploadAPI.BlobAcceptSuccess
+/** @deprecated */
+export type W3sBlobAcceptFailure = LegacyUploadAPI.BlobAcceptFailure
 
 export interface Service extends StorefrontService {
   upload: {
@@ -288,7 +296,7 @@ export interface Service extends StorefrontService {
     revoke: ServiceMethod<UCANRevoke, UCANRevokeSuccess, UCANRevokeFailure>
   }
   admin: {
-    store: LegacyService['admin']['store']
+    store: LegacyUploadAPI.Service['admin']['store']
     upload: {
       inspect: ServiceMethod<
         AdminUploadInspect,
@@ -345,8 +353,49 @@ export interface Service extends StorefrontService {
     report: ServiceMethod<UsageReport, UsageReportSuccess, UsageReportFailure>
   }
   // legacy handlers
-  store: LegacyService['store']
+  store: LegacyUploadAPI.Service['store']
+  ['web3.storage']: {
+    blob: {
+      allocate: ServiceMethod<
+        W3sBlobAllocate,
+        W3sBlobAllocateSuccess,
+        W3sBlobAllocateFailure
+      >
+      accept: ServiceMethod<
+        W3sBlobAccept,
+        W3sBlobAcceptSuccess,
+        W3sBlobAcceptFailure
+      >
+    }
+  }
 }
+
+/** @deprecated */
+export type LegacyStoreServiceContext = LegacyUploadAPI.StoreServiceContext
+
+/** @deprecated */
+export interface LegacyCarStoreBucket extends LegacyUploadAPI.CarStoreBucket {}
+
+/** @deprecated */
+export interface LegacyCarStoreBucketOptions
+  extends LegacyUploadAPI.CarStoreBucketOptions {}
+
+/** @deprecated */
+export interface LegacyStoreTable extends LegacyUploadAPI.StoreTable {}
+
+/** @deprecated */
+export interface LegacyStoreAddInput extends LegacyUploadAPI.StoreAddInput {}
+
+/** @deprecated */
+export type LegacyBlobServiceContext = Omit<
+  LegacyUploadAPI.BlobServiceContext,
+  'allocationsStorage'
+> & {
+  registry: BlobRegistry
+}
+
+/** @deprecated */
+export interface LegacyBlobsStorage extends LegacyUploadAPI.BlobsStorage {}
 
 export type BlobServiceContext = SpaceServiceContext & {
   /**
@@ -391,8 +440,23 @@ export interface CustomerServiceContext {
 export interface AdminServiceContext {
   signer: Signer
   uploadTable: UploadTable
-  storeTable: LegacyAdminServiceContext['storeTable']
 }
+
+/** @deprecated */
+export interface LegacyAdminServiceContext
+  extends Pick<LegacyUploadAPI.AdminServiceContext, 'storeTable'> {}
+
+/** @deprecated */
+export type LegacyAdminStoreInspectResult =
+  LegacyUploadAPI.AdminStoreInspectResult
+
+/** @deprecated */
+export type LegacyAdminStoreInspectSuccess =
+  LegacyUploadAPI.AdminStoreInspectSuccess
+
+/** @deprecated */
+export type LegacyAdminStoreInspectFailure =
+  LegacyUploadAPI.AdminStoreInspectFailure
 
 export interface ConsoleServiceContext {}
 
@@ -423,6 +487,15 @@ export interface RevocationServiceContext {
   revocationsStorage: RevocationsStorage
 }
 
+/** @deprecated */
+export interface LegacyConcludeServiceContext
+  extends Pick<
+    LegacyUploadAPI.ConcludeServiceContext,
+    'id' | 'getServiceConnection'
+  > {
+  registry: BlobRegistry
+}
+
 export interface ConcludeServiceContext {
   /** Upload service signer. */
   id: Signer
@@ -433,6 +506,14 @@ export interface ConcludeServiceContext {
   registry: BlobRegistry
   router: RoutingService
 }
+
+export interface UcanServiceContext
+  extends RevocationServiceContext,
+    ConcludeServiceContext {}
+
+/** @deprecated */
+export interface LegacyUcanServiceContext
+  extends LegacyConcludeServiceContext {}
 
 export interface PlanServiceContext {
   plansStorage: PlansStorage
@@ -445,6 +526,7 @@ export interface UsageServiceContext {
 
 export interface ServiceContext
   extends AdminServiceContext,
+    LegacyAdminServiceContext,
     AgentContext,
     AccessServiceContext,
     ConsoleServiceContext,
@@ -453,10 +535,11 @@ export interface ServiceContext
     ProviderServiceContext,
     SpaceServiceContext,
     BlobServiceContext,
-    ConcludeServiceContext,
+    LegacyBlobServiceContext,
     SubscriptionServiceContext,
     RateLimitServiceContext,
-    RevocationServiceContext,
+    UcanServiceContext,
+    LegacyUcanServiceContext,
     PlanServiceContext,
     UploadServiceContext,
     FilecoinServiceContext,
@@ -468,7 +551,7 @@ export interface UcantoServerContext
   extends ServiceContext,
     RevocationChecker,
     PrincipalResolver,
-    AuthorityProver {
+    Partial<AuthorityProver> {
   id: Signer
   audience?: Reader<DID>
   codec?: InboundCodec
@@ -562,7 +645,9 @@ export interface UcantoServerTestContext
 
   grantAccess: (mail: { url: string | URL }) => Promise<void>
 
-  claimsService: ClaimsClientConfig & ClaimReader & Deactivator
+  carStoreBucket: LegacyCarStoreBucket & Deactivator
+  blobsStorage: LegacyBlobsStorage & Deactivator
+  claimsService: LegacyUploadAPI.ClaimsClientConfig & ClaimReader & Deactivator
   storageProviders: Deactivator[]
 }
 

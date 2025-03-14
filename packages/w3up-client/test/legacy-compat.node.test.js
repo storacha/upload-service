@@ -1,11 +1,15 @@
 import http from 'node:http'
-import { Client } from '@web3-storage/w3up-client'
-import { AgentData } from '@web3-storage/access'
+import { Client as LegacyClient } from '@web3-storage/w3up-client'
+import { AgentData as LegacyAgentData } from '@web3-storage/access'
+import { Client } from '@storacha/client'
+import { AgentData } from '@storacha/access'
 import * as Link from 'multiformats/link'
 import { Message } from '@ucanto/core'
 import * as CAR from '@ucanto/transport/car'
 import * as Test from './test.js'
 import { randomBytes } from './helpers/random.js'
+
+const legacyProviderDID = 'did:web:test.web3.storage'
 
 /** @param {import('@storacha/upload-api').AgentStore} agentStore */
 const createReceiptsServer = (agentStore) =>
@@ -25,45 +29,77 @@ const createReceiptsServer = (agentStore) =>
 /** @type {Test.Suite} */
 export const testLegacyCompatibility = {
   uploadFile: Test.withContext({
-    'should upload a file to the service via legacy client': async (
+    'should upload a file to the service with legacy client': async (
       assert,
-      { connection, provisionsStorage, agentStore }
-    ) => {
-      const receiptsServer = createReceiptsServer(agentStore)
-      const receiptsEndpoint = await new Promise((resolve) => {
-        receiptsServer.listen(() => {
-          // @ts-expect-error
-          resolve(new URL(`http://127.0.0.1:${receiptsServer.address().port}`))
-        })
-      })
-
-      try {
-        const bytes = await randomBytes(128)
-        const file = new Blob([bytes])
-        const alice = new Client(await AgentData.create(), {
-          // @ts-expect-error service no longer implements `store/*`
-          serviceConf: { access: connection, upload: connection },
-          receiptsEndpoint,
-        })
-
-        const space = await alice.createSpace('upload-test')
-        const auth = await space.createAuthorization(alice)
-        await alice.addSpace(auth)
-        await alice.setCurrentSpace(space.did())
-
-        await provisionsStorage.put({
-          // @ts-expect-error
-          provider: connection.id.did(),
-          account: alice.agent.did(),
-          consumer: space.did(),
-        })
-
-        await assert.doesNotReject(alice.uploadFile(file))
-      } finally {
-        receiptsServer.close()
-      }
-    },
+      context
+    ) =>
+      testUploadFile(assert, {
+        ...context,
+        legacy: { client: true, space: false },
+      }),
+    'should upload a file to the service with legacy space': async (
+      assert,
+      context
+    ) =>
+      testUploadFile(assert, {
+        ...context,
+        legacy: { client: false, space: true },
+      }),
+    'should upload a file to the service with legacy client and space': async (
+      assert,
+      context
+    ) =>
+      testUploadFile(assert, {
+        ...context,
+        legacy: { client: true, space: true },
+      }),
   }),
+}
+
+/**
+ * @param {import('./test.js').Assert} assert
+ * @param {import('@storacha/upload-api').UcantoServerTestContext & { legacy: { client?: boolean, space?: boolean } }} context
+ */
+const testUploadFile = async (
+  assert,
+  { connection: conn, provisionsStorage, agentStore, legacy }
+) => {
+  const receiptsServer = createReceiptsServer(agentStore)
+  const receiptsEndpoint = await new Promise((resolve) => {
+    receiptsServer.listen(() => {
+      // @ts-expect-error
+      resolve(new URL(`http://127.0.0.1:${receiptsServer.address().port}`))
+    })
+  })
+
+  try {
+    const bytes = await randomBytes(128)
+    const file = new Blob([bytes])
+
+    const serviceConf = { access: conn, upload: conn, filecoin: conn }
+    const clientOptions = { serviceConf, receiptsEndpoint }
+    const alice = legacy.client
+      ? new LegacyClient(await LegacyAgentData.create(), clientOptions)
+      : new Client(await AgentData.create(), clientOptions)
+
+    const space = await alice.createSpace('upload-test')
+    const auth = await space.createAuthorization(alice)
+    await alice.addSpace(auth)
+    await alice.setCurrentSpace(space.did())
+
+    await provisionsStorage.put({
+      provider:
+        /** @type {import('@storacha/upload-api').ProviderDID} */
+        (legacy.space ? legacyProviderDID : conn.id.did()),
+      // @ts-expect-error not a mailto
+      customer: alice.agent.did(),
+      consumer: space.did(),
+    })
+
+    await assert.doesNotReject(alice.uploadFile(file))
+  } finally {
+    receiptsServer.close()
+  }
 }
 
 Test.test({ LegacyCompatibility: testLegacyCompatibility })

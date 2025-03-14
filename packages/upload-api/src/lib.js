@@ -19,6 +19,7 @@ import { createService as createRateLimitService } from './rate-limit.js'
 import { createService as createUcanService } from './ucan.js'
 import { createService as createPlanService } from './plan.js'
 import { createService as createUsageService } from './usage.js'
+import { createService as createLegacyW3sService } from './web3.storage.js'
 import { createService as createFilecoinService } from '@storacha/filecoin-api/storefront/service'
 import { createService as createLegacyAdminService } from '@web3-storage/upload-api/admin'
 import { createService as createLegacyStoreService } from '@web3-storage/upload-api/store'
@@ -196,6 +197,7 @@ export const createService = (context) => ({
   usage: createUsageService(context),
   // legacy
   store: createLegacyStoreService(context),
+  'web3.storage': createLegacyW3sService(context),
 })
 
 /**
