@@ -1,3 +1,13 @@
+## 1.2.4 (2025-03-14)
+
+### 🩹 Fixes
+
+- fix: do not add space to location claim for legacy provisioned spaces ([#178](https://github.com/storacha/upload-service/pull/178))
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.2.3 (2025-03-13)
 
 ### 🩹 Fixes

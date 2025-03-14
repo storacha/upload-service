@@ -1,6 +1,6 @@
 {
   "name": "@storacha/ui-react",
-  "version": "2.5.9",
+  "version": "2.5.12",
   "description": "React adapter for w3ui.",
   "type": "module",
   "main": "./dist/index.js",

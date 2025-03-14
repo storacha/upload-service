@@ -1,3 +1,19 @@
+## 1.0.7 (2025-03-14)
+
+### 🩹 Fixes
+
+- fix: do not add space to location claim for legacy provisioned spaces ([#178](https://github.com/storacha/upload-service/pull/178))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-client to 1.0.4
+- Updated @storacha/capabilities to 1.2.4
+- Updated @storacha/blob-index to 1.0.3
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.0.6 (2025-03-13)
 
 ### 🩹 Fixes
