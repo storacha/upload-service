@@ -433,109 +433,6 @@ importers:
         specifier: 'catalog:'
         version: 1.0.2
 
-  packages/access-client/dist:
-    dependencies:
-      '@ipld/car':
-        specifier: ^5.1.1
-        version: 5.4.0
-      '@ipld/dag-ucan':
-        specifier: ^3.4.5
-        version: 3.4.5
-      '@scure/bip39':
-        specifier: ^1.2.1
-        version: 1.5.4
-      '@storacha/capabilities':
-        specifier: workspace:^
-        version: link:../../capabilities
-      '@storacha/did-mailto':
-        specifier: workspace:^
-        version: link:../../did-mailto
-      '@storacha/one-webcrypto':
-        specifier: ^1.0.1
-        version: 1.0.1
-      '@ucanto/client':
-        specifier: ^9.0.1
-        version: 9.0.1
-      '@ucanto/core':
-        specifier: ^10.3.0
-        version: 10.3.1
-      '@ucanto/interface':
-        specifier: ^10.2.0
-        version: 10.2.0
-      '@ucanto/principal':
-        specifier: ^9.0.2
-        version: 9.0.2
-      '@ucanto/transport':
-        specifier: ^9.1.1
-        version: 9.1.1
-      '@ucanto/validator':
-        specifier: ^9.1.0
-        version: 9.1.0
-      bigint-mod-arith:
-        specifier: ^3.1.2
-        version: 3.3.1
-      conf:
-        specifier: 11.0.2
-        version: 11.0.2
-      multiformats:
-        specifier: ^13.3.1
-        version: 13.3.1
-      p-defer:
-        specifier: ^4.0.0
-        version: 4.0.1
-      type-fest:
-        specifier: ^4.9.0
-        version: 4.33.0
-      uint8arrays:
-        specifier: ^5.1.0
-        version: 5.1.0
-    devDependencies:
-      '@storacha/eslint-config':
-        specifier: workspace:^
-        version: link:../../eslint-config-w3up
-      '@types/assert':
-        specifier: ^1.5.6
-        version: 1.5.11
-      '@types/inquirer':
-        specifier: ^9.0.4
-        version: 9.0.7
-      '@types/mocha':
-        specifier: ^10.0.1
-        version: 10.0.10
-      '@types/node':
-        specifier: ^20.8.4
-        version: 20.17.14
-      '@types/sinon':
-        specifier: ^10.0.19
-        version: 10.0.20
-      '@types/varint':
-        specifier: ^6.0.1
-        version: 6.0.3
-      '@types/ws':
-        specifier: ^8.5.4
-        version: 8.5.13
-      '@ucanto/server':
-        specifier: ^10.1.0
-        version: 10.2.0
-      assert:
-        specifier: ^2.0.0
-        version: 2.1.0
-      mocha:
-        specifier: ^10.2.0
-        version: 10.8.2
-      playwright-test:
-        specifier: ^12.3.4
-        version: 12.6.1
-      sinon:
-        specifier: ^15.0.3
-        version: 15.2.0
-      typescript:
-        specifier: 5.2.2
-        version: 5.2.2
-      watch:
-        specifier: ^1.0.2
-        version: 1.0.2
-
   packages/blob-index:
     dependencies:
       '@ipld/dag-cbor':
@@ -960,73 +857,6 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 5.7.3
-
-  packages/filecoin-client/dist:
-    dependencies:
-      '@ipld/dag-ucan':
-        specifier: ^3.4.5
-        version: 3.4.5
-      '@storacha/capabilities':
-        specifier: workspace:^
-        version: link:../../capabilities
-      '@ucanto/client':
-        specifier: ^9.0.1
-        version: 9.0.1
-      '@ucanto/core':
-        specifier: ^10.3.0
-        version: 10.3.1
-      '@ucanto/interface':
-        specifier: ^10.2.0
-        version: 10.2.0
-      '@ucanto/transport':
-        specifier: ^9.1.1
-        version: 9.1.1
-    devDependencies:
-      '@ipld/dag-json':
-        specifier: ^10.1.4
-        version: 10.2.3
-      '@storacha/eslint-config':
-        specifier: workspace:^
-        version: link:../../eslint-config-w3up
-      '@types/assert':
-        specifier: ^1.5.6
-        version: 1.5.11
-      '@types/mocha':
-        specifier: ^10.0.1
-        version: 10.0.10
-      '@ucanto/principal':
-        specifier: ^9.0.2
-        version: 9.0.2
-      '@ucanto/server':
-        specifier: ^10.2.0
-        version: 10.2.0
-      '@web3-storage/data-segment':
-        specifier: ^5.3.0
-        version: 5.3.0
-      assert:
-        specifier: ^2.0.0
-        version: 2.1.0
-      c8:
-        specifier: ^7.13.0
-        version: 7.14.0
-      hundreds:
-        specifier: ^0.0.9
-        version: 0.0.9
-      mocha:
-        specifier: ^10.2.0
-        version: 10.8.2
-      multiformats:
-        specifier: ^13.3.1
-        version: 13.3.1
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
-      playwright-test:
-        specifier: ^12.3.4
-        version: 12.6.1
-      typescript:
-        specifier: 5.2.2
-        version: 5.2.2
 
   packages/ui/examples/react/components:
     dependencies:
@@ -1610,106 +1440,6 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 5.7.3
-
-  packages/upload-client/dist:
-    dependencies:
-      '@ipld/car':
-        specifier: ^5.2.2
-        version: 5.4.0
-      '@ipld/dag-cbor':
-        specifier: ^9.0.6
-        version: 9.2.2
-      '@ipld/dag-ucan':
-        specifier: ^3.4.5
-        version: 3.4.5
-      '@ipld/unixfs':
-        specifier: ^3.0.0
-        version: 3.0.0
-      '@storacha/blob-index':
-        specifier: workspace:^
-        version: link:../../blob-index
-      '@storacha/capabilities':
-        specifier: workspace:^
-        version: link:../../capabilities
-      '@storacha/filecoin-client':
-        specifier: workspace:^
-        version: link:../../filecoin-client
-      '@ucanto/client':
-        specifier: ^9.0.1
-        version: 9.0.1
-      '@ucanto/core':
-        specifier: ^10.3.0
-        version: 10.3.1
-      '@ucanto/interface':
-        specifier: ^10.2.0
-        version: 10.2.0
-      '@ucanto/transport':
-        specifier: ^9.1.1
-        version: 9.1.1
-      '@web3-storage/data-segment':
-        specifier: ^5.1.0
-        version: 5.3.0
-      ipfs-utils:
-        specifier: ^9.0.14
-        version: 9.0.14(encoding@0.1.13)
-      multiformats:
-        specifier: ^13.3.1
-        version: 13.3.1
-      p-retry:
-        specifier: ^5.1.2
-        version: 5.1.2
-      varint:
-        specifier: ^6.0.0
-        version: 6.0.0
-    devDependencies:
-      '@storacha/eslint-config':
-        specifier: workspace:^
-        version: link:../../eslint-config-w3up
-      '@types/assert':
-        specifier: ^1.5.6
-        version: 1.5.11
-      '@types/mocha':
-        specifier: ^10.0.1
-        version: 10.0.10
-      '@types/varint':
-        specifier: ^6.0.1
-        version: 6.0.3
-      '@ucanto/principal':
-        specifier: ^9.0.2
-        version: 9.0.2
-      '@ucanto/server':
-        specifier: ^10.2.0
-        version: 10.2.0
-      '@web3-storage/content-claims':
-        specifier: ^5.1.3
-        version: 5.1.3
-      assert:
-        specifier: ^2.0.0
-        version: 2.1.0
-      blockstore-core:
-        specifier: ^3.0.0
-        version: 3.0.0
-      c8:
-        specifier: ^7.13.0
-        version: 7.14.0
-      hundreds:
-        specifier: ^0.0.9
-        version: 0.0.9
-      ipfs-unixfs-exporter:
-        specifier: ^10.0.0
-        version: 10.0.1
-      mocha:
-        specifier: ^10.2.0
-        version: 10.8.2
-      npm-run-all:
-        specifier: ^4.1.5
-        version: 4.1.5
-      playwright-test:
-        specifier: ^12.3.4
-        version: 12.6.1
-      typescript:
-        specifier: 5.2.2
-        version: 5.2.2
 
   packages/w3up-client:
     dependencies:
@@ -7877,11 +7607,6 @@ packages:
   typescript@4.9.5:
     resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
     engines: {node: '>=4.2.0'}
-    hasBin: true
-
-  typescript@5.2.2:
-    resolution: {integrity: sha512-mI4WrpHsbCIcwT9cF4FZvr80QUeKvsUsUvKDoR+X/7XHQH98xYD8YHZg7ANtz2GtZt/CBq2QJ0thkGJMHfqc1w==}
-    engines: {node: '>=14.17'}
     hasBin: true
 
   typescript@5.6.1-rc:
@@ -15347,8 +15072,6 @@ snapshots:
       reflect.getprototypeof: 1.0.10
 
   typescript@4.9.5: {}
-
-  typescript@5.2.2: {}
 
   typescript@5.6.1-rc: {}
 
