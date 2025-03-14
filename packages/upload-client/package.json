@@ -72,7 +72,7 @@
     "@types/node": "^20.8.4",
     "@types/varint": "catalog:",
     "@typescript-eslint/eslint-plugin": "catalog:",
-    "@ucanto/principal": "^9.0.2",
+    "@ucanto/principal": "catalog:",
     "@ucanto/server": "catalog:",
     "@web3-storage/content-claims": "^5.1.3",
     "assert": "catalog:",

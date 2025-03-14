@@ -40,7 +40,7 @@
     "@types/update-notifier": "catalog:",
     "@typescript-eslint/eslint-plugin": "catalog:",
     "@ucanto/interface": "catalog:",
-    "@ucanto/principal": "^9.0.2",
+    "@ucanto/principal": "catalog:",
     "@ucanto/server": "catalog:",
     "@web-std/blob": "catalog:",
     "@web3-storage/sigv4": "catalog:",
