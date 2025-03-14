@@ -33,7 +33,7 @@
     "@ipld/dag-ucan": "^3.4.0",
     "@ucanto/client": "catalog:",
     "@ucanto/interface": "catalog:",
-    "@ucanto/principal": "^9.0.1",
+    "@ucanto/principal": "catalog:",
     "@ucanto/transport": "catalog:",
     "@storacha/access": "workspace:^",
     "@storacha/did-mailto": "workspace:^",

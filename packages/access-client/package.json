@@ -76,7 +76,7 @@
     "@ucanto/client": "catalog:",
     "@ucanto/core": "catalog:",
     "@ucanto/interface": "catalog:",
-    "@ucanto/principal": "^9.0.2",
+    "@ucanto/principal": "catalog:",
     "@ucanto/transport": "catalog:",
     "@ucanto/validator": "catalog:",
     "bigint-mod-arith": "catalog:",

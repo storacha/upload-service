@@ -115,7 +115,7 @@
     "@types/mocha": "^10.0.1",
     "@typescript-eslint/eslint-plugin": "catalog:",
     "@ucanto/client": "catalog:",
-    "@ucanto/principal": "^9.0.2",
+    "@ucanto/principal": "catalog:",
     "@web-std/blob": "catalog:",
     "c8": "^10.1.2",
     "mocha": "^10.2.0",

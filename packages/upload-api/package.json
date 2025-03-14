@@ -129,7 +129,7 @@
     "@storacha/filecoin-api": "workspace:^",
     "@ucanto/client": "catalog:",
     "@ucanto/interface": "catalog:",
-    "@ucanto/principal": "^9.0.2",
+    "@ucanto/principal": "catalog:",
     "@ucanto/server": "catalog:",
     "@ucanto/transport": "catalog:",
     "@ucanto/validator": "catalog:",
