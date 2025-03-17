@@ -1,6 +1,9 @@
 {
   "name": "@storacha/blob-index",
   "description": "An index for slices that may be sharded across multiple blobs.",
+  "publishConfig": {
+    "access": "public"
+  },
   "version": "1.0.3",
   "homepage": "https://storacha.network",
   "repository": {
