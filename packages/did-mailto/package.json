@@ -2,6 +2,9 @@
   "name": "@storacha/did-mailto",
   "version": "1.0.2",
   "description": "did:mailto",
+  "publishConfig": {
+    "access": "public"
+  },
   "homepage": "https://storacha.network",
   "repository": {
     "type": "git",

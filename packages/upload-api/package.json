@@ -1,6 +1,9 @@
 {
   "name": "@storacha/upload-api",
   "description": "The upload api for storacha.network",
+  "publishConfig": {
+    "access": "public"
+  },
   "version": "1.3.8",
   "type": "module",
   "main": "./src/lib.js",

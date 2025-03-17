@@ -2,6 +2,9 @@
   "name": "@storacha/access",
   "version": "1.0.5",
   "description": "access client",
+  "publishConfig": {
+    "access": "public"
+  },
   "homepage": "https://storacha.network",
   "repository": {
     "type": "git",
