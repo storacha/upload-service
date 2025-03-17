@@ -190,10 +190,11 @@ export type { UsageStorage }
 import { StorageGetError } from './types/storage.js'
 import { Registry as BlobRegistry, RoutingService } from './types/blob.js'
 export type * as BlobAPI from './types/blob.js'
-import { IndexServiceContext } from './types/index.js'
+import { IPNIService, IndexServiceContext } from './types/index.js'
 import { Claim } from '@web3-storage/content-claims/client/api'
 export type {
   IndexServiceContext,
+  IPNIService,
   BlobRetriever,
   BlobNotFound,
   ShardedDAGIndex,
@@ -644,6 +645,10 @@ export interface UcantoServerTestContext
   fetch: typeof fetch
 
   grantAccess: (mail: { url: string | URL }) => Promise<void>
+
+  ipniService: IPNIService & {
+    query(digest: MultihashDigest): Promise<Result<Unit, RecordNotFound>>
+  }
 
   carStoreBucket: LegacyCarStoreBucket & Deactivator
   blobsStorage: LegacyBlobsStorage & Deactivator

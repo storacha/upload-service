@@ -1,5 +1,6 @@
 import { ok, error } from '@ucanto/core'
 import { DIDResolutionError } from '@ucanto/validator'
+import { IPNIService } from './ipni.js'
 import * as ClaimsService from './content-claims.js'
 import { BrowserStorageNode, StorageNode } from './storage-node.js'
 import * as BlobRetriever from './blob-retriever.js'
@@ -59,6 +60,7 @@ export const getExternalServiceImplementations = async (config) => {
   )
   const router = RoutingService.create(config.serviceID, storageProviders)
   return {
+    ipniService: new IPNIService(),
     claimsService,
     storageProviders,
     blobRetriever,
