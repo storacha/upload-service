@@ -1,12 +1,24 @@
 {
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "outDir": "dist",
-    "lib": ["ESNext", "DOM"]
-  },
-  "include": ["./src", "./test", "package.json", "test"],
-  "exclude": ["**/node_modules/**"],
-  "typedocOptions": {
-    "entryPoints": ["./src"]
-  },
+  "extends": "../../tsconfig.base.json",
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    },
+    {
+      "path": "../w3up-client"
+    },
+    {
+      "path": "../capabilities"
+    },
+    {
+      "path": "../upload-client"
+    },
+    {
+      "path": "../eslint-config-w3up"
+    }
+  ]
 }

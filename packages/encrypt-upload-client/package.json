@@ -27,12 +27,14 @@
     "types": "dist/src/index.d.ts",
     "scripts": {
         "lint": "tsc --build && eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
-        "lint:fix": "tsc --build && eslint '**/*.{js,ts}' --fix && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore"
+        "lint:fix": "tsc --build && eslint '**/*.{js,ts}' --fix && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+        "build-actions": "node lit-actions/esbuild.js"
     },
     "dependencies": {
         "@ipld/car": "^5.4.0",
         "@ipld/dag-cbor": "^9.2.2",
         "@ipld/dag-json": "^10.2.3",
+        "@ipld/dag-ucan": "^3.4.5",
         "@ipld/schema": "^6.0.6",
         "@lit-protocol/auth-helpers": "^7.0.2",
         "@lit-protocol/constants": "^7.0.2",
@@ -41,8 +43,9 @@
         "@lit-protocol/lit-auth-client": "^7.0.3",
         "@lit-protocol/lit-node-client": "^7.0.2",
         "@storacha/capabilities": "workspace:^",
-        "@storacha/upload-client": "workspace:^",
         "@storacha/client": "workspace:^",
+        "@storacha/upload-client": "workspace:^",
+        "@ucanto/client": "^9.0.1",
         "@ucanto/core": "^10.0.1",
         "@ucanto/interface": "^10.2.0",
         "@ucanto/principal": "^9.0.1",
@@ -60,6 +63,7 @@
     "devDependencies": {
         "@lit-protocol/types": "^7.0.8",
         "@storacha/eslint-config": "workspace:^",
+        "esbuild": "^0.25.1",
         "typescript": "5.2.2"
     },
     "eslintConfig": {
