@@ -1,6 +1,6 @@
 {
   "name": "@storacha/client",
-  "version": "1.1.9",
+  "version": "1.1.10",
   "description": "Client for the storacha.network w3up api",
   "publishConfig": {
     "access": "public"
@@ -96,9 +96,6 @@
       "import": "./dist/stores/memory.js"
     },
     "./types": "./dist/types.js"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "files": [
     "dist",
