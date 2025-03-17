@@ -1,57 +1,83 @@
-import { ethers } from 'ethers'
-import {Client as StorachaClient} from '@storacha/client'
-import { LitNodeClient } from '@lit-protocol/lit-node-client'
-import type {BlobLike, AnyLink} from '@storacha/client/types'
+import { Wallet } from 'ethers'
+import { ReadableStream } from 'stream/web'
 import { UnknownLink } from 'multiformats'
+// import { Signer } from '@ucanto/principal/ed25519'
+import {Client as StorachaClient } from '@storacha/client'
 import { Result, Failure, Block } from '@ucanto/interface'
+import { LitNodeClient } from '@lit-protocol/lit-node-client'
+import { AccessControlConditions, AuthSig, SessionSigsMap } from '@lit-protocol/types'
+import type {BlobLike, AnyLink, Signer, DID, SigAlg } from '@storacha/client/types'
 
-export type { UnknownFormat } from '@storacha/capabilities/types'
 export type { IPLDBlock } from '@ucanto/interface'
-export type { Result, UnknownLink }
-
 export type {SpaceDID} from '@storacha/capabilities/utils'
+export type { UnknownFormat } from '@storacha/capabilities/types'
+export type { Result, UnknownLink }
 export type {BlobLike, AnyLink}
 
 export type EncryptedClientOptions = {
-    storachaClient: StorachaClient
-    litClient?: LitNodeClient
-    gatewayURL?: URL
+  storachaClient: StorachaClient
+  litClient?: LitNodeClient
+  gatewayURL?: URL
 }
- 
 
 export interface EncryptedClient {
-    uploadEncryptedFile(file: BlobLike): Promise<AnyLink>
-    retrieveAndDecryptFile(wallet: ethers.Wallet, cid: AnyLink): Promise<ReadableStream>
+  uploadEncryptedFile(file: BlobLike): Promise<AnyLink>
+  retrieveAndDecryptFile(wallet: Wallet, cid: AnyLink, delegationCAR: Uint8Array): Promise<ReadableStream>
 }
 
 export type EncryptedPayload = {
-    identityBoundCiphertext: string
-    plaintextKeyHash: string
-    encryptedBlobLike: BlobLike
+  identityBoundCiphertext: string
+  plaintextKeyHash: string
+  encryptedBlobLike: BlobLike
 }
 
 export interface EncryptedMetadataInput {
-    encryptedDataCID: string
-    identityBoundCiphertext: string
-    plaintextKeyHash: string
-    accessControlConditions: [Record<string, any>]
-  }
+  encryptedDataCID: string
+  identityBoundCiphertext: string
+  plaintextKeyHash: string
+  accessControlConditions: [Record<string, any>]
+}
+
+export interface EncryptedMetadata {
+  encryptedDataCID: UnknownLink
+  identityBoundCiphertext: Uint8Array
+  plaintextKeyHash: Uint8Array
+  accessControlConditions: [Record<string, any>]
+}
+
+export interface EncryptedMetadataView extends EncryptedMetadata {
+  /** Encode it to a CAR file. */
+  archive(): Promise<Result<Uint8Array>>
+  archiveBlock(): Promise<Block>
+  toJSON(): EncryptedMetadataInput
+}
+
+export interface DecodeFailure extends Failure {
+  name: 'DecodeFailure'
+}
   
-  export interface EncryptedMetadata {
-    encryptedDataCID: UnknownLink
-    identityBoundCiphertext: Uint8Array
-    plaintextKeyHash: Uint8Array
-    accessControlConditions: [Record<string, any>]
-  }
-  
-  export interface EncryptedMetadataView extends EncryptedMetadata {
-    /** Encode it to a CAR file. */
-    archive(): Promise<Result<Uint8Array>>
-    archiveBlock(): Promise<Block>
-    toJSON(): EncryptedMetadataInput
-  }
-  
-  export interface DecodeFailure extends Failure {
-    name: 'DecodeFailure'
-  }
-  
+export interface SessionSignatureOptions {
+  wallet: Wallet
+  accessControlConditions: AccessControlConditions
+  dataToEncryptHash: string
+  expiration?: string
+  capabilityAuthSigs?: AuthSig[] // Required if the capacity credit is delegated to the decrypting user
+}
+
+export interface CreateDecryptWrappedInvocationOptions {
+  delegationCAR: Uint8Array
+  issuer: Signer<DID, SigAlg>
+  audience: `did:${string}:${string}`
+  spaceDID: `did:key:${string}`
+  resourceCID: AnyLink
+  expiration: number
+}
+
+export interface ExecuteUcanValidationOptions {
+  sessionSigs: SessionSigsMap
+  spaceDID: `did:key:${string}`
+  identityBoundCiphertext: string
+  plaintextKeyHash: string
+  accessControlConditions: AccessControlConditions
+  wrappedInvocation: string
+}
