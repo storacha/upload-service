@@ -38,7 +38,7 @@
     "@ucanto/core": "catalog:",
     "@ucanto/interface": "catalog:",
     "carstream": "catalog:",
-    "multiformats": "^13.0.1",
+    "multiformats": "catalog:",
     "uint8arrays": "^5.0.3"
   },
   "devDependencies": {
