@@ -135,7 +135,7 @@
     "@ucanto/validator": "catalog:",
     "@web3-storage/content-claims": "^5.1.3",
     "@web3-storage/upload-api": "catalog:",
-    "multiformats": "^13.3.1",
+    "multiformats": "catalog:",
     "uint8arrays": "^5.0.3"
   },
   "devDependencies": {

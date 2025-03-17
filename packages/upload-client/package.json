@@ -60,7 +60,7 @@
     "@ucanto/transport": "catalog:",
     "@web3-storage/data-segment": "^5.1.0",
     "ipfs-utils": "catalog:",
-    "multiformats": "^13.3.1",
+    "multiformats": "catalog:",
     "p-retry": "catalog:",
     "varint": "catalog:"
   },

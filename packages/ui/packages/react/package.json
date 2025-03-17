@@ -48,7 +48,7 @@
     "fake-indexeddb": "catalog:",
     "happy-dom": "catalog:",
     "jsdom": "catalog:",
-    "multiformats": "^13.1.0",
+    "multiformats": "catalog:",
     "react": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
