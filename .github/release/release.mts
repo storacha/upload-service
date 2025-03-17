@@ -27,6 +27,12 @@ const MAIN_BRANCH = requiredEnvVar('MAIN_BRANCH_NAME')
 /** The name of the release branch (which needn't yet exist). */
 const RELEASE_BRANCH = requiredEnvVar('RELEASE_BRANCH_NAME')
 
+/**
+ * If DRY_RUN env var is the string "true", no tags will be created, no github
+ * releases will be published and no packages will be published.
+ */
+const DRY_RUN = process.env.DRY_RUN === 'true'
+
 const octokit = new Octokit({ auth: requiredEnvVar('GITHUB_TOKEN') })
 const git = simpleGit()
 
@@ -138,8 +144,11 @@ if (pendingVersions.length > 0) {
           ?.body ?? ''
 
       log.debug('Creating tag', tagName)
-      log.warn(`[This is a dry run, no tag will be created.]`)
-      // git.addAnnotatedTag(tagName, changelogEntry)
+      if (DRY_RUN) {
+        log.warn('[This is a dry run, no tag will be created.]')
+      } else {
+        await git.addAnnotatedTag(tagName, changelogEntry)
+      }
 
       log.debug('Release:', {
         tagName,
@@ -148,16 +157,19 @@ if (pendingVersions.length > 0) {
       })
 
       log.info(`Creating/updating ${tagName} release on GitHub.`)
-      log.warn(`[This is a dry run, no release will be created on GitHub.]`)
-      // createOrUpdateRelease({
-      //   octokit,
-      //   log,
-      //   owner: REPO_OWNER,
-      //   repo: REPO_NAME,
-      //   tagName,
-      //   body: changelogEntry,
-      //   prerelease: currentVersion.includes('-'),
-      // })
+      if (DRY_RUN) {
+        log.warn('[This is a dry run, no release will be created on GitHub.]')
+      } else {
+        await createOrUpdateRelease({
+          octokit,
+          log,
+          owner: REPO_OWNER,
+          repo: REPO_NAME,
+          tagName,
+          body: changelogEntry,
+          prerelease: currentVersion.includes('-'),
+        })
+      }
     }
   }
 
@@ -165,9 +177,9 @@ if (pendingVersions.length > 0) {
   git.pushTags('origin')
 
   log.info('Publishing packages.')
-  log.warn(`[This is a dry run, no packages will be published.]`)
+  if (DRY_RUN) log.warn('[This is a dry run, no packages will be published.]')
   const publishResult = await releasePublish({
-    dryRun: true,
+    dryRun: DRY_RUN,
   })
   log.debug('releasePublish result:', publishResult)
 
