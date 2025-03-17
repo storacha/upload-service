@@ -38,6 +38,10 @@ const git = simpleGit()
 
 log.setDefaultLevel('info')
 
+log.debug('Setting git user info.')
+await git.addConfig('user.email', 'rachabot@storacha.network')
+await git.addConfig('user.name', 'Rachabot')
+
 if (process.env.LOGLEVEL !== '') {
   // Assume LOGLEVEL is a valid log level. If it's not, we'll get a useful
   // error from loglevel.
@@ -63,10 +67,6 @@ if (pendingVersions.length > 0) {
   log.info(
     `There are pending versions. Let's create a release PR for ${pendingVersionsString}.`
   )
-
-  log.debug('Setting git user info.')
-  await git.addConfig('user.email', 'rachabot@storacha.network')
-  await git.addConfig('user.name', 'Rachabot')
 
   log.debug(`Checking out ${RELEASE_BRANCH}.`)
   await git.checkoutLocalBranch(RELEASE_BRANCH)
