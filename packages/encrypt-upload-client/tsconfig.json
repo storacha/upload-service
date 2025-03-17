@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "lib": ["ESNext", "DOM"]
+  },
+  "include": ["./src", "./test", "package.json", "test"],
+  "exclude": ["**/node_modules/**"],
+  "typedocOptions": {
+    "entryPoints": ["./src"]
+  },
+}
