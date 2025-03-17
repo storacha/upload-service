@@ -1,3 +1,13 @@
+## 1.3.9 (2025-03-17)
+
+### 🩹 Fixes
+
+- fix: re-add removed IPNI service ([#190](https://github.com/storacha/upload-service/pull/190))
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.3.8 (2025-03-14)
 
 ### 🩹 Fixes
