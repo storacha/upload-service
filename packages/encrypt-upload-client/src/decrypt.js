@@ -41,7 +41,7 @@ export const retrieveAndDecrypt = async(storachaClient, litClient, gatewayURL, w
         ),
     })
 
-    const wrappedInvocation =  await createDecryptWrappedInvocation({
+    const wrappedInvocationJSON = await createDecryptWrappedInvocation({
         delegationCAR, 
         spaceDID, 
         resourceCID: cid, 
@@ -56,7 +56,7 @@ export const retrieveAndDecrypt = async(storachaClient, litClient, gatewayURL, w
         identityBoundCiphertext,
         plaintextKeyHash,
         accessControlConditions,
-        wrappedInvocation
+        wrappedInvocationJSON
     })
 
     return decryptFileWithKey(decryptKey, encryptedData)

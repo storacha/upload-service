@@ -79,5 +79,5 @@ export interface ExecuteUcanValidationOptions {
   identityBoundCiphertext: string
   plaintextKeyHash: string
   accessControlConditions: AccessControlConditions
-  wrappedInvocation: string
+  wrappedInvocationJSON: string
 }
