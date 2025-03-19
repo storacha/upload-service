@@ -61,13 +61,15 @@ const unwrapInvocation = wrappedInvocation => {
  * @returns {Promise<void>}
  */
 const decrypt = async () => {
-  try {
-    const wrappedInvocationCar = dagJSON.parse(wrappedInvocation)
-    const wrappedInvocation = (await extract(wrappedInvocationCar)).ok
+  try {    
+    const wrappedInvocationCar = dagJSON.parse(wrappedInvocationJSON)
+    const wrappedInvocationResult = await extract(wrappedInvocationCar)
 
-    if (!wrappedInvocation) {
-      throw new Error('Issue on extracting the wrapped invocation!')
+    if (wrappedInvocationResult.error) {
+      throw new Error(`Issue on extracting the wrapped invocation! Error message: ${wrappedInvocationResult.error}`)
     }
+
+    const wrappedInvocation = wrappedInvocationResult.ok
 
     const decryptCapability = wrappedInvocation.capabilities.find(cap => cap.can === Decrypt.can)
 
