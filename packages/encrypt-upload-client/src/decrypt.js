@@ -1,27 +1,27 @@
-import { ethers } from 'ethers'
+import { Wallet } from 'ethers'
 import { CID } from 'multiformats'
 import { CarIndexer } from '@ipld/car'
-import { createDecipheriv } from 'crypto'
-import { ReadableStream } from 'stream/web'
 import { exporter } from 'ipfs-unixfs-exporter'
 import { MemoryBlockstore } from 'blockstore-core'
+import { base64 } from "multiformats/bases/base64"
 
 import * as Lit from './lit.js'
 import * as Type from './types.js'
 import * as EncryptedMetadata from './encrypted-metadata.js'
-import { ENCRYPTION_ALGORITHM } from './config/constants.js'
 import { createDecryptWrappedInvocation } from './capability.js'
 
 /**
   * 
   * @param {import('@storacha/client').Client} storachaClient - The Storacha client
   * @param {import('@lit-protocol/lit-node-client').LitNodeClient} litClient - The Lit client
+  * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter responsible for performing
+ * encryption and decryption operations.
   * @param {URL} gatewayURL - The IPFS gateway URL
-  * @param {ethers.Wallet} wallet - The wallet to use to decrypt the file
+  * @param {Wallet} wallet - The wallet to use to decrypt the file
   * @param {Type.AnyLink} cid - The link to the file to retrieve
   * @param {Uint8Array} delegationCAR - The delegation that gives permission to decrypt the file
   */
-export const retrieveAndDecrypt = async(storachaClient, litClient, gatewayURL, wallet, cid, delegationCAR) => {
+export const retrieveAndDecrypt = async(storachaClient, litClient, cryptoAdapter, gatewayURL, wallet, cid, delegationCAR) => {
     const encryptedMetadataCar = await getCarFileFromGateway(gatewayURL, cid)
     const { encryptedDataCID, identityBoundCiphertext, plaintextKeyHash, accessControlConditions } = extractEncryptedMetadata(encryptedMetadataCar)
     const spaceDID = /** @type {`did:key:${string}`} */ (accessControlConditions[0].parameters[1])
@@ -59,21 +59,20 @@ export const retrieveAndDecrypt = async(storachaClient, litClient, gatewayURL, w
         wrappedInvocationJSON
     })
 
-    return decryptFileWithKey(decryptKey, encryptedData)
+    return decryptFileWithKey(cryptoAdapter, decryptKey, encryptedData)
  }
 
  /**
- *
+ * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter responsible for performing
+ * encryption and decryption operations.
  * @param {string} combinedKey
  * @param {Uint8Array} content
  */
-export async function decryptFileWithKey(combinedKey, content) {
+export function decryptFileWithKey(cryptoAdapter, combinedKey, content) {
     // Split the decrypted data back into key and initializationVector
-    const decryptedKeyData = Buffer.from(combinedKey, 'base64')
+    const decryptedKeyData = base64.decode(combinedKey)
     const symmetricKey = decryptedKeyData.subarray(0, 32)
     const initializationVector = decryptedKeyData.subarray(32)
-
-    const decipher = createDecipheriv(ENCRYPTION_ALGORITHM, symmetricKey, initializationVector)
 
     // Create a ReadableStream from the Uint8Array
     const contentStream = new ReadableStream({
@@ -83,33 +82,9 @@ export async function decryptFileWithKey(combinedKey, content) {
         },
     })
 
-    // Create a TransformStream to handle decryption
-    const decryptor = new TransformStream({
-        async transform(chunk, controller) {
-        try {
-            const decryptedChunk = decipher.update(chunk)
-            if (decryptedChunk.length > 0) {
-            controller.enqueue(decryptedChunk)
-            }
-        } catch (err) {
-            controller.error(err)
-        }
-        },
-        flush(controller) {
-        try {
-            const finalChunk = decipher.final();
-            if (finalChunk.length > 0) {
-            controller.enqueue(finalChunk)
-            }
-            controller.terminate()
-        } catch (err) {
-            controller.error(err)
-        }
-        },
-    })
+    const decryptedStream = cryptoAdapter.decryptStream(contentStream, symmetricKey, initializationVector)
 
-    // @ts-ignore
-    return contentStream.pipeThrough(decryptor)
+    return decryptedStream
 }
 
  /**
