@@ -1,7 +1,5 @@
 import { Wallet } from 'ethers'
-import { ReadableStream } from 'stream/web'
 import { UnknownLink } from 'multiformats'
-// import { Signer } from '@ucanto/principal/ed25519'
 import {Client as StorachaClient } from '@storacha/client'
 import { Result, Failure, Block } from '@ucanto/interface'
 import { LitNodeClient } from '@lit-protocol/lit-node-client'
@@ -14,15 +12,27 @@ export type { UnknownFormat } from '@storacha/capabilities/types'
 export type { Result, UnknownLink }
 export type {BlobLike, AnyLink}
 
+export interface EncryptedClient {
+  uploadEncryptedFile(file: BlobLike): Promise<AnyLink>
+  retrieveAndDecryptFile(wallet: Wallet, cid: AnyLink, delegationCAR: Uint8Array): Promise<ReadableStream>
+}
+
 export type EncryptedClientOptions = {
   storachaClient: StorachaClient
+  cryptoAdapter: CryptoAdapter
   litClient?: LitNodeClient
   gatewayURL?: URL
 }
 
-export interface EncryptedClient {
-  uploadEncryptedFile(file: BlobLike): Promise<AnyLink>
-  retrieveAndDecryptFile(wallet: Wallet, cid: AnyLink, delegationCAR: Uint8Array): Promise<ReadableStream>
+export interface CryptoAdapter {
+  encryptStream(data: BlobLike): EncryptOutput
+  decryptStream(encryptedData: ReadableStream, key: Uint8Array, iv: Uint8Array): ReadableStream
+}
+
+export interface EncryptOutput { 
+  key: Uint8Array, 
+  iv: Uint8Array, 
+  encryptedStream: ReadableStream
 }
 
 export type EncryptedPayload = {

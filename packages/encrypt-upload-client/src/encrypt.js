@@ -1,29 +1,31 @@
 import { CARWriterStream } from 'carstream'
-import { createCipheriv, randomBytes } from 'crypto'
+import { base64 } from "multiformats/bases/base64"
 import { createFileEncoderStream } from '@storacha/upload-client/unixfs'
 
 import * as Lit from './lit.js'
 import * as Type from './types.js'
 import * as EncryptedMetadata from './encrypted-metadata.js'
-import { ENCRYPTION_ALGORITHM } from './config/constants.js'
-
 
 /**
   * Encrypt and upload a file to the Storacha network
   * @param {import('@storacha/client').Client} storachaClient - The Storacha client
   * @param {import('@lit-protocol/lit-node-client').LitNodeClient} litClient - The Lit client
+  * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter responsible for performing
+ * encryption and decryption operations.
   * @param {Type.BlobLike} file - The file to upload
   * @returns {Promise<Type.AnyLink>} - The link to the uploaded file
   */
-export const encryptAndUpload = async (storachaClient, litClient, file) => {
+export const encryptAndUpload = async (storachaClient, litClient, cryptoAdapter, file) => {
     const spaceDID =  /** @type {Type.SpaceDID | undefined} */ (storachaClient.agent.currentSpace())
     if(!spaceDID) throw new Error('No space selected!')
 
     const accessControlConditions = Lit.getAccessControlConditions(spaceDID)
+
     const encryptedPayload = await encryptFile(
-        litClient,
-        file,
-        accessControlConditions
+      litClient,
+      cryptoAdapter,
+      file,
+      accessControlConditions
     )
 
     const rootCid = await uploadEncryptedMetadata(storachaClient, encryptedPayload, accessControlConditions)
@@ -76,77 +78,26 @@ const uploadEncryptedMetadata = async (storachaClient, encryptedPayload, accessC
 /**
  * Encrypt a file
  * @param {import('@lit-protocol/lit-node-client').LitNodeClient} litClient - The Lit client
+ * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter responsible for performing
+ * encryption and decryption operations.
  * @param {Type.BlobLike} file - The file to encrypt
  * @param {import('@lit-protocol/types').AccessControlConditions} accessControlConditions - The access control conditions
  * @returns {Promise<Type.EncryptedPayload>} - The encrypted file
  */
-const encryptFile = async (litClient, file, accessControlConditions) => {
-    const {cipher, dataToEncrypt} = createEncryptKey()
+const encryptFile = async (litClient, cryptoAdapter, file, accessControlConditions) => {
+    const {key, iv, encryptedStream } = cryptoAdapter.encryptStream(file)
+
+    // Combine key and initializationVector for Lit encryption
+    const dataToEncrypt = base64.encode(new Uint8Array([...key, ...iv]))
 
     const { ciphertext, dataToEncryptHash } = await Lit.encryptString(
-        { dataToEncrypt, accessControlConditions },
-        litClient
+      { dataToEncrypt, accessControlConditions },
+      litClient
     )
 
-    /** @type {Type.BlobLike} */
-    const encryptedBlobLike = {
-        stream: () => {
-            const encryptStream = new TransformStream({
-                transform: async (chunk, controller) => {
-                    const encryptedChunk = cipher.update(chunk)
-                    if (encryptedChunk.length) {
-                        controller.enqueue(encryptedChunk)
-                    }
-                },
-                flush: (controller) => {
-                    const final = cipher.final()
-                    if (final.length) {
-                        controller.enqueue(final)
-                    }
-                }
-            })
-            return file.stream().pipeThrough(encryptStream)
-        }
-    }
-
     return {
-        identityBoundCiphertext: ciphertext,
-        plaintextKeyHash: dataToEncryptHash,
-        encryptedBlobLike
+      identityBoundCiphertext: ciphertext,
+      plaintextKeyHash: dataToEncryptHash,
+      encryptedBlobLike: {stream: () => encryptedStream}
     }
-}
-
-const createEncryptKey = () => {
-    // Generate a random symmetric key and initialization vector
-  const symmetricKey = randomBytes(32) // 256 bits for AES-256
-  const initializationVector = randomBytes(16) // 16 bytes for AES
-
-  const cipher = createCipheriv(ENCRYPTION_ALGORITHM, symmetricKey, initializationVector)
-
-  // Combine key and initializationVector for Lit encryption
-  const dataToEncrypt = Buffer.concat([symmetricKey, initializationVector]).toString('base64')
-
-  /**
-   * TODO: use web crypto API. 
-   * ISSUE: web crypto does not support streaming encryption. We can hack it using the 'AES-CBC', but this also adds a security risk. We need to evaluate the risk.
-   * 
-   *   // Generate a random symmetric key and initialization vector
-   *   const symmetricKey = crypto.getRandomValues(new Uint8Array(32)) // 256 bits for AES-256
-   *   const initializationVector = crypto.getRandomValues(new Uint8Array(16)) // 16 bytes for AES
-   * 
-   *    const algorithm = { name: 'AES-CBC', length: 256, iv: initializationVector };
-   *
-   *    const cipher = await crypto.subtle.importKey(
-   *        'raw',
-   *        symmetricKey,
-   *        algorithm,
-   *        false, // is extractable ?
-   *        ['encrypt', 'decrypt']
-   *    );
-   * 
-   *    // Combine key and initializationVector for Lit encryption
-   *    const dataToEncrypt = base64.encode(new Uint8Array([...symmetricKey, ...initializationVector]))
-   */
-
-  return {cipher, dataToEncrypt}
 }

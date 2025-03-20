@@ -8,10 +8,11 @@ import { getLitClient } from './lit.js'
  */
 export async function create(options) {
     const litClient = options.litClient ?? await getLitClient()
+    const cryptoAdapter = options.cryptoAdapter
     const gatewayURL = options.gatewayURL ?? GATEWAY_URL
     const storachaClient = options.storachaClient
 
-    return new EncryptedClient(storachaClient, litClient, gatewayURL )
+    return new EncryptedClient(storachaClient, cryptoAdapter, litClient, gatewayURL )
 }
 
 export { EncryptedClient }
