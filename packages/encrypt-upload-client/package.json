@@ -57,8 +57,7 @@
         "dotenv": "^16.4.7",
         "ethers": "5.7.1",
         "ipfs-unixfs-exporter": "^13.6.2",
-        "multiformats": "^13.3.1",
-        "zod": "^3.24.1"
+        "multiformats": "^13.3.1"
     },
     "devDependencies": {
         "@lit-protocol/types": "^7.0.8",
