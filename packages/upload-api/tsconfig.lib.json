@@ -1,6 +1,9 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "test/**/*"],
+  "compilerOptions": {
+    "rootDir": "."
+  },
   "references": [
     {
       "path": "../filecoin-api/tsconfig.lib.json"

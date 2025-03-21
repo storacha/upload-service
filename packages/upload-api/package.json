@@ -100,19 +100,19 @@
     },
     "./test": {
       "types": "./dist/test/lib.d.ts",
-      "import": "./test/lib.js"
+      "import": "./dist/test/lib.js"
     },
     "./test/context": {
       "types": "./dist/test/helpers/context.d.ts",
-      "import": "./test/helpers/context.js"
+      "import": "./dist/test/helpers/context.js"
     },
     "./test/external-service": {
       "types": "./dist/test/external-service/index.d.ts",
-      "import": "./test/external-service/index.js"
+      "import": "./dist/test/external-service/index.js"
     },
     "./test/utils": {
       "types": "./dist/test/helpers/utils.d.ts",
-      "import": "./test/helpers/utils.js"
+      "import": "./dist/test/helpers/utils.js"
     }
   },
   "scripts": {
