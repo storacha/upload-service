@@ -171,7 +171,7 @@
       "dist",
       "coverage",
       "src/types.js",
-      "test/types.js"
+      "src/test/types.js"
     ],
     "rules": {
       "@typescript-eslint/no-empty-object-type": "off"
