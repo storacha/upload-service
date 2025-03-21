@@ -1,18 +1,21 @@
-import { z } from 'zod'
 import dotenv from 'dotenv'
+import { Schema } from '@ucanto/core'
 import { LIT_NETWORK } from '@lit-protocol/constants'
 
 dotenv.config()
 
-const envSchema = z.object({
-  LIT_NETWORK: z
-    .enum([LIT_NETWORK.Custom, LIT_NETWORK.Datil, LIT_NETWORK.DatilDev, LIT_NETWORK.DatilTest])
-    .default(LIT_NETWORK.DatilTest),
-  LIT_DEBUG: z.boolean().optional(),
-  WALLET_PK: z.string(),
+const envSchema = Schema.struct({
+  WALLET_PK: Schema.text(),
+  LIT_NETWORK: Schema.enum([LIT_NETWORK.Custom, LIT_NETWORK.Datil, LIT_NETWORK.DatilDev, LIT_NETWORK.DatilTest]).default(LIT_NETWORK.DatilTest),
+  LIT_DEBUG: Schema.boolean().default(false),
 })
 
-// validate `process.env` against our schema
-const env = envSchema.parse(process.env)
+const processEnv = {
+  LIT_DEBUG: process.env.LIT_DEBUG,
+  LIT_NETWORK: process.env.LIT_NETWORK,
+  WALLET_PK: process.env.WALLET_PK
+}
+
+const env = envSchema.from(processEnv)
 
 export default env
