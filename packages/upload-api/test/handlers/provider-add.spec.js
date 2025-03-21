@@ -2,12 +2,15 @@ import * as principal from '@ucanto/principal'
 import * as assert from 'assert'
 import * as ucanto from '@ucanto/core'
 import * as API from '../../src/types.js'
-import * as Types from '../types.js'
-import { cleanupContext, createContext } from '../helpers/context.js'
+import * as Types from '../../src/test/types.js'
+import {
+  cleanupContext,
+  createContext,
+} from '../../src/test/helpers/context.js'
 import { Access, Provider, Consumer } from '@storacha/capabilities'
 import * as delegationsResponse from '../../src/utils/delegations-response.js'
 import { NON_STANDARD } from '@ipld/dag-ucan/signature'
-import { createAuthorization } from '../helpers/utils.js'
+import { createAuthorization } from '../../src/test/helpers/utils.js'
 import { authorizeFromUrl } from '../../src/validate.js'
 
 describe(`provider/add`, () => {
