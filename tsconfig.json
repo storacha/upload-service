@@ -38,6 +38,9 @@
       "path": "./packages/upload-api"
     },
     {
+      "path": "./packages/encrypt-upload-client"
+    },
+    {
       "path": "./packages/ui/examples/react/multi-file-upload"
     },
     {
