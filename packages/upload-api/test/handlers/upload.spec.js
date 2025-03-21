@@ -1,3 +1,3 @@
-import * as Upload from './upload.js'
-import { test } from '../test.js'
+import * as Upload from '../../src/test/handlers/upload.js'
+import { test } from '../../src/test/test.js'
 test({ 'upload/*': Upload.test })

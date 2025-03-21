@@ -1,3 +1,3 @@
-import * as Subscription from './subscription.js'
-import { test } from '../test.js'
+import * as Subscription from '../../src/test/handlers/subscription.js'
+import { test } from '../../src/test/test.js'
 test({ 'subscription/*': Subscription.test })

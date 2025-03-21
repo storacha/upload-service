@@ -1,7 +1,10 @@
 import * as Space from '@storacha/capabilities/space'
 import assert from 'assert'
-import { cleanupContext, createContext } from '../helpers/context.js'
-import { createSpace } from '../helpers/utils.js'
+import {
+  cleanupContext,
+  createContext,
+} from '../../src/test/helpers/context.js'
+import { createSpace } from '../../src/test/helpers/utils.js'
 import { parseLink } from '@ucanto/core'
 import * as principal from '@ucanto/principal'
 import * as Store from '@storacha/capabilities/store'
@@ -11,7 +14,7 @@ import * as Upload from '@storacha/capabilities/upload'
 import isSubset from 'is-subset'
 
 describe('space/info', function () {
-  /** @type {import('../types.js').UcantoServerTestContext} */
+  /** @type {import('../../src/test/types.js').UcantoServerTestContext} */
   let ctx
   beforeEach(async function () {
     ctx = await createContext()

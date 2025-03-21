@@ -1,3 +1,3 @@
-import * as Usage from './usage.js'
-import { test } from '../test.js'
+import * as Usage from '../../src/test/handlers/usage.js'
+import { test } from '../../src/test/test.js'
 test({ 'usage/*': Usage.test })
