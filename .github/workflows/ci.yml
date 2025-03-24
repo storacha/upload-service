@@ -33,4 +33,4 @@ jobs:
 
       # Run CI tasks over all affected projects
       # TODO: Add `attw` back once fixed.
-      - run: pnpm nx affected -t typecheck lint build test depcheck --parallel=1
+      - run: pnpm nx affected -t typecheck lint build test depcheck

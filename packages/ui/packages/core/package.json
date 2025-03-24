@@ -7,11 +7,9 @@
   },
   "type": "module",
   "main": "./dist/index.js",
-  "module": "./dist/index.esm.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "dev": "bunchee --watch",
-    "build": "bunchee",
+    "dev": "tsc --build --watch --preserveWatchOutput",
     "clean": "rm -rf dist *.tsbuildinfo",
     "lint": "echo 'Linting in @storacha/ui-core is temporarily disabled while we resolve version issues.'",
     "lint:fix": "echo 'Linting in @storacha/ui-core is temporarily disabled while we resolve version issues.'",
@@ -53,7 +51,6 @@
   ],
   "devDependencies": {
     "@storacha/eslint-config-ui": "workspace:^",
-    "bunchee": "catalog:",
     "fake-indexeddb": "catalog:",
     "happy-dom": "catalog:",
     "vitest": "catalog:"
