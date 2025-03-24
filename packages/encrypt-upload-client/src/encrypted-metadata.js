@@ -8,7 +8,7 @@ import * as Types from './types.js'
 import { UnknownFormat } from './errors.js'
 import { stringToBytes, bytesToString } from './utils.js'
 
-export const version = 'encrypted/metadata@0.1'
+export const version = 'encrypted-metadata@0.1'
 
 export const EncryptedMetadataSchema = Schema.variant({
   [version]: Schema.struct({
