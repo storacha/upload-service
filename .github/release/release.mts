@@ -42,7 +42,7 @@ log.debug('Setting git user info.')
 await git.addConfig('user.email', 'rachabot@storacha.network')
 await git.addConfig('user.name', 'Rachabot')
 
-if (process.env.LOGLEVEL !== '') {
+if (process.env.LOGLEVEL && process.env.LOGLEVEL !== '') {
   // Assume LOGLEVEL is a valid log level. If it's not, we'll get a useful
   // error from loglevel.
   log.setLevel(process.env.LOGLEVEL as log.LogLevelDesc)
@@ -57,16 +57,12 @@ log.info('Bumping versions.')
 const versionResult = await releaseVersion({})
 log.debug('releaseVersion result:', versionResult)
 
-const pendingVersions = Object.entries(versionResult.projectsVersionData)
-  .filter(([, versionData]) => versionData.newVersion)
-  .map(([project, versionData]) => `${project}@${versionData.newVersion}`)
+const pendingVersions = Object.entries(
+  versionResult.projectsVersionData
+).filter(([, versionData]) => versionData.newVersion)
 
 if (pendingVersions.length > 0) {
-  const pendingVersionsString = pendingVersions.join(', ')
-
-  log.info(
-    `There are pending versions. Let's create a release PR for ${pendingVersionsString}.`
-  )
+  log.info(`There are pending versions. Let's create a release PR.`)
 
   log.debug(`Checking out ${RELEASE_BRANCH}.`)
   await git.checkoutLocalBranch(RELEASE_BRANCH)
@@ -76,6 +72,7 @@ if (pendingVersions.length > 0) {
     versionData: versionResult.projectsVersionData,
     deleteVersionPlans: true,
     createRelease: false,
+    gitTag: false,
     gitPush: false,
   })
   log.debug('releaseChangelog result:', changelogResult)
@@ -93,7 +90,13 @@ if (pendingVersions.length > 0) {
     )
     .join('\n\n')
 
-  const prTitle = `Release ${pendingVersionsString}`
+  const versionsToReleaseString = Object.values(
+    changelogResult.projectChangelogs ?? {}
+  )
+    .map((changelog) => changelog.releaseVersion.gitTag)
+    .join(', ')
+
+  const prTitle = `Release ${versionsToReleaseString}`
 
   log.debug('Release PR:', {
     title: prTitle,
