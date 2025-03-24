@@ -7,9 +7,9 @@ import {
   LitAccessControlConditionResource
 } from '@lit-protocol/auth-helpers'
 
-import env from './config/env.js'
-import * as Type from './types.js'
-import { STORACHA_LIT_ACTION_CID } from './config/constants.js'
+import env from '../config/env.js'
+import * as Type from '../types.js'
+import { STORACHA_LIT_ACTION_CID } from '../config/constants.js'
 
 
 export { encryptString } from '@lit-protocol/encryption'

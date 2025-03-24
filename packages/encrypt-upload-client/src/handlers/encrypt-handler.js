@@ -2,9 +2,9 @@ import { CARWriterStream } from 'carstream'
 import { base64 } from "multiformats/bases/base64"
 import { createFileEncoderStream } from '@storacha/upload-client/unixfs'
 
-import * as Lit from './lit.js'
-import * as Type from './types.js'
-import * as EncryptedMetadata from './encrypted-metadata.js'
+import * as Type from '../types.js'
+import * as Lit from '../protocols/lit.js'
+import * as EncryptedMetadata from '../core/encrypted-metadata.js'
 
 /**
   * Encrypt and upload a file to the Storacha network

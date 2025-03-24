@@ -4,9 +4,9 @@ import * as Link from 'multiformats/link'
 import { sha256 } from 'multiformats/hashes/sha2'
 import { CAR, ok, error, Schema } from '@ucanto/core'
 
-import * as Types from './types.js'
+import * as Types from '../types.js'
 import { UnknownFormat } from './errors.js'
-import { stringToBytes, bytesToString } from './utils.js'
+import { stringToBytes, bytesToString } from '../utils.js'
 
 export const version = 'encrypted-metadata@0.1'
 
@@ -100,6 +100,12 @@ class EncryptedMetadata {
   }
 }
 
+/**
+ * @param {Types.EncryptedMetadata|Types.EncryptedMetadataInput} encryptedMetadataInput
+ * @returns {Types.EncryptedMetadataView}
+ */
+export const create = encryptedMetadataInput => new EncryptedMetadata(encryptedMetadataInput)
+
 /** @param {Types.EncryptedMetadataView} encryptedMetadata*/
 export const toJSON = encryptedMetadata => ({
   encryptedDataCID: encryptedMetadata.encryptedDataCID.toString(),
@@ -118,12 +124,6 @@ export const parse = encryptedMetadataInput => ({
   plaintextKeyHash: stringToBytes(encryptedMetadataInput.plaintextKeyHash),
   accessControlConditions: encryptedMetadataInput.accessControlConditions
 })
-
-/**
- * @param {Types.EncryptedMetadata|Types.EncryptedMetadataInput} encryptedMetadataInput
- * @returns {Types.EncryptedMetadataView}
- */
-export const create = encryptedMetadataInput => new EncryptedMetadata(encryptedMetadataInput)
 
 /**
  * @param {Types.EncryptedMetadata} encryptedMetadataInput

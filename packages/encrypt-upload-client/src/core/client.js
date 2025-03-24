@@ -1,8 +1,10 @@
 import { Wallet } from 'ethers'
 
-import * as Type from './types.js'
-import { encryptAndUpload } from './encrypt.js'
-import { retrieveAndDecrypt } from './decrypt.js'
+import * as Type from '../types.js'
+import { getLitClient } from '../protocols/lit.js'
+import { GATEWAY_URL } from '../config/constants.js'
+import { encryptAndUpload } from '../handlers/encrypt-handler.js'
+import { retrieveAndDecrypt } from '../handlers/decrypt-handler.js'
 
 /** @implements {Type.EncryptedClient} */
 export class EncryptedClient {
@@ -63,4 +65,22 @@ export class EncryptedClient {
     async retrieveAndDecryptFile(wallet, cid, delegationCAR){
       return retrieveAndDecrypt(this._storachaClient, this._litClient, this._cryptoAdapter, this._gatewayURL, wallet, cid, delegationCAR)
     }
+ }
+
+ /**
+ * Creates a new EncryptClient.
+ * 
+ * If no Lit Client is provided, one will be created based on the LIT_NETWORK environment variable, defaulting to "DatilTest" if not set.
+ * 
+ * If no Gateway URL is provided, the default value of 'https://w3s.link' will be used.
+ * 
+ * @param {Type.EncryptedClientOptions} options 
+ */
+ export const create = async (options) => {
+    const litClient = options.litClient ?? await getLitClient()
+    const cryptoAdapter = options.cryptoAdapter
+    const gatewayURL = options.gatewayURL ?? GATEWAY_URL
+    const storachaClient = options.storachaClient
+
+    return new EncryptedClient(storachaClient, cryptoAdapter, litClient, gatewayURL )
  }

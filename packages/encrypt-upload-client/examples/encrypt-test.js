@@ -7,7 +7,6 @@ import * as Signer from '@ucanto/principal/ed25519'
 import { StoreMemory } from '@storacha/client/stores/memory'
 
 import * as EncryptClient from '../src/index.js'
-import { NodeCryptoAdapter } from '../src/crypto/index.js'
 import { serviceConf, receiptsEndpoint } from '../src/config/service.js'
 
 dotenv.config()
@@ -36,7 +35,7 @@ async function main(){
 
   const encryptedClient = await EncryptClient.create({
     storachaClient: client,
-    cryptoAdapter: new NodeCryptoAdapter()
+    cryptoAdapter: new EncryptClient.NodeCryptoAdapter()
   })
 
   const fileContent = await fs.promises.readFile('./README.md') 

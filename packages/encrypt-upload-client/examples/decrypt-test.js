@@ -1,12 +1,10 @@
 import * as fs from 'fs'
 import dotenv from 'dotenv'
-import { ethers } from 'ethers'
 import * as Client from '@storacha/client'
 import * as Signer from '@ucanto/principal/ed25519'
 import { StoreMemory } from '@storacha/client/stores/memory'
 
-import * as EncryptClient from '../src/index.js'
-import { NodeCryptoAdapter } from '../src/crypto/index.js'
+import {create, Wallet, NodeCryptoAdapter} from '../src/index.js'
 import { serviceConf, receiptsEndpoint } from '../src/config/service.js'
 
 dotenv.config()
@@ -17,7 +15,7 @@ async function main(){
 
     const delegationCarBuffer = fs.readFileSync('delegation.car')
 
-    const wallet = new ethers.Wallet(process.env.WALLET_PK || '')
+    const wallet = new Wallet(process.env.WALLET_PK || '')
 
     const principal = Signer.parse(process.env.DELEGATEE_AGENT_PK || '')
     const store = new StoreMemory()
@@ -25,7 +23,7 @@ async function main(){
     const client = await Client.create({ principal, store, serviceConf, receiptsEndpoint })
 
 
-    const encryptedClient = await EncryptClient.create({
+    const encryptedClient = await create({
         storachaClient: client,
         cryptoAdapter: new NodeCryptoAdapter()
     })

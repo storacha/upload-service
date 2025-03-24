@@ -3,7 +3,7 @@ import { describe, it } from 'node:test'
 import * as Result from '@storacha/client/result'
 
 import * as Types from '../src/types.js'
-import { create, extract } from '../src/encrypted-metadata.js'
+import { create, extract } from '../src/core/encrypted-metadata.js'
 
 /** @type {Types.EncryptedMetadataInput} */
 const encryptedMetadataInput = {
