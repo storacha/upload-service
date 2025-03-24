@@ -1216,9 +1216,6 @@ importers:
       '@ucanto/transport':
         specifier: 'catalog:'
         version: 9.1.1
-      bunchee:
-        specifier: 'catalog:'
-        version: 5.6.2(typescript@5.7.3)
       eslint-plugin-react-hooks:
         specifier: 'catalog:'
         version: 4.6.2(eslint@8.57.1)

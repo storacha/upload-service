@@ -9,7 +9,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "dev": "bunchee --watch",
+    "dev": "tsc --build --watch --preserveWatchOutput",
     "clean": "rm -rf dist *.tsbuildinfo",
     "lint": "echo 'Linting in @storacha/ui-react is temporarily disabled while we resolve version issues.'",
     "lint:fix": "echo 'Linting in @storacha/ui-react is temporarily disabled while we resolve version issues.'",
@@ -46,7 +46,6 @@
     "@ucanto/interface": "catalog:",
     "@ucanto/principal": "catalog:",
     "@ucanto/transport": "catalog:",
-    "bunchee": "catalog:",
     "eslint-plugin-react-hooks": "catalog:",
     "fake-indexeddb": "catalog:",
     "happy-dom": "catalog:",
