@@ -405,7 +405,7 @@ export async function createDelegation(audienceDID, opts) {
 
   if (client.currentSpace() == null) {
     throw new Error(
-      'no current space, use `storacha space register` to create one.'
+      'no current space, use `storacha space create` to create one.'
     )
   }
   const audience = DID.parse(audienceDID)
