@@ -22,14 +22,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/web3-storage/w3ui.git"
+    "url": "git+https://github.com/storacha/upload-service.git"
   },
   "author": "Alan Shaw",
   "license": "Apache-2.0 OR MIT",
   "bugs": {
     "url": "https://github.com/storacha/upload-service/issues"
   },
-  "homepage": "https://github.com/web3-storage/w3ui/tree/main/packages/react",
+  "homepage": "https://github.com/storacha/upload-service/tree/main/packages/ui",
   "dependencies": {
     "@ariakit/react": "catalog:",
     "@ariakit/react-core": "catalog:",
