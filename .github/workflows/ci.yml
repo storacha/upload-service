@@ -33,4 +33,17 @@ jobs:
 
       # Run CI tasks over all affected projects
       # TODO: Add `attw` back once fixed.
-      - run: pnpm nx affected -t typecheck lint build test depcheck
+      # - run: pnpm nx affected -t typecheck lint build test depcheck
+
+      # DEBUGGING CI:
+
+      - run: sudo apt-get install tree
+
+      - name: dist directories before typecheck
+        run: find packages -name dist | xargs tree
+
+      - name: Typecheck ui-react package
+        run: pnpm nx run @storacha/ui-react:typecheck
+
+      - name: dist directories after typecheck
+        run: find packages -name dist | xargs tree
