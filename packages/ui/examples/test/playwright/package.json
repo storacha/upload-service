@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "serve": "serve node_modules/@storacha",
+    "clean": "rm -rf dist *.tsbuildinfo coverage",
     "test": "playwright test",
     "test-debug": "playwright test --project=chromium --headed",
     "prepare-environment": "playwright install --with-deps",
