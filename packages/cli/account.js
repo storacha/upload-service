@@ -24,8 +24,9 @@ const GitHubOauthClientIDs = {
 }
 
 /** @param {import('@storacha/client/types').DID} serviceID */
-const getGithubOAuthClientID = serviceID => {
-  const id = process.env.GITHUB_OAUTH_CLIENT_ID || GitHubOauthClientIDs[serviceID]
+const getGithubOAuthClientID = (serviceID) => {
+  const id =
+    process.env.GITHUB_OAUTH_CLIENT_ID || GitHubOauthClientIDs[serviceID]
   if (!id) throw new Error(`missing OAuth client ID for: ${serviceID}`)
   return id
 }
@@ -56,7 +57,9 @@ export const login = async (email, options) => {
   } else if (method === 'github') {
     await oauthLoginWithClient(OAuthProviderGitHub, await getClient())
   } else {
-    console.error('Error: please provide email address or specify flag for alternate login method')
+    console.error(
+      'Error: please provide email address or specify flag for alternate login method'
+    )
     process.exit(1)
   }
 }
@@ -112,26 +115,38 @@ export const oauthLoginWithClient = async (provider, client) => {
       // agent that should be granted access
       with: client.agent.did(),
       // capabilities requested (account access)
-      nb: { att: [{ can: '*' }] }
+      nb: { att: [{ can: '*' }] },
     })
     const archive = await request.archive()
     if (archive.error) {
-      throw new Error('archiving access authorize delegation', { cause: archive.error })
+      throw new Error('archiving access authorize delegation', {
+        cause: archive.error,
+      })
     }
 
     const clientID = getGithubOAuthClientID(client.agent.connection.id.did())
     const state = base64url.encode(archive.ok)
     const loginURL = `https://github.com/login/oauth/authorize?scope=read:user,user:email&client_id=${clientID}&state=${state}`
 
-    if (await confirm({ message: 'Open the GitHub login URL in your default browser?' })) {
-      spinner = ora('Waiting for GitHub authorization to be completed in browser...').start()
+    if (
+      await confirm({
+        message: 'Open the GitHub login URL in your default browser?',
+      })
+    ) {
+      spinner = ora(
+        'Waiting for GitHub authorization to be completed in browser...'
+      ).start()
       await open(loginURL)
     } else {
-      spinner = ora(`Click the link to authenticate with GitHub: ${loginURL}`).start()
+      spinner = ora(
+        `Click the link to authenticate with GitHub: ${loginURL}`
+      ).start()
     }
 
-    const expiration = Math.floor(Date.now() / 1000) + (60 * 15)
-    const account = Result.unwrap(await Account.externalLogin(client, { request: request.cid, expiration }))
+    const expiration = Math.floor(Date.now() / 1000) + 60 * 15
+    const account = Result.unwrap(
+      await Account.externalLogin(client, { request: request.cid, expiration })
+    )
 
     Result.unwrap(await account.save())
 

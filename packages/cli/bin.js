@@ -56,7 +56,11 @@ cli
   .describe(
     'Authenticate this agent with your email address to gain access to all capabilities that have been delegated to it.'
   )
-  .option('--github', 'Use GitHub to authenticate. GitHub developer accounts automatically gain access to a trial plan.', false)
+  .option(
+    '--github',
+    'Use GitHub to authenticate. GitHub developer accounts automatically gain access to a trial plan.',
+    false
+  )
   .action(Account.login)
 
 cli
