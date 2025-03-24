@@ -92,3 +92,27 @@ export const egressRecord = capability({
   }),
   derives: equalWith,
 })
+
+
+/**
+ * The capability grants permission to decrypt a given resource.
+ * It can be derived from `space/content/decrypt` capability that has matching `with` and `nb.resource`.
+ */
+export const decrypt = capability({
+  can: 'space/content/decrypt',
+  with: SpaceDID,
+  nb: Schema.struct({
+    resource: Schema.link()
+  }),
+  derives: (child, parent) => {
+    if (child.with !== parent.with) {
+      return fail(`Can not derive ${child.can} with ${child.with} from ${parent.with}`)
+    }
+    if (child.nb.resource.toString() !== parent.nb.resource.toString()) {
+      return fail(
+        `Can not derive ${child.can} resource ${child.nb.resource} from ${parent.nb.resource}`
+      )
+    }
+    return ok({})
+  }
+})

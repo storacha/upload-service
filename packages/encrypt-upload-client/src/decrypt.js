@@ -8,7 +8,7 @@ import { base64 } from "multiformats/bases/base64"
 import * as Lit from './lit.js'
 import * as Type from './types.js'
 import * as EncryptedMetadata from './encrypted-metadata.js'
-import { createDecryptWrappedInvocation } from './capability.js'
+import { createDecryptWrappedInvocation } from './utils.js'
 
 /**
   * 
