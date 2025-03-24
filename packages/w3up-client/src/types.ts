@@ -122,6 +122,7 @@ export type {
   FilecoinInfo,
   FilecoinInfoSuccess,
   FilecoinInfoFailure,
+  UCANAttest,
 } from '@storacha/capabilities/types'
 
 export type {
@@ -172,3 +173,5 @@ export type {
   BlobLike,
   ProgressStatus,
 } from '@storacha/upload-client/types'
+
+export type { UTCUnixTimestamp } from '@ipld/dag-ucan'
