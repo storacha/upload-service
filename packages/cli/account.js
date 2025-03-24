@@ -31,7 +31,6 @@ const getGithubOAuthClientID = serviceID => {
 }
 
 /**
- * @param {DidMailto.EmailAddress} email
  * @param {DidMailto.EmailAddress} [email]
  * @param {object} [options]
  * @param {boolean} [options.github]
