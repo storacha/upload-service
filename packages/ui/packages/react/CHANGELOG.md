@@ -1,3 +1,9 @@
+## 2.5.18 (2025-03-24)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/ui-core to 2.4.23
+
 ## 2.5.14 (2025-03-17)
 
 ### 🧱 Updated Dependencies

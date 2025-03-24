@@ -1,3 +1,13 @@
+## 1.3.11 (2025-03-24)
+
+### 🩹 Fixes
+
+- fix: exports for testing ([#197](https://github.com/storacha/upload-service/pull/197))
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.3.9 (2025-03-17)
 
 ### 🩹 Fixes
