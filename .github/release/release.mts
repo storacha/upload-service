@@ -42,7 +42,7 @@ log.debug('Setting git user info.')
 await git.addConfig('user.email', 'rachabot@storacha.network')
 await git.addConfig('user.name', 'Rachabot')
 
-if (process.env.LOGLEVEL && process.env.LOGLEVEL !== '') {
+if (process.env.LOGLEVEL) {
   // Assume LOGLEVEL is a valid log level. If it's not, we'll get a useful
   // error from loglevel.
   log.setLevel(process.env.LOGLEVEL as log.LogLevelDesc)
@@ -57,11 +57,11 @@ log.info('Bumping versions.')
 const versionResult = await releaseVersion({})
 log.debug('releaseVersion result:', versionResult)
 
-const pendingVersions = Object.entries(
+const versionsArePending = Object.entries(
   versionResult.projectsVersionData
-).filter(([, versionData]) => versionData.newVersion)
+).some(([, versionData]) => versionData.newVersion)
 
-if (pendingVersions.length > 0) {
+if (versionsArePending) {
   log.info(`There are pending versions. Let's create a release PR.`)
 
   log.debug(`Checking out ${RELEASE_BRANCH}.`)
