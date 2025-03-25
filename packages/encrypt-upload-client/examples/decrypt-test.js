@@ -1,5 +1,6 @@
 import * as fs from 'fs'
 import dotenv from 'dotenv'
+import { CID } from 'multiformats'
 import * as Client from '@storacha/client'
 import * as Signer from '@ucanto/principal/ed25519'
 import { StoreMemory } from '@storacha/client/stores/memory'
@@ -11,7 +12,7 @@ dotenv.config()
 
 async function main(){
     // set up storacha client with a new agent
-    const cid = 'bafyreifhwqmspdjsy6rgcmcizgodv7bwskgiehjhdx7wukax3z5r7tz5ji'
+    const cid = CID.parse('bafyreifhwqmspdjsy6rgcmcizgodv7bwskgiehjhdx7wukax3z5r7tz5ji')
 
     const delegationCarBuffer = fs.readFileSync('delegation.car')
 

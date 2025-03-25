@@ -95,6 +95,7 @@ class EncryptedMetadata {
     return archiveBlock(input)
   }
 
+  /** @returns {Types.EncryptedMetadataInput} */
   toJSON() {
     return toJSON(this)
   }
@@ -106,7 +107,10 @@ class EncryptedMetadata {
  */
 export const create = encryptedMetadataInput => new EncryptedMetadata(encryptedMetadataInput)
 
-/** @param {Types.EncryptedMetadataView} encryptedMetadata*/
+/** 
+ * @param {Types.EncryptedMetadataView} encryptedMetadata
+ * @returns {Types.EncryptedMetadataInput}
+ * */
 export const toJSON = encryptedMetadata => ({
   encryptedDataCID: encryptedMetadata.encryptedDataCID.toString(),
   identityBoundCiphertext: bytesToString(encryptedMetadata.identityBoundCiphertext),

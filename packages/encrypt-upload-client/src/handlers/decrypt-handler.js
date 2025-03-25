@@ -5,10 +5,10 @@ import { exporter } from 'ipfs-unixfs-exporter'
 import { MemoryBlockstore } from 'blockstore-core'
 import { base64 } from "multiformats/bases/base64"
 
-import * as Lit from './protocols/lit.js'
-import * as Type from './types.js'
-import * as EncryptedMetadata from './core/encrypted-metadata.js'
-import { createDecryptWrappedInvocation } from './utils.js'
+import * as Lit from '../protocols/lit.js'
+import * as Type from '../types.js'
+import * as EncryptedMetadata from '../core/encrypted-metadata.js'
+import { createDecryptWrappedInvocation } from '../utils.js'
 
 /**
   * 
@@ -22,7 +22,7 @@ import { createDecryptWrappedInvocation } from './utils.js'
   * @param {Uint8Array} delegationCAR - The delegation that gives permission to decrypt the file
   */
 export const retrieveAndDecrypt = async(storachaClient, litClient, cryptoAdapter, gatewayURL, wallet, cid, delegationCAR) => {
-    const encryptedMetadataCar = await getCarFileFromGateway(gatewayURL, cid)
+    const encryptedMetadataCar = await getCarFileFromGateway(gatewayURL, cid.toString())
     const { encryptedDataCID, identityBoundCiphertext, plaintextKeyHash, accessControlConditions } = extractEncryptedMetadata(encryptedMetadataCar)
     const spaceDID = /** @type {`did:key:${string}`} */ (accessControlConditions[0].parameters[1])
     const encryptedData = await getEncryptedDataFromCar(encryptedMetadataCar, encryptedDataCID)

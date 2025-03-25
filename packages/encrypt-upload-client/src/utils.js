@@ -1,4 +1,3 @@
-import { CID } from 'multiformats'
 import { DID  } from '@ucanto/server'
 import * as dagJSON from '@ipld/dag-json'
 import { extract } from '@ucanto/core/delegation'
@@ -21,7 +20,7 @@ export const createDecryptWrappedInvocation = async ({ delegationCAR, issuer, sp
         audience: DID.parse(audience),
         with: spaceDID,
         nb: {
-         resource: CID.parse(resourceCID)
+         resource: resourceCID
         },
         expiration: expiration,
         proofs: [delegation.ok]
