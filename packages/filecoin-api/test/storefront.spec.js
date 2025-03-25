@@ -1,16 +1,16 @@
 import * as assert from 'assert'
 import * as Signer from '@ucanto/principal/ed25519'
 
-import * as StorefrontService from './services/storefront.js'
-import * as StorefrontEvents from './events/storefront.js'
+import * as StorefrontService from '../src/test/services/storefront.js'
+import * as StorefrontEvents from '../src/test/events/storefront.js'
 
 import {
   getMockService,
   getConnection,
   getStoreImplementations,
   getQueueImplementations,
-} from './context/service.js'
-import { validateAuthorization } from './utils.js'
+} from '../src/test/context/service.js'
+import { validateAuthorization } from '../src/test/utils.js'
 
 describe('storefront', () => {
   describe('filecoin/*', () => {

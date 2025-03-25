@@ -4,10 +4,10 @@ import * as Signer from '@ucanto/principal/ed25519'
 import { CBOR } from '@ucanto/core'
 import pWaitFor from 'p-wait-for'
 
-import * as API from '../../src/types.js'
-import * as AggregatorApi from '../../src/aggregator/api.js'
+import * as API from '../../types.js'
+import * as AggregatorApi from '../../aggregator/api.js'
 
-import { createServer, connect } from '../../src/aggregator/service.js'
+import { createServer, connect } from '../../aggregator/service.js'
 import { randomAggregate, randomCargo } from '../utils.js'
 import { FailingStore } from '../context/store.js'
 import { FailingQueue } from '../context/queue.js'
@@ -15,19 +15,19 @@ import {
   QueueOperationErrorName,
   StoreOperationErrorName,
   UnsupportedCapabilityErrorName,
-} from '../../src/errors.js'
+} from '../../errors.js'
 
 /**
  * @typedef {import('@web3-storage/data-segment').PieceLink} PieceLink
  * @typedef {import('@ucanto/interface').Link} Link
- * @typedef {import('../../src/aggregator/api.js').Buffer} Buffer
- * @typedef {import('../../src/aggregator/api.js').PieceRecord} PieceRecord
- * @typedef {import('../../src/aggregator/api.js').PieceRecordKey} PieceRecordKey
- * @typedef {import('../../src/aggregator/api.js').BufferRecord} BufferRecord
- * @typedef {import('../../src/aggregator/api.js').AggregateRecord} AggregateRecord
- * @typedef {import('../../src/aggregator/api.js').AggregateRecordKey} AggregateRecordKey
- * @typedef {import('../../src/aggregator/api.js').InclusionRecord} InclusionRecord
- * @typedef {import('../../src/aggregator/api.js').InclusionRecordKey} InclusionRecordKey
+ * @typedef {import('../../aggregator/api.js').Buffer} Buffer
+ * @typedef {import('../../aggregator/api.js').PieceRecord} PieceRecord
+ * @typedef {import('../../aggregator/api.js').PieceRecordKey} PieceRecordKey
+ * @typedef {import('../../aggregator/api.js').BufferRecord} BufferRecord
+ * @typedef {import('../../aggregator/api.js').AggregateRecord} AggregateRecord
+ * @typedef {import('../../aggregator/api.js').AggregateRecordKey} AggregateRecordKey
+ * @typedef {import('../../aggregator/api.js').InclusionRecord} InclusionRecord
+ * @typedef {import('../../aggregator/api.js').InclusionRecordKey} InclusionRecordKey
  */
 
 /**

@@ -1,15 +1,15 @@
-import * as API from '../../src/types.js'
-import { StoreOperationFailed, RecordNotFound } from '../../src/errors.js'
+import * as API from '../../types.js'
+import { StoreOperationFailed, RecordNotFound } from '../../errors.js'
 
 /**
- * @typedef {import('../../src/types.js').StorePutError} StorePutError
- * @typedef {import('../../src/types.js').StoreGetError} StoreGetError
- * @typedef {import('../../src/types.js').Pageable} Pageable
+ * @typedef {import('../../types.js').StorePutError} StorePutError
+ * @typedef {import('../../types.js').StoreGetError} StoreGetError
+ * @typedef {import('../../types.js').Pageable} Pageable
  */
 
 /**
  * @template T
- * @typedef {import('../../src/types.js').ListSuccess<T>} ListSuccess
+ * @typedef {import('../../types.js').ListSuccess<T>} ListSuccess
  */
 
 /**

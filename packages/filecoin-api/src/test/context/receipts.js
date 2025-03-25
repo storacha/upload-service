@@ -3,7 +3,7 @@ import * as StorefrontCaps from '@storacha/capabilities/filecoin/storefront'
 import * as AggregatorCaps from '@storacha/capabilities/filecoin/aggregator'
 import * as DealerCaps from '@storacha/capabilities/filecoin/dealer'
 
-import * as API from '../../src/types.js'
+import * as API from '../../types.js'
 
 /**
  * @param {object} context

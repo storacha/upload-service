@@ -72,15 +72,15 @@
     },
     "./test": {
       "types": "./dist/test/lib.d.ts",
-      "import": "./test/lib.js"
+      "import": "./dist/test/lib.js"
     },
     "./test/context/service": {
       "types": "./dist/test/context/service.d.ts",
-      "import": "./test/context/service.js"
+      "import": "./dist/test/context/service.js"
     },
     "./test/types": {
       "types": "./dist/test/types.d.ts",
-      "import": "./test/types.js"
+      "import": "./dist/test/types.js"
     }
   },
   "scripts": {
@@ -140,7 +140,7 @@
       "src/dealer/api.js",
       "src/storefront/api.js",
       "src/types.js",
-      "test/types.js"
+      "src/test/types.js"
     ],
     "rules": {
       "@typescript-eslint/no-empty-object-type": "off"

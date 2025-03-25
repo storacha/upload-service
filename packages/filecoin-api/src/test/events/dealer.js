@@ -4,18 +4,18 @@ import * as Server from '@ucanto/server'
 import * as DealerCaps from '@storacha/capabilities/filecoin/dealer'
 import * as DealTrackerCaps from '@storacha/capabilities/filecoin/deal-tracker'
 
-import * as API from '../../src/types.js'
+import * as API from '../../types.js'
 import * as TestAPI from '../types.js'
-import * as DealerEvents from '../../src/dealer/events.js'
+import * as DealerEvents from '../../dealer/events.js'
 
 import { FailingStore } from '../context/store.js'
 import { mockService } from '../context/mocks.js'
 import { getConnection } from '../context/service.js'
 import { randomAggregate } from '../utils.js'
-import { StoreOperationErrorName } from '../../src/errors.js'
+import { StoreOperationErrorName } from '../../errors.js'
 
 /**
- * @typedef {import('../../src/dealer/api.js').AggregateRecord} AggregateRecord
+ * @typedef {import('../../dealer/api.js').AggregateRecord} AggregateRecord
  */
 
 /**

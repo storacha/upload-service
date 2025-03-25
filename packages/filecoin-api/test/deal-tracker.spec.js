@@ -1,10 +1,10 @@
 import * as assert from 'assert'
 import * as Signer from '@ucanto/principal/ed25519'
 
-import * as DealTrackerService from './services/deal-tracker.js'
+import * as DealTrackerService from '../src/test/services/deal-tracker.js'
 
-import { getStoreImplementations } from './context/store-implementations.js'
-import { validateAuthorization } from './utils.js'
+import { getStoreImplementations } from '../src/test/context/store-implementations.js'
+import { validateAuthorization } from '../src/test/utils.js'
 
 /**
  * @typedef {import('../src/deal-tracker/api.js').DealRecord} DealRecord

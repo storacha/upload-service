@@ -1,4 +1,4 @@
-import { Pageable, ListSuccess } from '../../src/types.js'
+import { Pageable, ListSuccess } from '../../types.js'
 
 export interface StoreOptions<K, V> {
   getFn?: (items: Set<V>, item: K) => V | undefined
