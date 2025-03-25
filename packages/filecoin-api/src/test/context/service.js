@@ -9,7 +9,7 @@ import * as DealerCaps from '@storacha/capabilities/filecoin/dealer'
 import * as DealTrackerCaps from '@storacha/capabilities/filecoin/deal-tracker'
 
 // eslint-disable-next-line no-unused-vars
-import * as API from '../../src/types.js'
+import * as API from '../../types.js'
 
 import { validateAuthorization } from '../utils.js'
 import { mockService } from './mocks.js'

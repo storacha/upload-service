@@ -1,6 +1,6 @@
-import * as API from '../../src/types.js'
+import * as API from '../../types.js'
 
-import { QueueOperationFailed } from '../../src/errors.js'
+import { QueueOperationFailed } from '../../errors.js'
 
 /**
  * @template T

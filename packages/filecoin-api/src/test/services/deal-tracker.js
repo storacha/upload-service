@@ -1,17 +1,17 @@
 import { DealTracker } from '@storacha/capabilities'
 import * as Signer from '@ucanto/principal/ed25519'
 
-import * as API from '../../src/types.js'
-import * as DealTrackerApi from '../../src/deal-tracker/api.js'
+import * as API from '../../types.js'
+import * as DealTrackerApi from '../../deal-tracker/api.js'
 
-import { createServer, connect } from '../../src/deal-tracker/service.js'
+import { createServer, connect } from '../../deal-tracker/service.js'
 import { randomCargo } from '../utils.js'
 import { FailingStore } from '../context/store.js'
-import { StoreOperationErrorName } from '../../src/errors.js'
+import { StoreOperationErrorName } from '../../errors.js'
 
 /**
- * @typedef {import('../../src/deal-tracker/api.js').DealRecord} DealRecord
- * @typedef {import('../../src/deal-tracker/api.js').DealRecordKey} DealRecordKey
+ * @typedef {import('../../deal-tracker/api.js').DealRecord} DealRecord
+ * @typedef {import('../../deal-tracker/api.js').DealRecordKey} DealRecordKey
  */
 
 /**

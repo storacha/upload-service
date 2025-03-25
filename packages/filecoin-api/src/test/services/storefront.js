@@ -5,15 +5,15 @@ import * as Signer from '@ucanto/principal/ed25519'
 import * as DealTrackerCaps from '@storacha/capabilities/filecoin/deal-tracker'
 import pWaitFor from 'p-wait-for'
 
-import * as API from '../../src/types.js'
-import * as StorefrontApi from '../../src/storefront/api.js'
+import * as API from '../../types.js'
+import * as StorefrontApi from '../../storefront/api.js'
 
-import { createServer, connect } from '../../src/storefront/service.js'
+import { createServer, connect } from '../../storefront/service.js'
 import {
   QueueOperationErrorName,
   StoreOperationErrorName,
   UnsupportedCapabilityErrorName,
-} from '../../src/errors.js'
+} from '../../errors.js'
 import { randomCargo, randomAggregate } from '../utils.js'
 import { createInvocationsAndReceiptsForDealDataProofChain } from '../context/receipts.js'
 import { FailingStore } from '../context/store.js'
@@ -22,8 +22,8 @@ import { mockService } from '../context/mocks.js'
 import { getConnection } from '../context/service.js'
 
 /**
- * @typedef {import('../../src/storefront/api.js').PieceRecord} PieceRecord
- * @typedef {import('../../src/storefront/api.js').PieceRecordKey} PieceRecordKey
+ * @typedef {import('../../storefront/api.js').PieceRecord} PieceRecord
+ * @typedef {import('../../storefront/api.js').PieceRecordKey} PieceRecordKey
  */
 
 /**

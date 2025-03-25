@@ -3,10 +3,10 @@ import * as AggregatorCaps from '@storacha/capabilities/filecoin/aggregator'
 import pWaitFor from 'p-wait-for'
 import { CBOR } from '@ucanto/core'
 
-import * as API from '../../src/types.js'
+import * as API from '../../types.js'
 import * as TestAPI from '../types.js'
-import * as AggregatorEvents from '../../src/aggregator/events.js'
-import { getBufferedPieces } from '../../src/aggregator/buffer-reducing.js'
+import * as AggregatorEvents from '../../aggregator/events.js'
+import { getBufferedPieces } from '../../aggregator/buffer-reducing.js'
 
 import { FailingStore } from '../context/store.js'
 import { FailingQueue } from '../context/queue.js'
@@ -17,16 +17,16 @@ import {
   QueueOperationErrorName,
   RecordNotFoundErrorName,
   StoreOperationErrorName,
-} from '../../src/errors.js'
+} from '../../errors.js'
 
 /**
- * @typedef {import('../../src/aggregator/api.js').Buffer} Buffer
- * @typedef {import('../../src/aggregator/api.js').PiecePolicy} PiecePolicy
+ * @typedef {import('../../aggregator/api.js').Buffer} Buffer
+ * @typedef {import('../../aggregator/api.js').PiecePolicy} PiecePolicy
  *
- * @typedef {import('../../src/aggregator/api.js').PieceMessage} PieceMessage
- * @typedef {import('../../src/aggregator/api.js').BufferMessage} BufferMessage
- * @typedef {import('../../src/aggregator/api.js').AggregateOfferMessage} AggregateOfferMessage
- * @typedef {import('../../src/aggregator/api.js').PieceAcceptMessage} PieceAcceptMessage
+ * @typedef {import('../../aggregator/api.js').PieceMessage} PieceMessage
+ * @typedef {import('../../aggregator/api.js').BufferMessage} BufferMessage
+ * @typedef {import('../../aggregator/api.js').AggregateOfferMessage} AggregateOfferMessage
+ * @typedef {import('../../aggregator/api.js').PieceAcceptMessage} PieceAcceptMessage
  */
 
 /**
@@ -407,7 +407,7 @@ export const test = {
       })
 
       const [cargo] = await randomCargo(1, 128)
-      /** @type {import('../../src/aggregator/api.js').BufferedPiece} */
+      /** @type {import('../../aggregator/api.js').BufferedPiece} */
       const bufferedPiece = {
         piece: cargo.link.link(),
         policy: 0,

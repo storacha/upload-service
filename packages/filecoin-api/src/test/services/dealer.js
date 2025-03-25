@@ -4,10 +4,10 @@ import * as Server from '@ucanto/server'
 import * as DealTrackerCaps from '@storacha/capabilities/filecoin/deal-tracker'
 import { CBOR } from '@ucanto/core'
 
-import * as API from '../../src/types.js'
-import * as DealerApi from '../../src/dealer/api.js'
+import * as API from '../../types.js'
+import * as DealerApi from '../../dealer/api.js'
 
-import { createServer, connect } from '../../src/dealer/service.js'
+import { createServer, connect } from '../../dealer/service.js'
 import { randomAggregate } from '../utils.js'
 import { FailingStore } from '../context/store.js'
 import { mockService } from '../context/mocks.js'
@@ -15,12 +15,12 @@ import { getConnection } from '../context/service.js'
 import {
   StoreOperationErrorName,
   UnsupportedCapabilityErrorName,
-} from '../../src/errors.js'
+} from '../../errors.js'
 
 /**
- * @typedef {import('../../src/dealer/api.js').AggregateRecord} AggregateRecord
- * @typedef {import('../../src/dealer/api.js').AggregateRecordKey} AggregateRecordKey
- * @typedef {import('../../src/dealer/api.js').OfferDocument} OfferDocument
+ * @typedef {import('../../dealer/api.js').AggregateRecord} AggregateRecord
+ * @typedef {import('../../dealer/api.js').AggregateRecordKey} AggregateRecordKey
+ * @typedef {import('../../dealer/api.js').OfferDocument} OfferDocument
  */
 
 /**

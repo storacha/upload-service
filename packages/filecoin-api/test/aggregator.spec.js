@@ -1,13 +1,13 @@
 import * as assert from 'assert'
 import * as Signer from '@ucanto/principal/ed25519'
 
-import * as AggregatorService from './services/aggregator.js'
-import * as AggregatorEvents from './events/aggregator.js'
+import * as AggregatorService from '../src/test/services/aggregator.js'
+import * as AggregatorEvents from '../src/test/events/aggregator.js'
 
-import { getStoreImplementations } from './context/store-implementations.js'
-import { Queue } from './context/queue.js'
-import { getMockService, getConnection } from './context/service.js'
-import { validateAuthorization } from './utils.js'
+import { getStoreImplementations } from '../src/test/context/store-implementations.js'
+import { Queue } from '../src/test/context/queue.js'
+import { getMockService, getConnection } from '../src/test/context/service.js'
+import { validateAuthorization } from '../src/test/utils.js'
 
 describe('Aggregator', () => {
   describe('piece/*', () => {

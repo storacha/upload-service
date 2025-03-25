@@ -6,10 +6,10 @@ const notImplemented = () => {
 
 /**
  * @param {Partial<{
- * filecoin: Partial<import('../../src/types.js').StorefrontService['filecoin']>
- * piece: Partial<import('../../src/types.js').AggregatorService['piece']>
- * aggregate: Partial<import('../../src/types.js').DealerService['aggregate']>
- * deal: Partial<import('../../src/types.js').DealTrackerService['deal']>
+ * filecoin: Partial<import('../../types.js').StorefrontService['filecoin']>
+ * piece: Partial<import('../../types.js').AggregatorService['piece']>
+ * aggregate: Partial<import('../../types.js').DealerService['aggregate']>
+ * deal: Partial<import('../../types.js').DealTrackerService['deal']>
  * assert: Partial<import('@web3-storage/content-claims/server/service/api').AssertService>
  * }>} impl
  */

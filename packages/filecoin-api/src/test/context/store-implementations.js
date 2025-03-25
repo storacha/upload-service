@@ -1,8 +1,8 @@
-import * as API from '../../src/types.js'
-import * as StorefrontAPI from '../../src/storefront/api.js'
-import * as AggregatorAPI from '../../src/aggregator/api.js'
-import * as DealerAPI from '../../src/dealer/api.js'
-import * as DealTrackerAPI from '../../src/deal-tracker/api.js'
+import * as API from '../../types.js'
+import * as StorefrontAPI from '../../storefront/api.js'
+import * as AggregatorAPI from '../../aggregator/api.js'
+import * as DealerAPI from '../../dealer/api.js'
+import * as DealTrackerAPI from '../../deal-tracker/api.js'
 import { Store } from './store.js'
 
 export const getStoreImplementations = () => ({

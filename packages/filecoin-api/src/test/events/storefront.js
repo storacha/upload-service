@@ -3,14 +3,14 @@ import * as Signer from '@ucanto/principal/ed25519'
 import { CBOR } from '@ucanto/core'
 import * as AggregatorCaps from '@storacha/capabilities/filecoin/aggregator'
 
-import * as API from '../../src/types.js'
+import * as API from '../../types.js'
 import * as TestAPI from '../types.js'
-import * as StorefrontEvents from '../../src/storefront/events.js'
+import * as StorefrontEvents from '../../storefront/events.js'
 import {
   StoreOperationErrorName,
   UnexpectedStateErrorName,
   BlobNotFoundErrorName,
-} from '../../src/errors.js'
+} from '../../errors.js'
 
 import { randomCargo, randomAggregate } from '../utils.js'
 import { FailingStore } from '../context/store.js'
@@ -19,7 +19,7 @@ import { getConnection } from '../context/service.js'
 import { createInvocationsAndReceiptsForDealDataProofChain } from '../context/receipts.js'
 
 /**
- * @typedef {import('../../src/storefront/api.js').PieceRecord} PieceRecord
+ * @typedef {import('../../storefront/api.js').PieceRecord} PieceRecord
  */
 
 /**
