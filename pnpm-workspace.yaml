@@ -10,7 +10,7 @@ catalog:
   '@inquirer/prompts': ^3.3.0
   '@ipld/dag-cbor': ^9.0.6
   '@ipld/unixfs': ^3.0.0
-  '@nx/js': ^20.3.2
+  '@nx/js': 20.3.2
   '@playwright/test': ^1.29.2
   '@scure/bip39': ^1.2.1
   '@storacha/one-webcrypto': ^1.0.1
