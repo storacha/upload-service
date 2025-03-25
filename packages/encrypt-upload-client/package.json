@@ -8,7 +8,7 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/storacha/upload-service.git",
-        "directory": "packages/encrypt-client"
+        "directory": "packages/encrypt-upload-client"
     },
     "keywords": [
         "storacha",
@@ -23,12 +23,31 @@
         "UCAN",
         "IPFS"
     ],
-    "main": "dist/src/index.js",
-    "types": "dist/src/index.d.ts",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist",
+        "!dist/**/*.js.map"
+    ],
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./crypto/adapters": {
+        "types": "./dist/crypto-adapters/node-crypto-adapter.d.ts",
+        "import": "./dist/crypto-adapters/node-crypto-adapter.js"
+      },
+      "./types": "./dist/types.js"
+    },
     "scripts": {
+        "dev": "tsc --build --watch --preserveWatchOutput",
+        "clean": "rm -rf dist *.tsbuildinfo",
         "lint": "tsc --build && eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
         "lint:fix": "tsc --build && eslint '**/*.{js,ts}' --fix && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
-        "build-actions": "node lit-actions/esbuild.js"
+        "build-actions": "node lit-actions/esbuild.js",
+        "attw": "attw --pack .",
+        "rc": "npm version prerelease --preid rc"
     },
     "dependencies": {
         "@ipld/car": "^5.4.0",
