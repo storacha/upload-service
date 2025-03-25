@@ -1,3 +1,9 @@
+## 2.4.30 (2025-03-25)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.2.2
+
 ## 2.4.28 (2025-03-25)
 
 ### 🩹 Fixes
