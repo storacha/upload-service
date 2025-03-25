@@ -72,7 +72,7 @@ storacha up recipies.txt
 
 ---
 
-### `storacha login <email>`
+### `storacha login [email]`
 
 Authenticate this agent with your email address to get access to all capabilities that had been delegated to it.
 

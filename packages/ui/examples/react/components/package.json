@@ -5,10 +5,8 @@
   "description": "Components for React examples",
   "type": "module",
   "main": "./dist/index.js",
-  "module": "./dist/index.esm.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "bunchee",
     "clean": "rm -rf dist *.tsbuildinfo",
     "lint": "echo 'Linting in @storacha/ui-example-react-components is temporarily disabled while we resolve version issues.'",
     "lint:fix": "echo 'Linting in @storacha/ui-example-react-components is temporarily disabled while we resolve version issues.'"
@@ -30,7 +28,6 @@
   },
   "devDependencies": {
     "@types/react": "catalog:",
-    "bunchee": "catalog:",
     "eslint-plugin-react-hooks": "catalog:",
     "typescript": "catalog:"
   },

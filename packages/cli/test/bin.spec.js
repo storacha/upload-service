@@ -47,7 +47,7 @@ export const testStoracha = {
     const { output, status } = await storacha.args(['--version']).join()
 
     assert.equal(status.code, 0)
-    assert.match(output, /storacha, \d.\d.\d/)
+    assert.match(output, /storacha, \d+\.\d+\.\d+/)
   }),
 
   'storacha whoami': test(async (assert) => {
