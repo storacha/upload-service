@@ -1,3 +1,10 @@
+## 1.1.5 (2025-03-25)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-client to 1.0.5
+- Updated @storacha/capabilities to 1.3.0
+
 ## 1.1.4 (2025-03-14)
 
 ### 🧱 Updated Dependencies
