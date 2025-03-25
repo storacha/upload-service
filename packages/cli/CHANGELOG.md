@@ -1,3 +1,13 @@
+## 1.2.1 (2025-03-25)
+
+### 🩹 Fixes
+
+- fix(cli): select login method ([#203](https://github.com/storacha/upload-service/pull/203))
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.2.0 (2025-03-25)
 
 ### 🚀 Features
