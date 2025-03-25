@@ -140,7 +140,7 @@
       "src/dealer/api.js",
       "src/storefront/api.js",
       "src/types.js",
-      "test/types.js"
+      "src/test/types.js"
     ],
     "rules": {
       "@typescript-eslint/no-empty-object-type": "off"
