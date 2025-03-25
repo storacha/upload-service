@@ -1,3 +1,13 @@
+## 1.1.6 (2025-03-25)
+
+### 🩹 Fixes
+
+- fix(filecoin-api): test exports ([#205](https://github.com/storacha/upload-service/pull/205))
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.1.5 (2025-03-25)
 
 ### 🧱 Updated Dependencies
