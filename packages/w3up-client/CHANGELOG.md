@@ -1,3 +1,22 @@
+## 1.2.0 (2025-03-25)
+
+### 🚀 Features
+
+- feat: external login ([d177feab](https://github.com/storacha/upload-service/commit/d177feab))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-client to 1.0.5
+- Updated @storacha/access to 1.1.0
+- Updated @storacha/upload-client to 1.0.8
+- Updated @storacha/capabilities to 1.3.0
+- Updated @storacha/blob-index to 1.0.4
+- Updated @storacha/upload-api to 1.4.0
+
+### ❤️ Thank You
+
+- Alan Shaw
+
 ## 1.1.11 (2025-03-24)
 
 ### 🧱 Updated Dependencies

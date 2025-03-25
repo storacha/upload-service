@@ -1,3 +1,18 @@
+## 2.4.28 (2025-03-25)
+
+### 🩹 Fixes
+
+- Stop bundling with `bunchee` and fall in line with other `@storacha/` packages. This could potentially cause an issue with downstream packages, but it's not expected to. If you have an issue importing `'@storacha/ui-core'` or `'@storacha/ui-react'` as of this version, please file an issue so we can address it! ([1e4d9419](https://github.com/storacha/upload-service/commit/1e4d9419))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.1.0
+- Updated @storacha/client to 1.2.0
+
+### ❤️ Thank You
+
+- Rachabot
+
 ## 2.4.21 (2025-03-24)
 
 ### 🧱 Updated Dependencies
