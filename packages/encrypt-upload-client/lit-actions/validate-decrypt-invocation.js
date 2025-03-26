@@ -8,11 +8,13 @@ const Decrypt = capability({
   can: 'space/content/decrypt',
   with: DID.match({ method: 'key' }),
   nb: Schema.struct({
-    resource: Schema.link()
+    resource: Schema.link(),
   }),
   derives: (child, parent) => {
     if (child.with !== parent.with) {
-      return fail(`Can not derive ${child.can} with ${child.with} from ${parent.with}`)
+      return fail(
+        `Can not derive ${child.can} with ${child.with} from ${parent.with}`
+      )
     }
     if (child.nb.resource.toString() !== parent.nb.resource.toString()) {
       return fail(
@@ -20,7 +22,7 @@ const Decrypt = capability({
       )
     }
     return ok({})
-  }
+  },
 })
 
 /**
@@ -36,12 +38,16 @@ const Decrypt = capability({
  * @param {Delegation} decryptDelegation - The delegation to validate
  * @throws {Error} If the delegation is invalid
  */
-const validateDecryptDelegation = decryptDelegation => {
+const validateDecryptDelegation = (decryptDelegation) => {
   if (decryptDelegation.proofs.length !== 1) {
     throw new Error('Expected one Decrypt delegation!')
   }
 
-  if (!decryptDelegation.proofs[0].capabilities.some(/** @param {{can: string}} c */ c => c.can === Decrypt.can)) {
+  if (
+    !decryptDelegation.proofs[0].capabilities.some(
+      /** @param {{can: string}} c */ (c) => c.can === Decrypt.can
+    )
+  ) {
     throw new Error('Delegation does not contain Decrypt capability!')
   }
 }
@@ -51,7 +57,7 @@ const validateDecryptDelegation = decryptDelegation => {
  * @param {Delegation} wrappedInvocation - The invocation to unwrap
  * @returns {Delegation} The unwrapped delegation
  */
-const unwrapInvocation = wrappedInvocation => {
+const unwrapInvocation = (wrappedInvocation) => {
   validateDecryptDelegation(wrappedInvocation)
   return wrappedInvocation.proofs[0]
 }
@@ -61,17 +67,21 @@ const unwrapInvocation = wrappedInvocation => {
  * @returns {Promise<void>}
  */
 const decrypt = async () => {
-  try {    
+  try {
     const wrappedInvocationCar = dagJSON.parse(wrappedInvocationJSON)
     const wrappedInvocationResult = await extract(wrappedInvocationCar)
 
     if (wrappedInvocationResult.error) {
-      throw new Error(`Issue on extracting the wrapped invocation! Error message: ${wrappedInvocationResult.error}`)
+      throw new Error(
+        `Issue on extracting the wrapped invocation! Error message: ${wrappedInvocationResult.error}`
+      )
     }
 
     const wrappedInvocation = wrappedInvocationResult.ok
 
-    const decryptCapability = wrappedInvocation.capabilities.find(cap => cap.can === Decrypt.can)
+    const decryptCapability = wrappedInvocation.capabilities.find(
+      (cap) => cap.can === Decrypt.can
+    )
 
     if (decryptCapability?.with !== spaceDID) {
       throw new Error(
@@ -93,7 +103,7 @@ const decrypt = async () => {
       principal: Verifier,
       capability: Decrypt,
       authority: 'did:web:web3.storage',
-      validateAuthorization: () => ok({}) // TODO: check if it's not revoked
+      validateAuthorization: () => ok({}), // TODO: check if it's not revoked
     })
 
     /** @type {Record<string, any>} */
@@ -107,7 +117,7 @@ const decrypt = async () => {
         ciphertext: identityBoundCiphertext,
         dataToEncryptHash: plaintextKeyHash,
         authSig: null,
-        chain: 'ethereum'
+        chain: 'ethereum',
       })
       console.log('Decryption process completed successfully.')
       response.decryptedString = decryptedString
@@ -116,7 +126,9 @@ const decrypt = async () => {
     }
     return Lit.Actions.setResponse({ response: JSON.stringify(response) })
   } catch (/** @type any*/ error) {
-    return Lit.Actions.setResponse({ response: JSON.stringify({ error: error.message }) })
+    return Lit.Actions.setResponse({
+      response: JSON.stringify({ error: error.message }),
+    })
   }
 }
 

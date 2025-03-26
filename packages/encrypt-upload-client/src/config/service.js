@@ -2,7 +2,6 @@ import * as client from '@ucanto/client'
 import { CAR, HTTP } from '@ucanto/transport'
 import * as DID from '@ipld/dag-ucan/did'
 
-
 const storachaServiceURL = 'https://up.web3.storage'
 const storachaPrincipalDID = 'did:web:web3.storage'
 

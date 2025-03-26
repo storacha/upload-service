@@ -1,127 +1,127 @@
 {
-    "name": "@storacha/encrypt-upload-client",
-    "type": "module",
-    "version": "0.0.1",
-    "license": "Apache-2.0 OR MIT",
-    "description": "Client for upload and download encrypted files",
-    "author": "Storacha",
-    "publishConfig": {
-        "access": "public"
+  "name": "@storacha/encrypt-upload-client",
+  "type": "module",
+  "version": "0.0.1",
+  "license": "Apache-2.0 OR MIT",
+  "description": "Client for upload and download encrypted files",
+  "author": "Storacha",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storacha/upload-service.git",
+    "directory": "packages/encrypt-upload-client"
+  },
+  "keywords": [
+    "storacha",
+    "lit protocol",
+    "web3",
+    "storage",
+    "upload",
+    "store",
+    "encrypt",
+    "decrypt",
+    "IPLD",
+    "UCAN",
+    "IPFS"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "!dist/**/*.js.map"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/storacha/upload-service.git",
-        "directory": "packages/encrypt-upload-client"
+    "./crypto/adapters": {
+      "types": "./dist/crypto-adapters/node-crypto-adapter.d.ts",
+      "import": "./dist/crypto-adapters/node-crypto-adapter.js"
     },
-    "keywords": [
-        "storacha",
-        "lit protocol",
-        "web3",
-        "storage",
-        "upload",
-        "store",
-        "encrypt",
-        "decrypt",
-        "IPLD",
-        "UCAN",
-        "IPFS"
+    "./types": "./dist/types.js"
+  },
+  "scripts": {
+    "dev": "tsc --build --watch --preserveWatchOutput",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "lint": "tsc --build && eslint '**/*.{js,ts}' --ignore-pattern 'lit-actions/**' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+    "lint:fix": "tsc --build && eslint '**/*.{js,ts}' --fix && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+    "build-actions": "node lit-actions/esbuild.js",
+    "attw": "attw --pack .",
+    "rc": "npm version prerelease --preid rc"
+  },
+  "dependencies": {
+    "@ipld/car": "catalog:",
+    "@ipld/dag-cbor": "catalog:",
+    "@ipld/dag-json": "catalog:",
+    "@ipld/dag-ucan": "catalog:",
+    "@ipld/schema": "catalog:",
+    "@lit-protocol/auth-helpers": "^7.0.2",
+    "@lit-protocol/constants": "^7.0.2",
+    "@lit-protocol/contracts-sdk": "^7.0.2",
+    "@lit-protocol/encryption": "^7.0.2",
+    "@lit-protocol/lit-auth-client": "^7.0.3",
+    "@lit-protocol/lit-node-client": "^7.0.2",
+    "@storacha/capabilities": "workspace:^",
+    "@storacha/client": "workspace:^",
+    "@storacha/upload-client": "workspace:^",
+    "@ucanto/client": "catalog:",
+    "@ucanto/core": "catalog:",
+    "@ucanto/interface": "catalog:",
+    "@ucanto/principal": "catalog:",
+    "@ucanto/server": "catalog:",
+    "@ucanto/transport": "catalog:",
+    "@ucanto/validator": "catalog:",
+    "blockstore-core": "catalog:",
+    "carstream": "catalog:",
+    "dotenv": "^16.4.7",
+    "ethers": "5.7.1",
+    "ipfs-unixfs-exporter": "catalog:",
+    "multiformats": "catalog:"
+  },
+  "devDependencies": {
+    "@lit-protocol/types": "^7.0.8",
+    "@storacha/eslint-config": "workspace:^",
+    "esbuild": "^0.25.1",
+    "typescript": "catalog:"
+  },
+  "eslintConfig": {
+    "extends": [
+      "@storacha/eslint-config"
     ],
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
-    "files": [
-        "dist",
-        "!dist/**/*.js.map"
+    "parserOptions": {
+      "project": "./tsconfig.json"
+    },
+    "env": {
+      "es2022": true,
+      "mocha": true,
+      "browser": true,
+      "node": true
+    },
+    "ignorePatterns": [
+      "dist",
+      "docs",
+      "docs-generated",
+      "coverage",
+      "src/types.js",
+      "*.min.js"
+    ]
+  },
+  "depcheck": {
+    "ignorePatterns": [
+      "dist"
     ],
-    "exports": {
-      ".": {
-        "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
-      },
-      "./crypto/adapters": {
-        "types": "./dist/crypto-adapters/node-crypto-adapter.d.ts",
-        "import": "./dist/crypto-adapters/node-crypto-adapter.js"
-      },
-      "./types": "./dist/types.js"
-    },
-    "scripts": {
-        "dev": "tsc --build --watch --preserveWatchOutput",
-        "clean": "rm -rf dist *.tsbuildinfo",
-        "lint": "tsc --build && eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
-        "lint:fix": "tsc --build && eslint '**/*.{js,ts}' --fix && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
-        "build-actions": "node lit-actions/esbuild.js",
-        "attw": "attw --pack .",
-        "rc": "npm version prerelease --preid rc"
-    },
-    "dependencies": {
-        "@ipld/car": "^5.4.0",
-        "@ipld/dag-cbor": "^9.2.2",
-        "@ipld/dag-json": "^10.2.3",
-        "@ipld/dag-ucan": "^3.4.5",
-        "@ipld/schema": "^6.0.6",
-        "@lit-protocol/auth-helpers": "^7.0.2",
-        "@lit-protocol/constants": "^7.0.2",
-        "@lit-protocol/contracts-sdk": "^7.0.2",
-        "@lit-protocol/encryption": "^7.0.2",
-        "@lit-protocol/lit-auth-client": "^7.0.3",
-        "@lit-protocol/lit-node-client": "^7.0.2",
-        "@storacha/capabilities": "workspace:^",
-        "@storacha/client": "workspace:^",
-        "@storacha/upload-client": "workspace:^",
-        "@ucanto/client": "^9.0.1",
-        "@ucanto/core": "^10.0.1",
-        "@ucanto/interface": "^10.2.0",
-        "@ucanto/principal": "^9.0.1",
-        "@ucanto/server": "^10.0.0",
-        "@ucanto/transport": "^9.1.1",
-        "@ucanto/validator": "^9.0.2",
-        "blockstore-core": "^5.0.2",
-        "carstream": "^2.3.0",
-        "dotenv": "^16.4.7",
-        "ethers": "5.7.1",
-        "ipfs-unixfs-exporter": "^13.6.2",
-        "multiformats": "^13.3.1"
-    },
-    "devDependencies": {
-        "@lit-protocol/types": "^7.0.8",
-        "@storacha/eslint-config": "workspace:^",
-        "esbuild": "^0.25.1",
-        "typescript": "5.2.2"
-    },
-    "eslintConfig": {
-        "extends": [
-            "@storacha/eslint-config"
-        ],
-        "parserOptions": {
-            "project": "./tsconfig.json"
-        },
-        "env": {
-            "es2022": true,
-            "mocha": true,
-            "browser": true,
-            "node": true
-        },
-        "ignorePatterns": [
-            "dist",
-            "docs",
-            "docs-generated",
-            "coverage",
-            "src/types.js",
-            "*.min.js"
-        ]
-    },
-    "depcheck": {
-        "ignorePatterns": [
-            "dist"
-        ],
-        "ignores": [
-            "@typescript-eslint/eslint-plugin",
-            "@typescript-eslint/parser",
-            "assert",
-            "c8"
-        ]
-    },
-    "engines": {
-        "node": ">=18"
-    },
-    "engineStrict": true
+    "ignores": [
+      "@typescript-eslint/eslint-plugin",
+      "@typescript-eslint/parser",
+      "assert",
+      "c8"
+    ]
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "engineStrict": true
 }

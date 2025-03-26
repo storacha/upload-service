@@ -8,8 +8,8 @@ build({
   outfile: './lit-actions/dist/validate-decrypt-invocation.js',
   sourceRoot: './',
   platform: 'browser',
-  metafile: true
-}).catch(err => {
+  metafile: true,
+}).catch((err) => {
   console.error(err)
   return process.exit(1)
 })

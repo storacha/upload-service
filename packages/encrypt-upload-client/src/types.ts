@@ -1,20 +1,34 @@
 import { Wallet } from 'ethers'
 import { UnknownLink } from 'multiformats'
-import {Client as StorachaClient } from '@storacha/client'
+import { Client as StorachaClient } from '@storacha/client'
 import { Result, Failure, Block } from '@ucanto/interface'
 import { LitNodeClient } from '@lit-protocol/lit-node-client'
-import { AccessControlConditions, AuthSig, SessionSigsMap } from '@lit-protocol/types'
-import type {BlobLike, AnyLink, Signer, DID, SigAlg } from '@storacha/client/types'
+import {
+  AccessControlConditions,
+  AuthSig,
+  SessionSigsMap,
+} from '@lit-protocol/types'
+import type {
+  BlobLike,
+  AnyLink,
+  Signer,
+  DID,
+  SigAlg,
+} from '@storacha/client/types'
 
 export type { IPLDBlock } from '@ucanto/interface'
-export type {SpaceDID} from '@storacha/capabilities/utils'
+export type { SpaceDID } from '@storacha/capabilities/utils'
 export type { UnknownFormat } from '@storacha/capabilities/types'
 export type { Result, UnknownLink }
-export type {BlobLike, AnyLink}
+export type { BlobLike, AnyLink }
 
 export interface EncryptedClient {
   uploadEncryptedFile(file: BlobLike): Promise<AnyLink>
-  retrieveAndDecryptFile(wallet: Wallet, cid: AnyLink, delegationCAR: Uint8Array): Promise<ReadableStream>
+  retrieveAndDecryptFile(
+    wallet: Wallet,
+    cid: AnyLink,
+    delegationCAR: Uint8Array
+  ): Promise<ReadableStream>
 }
 
 export type EncryptedClientOptions = {
@@ -26,12 +40,16 @@ export type EncryptedClientOptions = {
 
 export interface CryptoAdapter {
   encryptStream(data: BlobLike): EncryptOutput
-  decryptStream(encryptedData: ReadableStream, key: Uint8Array, iv: Uint8Array): ReadableStream
+  decryptStream(
+    encryptedData: ReadableStream,
+    key: Uint8Array,
+    iv: Uint8Array
+  ): ReadableStream
 }
 
-export interface EncryptOutput { 
-  key: Uint8Array, 
-  iv: Uint8Array, 
+export interface EncryptOutput {
+  key: Uint8Array
+  iv: Uint8Array
   encryptedStream: ReadableStream
 }
 
@@ -41,18 +59,20 @@ export type EncryptedPayload = {
   encryptedBlobLike: BlobLike
 }
 
+export type GenericAccessControlCondition = [Record<string, any>] // eslint-disable-line @typescript-eslint/no-explicit-any
+
 export interface EncryptedMetadataInput {
   encryptedDataCID: string
   identityBoundCiphertext: string
   plaintextKeyHash: string
-  accessControlConditions: [Record<string, any>]
+  accessControlConditions: GenericAccessControlCondition
 }
 
 export interface EncryptedMetadata {
   encryptedDataCID: UnknownLink
   identityBoundCiphertext: Uint8Array
   plaintextKeyHash: Uint8Array
-  accessControlConditions: [Record<string, any>]
+  accessControlConditions: GenericAccessControlCondition
 }
 
 export interface EncryptedMetadataView extends EncryptedMetadata {
@@ -65,7 +85,7 @@ export interface EncryptedMetadataView extends EncryptedMetadata {
 export interface DecodeFailure extends Failure {
   name: 'DecodeFailure'
 }
-  
+
 export interface SessionSignatureOptions {
   wallet: Wallet
   accessControlConditions: AccessControlConditions

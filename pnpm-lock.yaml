@@ -24,9 +24,21 @@ catalogs:
     '@inquirer/prompts':
       specifier: ^3.3.0
       version: 3.3.2
+    '@ipld/car':
+      specifier: ^5.4.0
+      version: 5.4.0
     '@ipld/dag-cbor':
       specifier: ^9.0.6
       version: 9.2.2
+    '@ipld/dag-json':
+      specifier: ^10.2.3
+      version: 10.2.3
+    '@ipld/dag-ucan':
+      specifier: ^3.4.5
+      version: 3.4.5
+    '@ipld/schema':
+      specifier: ^6.0.6
+      version: 6.0.6
     '@ipld/unixfs':
       specifier: ^3.0.0
       version: 3.0.0
@@ -694,38 +706,38 @@ importers:
   packages/encrypt-upload-client:
     dependencies:
       '@ipld/car':
-        specifier: ^5.4.0
+        specifier: 'catalog:'
         version: 5.4.0
       '@ipld/dag-cbor':
-        specifier: ^9.2.2
+        specifier: 'catalog:'
         version: 9.2.2
       '@ipld/dag-json':
-        specifier: ^10.2.3
+        specifier: 'catalog:'
         version: 10.2.3
       '@ipld/dag-ucan':
-        specifier: ^3.4.5
+        specifier: 'catalog:'
         version: 3.4.5
       '@ipld/schema':
-        specifier: ^6.0.6
+        specifier: 'catalog:'
         version: 6.0.6
       '@lit-protocol/auth-helpers':
         specifier: ^7.0.2
-        version: 7.0.8(typescript@5.2.2)
+        version: 7.0.8(typescript@5.8.2)
       '@lit-protocol/constants':
         specifier: ^7.0.2
-        version: 7.0.8(typescript@5.2.2)
+        version: 7.0.8(typescript@5.8.2)
       '@lit-protocol/contracts-sdk':
         specifier: ^7.0.2
-        version: 7.0.8(typescript@5.2.2)
+        version: 7.0.8(typescript@5.8.2)
       '@lit-protocol/encryption':
         specifier: ^7.0.2
-        version: 7.0.8(typescript@5.2.2)
+        version: 7.0.8(typescript@5.8.2)
       '@lit-protocol/lit-auth-client':
         specifier: ^7.0.3
-        version: 7.0.8(encoding@0.1.13)(typescript@5.2.2)
+        version: 7.0.8(encoding@0.1.13)(typescript@5.8.2)
       '@lit-protocol/lit-node-client':
         specifier: ^7.0.2
-        version: 7.0.8(encoding@0.1.13)(typescript@5.2.2)
+        version: 7.0.8(encoding@0.1.13)(typescript@5.8.2)
       '@storacha/capabilities':
         specifier: workspace:^
         version: link:../capabilities
@@ -736,31 +748,31 @@ importers:
         specifier: workspace:^
         version: link:../upload-client
       '@ucanto/client':
-        specifier: ^9.0.1
+        specifier: 'catalog:'
         version: 9.0.1
       '@ucanto/core':
-        specifier: ^10.0.1
-        version: 10.3.0
+        specifier: 'catalog:'
+        version: 10.3.1
       '@ucanto/interface':
-        specifier: ^10.2.0
+        specifier: 'catalog:'
         version: 10.2.0
       '@ucanto/principal':
-        specifier: ^9.0.1
+        specifier: 'catalog:'
         version: 9.0.2
       '@ucanto/server':
-        specifier: ^10.0.0
+        specifier: 'catalog:'
         version: 10.2.0
       '@ucanto/transport':
-        specifier: ^9.1.1
+        specifier: 'catalog:'
         version: 9.1.1
       '@ucanto/validator':
-        specifier: ^9.0.2
+        specifier: 'catalog:'
         version: 9.1.0
       blockstore-core:
-        specifier: ^5.0.2
-        version: 5.0.2
+        specifier: 'catalog:'
+        version: 3.0.0
       carstream:
-        specifier: ^2.3.0
+        specifier: 'catalog:'
         version: 2.3.0
       dotenv:
         specifier: ^16.4.7
@@ -769,11 +781,11 @@ importers:
         specifier: 5.7.1
         version: 5.7.1
       ipfs-unixfs-exporter:
-        specifier: ^13.6.2
-        version: 13.6.2
+        specifier: 'catalog:'
+        version: 10.0.1
       multiformats:
-        specifier: ^13.3.1
-        version: 13.3.1
+        specifier: 'catalog:'
+        version: 13.3.2
     devDependencies:
       '@lit-protocol/types':
         specifier: ^7.0.8
@@ -785,8 +797,8 @@ importers:
         specifier: ^0.25.1
         version: 0.25.1
       typescript:
-        specifier: 5.2.2
-        version: 5.2.2
+        specifier: 'catalog:'
+        version: 5.8.2
 
   packages/eslint-config-w3up:
     dependencies:
@@ -1609,7 +1621,7 @@ importers:
         version: 5.3.0
       '@web3-storage/w3up-client':
         specifier: ^16.5.1
-        version: 16.5.2
+        version: 16.5.2(encoding@0.1.13)
       assert:
         specifier: 'catalog:'
         version: 2.1.0
@@ -2233,12 +2245,6 @@ packages:
 
   '@braidai/lang@1.1.0':
     resolution: {integrity: sha512-xyJYkiyNQtTyCLeHxZmOs7rnB94D+N1IjKNArQIh8+8lTBOY7TFgwEV+Ow5a1uaBi5j2w9fLbWcJFTWLDItl5g==}
-
-  '@chainsafe/is-ip@2.1.0':
-    resolution: {integrity: sha512-KIjt+6IfysQ4GCv66xihEitBjvhU/bixbbbFxdJ1sqCp4uJ0wuZiYBPhksZoy4lfaF0k9cwNzY5upEW/VWdw3w==}
-
-  '@chainsafe/netmask@2.0.0':
-    resolution: {integrity: sha512-I3Z+6SWUoaljh3TBzCnCxjlUyN8tA+NAk5L6m9IxvCf1BENQTePzPMis97CoN/iMW1St3WN+AWCCRp+TTBRiDg==}
 
   '@colors/colors@1.5.0':
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
@@ -3049,15 +3055,6 @@ packages:
   '@kwsites/promise-deferred@1.1.1':
     resolution: {integrity: sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw==}
 
-  '@leichtgewicht/ip-codec@2.0.5':
-    resolution: {integrity: sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw==}
-
-  '@libp2p/interface@2.7.0':
-    resolution: {integrity: sha512-lWmfIGzbSaw//yoEWWJh8dXNDGSCwUyXwC7P1Q6jCFWNoEtCaB1pvwOGBtri7Db/aNFZryMzN5covoq5ulldnA==}
-
-  '@libp2p/logger@5.1.13':
-    resolution: {integrity: sha512-JKyMlySG8T+LpItsj9Vma57yap/A0HqJ8ZdaHvgdoThhSOfqcRs8oRWO/2EG0Q5hUXugw//EAT+Ptj8MyNdbjQ==}
-
   '@lit-protocol/access-control-conditions@7.0.8':
     resolution: {integrity: sha512-oSV/3Mki8nr0MeSH2bPLqA3oU41TzcJscqQ1t3G8dtImJ/vFyaQCZSYS+G3V7lFQXhutcqBQcXT+GuyD99OVVg==}
 
@@ -3125,12 +3122,6 @@ packages:
 
   '@multiformats/base-x@4.0.1':
     resolution: {integrity: sha512-eMk0b9ReBbV23xXU693TAIrLyeO5iTgBZGSJfpqriG8UkYvr/hC9u9pyMlAakDNHWmbhMZCDs6KQO0jzKD8OTw==}
-
-  '@multiformats/dns@1.0.6':
-    resolution: {integrity: sha512-nt/5UqjMPtyvkG9BQYdJ4GfLK3nMqGpFZOzf4hAmIa0sJh2LlS9YKXZ4FgwBDsaHvzZqR/rUFIywIc7pkHNNuw==}
-
-  '@multiformats/multiaddr@12.4.0':
-    resolution: {integrity: sha512-FL7yBTLijJ5JkO044BGb2msf+uJLrwpD6jD6TkXlbjA9N12+18HT40jvd4o5vL4LOJMc86dPX6tGtk/uI9kYKg==}
 
   '@multiformats/murmur3@2.1.8':
     resolution: {integrity: sha512-6vId1C46ra3R1sbJUOFCZnsUIveR9oF20yhPmAFxPm0JfrX3/ZRCgP3YDrBzlGoEppOXnA9czHeYc0T9mB6hbA==}
@@ -3755,9 +3746,6 @@ packages:
   '@types/configstore@6.0.2':
     resolution: {integrity: sha512-OS//b51j9uyR3zvwD04Kfs5kHpve2qalQ18JhY/ho3voGYUTPLEG90/ocfKPI48hyHH8T04f7KEEbK6Ue60oZQ==}
 
-  '@types/dns-packet@5.6.5':
-    resolution: {integrity: sha512-qXOC7XLOEe43ehtWJCMnQXvgcIpv6rPmQ1jXT98Ad8A3TB1Ue50jsCbSSSyuazScEuZ/Q026vHbrOTVkmwA+7Q==}
-
   '@types/estree@1.0.6':
     resolution: {integrity: sha512-AYnb1nQyY49te+VRAVgmzfcgjYS91mY5P0TKUDCLEM+gNnA+3T6rWITXRLYCpahpqSQbN5cE+gHpnPyXjHWxcw==}
 
@@ -3941,9 +3929,6 @@ packages:
 
   '@ucanto/client@9.0.1':
     resolution: {integrity: sha512-cV8w3AnaZaYCdUmyFFICj8YhFckDoy2DvWgAzGDMkPz0WbUW4lw9Tjm4hEE8x5kiP47wYej/pHKWCcoELiU0qw==}
-
-  '@ucanto/core@10.3.0':
-    resolution: {integrity: sha512-hPJDuGKSzQdfe0ZrRzNRGz+AeEeVd3ed+St8LUn6/mJMncsqOGzqUbHNVc6sOMGAI4incSGKAO7AXOKd6DRObw==}
 
   '@ucanto/core@10.3.1':
     resolution: {integrity: sha512-P4McvR1T7a+FJknWgn8B62WZs/tnL5qTpZWkaRI4dL85AICjfGmnns4ebAq0R0rkz2wrcGuBZEOB7/mwnxbH9w==}
@@ -4469,9 +4454,6 @@ packages:
   blockstore-core@3.0.0:
     resolution: {integrity: sha512-5ZZB5nh6kErcjZ/CTK6lCwTIGlPdkTXbD8+2xLC4Fm0WGh7g2e2lW2bfURw7mvnPtSX1xV+sN4V2ndowSgIiHQ==}
     engines: {node: '>=16.0.0', npm: '>=7.0.0'}
-
-  blockstore-core@5.0.2:
-    resolution: {integrity: sha512-y7/BHdYLO3YCpJMg6Ue7b4Oz4FT1HWSZoHHdlsaJTsvoE8XieXb6kUCB9UkkUBDw2x4neRDwlgYBpyK77+Ro2Q==}
 
   bn.js@4.12.1:
     resolution: {integrity: sha512-k8TVBiPkPJT9uHLdOKfFpqcfprwBFOAAXXozRubr7R7PfIuKvQlzcI4M0pALeqXN09vdaMbUdUj+pass+uULAg==}
@@ -5089,10 +5071,6 @@ packages:
 
   dlv@1.1.3:
     resolution: {integrity: sha512-+HlytyjlPKnIG8XuRG8WvmBP8xs8P71y+SKKS6ZXWoEgLuePxtDoUEiH7WkdePWrQ5JBpE6aoVqfZfJUQkjXwA==}
-
-  dns-packet@5.6.1:
-    resolution: {integrity: sha512-l4gcSouhcgIKRvyy99RNVOgxXiicE+2jZoNmaNmZ6JXiGajBOJAesk1OBlJuM5k2c+eudGdLxDqXuPCKIj6kpw==}
-    engines: {node: '>=6'}
 
   doctrine@2.1.0:
     resolution: {integrity: sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw==}
@@ -5850,9 +5828,6 @@ packages:
   hash.js@1.1.7:
     resolution: {integrity: sha512-taOaskGt4z4SOANNseOviYDvjEJinIkRgmp7LbKP2YTTmVxWBl87s/uzK9r+44BclBSp2X7K1hqeNfz9JbBeXA==}
 
-  hashlru@2.3.0:
-    resolution: {integrity: sha512-0cMsjjIC8I+D3M44pOQdsy0OHXGLVz6Z0beRuufhKa0KfaD2wGwAev6jILzXsd3/vpnNQJmWyZtIILqM1N+n5A==}
-
   hasown@2.0.2:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
@@ -5972,12 +5947,6 @@ packages:
     resolution: {integrity: sha512-ROWKGJls7vLeFaQtI3hZVCJOkUoZ05xAi2t2qysM4d7dwVKrfm5jUOqWh8JgLL7Iup3XqJ0mKXXZuwJ3s03RSw==}
     engines: {node: '>=16.0.0', npm: '>=7.0.0'}
 
-  interface-blockstore@5.3.1:
-    resolution: {integrity: sha512-nhgrQnz6yUQEqxTFLhlOBurQOy5lWlwCpgFmZ3GTObTVTQS9RZjK/JTozY6ty9uz2lZs7VFJSqwjWAltorJ4Vw==}
-
-  interface-datastore@8.3.1:
-    resolution: {integrity: sha512-3r0ETmHIi6HmvM5sc09QQiCD3gUfwtEM/AAChOyAd/UAKT69uk8LXfTSUBufbUIO/dU65Vj8nb9O6QjwW8vDSQ==}
-
   interface-ipld-format@1.0.1:
     resolution: {integrity: sha512-WV/ar+KQJVoQpqRDYdo7YPGYIUHJxCuOEhdvsRpzLqoOIVCqPKdMMYmsLL1nCRsF3yYNio+PAJbCKiv6drrEAg==}
     deprecated: This module has been superseded by the multiformats module
@@ -5985,9 +5954,6 @@ packages:
   interface-store@3.0.4:
     resolution: {integrity: sha512-OjHUuGXbH4eXSBx1TF1tTySvjLldPLzRSYYXJwrEQI+XfH5JWYZofr0gVMV4F8XTwC+4V7jomDYkvGRmDSRKqQ==}
     engines: {node: '>=16.0.0', npm: '>=7.0.0'}
-
-  interface-store@6.0.2:
-    resolution: {integrity: sha512-KSFCXtBlNoG0hzwNa0RmhHtrdhzexp+S+UY2s0rWTBJyfdEIgn6i6Zl9otVqrcFYbYrneBT7hbmHQ8gE0C3umA==}
 
   internal-slot@1.1.0:
     resolution: {integrity: sha512-4gd7VpWNQNB4UKKCFFVcp1AVv+FMOgs9NKzjHKusc8jTMhd5eL1NqQqOpE0KzMds804/yHlglp3uxgluOqAPLw==}
@@ -6005,15 +5971,9 @@ packages:
     resolution: {integrity: sha512-lSaCF2wpG7U26heLNiauTwaKmBRmr3unoj2/PVv93J/mgD7Qy+gq9/pJNLhQReX1iOIQY6pQjm02aCJ3oAfyMQ==}
     engines: {node: '>=16.0.0', npm: '>=7.0.0'}
 
-  ipfs-unixfs-exporter@13.6.2:
-    resolution: {integrity: sha512-U3NkQHvQn5XzxtjSo1/GfoFIoXYY4hPgOlZG5RUrV5ScBI222b3jAHbHksXZuMy7sqPkA9ieeWdOmnG1+0nxyw==}
-
   ipfs-unixfs-importer@7.0.3:
     resolution: {integrity: sha512-qeFOlD3AQtGzr90sr5Tq1Bi8pT5Nr2tSI8z310m7R4JDYgZc6J1PEZO3XZQ8l1kuGoqlAppBZuOYmPEqaHcVQQ==}
     engines: {node: '>=14.0.0', npm: '>=7.0.0'}
-
-  ipfs-unixfs@11.2.1:
-    resolution: {integrity: sha512-gUeeX63EFgiaMgcs0cUs2ZUPvlOeEZ38okjK8twdWGZX2jYd2rCk8k/TJ3DSRIDZ2t/aZMv6I23guxHaofZE3w==}
 
   ipfs-unixfs@4.0.3:
     resolution: {integrity: sha512-hzJ3X4vlKT8FQ3Xc4M1szaFVjsc1ZydN+E4VQ91aXxfpjFn9G2wsMo1EFdAXNq/BUnN5dgqIOMP5zRYr3DTsAw==}
@@ -6283,15 +6243,9 @@ packages:
     resolution: {integrity: sha512-ESuHV6MLUNxuSy0vGZpKhSRjW0ixczN1FhbVy7eGJHjX6U2qiiXTyMvDc0z/w+nifOOwPyI5DT9Rc3o9IaGqEQ==}
     engines: {node: '>=16.0.0', npm: '>=7.0.0'}
 
-  it-drain@3.0.8:
-    resolution: {integrity: sha512-eeOz+WwKc11ou1UuqZympcXPLCjpTn5ALcYFJiHeTEiYEZ2py/J1vq41XWYj88huCUiqp9iNHfObOKrbIk5Izw==}
-
   it-filter@2.0.2:
     resolution: {integrity: sha512-gocw1F3siqupegsOzZ78rAc9C+sYlQbI2af/TmzgdrR613MyEJHbvfwBf12XRekGG907kqXSOGKPlxzJa6XV1Q==}
     engines: {node: '>=16.0.0', npm: '>=7.0.0'}
-
-  it-filter@3.1.2:
-    resolution: {integrity: sha512-2AozaGjIvBBiB7t7MpVNug9kwofqmKSpvgW7zhuyvCs6xxDd6FrfvqyfYtlQTKLNP+Io1WeXko1UQhdlK4M0gg==}
 
   it-first@1.0.7:
     resolution: {integrity: sha512-nvJKZoBpZD/6Rtde6FXqwDqDZGF1sCADmr2Zoc0hZsIvnE449gRFnGctxDf09Bzc/FWnHXAdaHVIetY6lrE0/g==}
@@ -6303,22 +6257,13 @@ packages:
     resolution: {integrity: sha512-uVMedYW0wa2Cx0TAmcOCLbfuLLII7+vyURmhKa8Zovpd+aBTMsmINtsta2n364wJ5qsEDBH+akY1sUtAkaYBlg==}
     engines: {node: '>=16.0.0', npm: '>=7.0.0'}
 
-  it-last@3.0.7:
-    resolution: {integrity: sha512-qG4BTveE6Wzsz5voqaOtZAfZgXTJT+yiaj45vp5S0Vi8oOdgKlRqUeolfvWoMCJ9vwSc/z9pAaNYIza7gA851w==}
-
   it-map@2.0.1:
     resolution: {integrity: sha512-a2GcYDHiAh/eSU628xlvB56LA98luXZnniH2GlD0IdBzf15shEq9rBeb0Rg3o1SWtNILUAwqmQxEXcewGCdvmQ==}
     engines: {node: '>=16.0.0', npm: '>=7.0.0'}
 
-  it-map@3.1.2:
-    resolution: {integrity: sha512-G3dzFUjTYHKumJJ8wa9dSDS3yKm8L7qDUnAgzemOD0UMztwm54Qc2v97SuUCiAgbOz/aibkSLImfoFK09RlSFQ==}
-
   it-merge@2.0.1:
     resolution: {integrity: sha512-ItoBy3dPlNKnhjHR8e7nfabfZzH4Jy2OMPvayYH3XHy4YNqSVKmWTIxhz7KX4UMBsLChlIJZ+5j6csJgrYGQtw==}
     engines: {node: '>=16.0.0', npm: '>=7.0.0'}
-
-  it-merge@3.0.7:
-    resolution: {integrity: sha512-4Jzk4ysLW9D6EP6tLCQF253X/ZLO/ELjG9S+Ax79Peo3GQvV4Czux8s3gFS3N/t7/mFhG17ouPvuwY9reFIf+w==}
 
   it-parallel-batch@1.0.11:
     resolution: {integrity: sha512-UWsWHv/kqBpMRmyZJzlmZeoAMA0F3SZr08FBdbhtbe+MtoEBgr/ZUAKrnenhXCBrsopy76QjRH2K/V8kNdupbQ==}
@@ -6326,15 +6271,8 @@ packages:
   it-parallel@3.0.8:
     resolution: {integrity: sha512-URLhs6eG4Hdr4OdvgBBPDzOjBeSSmI+Kqex2rv/aAyYClME26RYHirLVhZsZP5M+ZP6M34iRlXk8Wlqtezuqpg==}
 
-  it-peekable@3.0.6:
-    resolution: {integrity: sha512-odk9wn8AwFQipy8+tFaZNRCM62riraKZJRysfbmOett9wgJumCwgZFzWUBUwMoiQapEcEVGwjDpMChZIi+zLuQ==}
-
   it-pipe@2.0.5:
     resolution: {integrity: sha512-y85nW1N6zoiTnkidr2EAyC+ZVzc7Mwt2p+xt2a2ooG1ThFakSpNw1Kxm+7F13Aivru96brJhjQVRQNU+w0yozw==}
-    engines: {node: '>=16.0.0', npm: '>=7.0.0'}
-
-  it-pipe@3.0.1:
-    resolution: {integrity: sha512-sIoNrQl1qSRg2seYSBH/3QxWhJFn9PKYvOf/bHdtCBF0bnghey44VyASsWzn5dAx0DCDDABq1hZIuzKmtBZmKA==}
     engines: {node: '>=16.0.0', npm: '>=7.0.0'}
 
   it-pushable@3.2.3:
@@ -6343,9 +6281,6 @@ packages:
   it-stream-types@1.0.5:
     resolution: {integrity: sha512-I88Ka1nHgfX62e5mi5LLL+oueqz7Ltg0bUdtsUKDe9SoUqbQPf2Mp5kxDTe9pNhHQGs4pvYPAINwuZ1HAt42TA==}
     engines: {node: '>=16.0.0', npm: '>=7.0.0'}
-
-  it-stream-types@2.0.2:
-    resolution: {integrity: sha512-Rz/DEZ6Byn/r9+/SBCuJhpPATDF9D+dz5pbgSUyBsCDtza6wtNATrz/jz1gDyNanC3XdLboriHnOC925bZRBww==}
 
   it-take@2.0.1:
     resolution: {integrity: sha512-DL7kpZNjuoeSTnB9dMAJ0Z3m2T29LRRAU+HIgkiQM+1jH3m8l9e/1xpWs8JHTlbKivbqSFrQMTc8KVcaQNmsaA==}
@@ -6811,10 +6746,6 @@ packages:
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
-  ms@3.0.0-canary.1:
-    resolution: {integrity: sha512-kh8ARjh8rMN7Du2igDRO9QJnqCb2xYTJxyQYK7vJJS4TvLLmsbyhiKpSW+t+y26gyOyMd0riphX0GeWKU3ky5g==}
-    engines: {node: '>=12.13'}
-
   multibase@4.0.6:
     resolution: {integrity: sha512-x23pDe5+svdLz/k5JPGCVdfn7Q5mZVMBETiC+ORfO+sor9Sgs0smJzAjfTbM5tckeCqnaUuMYoz+k3RXMmJClQ==}
     engines: {node: '>=12.0.0', npm: '>=6.0.0'}
@@ -6831,9 +6762,6 @@ packages:
   multiformats@12.1.3:
     resolution: {integrity: sha512-eajQ/ZH7qXZQR2AgtfpmSMizQzmyYVmCql7pdhldPuYQi4atACekbJaQplk6dWyIi10jCaFnd6pqvcEFXjbaJw==}
     engines: {node: '>=16.0.0', npm: '>=7.0.0'}
-
-  multiformats@13.3.1:
-    resolution: {integrity: sha512-QxowxTNwJ3r5RMctoGA5p13w5RbRT2QDkoM+yFlqfLiioBp78nhDjnRLvmSBI9+KAqN4VdgOVWM9c0CHd86m3g==}
 
   multiformats@13.3.2:
     resolution: {integrity: sha512-qbB0CQDt3QKfiAzZ5ZYjLFOs+zW43vA4uyM8g27PeEuXZybUOFyjrVdP93HPBHMoglibwfkdVwbzfUq8qGcH6g==}
@@ -7119,10 +7047,6 @@ packages:
   p-queue@7.4.1:
     resolution: {integrity: sha512-vRpMXmIkYF2/1hLBKisKeVYJZ8S2tZ0zEAmIJgdVKP2nq0nh4qCdf8bgw+ZgKrkh71AOCaqzwbJJk1WtdcF3VA==}
     engines: {node: '>=12'}
-
-  p-queue@8.1.0:
-    resolution: {integrity: sha512-mxLDbbGIBEXTJL0zEx8JIylaj3xQ7Z/7eEVjcF9fJX4DBiH9oqe+oahYnlKKxm0Ci9TlWTyhSHgygxMxjIB2jw==}
-    engines: {node: '>=18'}
 
   p-retry@5.1.2:
     resolution: {integrity: sha512-couX95waDu98NfNZV+i/iLt+fdVxmI7CbrrdC2uDWfPdUAApyxT4wmDlyOtR5KtTDmkDO0zDScDjDou9YHhd9g==}
@@ -7412,9 +7336,6 @@ packages:
     resolution: {integrity: sha512-cdGef/drWFoydD1JsMzuFf8100nZl+GT+yacc2bEced5f9Rjk4z+WtFUTBu9PhOi9j/jfmBPu0mMEY4wIdAF8A==}
     engines: {node: '>= 0.6.0'}
 
-  progress-events@1.0.1:
-    resolution: {integrity: sha512-MOzLIwhpt64KIVN64h1MwdKWiyKFNc/S6BoYKPIVUHFg0/eIEyBulhWCgn678v/4c0ri3FdGuzXymNCv02MUIw==}
-
   promise-retry@2.0.1:
     resolution: {integrity: sha512-y+WKFlBR8BGXnsNlIHFGPZmyDf3DFMoLhaflAnyZgV6rG6xu+JwesTo2Q9R6XwYmtmwAFCkAk3e35jEdoeh/3g==}
     engines: {node: '>=10'}
@@ -7432,9 +7353,6 @@ packages:
   protobufjs@7.4.0:
     resolution: {integrity: sha512-mRUWCc3KUU4w1jU8sGxICXH/gNS94DvI1gxqDvBzhj1JpcsimQkYiOJfwsPUykUI5ZaspFbSgmBLER8IrQ3tqw==}
     engines: {node: '>=12.0.0'}
-
-  protons-runtime@5.5.0:
-    resolution: {integrity: sha512-EsALjF9QsrEk6gbCx3lmfHxVN0ah7nG3cY7GySD4xf4g8cr7g543zB88Foh897Sr1RQJ9yDCUsoT1i1H/cVUFA==}
 
   proxy-from-env@1.1.0:
     resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
@@ -8095,10 +8013,6 @@ packages:
     resolution: {integrity: sha512-MpUEN2OodtUzxvKQl72cUF7RQ5EiHsGvSsVG0ia9c5RbWGL2CI4C7EpPS8UTBIplnlzZiNuV56w+FuNxy3ty2Q==}
     engines: {node: '>=10'}
 
-  supports-color@9.4.0:
-    resolution: {integrity: sha512-VL+lNrEoIXww1coLPOmiEmK/0sGigko5COxI09KzHc2VJXJsQ37UaQ+8quuxjDeA7+KnLGTWRyOXSLLR2Wb4jw==}
-    engines: {node: '>=12'}
-
   supports-hyperlinks@3.1.0:
     resolution: {integrity: sha512-2rn0BZ+/f7puLOHZm1HOJfwBggfaHXUpPUSSG/SWM4TWp5KCfmNYwnC3hruy2rZlMnmWZ+QAGpZfchu3f3695A==}
     engines: {node: '>=14.18'}
@@ -8356,11 +8270,6 @@ packages:
     engines: {node: '>=4.2.0'}
     hasBin: true
 
-  typescript@5.2.2:
-    resolution: {integrity: sha512-mI4WrpHsbCIcwT9cF4FZvr80QUeKvsUsUvKDoR+X/7XHQH98xYD8YHZg7ANtz2GtZt/CBq2QJ0thkGJMHfqc1w==}
-    engines: {node: '>=14.17'}
-    hasBin: true
-
   typescript@5.6.1-rc:
     resolution: {integrity: sha512-E3b2+1zEFu84jB0YQi9BORDjz9+jGbwwy1Zi3G0LUNw7a7cePUrHMRNy8aPh53nXpkFGVHSxIZo5vKTfYaFiBQ==}
     engines: {node: '>=14.17'}
@@ -8376,9 +8285,6 @@ packages:
 
   ufo@1.5.4:
     resolution: {integrity: sha512-UsUk3byDzKd04EyoZ7U4DOlxQaD14JUKQl6/P7wiX4FNvUfm3XL246n9W5AmqwW5RSFJ27NAuM0iLscAOYUiGQ==}
-
-  uint8-varint@2.0.4:
-    resolution: {integrity: sha512-FwpTa7ZGA/f/EssWAb5/YV6pHgVF1fViKdW8cWaEarjB8t7NyofSWBdOTyFPaGuUG4gx3v1O3PQ8etsiOs3lcw==}
 
   uint8arraylist@2.4.8:
     resolution: {integrity: sha512-vc1PlGOzglLF0eae1M8mLRTBivsvrGsdmJ5RbK3e+QRvRLOZfZhQROTwH/OfyF3+ZVUg9/8hE8bmKP2CvP9quQ==}
@@ -8655,9 +8561,6 @@ packages:
 
   wcwidth@1.0.1:
     resolution: {integrity: sha512-XHPEwS0q6TaxcvG85+8EYkbiCux2XtWG2mkc47Ng2A77BQu9+DqIOJldST4HgPkuea7dvKSj5VgX3P1d4rW8Tg==}
-
-  weald@1.0.4:
-    resolution: {integrity: sha512-+kYTuHonJBwmFhP1Z4YQK/dGi3jAnJGCYhyODFpHK73rbxnp9lnZQj7a2m+WVgn8fXr5bJaxUpF6l8qZpPeNWQ==}
 
   web-encoding@1.1.5:
     resolution: {integrity: sha512-HYLeVCdJ0+lBYV2FvNZmv3HJ2Nt0QYXqZojk3d9FJOLkwnuhzM9tmamh8d7HPM8QqjKH8DeHkFTx+CFlWpZZDA==}
@@ -9648,12 +9551,6 @@ snapshots:
 
   '@braidai/lang@1.1.0': {}
 
-  '@chainsafe/is-ip@2.1.0': {}
-
-  '@chainsafe/netmask@2.0.0':
-    dependencies:
-      '@chainsafe/is-ip': 2.1.0
-
   '@colors/colors@1.5.0':
     optional: true
 
@@ -10642,37 +10539,18 @@ snapshots:
 
   '@kwsites/promise-deferred@1.1.1': {}
 
-  '@leichtgewicht/ip-codec@2.0.5': {}
-
-  '@libp2p/interface@2.7.0':
-    dependencies:
-      '@multiformats/multiaddr': 12.4.0
-      it-pushable: 3.2.3
-      it-stream-types: 2.0.2
-      multiformats: 13.3.2
-      progress-events: 1.0.1
-      uint8arraylist: 2.4.8
-
-  '@libp2p/logger@5.1.13':
-    dependencies:
-      '@libp2p/interface': 2.7.0
-      '@multiformats/multiaddr': 12.4.0
-      interface-datastore: 8.3.1
-      multiformats: 13.3.2
-      weald: 1.0.4
-
-  '@lit-protocol/access-control-conditions@7.0.8(typescript@5.2.2)':
+  '@lit-protocol/access-control-conditions@7.0.8(typescript@5.8.2)':
     dependencies:
       '@ethersproject/abstract-provider': 5.7.0
       '@ethersproject/contracts': 5.7.0
       '@ethersproject/providers': 5.7.2
       '@lit-protocol/accs-schemas': 0.0.24
-      '@lit-protocol/constants': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/contracts': 0.0.74(typescript@5.2.2)
-      '@lit-protocol/logger': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/misc': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/constants': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/contracts': 0.0.74(typescript@5.8.2)
+      '@lit-protocol/logger': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/misc': 7.0.8(typescript@5.8.2)
       '@lit-protocol/types': 7.0.8
-      '@lit-protocol/uint8arrays': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/uint8arrays': 7.0.8(typescript@5.8.2)
       '@openagenda/verror': 3.1.4
       ajv: 8.17.1
       bech32: 2.0.0
@@ -10690,7 +10568,7 @@ snapshots:
     dependencies:
       ajv: 8.17.1
 
-  '@lit-protocol/auth-browser@7.0.8(typescript@5.2.2)':
+  '@lit-protocol/auth-browser@7.0.8(typescript@5.8.2)':
     dependencies:
       '@ethersproject/abstract-provider': 5.7.0
       '@ethersproject/bytes': 5.7.0
@@ -10699,12 +10577,12 @@ snapshots:
       '@ethersproject/strings': 5.7.0
       '@ethersproject/wallet': 5.7.0
       '@lit-protocol/accs-schemas': 0.0.24
-      '@lit-protocol/constants': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/logger': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/misc': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/misc-browser': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/constants': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/logger': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/misc': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/misc-browser': 7.0.8(typescript@5.8.2)
       '@lit-protocol/types': 7.0.8
-      '@lit-protocol/uint8arrays': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/uint8arrays': 7.0.8(typescript@5.8.2)
       '@openagenda/verror': 3.1.4
       ajv: 8.17.1
       bech32: 2.0.0
@@ -10716,19 +10594,19 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@lit-protocol/auth-helpers@7.0.8(typescript@5.2.2)':
+  '@lit-protocol/auth-helpers@7.0.8(typescript@5.8.2)':
     dependencies:
       '@ethersproject/abstract-provider': 5.7.0
       '@ethersproject/contracts': 5.7.0
       '@ethersproject/providers': 5.7.2
-      '@lit-protocol/access-control-conditions': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/access-control-conditions': 7.0.8(typescript@5.8.2)
       '@lit-protocol/accs-schemas': 0.0.24
-      '@lit-protocol/constants': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/contracts': 0.0.74(typescript@5.2.2)
-      '@lit-protocol/logger': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/misc': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/constants': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/contracts': 0.0.74(typescript@5.8.2)
+      '@lit-protocol/logger': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/misc': 7.0.8(typescript@5.8.2)
       '@lit-protocol/types': 7.0.8
-      '@lit-protocol/uint8arrays': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/uint8arrays': 7.0.8(typescript@5.8.2)
       '@openagenda/verror': 3.1.4
       ajv: 8.17.1
       bech32: 2.0.0
@@ -10743,11 +10621,11 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@lit-protocol/constants@7.0.8(typescript@5.2.2)':
+  '@lit-protocol/constants@7.0.8(typescript@5.8.2)':
     dependencies:
       '@ethersproject/abstract-provider': 5.7.0
       '@lit-protocol/accs-schemas': 0.0.24
-      '@lit-protocol/contracts': 0.0.74(typescript@5.2.2)
+      '@lit-protocol/contracts': 0.0.74(typescript@5.8.2)
       '@lit-protocol/types': 7.0.8
       '@openagenda/verror': 3.1.4
       depd: 2.0.0
@@ -10759,17 +10637,17 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@lit-protocol/contracts-sdk@7.0.8(typescript@5.2.2)':
+  '@lit-protocol/contracts-sdk@7.0.8(typescript@5.8.2)':
     dependencies:
       '@ethersproject/abi': 5.7.0
       '@ethersproject/abstract-provider': 5.7.0
       '@ethersproject/contracts': 5.7.0
       '@ethersproject/providers': 5.7.2
       '@lit-protocol/accs-schemas': 0.0.24
-      '@lit-protocol/constants': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/contracts': 0.0.74(typescript@5.2.2)
-      '@lit-protocol/logger': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/misc': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/constants': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/contracts': 0.0.74(typescript@5.8.2)
+      '@lit-protocol/logger': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/misc': 7.0.8(typescript@5.8.2)
       '@lit-protocol/types': 7.0.8
       '@openagenda/verror': 3.1.4
       ajv: 8.17.1
@@ -10786,27 +10664,27 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@lit-protocol/contracts@0.0.74(typescript@5.2.2)':
+  '@lit-protocol/contracts@0.0.74(typescript@5.8.2)':
     dependencies:
-      typescript: 5.2.2
+      typescript: 5.8.2
 
-  '@lit-protocol/core@7.0.8(typescript@5.2.2)':
+  '@lit-protocol/core@7.0.8(typescript@5.8.2)':
     dependencies:
       '@ethersproject/abi': 5.7.0
       '@ethersproject/abstract-provider': 5.7.0
       '@ethersproject/contracts': 5.7.0
       '@ethersproject/providers': 5.7.2
-      '@lit-protocol/access-control-conditions': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/access-control-conditions': 7.0.8(typescript@5.8.2)
       '@lit-protocol/accs-schemas': 0.0.24
-      '@lit-protocol/constants': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/contracts': 0.0.74(typescript@5.2.2)
-      '@lit-protocol/contracts-sdk': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/crypto': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/logger': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/misc': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/constants': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/contracts': 0.0.74(typescript@5.8.2)
+      '@lit-protocol/contracts-sdk': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/crypto': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/logger': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/misc': 7.0.8(typescript@5.8.2)
       '@lit-protocol/nacl': 7.0.8
       '@lit-protocol/types': 7.0.8
-      '@lit-protocol/uint8arrays': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/uint8arrays': 7.0.8(typescript@5.8.2)
       '@lit-protocol/wasm': 7.0.8
       '@openagenda/verror': 3.1.4
       ajv: 8.17.1
@@ -10826,19 +10704,19 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@lit-protocol/crypto@7.0.8(typescript@5.2.2)':
+  '@lit-protocol/crypto@7.0.8(typescript@5.8.2)':
     dependencies:
       '@ethersproject/abstract-provider': 5.7.0
       '@ethersproject/contracts': 5.7.0
       '@ethersproject/providers': 5.7.2
       '@lit-protocol/accs-schemas': 0.0.24
-      '@lit-protocol/constants': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/contracts': 0.0.74(typescript@5.2.2)
-      '@lit-protocol/logger': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/misc': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/constants': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/contracts': 0.0.74(typescript@5.8.2)
+      '@lit-protocol/logger': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/misc': 7.0.8(typescript@5.8.2)
       '@lit-protocol/nacl': 7.0.8
       '@lit-protocol/types': 7.0.8
-      '@lit-protocol/uint8arrays': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/uint8arrays': 7.0.8(typescript@5.8.2)
       '@lit-protocol/wasm': 7.0.8
       '@openagenda/verror': 3.1.4
       ajv: 8.17.1
@@ -10854,18 +10732,18 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@lit-protocol/encryption@7.0.8(typescript@5.2.2)':
+  '@lit-protocol/encryption@7.0.8(typescript@5.8.2)':
     dependencies:
       '@ethersproject/abstract-provider': 5.7.0
       '@ethersproject/contracts': 5.7.0
       '@ethersproject/providers': 5.7.2
       '@lit-protocol/accs-schemas': 0.0.24
-      '@lit-protocol/constants': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/contracts': 0.0.74(typescript@5.2.2)
-      '@lit-protocol/logger': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/misc': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/constants': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/contracts': 0.0.74(typescript@5.8.2)
+      '@lit-protocol/logger': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/misc': 7.0.8(typescript@5.8.2)
       '@lit-protocol/types': 7.0.8
-      '@lit-protocol/uint8arrays': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/uint8arrays': 7.0.8(typescript@5.8.2)
       '@openagenda/verror': 3.1.4
       ajv: 8.17.1
       bech32: 2.0.0
@@ -10879,7 +10757,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@lit-protocol/lit-auth-client@7.0.8(encoding@0.1.13)(typescript@5.2.2)':
+  '@lit-protocol/lit-auth-client@7.0.8(encoding@0.1.13)(typescript@5.8.2)':
     dependencies:
       '@ethersproject/abi': 5.7.0
       '@ethersproject/abstract-provider': 5.7.0
@@ -10889,23 +10767,23 @@ snapshots:
       '@ethersproject/strings': 5.7.0
       '@ethersproject/transactions': 5.7.0
       '@ethersproject/wallet': 5.7.0
-      '@lit-protocol/access-control-conditions': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/access-control-conditions': 7.0.8(typescript@5.8.2)
       '@lit-protocol/accs-schemas': 0.0.24
-      '@lit-protocol/auth-browser': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/auth-helpers': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/constants': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/contracts': 0.0.74(typescript@5.2.2)
-      '@lit-protocol/contracts-sdk': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/core': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/crypto': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/lit-node-client': 7.0.8(encoding@0.1.13)(typescript@5.2.2)
-      '@lit-protocol/lit-node-client-nodejs': 7.0.8(encoding@0.1.13)(typescript@5.2.2)
-      '@lit-protocol/logger': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/misc': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/misc-browser': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/auth-browser': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/auth-helpers': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/constants': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/contracts': 0.0.74(typescript@5.8.2)
+      '@lit-protocol/contracts-sdk': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/core': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/crypto': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/lit-node-client': 7.0.8(encoding@0.1.13)(typescript@5.8.2)
+      '@lit-protocol/lit-node-client-nodejs': 7.0.8(encoding@0.1.13)(typescript@5.8.2)
+      '@lit-protocol/logger': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/misc': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/misc-browser': 7.0.8(typescript@5.8.2)
       '@lit-protocol/nacl': 7.0.8
       '@lit-protocol/types': 7.0.8
-      '@lit-protocol/uint8arrays': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/uint8arrays': 7.0.8(typescript@5.8.2)
       '@lit-protocol/wasm': 7.0.8
       '@openagenda/verror': 3.1.4
       '@walletconnect/ethereum-provider': 2.9.2(encoding@0.1.13)
@@ -10954,27 +10832,27 @@ snapshots:
       - uploadthing
       - utf-8-validate
 
-  '@lit-protocol/lit-node-client-nodejs@7.0.8(encoding@0.1.13)(typescript@5.2.2)':
+  '@lit-protocol/lit-node-client-nodejs@7.0.8(encoding@0.1.13)(typescript@5.8.2)':
     dependencies:
       '@ethersproject/abi': 5.7.0
       '@ethersproject/abstract-provider': 5.7.0
       '@ethersproject/contracts': 5.7.0
       '@ethersproject/providers': 5.7.2
       '@ethersproject/transactions': 5.7.0
-      '@lit-protocol/access-control-conditions': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/access-control-conditions': 7.0.8(typescript@5.8.2)
       '@lit-protocol/accs-schemas': 0.0.24
-      '@lit-protocol/auth-helpers': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/constants': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/contracts': 0.0.74(typescript@5.2.2)
-      '@lit-protocol/contracts-sdk': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/core': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/crypto': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/logger': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/misc': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/misc-browser': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/auth-helpers': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/constants': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/contracts': 0.0.74(typescript@5.8.2)
+      '@lit-protocol/contracts-sdk': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/core': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/crypto': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/logger': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/misc': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/misc-browser': 7.0.8(typescript@5.8.2)
       '@lit-protocol/nacl': 7.0.8
       '@lit-protocol/types': 7.0.8
-      '@lit-protocol/uint8arrays': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/uint8arrays': 7.0.8(typescript@5.8.2)
       '@lit-protocol/wasm': 7.0.8
       '@openagenda/verror': 3.1.4
       ajv: 8.17.1
@@ -10999,7 +10877,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@lit-protocol/lit-node-client@7.0.8(encoding@0.1.13)(typescript@5.2.2)':
+  '@lit-protocol/lit-node-client@7.0.8(encoding@0.1.13)(typescript@5.8.2)':
     dependencies:
       '@ethersproject/abi': 5.7.0
       '@ethersproject/abstract-provider': 5.7.0
@@ -11009,22 +10887,22 @@ snapshots:
       '@ethersproject/strings': 5.7.0
       '@ethersproject/transactions': 5.7.0
       '@ethersproject/wallet': 5.7.0
-      '@lit-protocol/access-control-conditions': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/access-control-conditions': 7.0.8(typescript@5.8.2)
       '@lit-protocol/accs-schemas': 0.0.24
-      '@lit-protocol/auth-browser': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/auth-helpers': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/constants': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/contracts': 0.0.74(typescript@5.2.2)
-      '@lit-protocol/contracts-sdk': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/core': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/crypto': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/lit-node-client-nodejs': 7.0.8(encoding@0.1.13)(typescript@5.2.2)
-      '@lit-protocol/logger': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/misc': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/misc-browser': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/auth-browser': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/auth-helpers': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/constants': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/contracts': 0.0.74(typescript@5.8.2)
+      '@lit-protocol/contracts-sdk': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/core': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/crypto': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/lit-node-client-nodejs': 7.0.8(encoding@0.1.13)(typescript@5.8.2)
+      '@lit-protocol/logger': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/misc': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/misc-browser': 7.0.8(typescript@5.8.2)
       '@lit-protocol/nacl': 7.0.8
       '@lit-protocol/types': 7.0.8
-      '@lit-protocol/uint8arrays': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/uint8arrays': 7.0.8(typescript@5.8.2)
       '@lit-protocol/wasm': 7.0.8
       '@openagenda/verror': 3.1.4
       '@walletconnect/ethereum-provider': 2.9.2(encoding@0.1.13)
@@ -11070,12 +10948,12 @@ snapshots:
       - uploadthing
       - utf-8-validate
 
-  '@lit-protocol/logger@7.0.8(typescript@5.2.2)':
+  '@lit-protocol/logger@7.0.8(typescript@5.8.2)':
     dependencies:
       '@ethersproject/abstract-provider': 5.7.0
       '@lit-protocol/accs-schemas': 0.0.24
-      '@lit-protocol/constants': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/contracts': 0.0.74(typescript@5.2.2)
+      '@lit-protocol/constants': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/contracts': 0.0.74(typescript@5.8.2)
       '@lit-protocol/types': 7.0.8
       '@openagenda/verror': 3.1.4
       depd: 2.0.0
@@ -11087,14 +10965,14 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@lit-protocol/misc-browser@7.0.8(typescript@5.2.2)':
+  '@lit-protocol/misc-browser@7.0.8(typescript@5.8.2)':
     dependencies:
       '@ethersproject/abstract-provider': 5.7.0
       '@lit-protocol/accs-schemas': 0.0.24
-      '@lit-protocol/constants': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/contracts': 0.0.74(typescript@5.2.2)
+      '@lit-protocol/constants': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/contracts': 0.0.74(typescript@5.8.2)
       '@lit-protocol/types': 7.0.8
-      '@lit-protocol/uint8arrays': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/uint8arrays': 7.0.8(typescript@5.8.2)
       '@openagenda/verror': 3.1.4
       depd: 2.0.0
       ethers: 5.7.1
@@ -11105,15 +10983,15 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@lit-protocol/misc@7.0.8(typescript@5.2.2)':
+  '@lit-protocol/misc@7.0.8(typescript@5.8.2)':
     dependencies:
       '@ethersproject/abstract-provider': 5.7.0
       '@ethersproject/contracts': 5.7.0
       '@ethersproject/providers': 5.7.2
       '@lit-protocol/accs-schemas': 0.0.24
-      '@lit-protocol/constants': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/contracts': 0.0.74(typescript@5.2.2)
-      '@lit-protocol/logger': 7.0.8(typescript@5.2.2)
+      '@lit-protocol/constants': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/contracts': 0.0.74(typescript@5.8.2)
+      '@lit-protocol/logger': 7.0.8(typescript@5.8.2)
       '@lit-protocol/types': 7.0.8
       '@openagenda/verror': 3.1.4
       ajv: 8.17.1
@@ -11144,12 +11022,12 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@lit-protocol/uint8arrays@7.0.8(typescript@5.2.2)':
+  '@lit-protocol/uint8arrays@7.0.8(typescript@5.8.2)':
     dependencies:
       '@ethersproject/abstract-provider': 5.7.0
       '@lit-protocol/accs-schemas': 0.0.24
-      '@lit-protocol/constants': 7.0.8(typescript@5.2.2)
-      '@lit-protocol/contracts': 0.0.74(typescript@5.2.2)
+      '@lit-protocol/constants': 7.0.8(typescript@5.8.2)
+      '@lit-protocol/contracts': 0.0.74(typescript@5.8.2)
       '@lit-protocol/types': 7.0.8
       '@openagenda/verror': 3.1.4
       depd: 2.0.0
@@ -11175,25 +11053,6 @@ snapshots:
       '@braidai/lang': 1.1.0
 
   '@multiformats/base-x@4.0.1': {}
-
-  '@multiformats/dns@1.0.6':
-    dependencies:
-      '@types/dns-packet': 5.6.5
-      buffer: 6.0.3
-      dns-packet: 5.6.1
-      hashlru: 2.3.0
-      p-queue: 8.1.0
-      progress-events: 1.0.1
-      uint8arrays: 5.1.0
-
-  '@multiformats/multiaddr@12.4.0':
-    dependencies:
-      '@chainsafe/is-ip': 2.1.0
-      '@chainsafe/netmask': 2.0.0
-      '@multiformats/dns': 1.0.6
-      multiformats: 13.3.2
-      uint8-varint: 2.0.4
-      uint8arrays: 5.1.0
 
   '@multiformats/murmur3@2.1.8':
     dependencies:
@@ -11854,10 +11713,6 @@ snapshots:
 
   '@types/configstore@6.0.2': {}
 
-  '@types/dns-packet@5.6.5':
-    dependencies:
-      '@types/node': 22.13.10
-
   '@types/estree@1.0.6': {}
 
   '@types/inquirer@9.0.7':
@@ -12159,14 +12014,6 @@ snapshots:
     dependencies:
       '@ucanto/core': 10.3.1
       '@ucanto/interface': 10.2.0
-
-  '@ucanto/core@10.3.0':
-    dependencies:
-      '@ipld/car': 5.4.0
-      '@ipld/dag-cbor': 9.2.2
-      '@ipld/dag-ucan': 3.4.5
-      '@ucanto/interface': 10.2.0
-      multiformats: 13.3.2
 
   '@ucanto/core@10.3.1':
     dependencies:
@@ -12742,7 +12589,7 @@ snapshots:
       multiformats: 12.1.3
       uint8arrays: 5.1.0
 
-  '@web3-storage/upload-client@17.1.3':
+  '@web3-storage/upload-client@17.1.3(encoding@0.1.13)':
     dependencies:
       '@ipld/car': 5.4.0
       '@ipld/dag-cbor': 9.2.2
@@ -12763,7 +12610,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@web3-storage/w3up-client@16.5.2':
+  '@web3-storage/w3up-client@16.5.2(encoding@0.1.13)':
     dependencies:
       '@ipld/dag-ucan': 3.4.5
       '@ucanto/client': 9.0.1
@@ -12776,7 +12623,7 @@ snapshots:
       '@web3-storage/capabilities': 17.4.1
       '@web3-storage/did-mailto': 2.1.0
       '@web3-storage/filecoin-client': 3.3.5
-      '@web3-storage/upload-client': 17.1.3
+      '@web3-storage/upload-client': 17.1.3(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 
@@ -13135,17 +12982,6 @@ snapshots:
       it-filter: 2.0.2
       it-take: 2.0.1
       multiformats: 11.0.2
-
-  blockstore-core@5.0.2:
-    dependencies:
-      '@libp2p/logger': 5.1.13
-      interface-blockstore: 5.3.1
-      interface-store: 6.0.2
-      it-drain: 3.0.8
-      it-filter: 3.1.2
-      it-merge: 3.0.7
-      it-pushable: 3.2.3
-      multiformats: 13.3.2
 
   bn.js@4.12.1: {}
 
@@ -13858,10 +13694,6 @@ snapshots:
       path-type: 4.0.0
 
   dlv@1.1.3: {}
-
-  dns-packet@5.6.1:
-    dependencies:
-      '@leichtgewicht/ip-codec': 2.0.5
 
   doctrine@2.1.0:
     dependencies:
@@ -14936,8 +14768,6 @@ snapshots:
       inherits: 2.0.4
       minimalistic-assert: 1.0.1
 
-  hashlru@2.3.0: {}
-
   hasown@2.0.2:
     dependencies:
       function-bind: 1.1.2
@@ -15068,16 +14898,6 @@ snapshots:
       interface-store: 3.0.4
       multiformats: 11.0.2
 
-  interface-blockstore@5.3.1:
-    dependencies:
-      interface-store: 6.0.2
-      multiformats: 13.3.2
-
-  interface-datastore@8.3.1:
-    dependencies:
-      interface-store: 6.0.2
-      uint8arrays: 5.1.0
-
   interface-ipld-format@1.0.1:
     dependencies:
       cids: 1.1.9
@@ -15085,8 +14905,6 @@ snapshots:
       multihashes: 4.0.3
 
   interface-store@3.0.4: {}
-
-  interface-store@6.0.2: {}
 
   internal-slot@1.1.0:
     dependencies:
@@ -15125,25 +14943,6 @@ snapshots:
       p-queue: 7.4.1
       uint8arrays: 4.0.10
 
-  ipfs-unixfs-exporter@13.6.2:
-    dependencies:
-      '@ipld/dag-cbor': 9.2.2
-      '@ipld/dag-json': 10.2.3
-      '@ipld/dag-pb': 4.1.3
-      '@multiformats/murmur3': 2.1.8
-      hamt-sharding: 3.0.6
-      interface-blockstore: 5.3.1
-      ipfs-unixfs: 11.2.1
-      it-filter: 3.1.2
-      it-last: 3.0.7
-      it-map: 3.1.2
-      it-parallel: 3.0.8
-      it-pipe: 3.0.1
-      it-pushable: 3.2.3
-      multiformats: 13.3.2
-      p-queue: 8.1.0
-      progress-events: 1.0.1
-
   ipfs-unixfs-importer@7.0.3(encoding@0.1.13):
     dependencies:
       bl: 5.1.0
@@ -15163,11 +14962,6 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - supports-color
-
-  ipfs-unixfs@11.2.1:
-    dependencies:
-      protons-runtime: 5.5.0
-      uint8arraylist: 2.4.8
 
   ipfs-unixfs@4.0.3:
     dependencies:
@@ -15193,7 +14987,7 @@ snapshots:
       it-to-stream: 1.0.0
       merge-options: 3.0.4
       nanoid: 3.3.8
-      native-fetch: 3.0.0(node-fetch@2.7.0)
+      native-fetch: 3.0.0(node-fetch@2.7.0(encoding@0.1.13))
       node-fetch: 2.7.0(encoding@0.1.13)
       react-native-fetch-api: 3.0.0
       stream-to-it: 0.2.4
@@ -15418,13 +15212,7 @@ snapshots:
 
   it-drain@2.0.1: {}
 
-  it-drain@3.0.8: {}
-
   it-filter@2.0.2: {}
-
-  it-filter@3.1.2:
-    dependencies:
-      it-peekable: 3.0.6
 
   it-first@1.0.7: {}
 
@@ -15435,19 +15223,9 @@ snapshots:
 
   it-last@2.0.1: {}
 
-  it-last@3.0.7: {}
-
   it-map@2.0.1: {}
 
-  it-map@3.1.2:
-    dependencies:
-      it-peekable: 3.0.6
-
   it-merge@2.0.1:
-    dependencies:
-      it-pushable: 3.2.3
-
-  it-merge@3.0.7:
     dependencies:
       it-pushable: 3.2.3
 
@@ -15459,27 +15237,17 @@ snapshots:
     dependencies:
       p-defer: 4.0.1
 
-  it-peekable@3.0.6: {}
-
   it-pipe@2.0.5:
     dependencies:
       it-merge: 2.0.1
       it-pushable: 3.2.3
       it-stream-types: 1.0.5
 
-  it-pipe@3.0.1:
-    dependencies:
-      it-merge: 3.0.7
-      it-pushable: 3.2.3
-      it-stream-types: 2.0.2
-
   it-pushable@3.2.3:
     dependencies:
       p-defer: 4.0.1
 
   it-stream-types@1.0.5: {}
-
-  it-stream-types@2.0.2: {}
 
   it-take@2.0.1: {}
 
@@ -15964,8 +15732,6 @@ snapshots:
 
   ms@2.1.3: {}
 
-  ms@3.0.0-canary.1: {}
-
   multibase@4.0.6:
     dependencies:
       '@multiformats/base-x': 4.0.1
@@ -15978,8 +15744,6 @@ snapshots:
   multiformats@11.0.2: {}
 
   multiformats@12.1.3: {}
-
-  multiformats@13.3.1: {}
 
   multiformats@13.3.2: {}
 
@@ -16022,7 +15786,7 @@ snapshots:
 
   nanoid@5.0.9: {}
 
-  native-fetch@3.0.0(node-fetch@2.7.0):
+  native-fetch@3.0.0(node-fetch@2.7.0(encoding@0.1.13)):
     dependencies:
       node-fetch: 2.7.0(encoding@0.1.13)
 
@@ -16364,11 +16128,6 @@ snapshots:
       eventemitter3: 5.0.1
       p-timeout: 5.1.0
 
-  p-queue@8.1.0:
-    dependencies:
-      eventemitter3: 5.0.1
-      p-timeout: 6.1.4
-
   p-retry@5.1.2:
     dependencies:
       '@types/retry': 0.12.1
@@ -16643,8 +16402,6 @@ snapshots:
 
   process@0.11.10: {}
 
-  progress-events@1.0.1: {}
-
   promise-retry@2.0.1:
     dependencies:
       err-code: 2.0.3
@@ -16688,12 +16445,6 @@ snapshots:
       '@protobufjs/utf8': 1.1.0
       '@types/node': 22.13.10
       long: 5.2.4
-
-  protons-runtime@5.5.0:
-    dependencies:
-      uint8-varint: 2.0.4
-      uint8arraylist: 2.4.8
-      uint8arrays: 5.1.0
 
   proxy-from-env@1.1.0: {}
 
@@ -17434,8 +17185,6 @@ snapshots:
     dependencies:
       has-flag: 4.0.0
 
-  supports-color@9.4.0: {}
-
   supports-hyperlinks@3.1.0:
     dependencies:
       has-flag: 4.0.0
@@ -17724,8 +17473,6 @@ snapshots:
 
   typescript@4.9.5: {}
 
-  typescript@5.2.2: {}
-
   typescript@5.6.1-rc: {}
 
   typescript@5.8.2: {}
@@ -17738,11 +17485,6 @@ snapshots:
       - supports-color
 
   ufo@1.5.4: {}
-
-  uint8-varint@2.0.4:
-    dependencies:
-      uint8arraylist: 2.4.8
-      uint8arrays: 5.1.0
 
   uint8arraylist@2.4.8:
     dependencies:
@@ -17980,11 +17722,6 @@ snapshots:
   wcwidth@1.0.1:
     dependencies:
       defaults: 1.0.4
-
-  weald@1.0.4:
-    dependencies:
-      ms: 3.0.0-canary.1
-      supports-color: 9.4.0
 
   web-encoding@1.1.5:
     dependencies:

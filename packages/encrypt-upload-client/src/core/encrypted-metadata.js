@@ -17,9 +17,9 @@ export const EncryptedMetadataSchema = Schema.variant({
     plaintextKeyHash: Schema.bytes(),
     accessControlConditions: Schema.dictionary({
       key: Schema.text(),
-      value: Schema.unknown()
-    }).array()
-  })
+      value: Schema.unknown(),
+    }).array(),
+  }),
 })
 
 export const EncryptedMetadataInputSchema = Schema.struct({
@@ -28,8 +28,8 @@ export const EncryptedMetadataInputSchema = Schema.struct({
   plaintextKeyHash: Schema.string(),
   accessControlConditions: Schema.dictionary({
     key: Schema.text(),
-    value: Schema.unknown()
-  }).array()
+    value: Schema.unknown(),
+  }).array(),
 })
 
 /** @implements {Types.EncryptedMetadataView} */
@@ -48,13 +48,16 @@ class EncryptedMetadata {
         /** @type {Types.EncryptedMetadataInput} */ (encryptedMetadataInput)
       )
     } else {
-      encryptedMetadata = /** @type {Types.EncryptedMetadata} */ (encryptedMetadataInput)
+      encryptedMetadata = /** @type {Types.EncryptedMetadata} */ (
+        encryptedMetadataInput
+      )
     }
 
     this.#encryptedDataCID = encryptedMetadata.encryptedDataCID
     this.#identityBoundCiphertext = encryptedMetadata.identityBoundCiphertext
     this.#plaintextKeyHash = encryptedMetadata.plaintextKeyHash
-    this.#accessControlConditions = encryptedMetadataInput.accessControlConditions
+    this.#accessControlConditions =
+      encryptedMetadataInput.accessControlConditions
   }
 
   get encryptedDataCID() {
@@ -79,7 +82,7 @@ class EncryptedMetadata {
       encryptedDataCID: this.encryptedDataCID,
       identityBoundCiphertext: this.identityBoundCiphertext,
       plaintextKeyHash: this.plaintextKeyHash,
-      accessControlConditions: this.accessControlConditions
+      accessControlConditions: this.accessControlConditions,
     }
     return archive(input)
   }
@@ -90,7 +93,7 @@ class EncryptedMetadata {
       encryptedDataCID: this.encryptedDataCID,
       identityBoundCiphertext: this.identityBoundCiphertext,
       plaintextKeyHash: this.plaintextKeyHash,
-      accessControlConditions: this.accessControlConditions
+      accessControlConditions: this.accessControlConditions,
     }
     return archiveBlock(input)
   }
@@ -105,35 +108,40 @@ class EncryptedMetadata {
  * @param {Types.EncryptedMetadata|Types.EncryptedMetadataInput} encryptedMetadataInput
  * @returns {Types.EncryptedMetadataView}
  */
-export const create = encryptedMetadataInput => new EncryptedMetadata(encryptedMetadataInput)
+export const create = (encryptedMetadataInput) =>
+  new EncryptedMetadata(encryptedMetadataInput)
 
-/** 
+/**
  * @param {Types.EncryptedMetadataView} encryptedMetadata
  * @returns {Types.EncryptedMetadataInput}
- * */
-export const toJSON = encryptedMetadata => ({
+ */
+export const toJSON = (encryptedMetadata) => ({
   encryptedDataCID: encryptedMetadata.encryptedDataCID.toString(),
-  identityBoundCiphertext: bytesToString(encryptedMetadata.identityBoundCiphertext),
+  identityBoundCiphertext: bytesToString(
+    encryptedMetadata.identityBoundCiphertext
+  ),
   plaintextKeyHash: bytesToString(encryptedMetadata.plaintextKeyHash),
-  accessControlConditions: encryptedMetadata.accessControlConditions
+  accessControlConditions: encryptedMetadata.accessControlConditions,
 })
 
 /**
  * @param {Types.EncryptedMetadataInput} encryptedMetadataInput
  * @returns {Types.EncryptedMetadata}
  */
-export const parse = encryptedMetadataInput => ({
+export const parse = (encryptedMetadataInput) => ({
   encryptedDataCID: CID.parse(encryptedMetadataInput.encryptedDataCID),
-  identityBoundCiphertext: stringToBytes(encryptedMetadataInput.identityBoundCiphertext),
+  identityBoundCiphertext: stringToBytes(
+    encryptedMetadataInput.identityBoundCiphertext
+  ),
   plaintextKeyHash: stringToBytes(encryptedMetadataInput.plaintextKeyHash),
-  accessControlConditions: encryptedMetadataInput.accessControlConditions
+  accessControlConditions: encryptedMetadataInput.accessControlConditions,
 })
 
 /**
  * @param {Types.EncryptedMetadata} encryptedMetadataInput
  * @returns {Promise<import('@ucanto/interface').Block>}
  */
-export const archiveBlock = async encryptedMetadataInput => {
+export const archiveBlock = async (encryptedMetadataInput) => {
   const bytes = dagCBOR.encode({ [version]: encryptedMetadataInput })
   const digest = await sha256.digest(bytes)
   const cid = Link.create(dagCBOR.code, digest)
@@ -144,7 +152,7 @@ export const archiveBlock = async encryptedMetadataInput => {
  * @param {Types.EncryptedMetadata} encryptedMetadataInput
  * @returns {Promise<Types.Result<Uint8Array>>}
  */
-export const archive = async encryptedMetadataInput => {
+export const archive = async (encryptedMetadataInput) => {
   const block = await archiveBlock(encryptedMetadataInput)
   return ok(CAR.encode({ roots: [block] }))
 }
@@ -153,8 +161,8 @@ export const archive = async encryptedMetadataInput => {
  * @param {Uint8Array} archive
  * @returns {Types.Result<Types.EncryptedMetadataView, Types.UnknownFormat>}
  */
-export const extract = archive => {
-  const { roots, blocks } = CAR.decode(archive)
+export const extract = (archive) => {
+  const { roots } = CAR.decode(archive)
 
   if (!roots.length) {
     return error(new UnknownFormat('missing root block'))
@@ -162,16 +170,17 @@ export const extract = archive => {
 
   const { code } = roots[0].cid
   if (code !== dagCBOR.code) {
-    return error(new UnknownFormat(`unexpected root CID codec: 0x${code.toString(16)}`))
+    return error(
+      new UnknownFormat(`unexpected root CID codec: 0x${code.toString(16)}`)
+    )
   }
 
-  return view({ root: roots[0], blocks })
+  return view({ root: roots[0] })
 }
 
 /**
  * @param {object} source
  * @param {Types.IPLDBlock} source.root
- * @param {Map<string, Types.IPLDBlock>} source.blocks
  * @returns {Types.Result<Types.EncryptedMetadataView, Types.UnknownFormat>}
  */
 export const view = ({ root }) => {

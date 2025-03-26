@@ -21,12 +21,17 @@ export async function parseProof(data) {
   return importDAG(blocks)
 }
 
-async function main(){
-     // set up storacha client with a new agent
+async function main() {
+  // set up storacha client with a new agent
   const principal = Signer.parse(process.env.AGENT_PK || '')
   const store = new StoreMemory()
- 
-  const client = await Client.create({ principal, store, serviceConf, receiptsEndpoint })
+
+  const client = await Client.create({
+    principal,
+    store,
+    serviceConf,
+    receiptsEndpoint,
+  })
 
   // now give Agent the delegation from the Space
   const proof = await parseProof(process.env.PROOF || '')
@@ -35,19 +40,18 @@ async function main(){
 
   const encryptedClient = await EncryptClient.create({
     storachaClient: client,
-    cryptoAdapter: new EncryptClient.NodeCryptoAdapter()
+    cryptoAdapter: new EncryptClient.NodeCryptoAdapter(),
   })
 
-  const fileContent = await fs.promises.readFile('./README.md') 
+  const fileContent = await fs.promises.readFile('./README.md')
   const blob = new Blob([fileContent])
   const link = await encryptedClient.uploadEncryptedFile(blob)
   console.log(link)
-
 }
 
 main()
   .then(() => process.exit(0))
-  .catch(err => {
+  .catch((err) => {
     console.error(err)
     process.exit(1)
   })
