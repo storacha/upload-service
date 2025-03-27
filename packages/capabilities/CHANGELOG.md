@@ -1,3 +1,15 @@
+## 1.4.0 (2025-03-27)
+
+### 🚀 Features
+
+- Add space/content/decrypt capability ([f09a88d1](https://github.com/storacha/upload-service/commit/f09a88d1))
+
+  Add encrypt-upload-client to upload encrypted files
+
+### ❤️ Thank You
+
+- Natalie Bravo
+
 ## 1.3.0 (2025-03-25)
 
 ### 🚀 Features
