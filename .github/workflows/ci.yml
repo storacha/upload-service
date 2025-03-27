@@ -27,10 +27,16 @@ jobs:
 
       # Set the base and head that `nx affected` will use
       - uses: nrwl/nx-set-shas@v4
+        env:
+          NX_VERBOSE_LOGGING: ${{ runner.debug && 'true' || 'false' }}
 
       - name: Prepare environment
         run: pnpm nx affected -t prepare-environment
+        env:
+          NX_VERBOSE_LOGGING: ${{ runner.debug && 'true' || 'false' }}
 
       # Run CI tasks over all affected projects
       # TODO: Add `attw` back once fixed.
       - run: pnpm nx affected -t typecheck lint build test depcheck
+        env:
+          NX_VERBOSE_LOGGING: ${{ runner.debug && 'true' || 'false' }}

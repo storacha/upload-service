@@ -8,9 +8,13 @@ catalog:
   '@heroicons/react': ^2.0.17
   '@inquirer/core': ^5.1.1
   '@inquirer/prompts': ^3.3.0
+  '@ipld/car': ^5.4.0
   '@ipld/dag-cbor': ^9.0.6
+  '@ipld/dag-json': ^10.2.3
+  '@ipld/dag-ucan': ^3.4.5
+  '@ipld/schema': ^6.0.6
   '@ipld/unixfs': ^3.0.0
-  '@nx/js': ^20.3.2
+  '@nx/js': 20.3.2
   '@playwright/test': ^1.29.2
   '@scure/bip39': ^1.2.1
   '@storacha/one-webcrypto': ^1.0.1
