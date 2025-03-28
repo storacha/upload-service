@@ -37,7 +37,7 @@ import ago from 's-ago'
 
 /**
  * @import { MultihashDigest } from 'multiformats'
- * @import { code as pieceHashCode } from '@web3-storage/data-segment/dist/src/multihash'
+ * @import { code as pieceHashCode } from '@web3-storage/data-segment/multihash'
  */
 
 /**
@@ -359,7 +359,7 @@ export async function spaceInfo(opts) {
     )
   }
 
-  /** @type {import('@storacha/access/dist/types').SpaceInfoResult} */
+  /** @type {import('@storacha/access/types').SpaceInfoResult} */
   let info
   try {
     info = await client.capability.space.info(spaceDID)
@@ -450,7 +450,6 @@ export async function createDelegation(audienceDID, opts) {
   )
 
   for (const block of delegation.export()) {
-    // @ts-expect-error
     await writer.put(block)
   }
   await writer.close()

@@ -171,9 +171,6 @@ catalogs:
     fake-indexeddb:
       specifier: ^5.0.1
       version: 5.0.2
-    files-from-path:
-      specifier: ^1.0.4
-      version: 1.1.1
     fr32-sha2-256-trunc254-padded-binary-tree-multihash:
       specifier: ^3.3.0
       version: 3.3.0
@@ -567,7 +564,7 @@ importers:
         specifier: 'catalog:'
         version: 3.3.2
       '@ipld/car':
-        specifier: ^5.2.4
+        specifier: ^5.4.0
         version: 5.4.0
       '@ipld/dag-json':
         specifier: ^10.1.5
@@ -609,8 +606,8 @@ importers:
         specifier: 'catalog:'
         version: 5.0.0
       files-from-path:
-        specifier: 'catalog:'
-        version: 1.1.1
+        specifier: ^1.1.4
+        version: 1.1.4
       fr32-sha2-256-trunc254-padded-binary-tree-multihash:
         specifier: 'catalog:'
         version: 3.3.0
@@ -5555,8 +5552,8 @@ packages:
   filelist@1.0.4:
     resolution: {integrity: sha512-w1cEuf3S+DrLCQL7ET6kz+gmlJdbq9J7yXCSjK/OZCPA+qEN1WyF4ZAf0YYJa4/shHJra2t/d/r8SV4Ji+x+8Q==}
 
-  files-from-path@1.1.1:
-    resolution: {integrity: sha512-M2JDH/0gHqIsdwTnp8IBMWEYUUiHe9ei0ZMTXLxqKFcGxJF4Ki+nicw2k8HP5KGEzPLTyJ81XwLmP8l8rKa6qg==}
+  files-from-path@1.1.4:
+    resolution: {integrity: sha512-huzBO8vS15VrEC0ej62GtYCtPUNEsTdHIN3aFBjCUZyFQTr+bW4cpwvPMZssM/r+9/hOh4ikUiJ3L+9kZKBMag==}
     engines: {node: '>=18'}
 
   fill-range@7.1.1:
@@ -14454,7 +14451,7 @@ snapshots:
     dependencies:
       minimatch: 5.1.6
 
-  files-from-path@1.1.1:
+  files-from-path@1.1.4:
     dependencies:
       graceful-fs: 4.2.11
 
