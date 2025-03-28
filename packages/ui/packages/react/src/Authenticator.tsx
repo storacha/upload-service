@@ -11,6 +11,7 @@ import React, {
 } from 'react'
 import { createComponent, createElement } from 'ariakit-react-utils'
 import { useW3, ContextState, ContextActions } from './providers/Provider.js'
+import { EmailAddress } from '@storacha/ui-core'
 
 export type AuthenticatorContextState = ContextState & {
   /**
@@ -98,7 +99,7 @@ export const AuthenticatorRoot: Component<AuthenticatorRootProps> =
         setSubmitted(true)
         try {
           if (client === undefined) throw new Error('missing client')
-          await client.login(email as '{string}@{string}', {
+          await client.login(email as EmailAddress, {
             signal: controller?.signal,
           })
         } catch (error: any) {
@@ -111,7 +112,7 @@ export const AuthenticatorRoot: Component<AuthenticatorRootProps> =
           setSubmitted(false)
         }
       },
-      [email, setSubmitted]
+      [client, email, setSubmitted]
     )
 
     const value = useMemo<AuthenticatorContextValue>(
