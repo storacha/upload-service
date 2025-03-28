@@ -112,7 +112,7 @@ export const AuthenticatorRoot: Component<AuthenticatorRootProps> =
           setSubmitted(false)
         }
       },
-      [email, setSubmitted]
+      [client, email, setSubmitted]
     )
 
     const value = useMemo<AuthenticatorContextValue>(
