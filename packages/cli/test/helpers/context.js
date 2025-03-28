@@ -48,9 +48,9 @@ export const provisionSpace = async (context, { space, account, provider }) => {
 
 /**
  * @typedef {UcantoServerTestContext & {
- *   server: import('./http-server').TestingServer['server']
+ *   server: import('./http-server.js').TestingServer['server']
  *   receiptsServer: import('./receipt-http-server.js').TestingServer['server']
- *   router: import('./http-server').Router
+ *   router: import('./http-server.js').Router
  *   env: { alice: Record<string, string>, bob: Record<string, string> }
  *   serverURL: URL
  * }} Context

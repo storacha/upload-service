@@ -55,7 +55,7 @@
   "dependencies": {
     "@inquirer/core": "catalog:",
     "@inquirer/prompts": "catalog:",
-    "@ipld/car": "^5.2.4",
+    "@ipld/car": "^5.4.0",
     "@ipld/dag-json": "^10.1.5",
     "@ipld/dag-ucan": "^3.4.5",
     "@storacha/access": "workspace:^",
@@ -69,7 +69,7 @@
     "ansi-escapes": "catalog:",
     "chalk": "catalog:",
     "crypto-random-string": "catalog:",
-    "files-from-path": "catalog:",
+    "files-from-path": "^1.1.4",
     "fr32-sha2-256-trunc254-padded-binary-tree-multihash": "catalog:",
     "open": "catalog:",
     "ora": "catalog:",

@@ -927,7 +927,6 @@ export const testDelegation = {
         blocks.push(block)
       }
 
-      // @ts-expect-error
       const delegation = importDAG(blocks)
       assert.equal(delegation.audience.did(), bob.did())
       assert.equal(delegation.capabilities[0].can, 'store/*')
@@ -977,7 +976,6 @@ export const testDelegation = {
         blocks.push(block)
       }
 
-      // @ts-expect-error
       const delegation = importDAG(blocks)
       assert.equal(delegation.audience.did(), bob.did())
       assert.equal(delegation.capabilities[0].can, 'store/add')
