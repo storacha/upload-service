@@ -1,3 +1,13 @@
+## 2.6.0 (2025-03-28)
+
+### 🚀 Features
+
+- Fixed a bug that prevented the `Authenticator.Form` from properly submitting if it mounted before the `client` came into existence. ([112ced57](https://github.com/storacha/upload-service/commit/112ced57))
+
+### ❤️ Thank You
+
+- Petra Jaros
+
 ## 2.5.24 (2025-03-27)
 
 ### 🧱 Updated Dependencies
