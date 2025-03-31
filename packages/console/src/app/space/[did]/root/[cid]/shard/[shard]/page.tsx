@@ -283,8 +283,8 @@ function InclusionProof ({ proof, piece, style }: { proof: ProofData, piece: Pie
 
   return (
     <div className='font-mono whitespace-nowrap overflow-x-scroll'>
-      {archy(data).split('\n').map(line => {
-        if (!line) return <div />
+      {archy(data).split('\n').map((line, i) => {
+        if (!line) return (<div key={i}/>)
         if (line.indexOf(' ') === -1) {
           return (
             <div key={line}>
