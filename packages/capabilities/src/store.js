@@ -20,6 +20,8 @@ export const CARLink = Schema.link({ code, version: 1 })
  * Capability can only be delegated (but not invoked) allowing audience to
  * derived any `store/` prefixed capability for the (memory) space identified
  * by DID in the `with` field.
+ *
+ * @deprecated
  */
 export const store = capability({
   can: 'store/*',
@@ -37,6 +39,8 @@ export const store = capability({
  * and provide it's CID and size using `nb.link` and `nb.size` fields, allowing
  * a service to provision a write location for the agent to PUT or POST desired
  * CAR into.
+ *
+ * @deprecated
  */
 export const add = capability({
   can: 'store/add',
@@ -91,6 +95,8 @@ export const add = capability({
  * capability only allows a get for that specific CID.
  *
  * When used as as an invocation, `nb.link` must be specified.
+ *
+ * @deprecated
  */
 export const get = capability({
   can: 'store/get',
@@ -107,6 +113,8 @@ export const get = capability({
 /**
  * Capability can be used to remove the stored CAR file from the (memory)
  * space identified by `with` field.
+ *
+ * @deprecated
  */
 export const remove = capability({
   can: 'store/remove',
@@ -127,6 +135,8 @@ export const remove = capability({
 /**
  * Capability can be invoked to request a list of stored CAR files in the
  * (memory) space identified by `with` field.
+ *
+ * @deprecated
  */
 export const list = capability({
   can: 'store/list',
@@ -160,6 +170,7 @@ export const list = capability({
   },
 })
 
+/** @deprecated */
 export const all = add.or(remove).or(list)
 
 // ⚠️ We export imports here so they are not omitted in generated typedes

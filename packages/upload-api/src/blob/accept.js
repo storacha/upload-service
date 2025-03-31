@@ -3,17 +3,19 @@ import * as W3sBlob from '@storacha/capabilities/web3.storage/blob'
 import { Message, Receipt, Invocation } from '@ucanto/core'
 import * as Transport from '@ucanto/transport/car'
 import * as API from '../types.js'
-import * as HTTP from '@storacha/capabilities/http'
 import * as DID from '@ipld/dag-ucan/did'
 import * as Digest from 'multiformats/hashes/digest'
 import { AgentMessage } from '../lib.js'
+import { execW3sAccept } from '../web3.storage/blob/accept.js'
+import { isW3sBlobAllocateTask } from '../web3.storage/blob/lib.js'
+import { isHttpPutTask } from './lib.js'
 
 /**
  * Polls `blob/accept` task whenever we receive a receipt. It may error if passed
  * receipt is for `http/put` task that refers to the `blob/allocate` that we
  * are unable to find.
  *
- * @param {API.ConcludeServiceContext} context
+ * @param {API.ConcludeServiceContext & API.LegacyConcludeServiceContext} context
  * @param {API.Receipt} receipt
  * @returns {Promise<API.Result<API.Unit, API.Failure>>}
  */
@@ -29,15 +31,14 @@ export const poll = async (context, receipt) => {
   }
 
   // Detect if this receipt is for an `http/put` invocation
-  const put = /** @type {API.HTTPPut} */ (
-    ran.ok.capabilities.find(({ can }) => can === HTTP.put.can)
-  )
+  const putTask = ran.ok
 
   // If it's not an http/put invocation nothing to do here.
-  if (put == null) {
+  if (!isHttpPutTask(putTask)) {
     return { ok: {} }
   }
 
+  const put = putTask.capabilities[0]
   // Otherwise we are going to lookup allocation corresponding to this http/put
   // in order to issue blob/accept.
   const [, allocation] = /** @type {API.UCANAwait} */ (put.nb.url)['ucan/await']
@@ -49,6 +50,14 @@ export const poll = async (context, receipt) => {
   // problem. Client test could potentially also catch errors.
   if (result.error) {
     return result
+  }
+
+  // if legacy allocation, use legacy accept
+  if (isW3sBlobAllocateTask(result.ok)) {
+    // We do not care about the result we just want receipt to be issued and
+    // stored.
+    await execW3sAccept({ context, putTask, allocateTask: result.ok })
+    return { ok: {} }
   }
 
   const provider = result.ok.audience
@@ -99,6 +108,7 @@ export const poll = async (context, receipt) => {
       space: /** @type {API.DIDKey} */ (DID.decode(allocate.nb.space).did()),
       _put: { 'ucan/await': ['.out.ok', receipt.ran.link()] },
     },
+    expiration: Infinity,
   })
   const w3sAcceptTask = await w3sAccept.delegate()
   const w3sAcceptReceipt = await Receipt.issue({
@@ -110,7 +120,7 @@ export const poll = async (context, receipt) => {
 
   // record the invocation and the receipt
   const message = await Message.build({
-    invocations: [configure.ok.invocation],
+    invocations: [configure.ok.invocation, w3sAcceptTask],
     receipts: [acceptReceipt, w3sAcceptReceipt],
   })
   const messageWrite = await context.agentStore.messages.write({

@@ -148,7 +148,6 @@ export async function readProofFromBytes(bytes) {
     process.exit(1)
   }
   try {
-    // @ts-expect-error
     return importDAG(blocks)
   } catch (/** @type {any} */ err) {
     console.error(`Error: failed to import proof: ${err.message}`)

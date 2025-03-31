@@ -1,4 +1,88 @@
-# Changelog
+## 1.2.4 (2025-03-27)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-client to 1.0.6
+- Updated @storacha/access to 1.1.1
+- Updated @storacha/upload-client to 1.0.9
+- Updated @storacha/capabilities to 1.4.0
+- Updated @storacha/blob-index to 1.0.5
+- Updated @storacha/upload-api to 1.4.3
+
+## 1.2.2 (2025-03-25)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/upload-api to 1.4.1
+
+## 1.2.0 (2025-03-25)
+
+### 🚀 Features
+
+- feat: external login ([d177feab](https://github.com/storacha/upload-service/commit/d177feab))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-client to 1.0.5
+- Updated @storacha/access to 1.1.0
+- Updated @storacha/upload-client to 1.0.8
+- Updated @storacha/capabilities to 1.3.0
+- Updated @storacha/blob-index to 1.0.4
+- Updated @storacha/upload-api to 1.4.0
+
+### ❤️ Thank You
+
+- Alan Shaw
+
+## 1.1.11 (2025-03-24)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/upload-api to 1.3.10
+
+## 1.1.10 (2025-03-17)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/upload-api to 1.3.9
+
+## 1.1.9 (2025-03-14)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-client to 1.0.4
+- Updated @storacha/access to 1.0.5
+- Updated @storacha/upload-client to 1.0.7
+- Updated @storacha/capabilities to 1.2.4
+- Updated @storacha/blob-index to 1.0.3
+- Updated @storacha/upload-api to 1.3.8
+
+## 1.1.7 (2025-03-13)
+
+### 🩹 Fixes
+
+- Start releasing packages with Nx! ([72a3a97e](https://github.com/storacha/upload-service/commit/72a3a97e))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-client to 1.0.3
+- Updated @storacha/access to 1.0.4
+- Updated @storacha/upload-client to 1.0.6
+- Updated @storacha/capabilities to 1.2.3
+- Updated @storacha/blob-index to 1.0.2
+- Updated @storacha/did-mailto to 1.0.2
+- Updated @storacha/upload-api to 1.3.6
+
+### ❤️ Thank You
+
+- Petra Jaros
+
+## [1.1.5](https://github.com/storacha/upload-service/compare/client-v1.1.4...client-v1.1.5) (2025-02-11)
+
+
+### Fixes
+
+* use up.storacha.network ([#144](https://github.com/storacha/upload-service/issues/144)) ([ac6b5b4](https://github.com/storacha/upload-service/commit/ac6b5b4b9881f9889e99e18b38fbfb302b4fb3b5))
 
 ## [1.1.4](https://github.com/storacha/upload-service/compare/client-v1.1.3...client-v1.1.4) (2025-01-22)
 

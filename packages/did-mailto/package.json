@@ -1,38 +1,31 @@
 {
   "name": "@storacha/did-mailto",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "did:mailto",
+  "publishConfig": {
+    "access": "public"
+  },
   "homepage": "https://storacha.network",
   "repository": {
     "type": "git",
     "url": "https://github.com/storacha/upload-service.git",
     "directory": "packages/did-mailto"
   },
-  "license": "(Apache-2.0 OR MIT)",
+  "license": "Apache-2.0 OR MIT",
   "type": "module",
   "types": "dist/src/index.d.ts",
   "main": "src/index.js",
   "files": [
-    "src",
-    "test",
-    "dist"
+    "dist",
+    "!dist/**/*.js.map"
   ],
   "exports": {
-    ".": "./dist/src/index.js",
-    "./types": "./dist/src/types.js"
-  },
-  "typesVersions": {
-    "*": {
-      "types": [
-        "dist/src/types"
-      ]
-    }
+    ".": "./dist/index.js",
+    "./types": "./dist/types.js"
   },
   "scripts": {
     "dev": "tsc --build --watch --preserveWatchOutput",
-    "build": "tsc --build",
-    "clean": "rm -rf dist",
-    "typecheck": "tsc --build",
+    "clean": "rm -rf dist *.tsbuildinfo",
     "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "test": "mocha --bail --timeout 10s -n no-warnings -n experimental-vm-modules -n experimental-fetch test/**/*.spec.js",
@@ -40,20 +33,18 @@
     "attw": "attw --pack ."
   },
   "devDependencies": {
-    "@arethetypeswrong/cli": "^0.17.3",
+    "@arethetypeswrong/cli": "catalog:",
     "@storacha/eslint-config": "workspace:^",
     "@types/assert": "^1.5.6",
     "@types/mocha": "^10.0.1",
+    "@typescript-eslint/eslint-plugin": "catalog:",
     "mocha": "^10.2.0",
-    "typescript": "5.2.2"
+    "typescript": "catalog:"
   },
   "eslintConfig": {
     "extends": [
       "@storacha/eslint-config"
     ],
-    "parserOptions": {
-      "project": "./tsconfig.json"
-    },
     "env": {
       "mocha": true
     },

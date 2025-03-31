@@ -1,127 +1,110 @@
 {
   "name": "@storacha/client",
-  "version": "1.1.4",
+  "version": "1.2.4",
   "description": "Client for the storacha.network w3up api",
-  "license": "Apache-2.0 OR MIT",
-  "type": "module",
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "*",
-        "dist/*",
-        "dist/src/*",
-        "dist/src/*/index"
-      ],
-      "src/*": [
-        "*",
-        "dist/*",
-        "dist/src/*",
-        "dist/src/*/index"
-      ]
-    }
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/src/index.d.ts",
-      "node": "./dist/src/index.node.js",
-      "import": "./dist/src/index.js"
-    },
-    "./account": {
-      "types": "./dist/src/account.d.ts",
-      "import": "./dist/src/account.js"
-    },
-    "./delegation": {
-      "types": "./dist/src/delegation.d.ts",
-      "import": "./dist/src/delegation.js"
-    },
-    "./principal": {
-      "types": "./dist/src/principal/index.d.ts",
-      "import": "./dist/src/principal/index.js"
-    },
-    "./principal/ed25519": {
-      "types": "./dist/src/principal/ed25519.d.ts",
-      "import": "./dist/src/principal/ed25519.js"
-    },
-    "./principal/rsa": {
-      "types": "./dist/src/principal/rsa.d.ts",
-      "import": "./dist/src/principal/rsa.js"
-    },
-    "./proof": {
-      "types": "./dist/src/proof.d.ts",
-      "import": "./dist/src/proof.js"
-    },
-    "./space": {
-      "types": "./dist/src/space.d.ts",
-      "import": "./dist/src/space.js"
-    },
-    "./result": {
-      "types": "./dist/src/result.d.ts",
-      "import": "./dist/src/result.js"
-    },
-    "./client": {
-      "types": "./dist/src/client.d.ts",
-      "import": "./dist/src/client.js"
-    },
-    "./capability/access": {
-      "types": "./dist/src/capability/access.d.ts",
-      "import": "./dist/src/capability/access.js"
-    },
-    "./capability/blob": {
-      "types": "./dist/src/capability/blob.d.ts",
-      "import": "./dist/src/capability/blob.js"
-    },
-    "./capability/index": {
-      "types": "./dist/src/capability/index.d.ts",
-      "import": "./dist/src/capability/index.js"
-    },
-    "./capability/space": {
-      "types": "./dist/src/capability/space.d.ts",
-      "import": "./dist/src/capability/space.js"
-    },
-    "./capability/subscription": {
-      "types": "./dist/src/capability/subscription.d.ts",
-      "import": "./dist/src/capability/subscription.js"
-    },
-    "./capability/upload": {
-      "types": "./dist/src/capability/upload.d.ts",
-      "import": "./dist/src/capability/upload.js"
-    },
-    "./capability/usage": {
-      "types": "./dist/src/capability/usage.d.ts",
-      "import": "./dist/src/capability/usage.js"
-    },
-    "./stores": {
-      "types": "./dist/src/stores/index.d.ts",
-      "import": "./dist/src/stores/index.js"
-    },
-    "./stores/conf": {
-      "types": "./dist/src/stores/conf.d.ts",
-      "import": "./dist/src/stores/conf.js"
-    },
-    "./stores/indexeddb": {
-      "types": "./dist/src/stores/indexeddb.d.ts",
-      "import": "./dist/src/stores/indexeddb.js"
-    },
-    "./stores/memory": {
-      "types": "./dist/src/stores/memory.d.ts",
-      "import": "./dist/src/stores/memory.js"
-    },
-    "./types": "./dist/src/types.js"
-  },
   "publishConfig": {
     "access": "public"
   },
+  "license": "Apache-2.0 OR MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "node": "./dist/index.node.js",
+      "import": "./dist/index.js"
+    },
+    "./account": {
+      "types": "./dist/account.d.ts",
+      "import": "./dist/account.js"
+    },
+    "./delegation": {
+      "types": "./dist/delegation.d.ts",
+      "import": "./dist/delegation.js"
+    },
+    "./principal": {
+      "types": "./dist/principal/index.d.ts",
+      "import": "./dist/principal/index.js"
+    },
+    "./principal/ed25519": {
+      "types": "./dist/principal/ed25519.d.ts",
+      "import": "./dist/principal/ed25519.js"
+    },
+    "./principal/rsa": {
+      "types": "./dist/principal/rsa.d.ts",
+      "import": "./dist/principal/rsa.js"
+    },
+    "./proof": {
+      "types": "./dist/proof.d.ts",
+      "import": "./dist/proof.js"
+    },
+    "./space": {
+      "types": "./dist/space.d.ts",
+      "import": "./dist/space.js"
+    },
+    "./result": {
+      "types": "./dist/result.d.ts",
+      "import": "./dist/result.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js"
+    },
+    "./capability/access": {
+      "types": "./dist/capability/access.d.ts",
+      "import": "./dist/capability/access.js"
+    },
+    "./capability/blob": {
+      "types": "./dist/capability/blob.d.ts",
+      "import": "./dist/capability/blob.js"
+    },
+    "./capability/index": {
+      "types": "./dist/capability/index.d.ts",
+      "import": "./dist/capability/index.js"
+    },
+    "./capability/space": {
+      "types": "./dist/capability/space.d.ts",
+      "import": "./dist/capability/space.js"
+    },
+    "./capability/subscription": {
+      "types": "./dist/capability/subscription.d.ts",
+      "import": "./dist/capability/subscription.js"
+    },
+    "./capability/upload": {
+      "types": "./dist/capability/upload.d.ts",
+      "import": "./dist/capability/upload.js"
+    },
+    "./capability/usage": {
+      "types": "./dist/capability/usage.d.ts",
+      "import": "./dist/capability/usage.js"
+    },
+    "./stores": {
+      "types": "./dist/stores/index.d.ts",
+      "import": "./dist/stores/index.js"
+    },
+    "./stores/conf": {
+      "types": "./dist/stores/conf.d.ts",
+      "import": "./dist/stores/conf.js"
+    },
+    "./stores/indexeddb": {
+      "types": "./dist/stores/indexeddb.d.ts",
+      "import": "./dist/stores/indexeddb.js"
+    },
+    "./stores/memory": {
+      "types": "./dist/stores/memory.d.ts",
+      "import": "./dist/stores/memory.js"
+    },
+    "./types": "./dist/types.js"
+  },
   "files": [
-    "dist"
+    "dist",
+    "!dist/**/*.js.map"
   ],
   "// scripts": "The `test-:*` scripts are internal only, to be run by `npm-run-all` in parallel with the mock servers.",
   "scripts": {
     "dev": "tsc --build --watch --preserveWatchOutput",
-    "build": "tsc --build",
-    "clean": "rm -rf dist coverage",
-    "typecheck": "tsc --build",
+    "clean": "rm -rf dist *.tsbuildinfo coverage",
     "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "test:node": "npm-run-all --parallel --race --npm-path pnpm mock:* 'test-:node'",
@@ -134,8 +117,7 @@
     "mock:gateway-server": "PORT=5001 node test/helpers/gateway-server.js",
     "attw": "attw --pack .",
     "coverage": "c8 report -r html && open coverage/index.html",
-    "rc": "npm version prerelease --preid rc",
-    "docs": "npm run build && typedoc --out docs-generated"
+    "rc": "npm version prerelease --preid rc"
   },
   "dependencies": {
     "@ipld/dag-ucan": "^3.4.5",
@@ -145,35 +127,35 @@
     "@storacha/did-mailto": "workspace:^",
     "@storacha/filecoin-client": "workspace:^",
     "@storacha/upload-client": "workspace:^",
-    "@ucanto/client": "^9.0.1",
-    "@ucanto/core": "^10.2.1",
-    "@ucanto/interface": "^10.1.1",
-    "@ucanto/principal": "^9.0.2",
-    "@ucanto/transport": "^9.1.1"
+    "@ucanto/client": "catalog:",
+    "@ucanto/core": "catalog:",
+    "@ucanto/interface": "catalog:",
+    "@ucanto/principal": "catalog:",
+    "@ucanto/transport": "catalog:"
   },
   "devDependencies": {
-    "@arethetypeswrong/cli": "^0.17.3",
+    "@arethetypeswrong/cli": "catalog:",
     "@ipld/car": "^5.1.1",
-    "@ipld/unixfs": "^3.0.0",
+    "@ipld/unixfs": "catalog:",
     "@storacha/eslint-config": "workspace:^",
     "@storacha/upload-api": "workspace:^",
     "@types/assert": "^1.5.6",
     "@types/mocha": "^10.0.1",
     "@types/node": "^20.17.14",
-    "@ucanto/server": "^10.1.0",
+    "@typescript-eslint/eslint-plugin": "catalog:",
+    "@ucanto/server": "catalog:",
     "@web3-storage/access": "^20.1.0",
     "@web3-storage/content-claims": "^4.0.4",
     "@web3-storage/data-segment": "^5.0.0",
     "@web3-storage/w3up-client": "^16.5.1",
-    "assert": "^2.0.0",
+    "assert": "catalog:",
     "c8": "^7.13.0",
-    "hundreds": "^0.0.9",
+    "hundreds": "catalog:",
     "mocha": "^10.8.2",
-    "multiformats": "^13.3.1",
-    "npm-run-all": "^4.1.5",
-    "playwright-test": "^12.3.4",
-    "typedoc": "^0.25.3",
-    "typescript": "5.2.2"
+    "multiformats": "catalog:",
+    "npm-run-all": "catalog:",
+    "playwright-test": "catalog:",
+    "typescript": "catalog:"
   },
   "eslintConfig": {
     "extends": [

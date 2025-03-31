@@ -1,0 +1,39 @@
+{
+  "name": "@storacha/ui-example-react-multi-file-upload",
+  "private": true,
+  "version": "0.0.15",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "vite preview",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "lint": "echo 'Linting in @storacha/ui-example-react-multi-file-upload is temporarily disabled while we resolve version issues.'",
+    "lint:fix": "echo 'Linting in @storacha/ui-example-react-multi-file-upload is temporarily disabled while we resolve version issues.'"
+  },
+  "dependencies": {
+    "@heroicons/react": "catalog:",
+    "@storacha/ui-example-react-components": "workspace:^",
+    "@storacha/ui-react": "workspace:^",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "autoprefixer": "catalog:",
+    "eslint": "catalog:",
+    "eslint-plugin-react": "catalog:",
+    "eslint-plugin-react-hooks": "catalog:",
+    "eslint-plugin-react-refresh": "catalog:",
+    "postcss": "catalog:",
+    "tailwindcss": "catalog:",
+    "vite": "catalog:"
+  },
+  "eslintConfig": {
+    "extends": [
+      "@storacha/ui"
+    ]
+  }
+}

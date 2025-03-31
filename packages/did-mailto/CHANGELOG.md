@@ -1,4 +1,12 @@
-# Changelog
+## 1.0.2 (2025-03-13)
+
+### 🩹 Fixes
+
+- Start releasing packages with Nx! ([72a3a97e](https://github.com/storacha/upload-service/commit/72a3a97e))
+
+### ❤️ Thank You
+
+- Petra Jaros
 
 ## [1.0.1](https://github.com/storacha/upload-service/compare/did-mailto-v1.0.0...did-mailto-v1.0.1) (2024-12-19)
 

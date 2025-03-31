@@ -1,4 +1,105 @@
-# Changelog
+## 1.4.3 (2025-03-27)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.1.1
+- Updated @storacha/capabilities to 1.4.0
+- Updated @storacha/filecoin-api to 1.1.7
+- Updated @storacha/blob-index to 1.0.5
+
+## 1.4.1 (2025-03-25)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-api to 1.1.6
+
+## 1.4.0 (2025-03-25)
+
+### 🚀 Features
+
+- feat: external login ([d177feab](https://github.com/storacha/upload-service/commit/d177feab))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.1.0
+- Updated @storacha/capabilities to 1.3.0
+- Updated @storacha/filecoin-api to 1.1.5
+- Updated @storacha/blob-index to 1.0.4
+
+### ❤️ Thank You
+
+- Alan Shaw
+
+## 1.3.10 (2025-03-24)
+
+### 🩹 Fixes
+
+- fix: exports for testing ([#197](https://github.com/storacha/upload-service/pull/197))
+
+### ❤️ Thank You
+
+- ash
+
+## 1.3.9 (2025-03-17)
+
+### 🩹 Fixes
+
+- fix: re-add removed IPNI service ([#190](https://github.com/storacha/upload-service/pull/190))
+
+### ❤️ Thank You
+
+- ash
+
+## 1.3.8 (2025-03-14)
+
+### 🩹 Fixes
+
+- fix: do not add space to location claim for legacy provisioned spaces ([#178](https://github.com/storacha/upload-service/pull/178))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.0.5
+- Updated @storacha/capabilities to 1.2.4
+- Updated @storacha/filecoin-api to 1.1.4
+- Updated @storacha/blob-index to 1.0.3
+
+### ❤️ Thank You
+
+- ash
+
+## 1.3.6 (2025-03-13)
+
+### 🩹 Fixes
+
+- Start releasing packages with Nx! ([72a3a97e](https://github.com/storacha/upload-service/commit/72a3a97e))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.0.4
+- Updated @storacha/capabilities to 1.2.3
+- Updated @storacha/filecoin-api to 1.1.3
+- Updated @storacha/blob-index to 1.0.2
+- Updated @storacha/did-mailto to 1.0.2
+
+### ❤️ Thank You
+
+- Petra Jaros
+
+## [1.3.4](https://github.com/storacha/upload-service/compare/upload-api-v1.3.3...upload-api-v1.3.4) (2025-02-11)
+
+
+### Fixes
+
+* store w3s accept invocation ([#142](https://github.com/storacha/upload-service/issues/142)) ([e0c509d](https://github.com/storacha/upload-service/commit/e0c509dec75386e3275abaca1e94c4de0ccefacd))
+* use up.storacha.network ([#144](https://github.com/storacha/upload-service/issues/144)) ([ac6b5b4](https://github.com/storacha/upload-service/commit/ac6b5b4b9881f9889e99e18b38fbfb302b4fb3b5))
+
+## [1.3.3](https://github.com/storacha/upload-service/compare/upload-api-v1.3.2...upload-api-v1.3.3) (2025-01-29)
+
+
+### Other Changes
+
+* **upload-api:** add comment for clarity ([c678bde](https://github.com/storacha/upload-service/commit/c678bde352ba44e9f320f731411705b2233e83ee))
+* **upload-api:** refactor(blob-registry): pass cause as a parameter to deregister ([632348d](https://github.com/storacha/upload-service/commit/632348d1529808f67873f332c695a504ca5bd7c4))
 
 ## [1.3.2](https://github.com/storacha/upload-service/compare/upload-api-v1.3.1...upload-api-v1.3.2) (2025-01-22)
 

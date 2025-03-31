@@ -1,0 +1,68 @@
+// See README.tsconfigs.md for details on how these work in this repo.
+
+{
+  "extends": "./tsconfig.base.json",
+  "files": [], // intentionally empty
+  "references": [
+    {
+      "path": "./.github/release"
+    },
+    {
+      "path": "./packages/eslint-config-w3up"
+    },
+    {
+      "path": "./packages/filecoin-client"
+    },
+    {
+      "path": "./packages/access-client"
+    },
+    {
+      "path": "./packages/upload-client"
+    },
+    {
+      "path": "./packages/capabilities"
+    },
+    {
+      "path": "./packages/filecoin-api"
+    },
+    {
+      "path": "./packages/w3up-client"
+    },
+    {
+      "path": "./packages/blob-index"
+    },
+    {
+      "path": "./packages/did-mailto"
+    },
+    {
+      "path": "./packages/upload-api"
+    },
+    {
+      "path": "./packages/encrypt-upload-client"
+    },
+    {
+      "path": "./packages/ui/examples/react/multi-file-upload"
+    },
+    {
+      "path": "./packages/ui/examples/react/uploads-list"
+    },
+    {
+      "path": "./packages/ui/examples/react/file-upload"
+    },
+    {
+      "path": "./packages/ui/examples/react/components"
+    },
+    {
+      "path": "./packages/ui/examples/react/sign-up-in"
+    },
+    {
+      "path": "./packages/ui/examples/test/playwright"
+    },
+    {
+      "path": "./packages/ui/packages/react"
+    },
+    {
+      "path": "./packages/ui/packages/core"
+    }
+  ]
+}

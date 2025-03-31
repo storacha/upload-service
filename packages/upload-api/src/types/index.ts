@@ -1,10 +1,19 @@
 import { MultihashDigest } from 'multiformats'
-import { Failure, Result } from '@ucanto/interface'
+import { Failure, Result, Unit } from '@ucanto/interface'
 import { ShardedDAGIndex } from '@storacha/blob-index/types'
 import { Registry } from './blob.js'
 import { ClaimsClientContext } from './content-claims.js'
 
 export type { ShardedDAGIndex, ClaimsClientContext }
+
+/**
+ * Service that allows publishing a set of multihashes to IPNI for a
+ * pre-configured provider.
+ */
+export interface IPNIService {
+  /** Publish the multihashes in the provided index to IPNI. */
+  publish(index: ShardedDAGIndex): Promise<Result<Unit, Failure>>
+}
 
 export interface BlobNotFound extends Failure {
   name: 'BlobNotFound'
@@ -21,4 +30,5 @@ export interface BlobRetriever {
 export interface IndexServiceContext extends ClaimsClientContext {
   blobRetriever: BlobRetriever
   registry: Registry
+  ipniService: IPNIService
 }

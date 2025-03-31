@@ -1,7 +1,10 @@
 {
   "name": "@storacha/blob-index",
   "description": "An index for slices that may be sharded across multiple blobs.",
-  "version": "1.0.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "version": "1.0.5",
   "homepage": "https://storacha.network",
   "repository": {
     "type": "git",
@@ -13,28 +16,18 @@
   "types": "dist/src/index.d.ts",
   "main": "src/index.js",
   "files": [
-    "src",
-    "test",
-    "dist"
+    "dist",
+    "!dist/**/*.js.map"
   ],
   "exports": {
-    ".": "./dist/src/index.js",
-    "./sharded-dag-index": "./dist/src/sharded-dag-index.js",
-    "./types": "./dist/src/api.js",
-    "./util": "./dist/src/util.js"
-  },
-  "typesVersions": {
-    "*": {
-      "types": [
-        "dist/src/types"
-      ]
-    }
+    ".": "./dist/index.js",
+    "./sharded-dag-index": "./dist/sharded-dag-index.js",
+    "./types": "./dist/api.js",
+    "./util": "./dist/util.js"
   },
   "scripts": {
     "dev": "tsc --build --watch --preserveWatchOutput",
-    "clean": "rm -rf dist coverage",
-    "build": "tsc --build",
-    "typecheck": "tsc --build",
+    "clean": "rm -rf dist *.tsbuildinfo coverage",
     "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "test": "entail test/*.spec.js",
@@ -42,37 +35,38 @@
     "coverage": "c8 --reporter text --reporter html npm run test"
   },
   "dependencies": {
-    "@ipld/dag-cbor": "^9.0.6",
+    "@ipld/dag-cbor": "catalog:",
     "@storacha/capabilities": "workspace:^",
-    "@storacha/one-webcrypto": "^1.0.1",
-    "@ucanto/core": "^10.2.1",
-    "@ucanto/interface": "^10.1.1",
-    "carstream": "^2.1.0",
-    "multiformats": "^13.0.1",
+    "@storacha/one-webcrypto": "catalog:",
+    "@ucanto/core": "catalog:",
+    "@ucanto/interface": "catalog:",
+    "carstream": "catalog:",
+    "multiformats": "catalog:",
     "uint8arrays": "^5.0.3"
   },
   "devDependencies": {
-    "@arethetypeswrong/cli": "^0.17.3",
+    "@arethetypeswrong/cli": "catalog:",
     "@storacha/eslint-config": "workspace:^",
-    "@ucanto/transport": "^9.1.1",
+    "@typescript-eslint/eslint-plugin": "catalog:",
+    "@ucanto/transport": "catalog:",
     "c8": "^7.14.0",
     "entail": "^2.1.2",
-    "typescript": "5.2.2"
+    "typescript": "catalog:"
   },
   "eslintConfig": {
     "extends": [
       "@storacha/eslint-config"
     ],
-    "parserOptions": {
-      "project": "./tsconfig.json"
-    },
     "env": {
-      "mocha": true
+      "es2022": true,
+      "mocha": true,
+      "browser": true,
+      "node": true
     },
     "ignorePatterns": [
       "dist",
       "coverage",
-      "src/types.js"
+      "src/api.js"
     ]
   },
   "engines": {

@@ -72,7 +72,7 @@ storacha up recipies.txt
 
 ---
 
-### `storacha login <email>`
+### `storacha login [email]`
 
 Authenticate this agent with your email address to get access to all capabilities that had been delegated to it.
 
@@ -271,23 +271,23 @@ Default `storacha-cli`
 
 ### `STORACHA_SERVICE_URL`
 
-`storacha` CLI will use the w3up service at https://upload.storacha.network. If you would like
+`storacha` CLI will use the w3up service at https://up.storacha.network. If you would like
 to use a different w3up-compatible service, set `STORACHA_SERVICE_DID` and `STORACHA_SERVICE_URL` environment variables to set the service DID and URL endpoint.
 
-Default `https://upload.storacha.network`
+Default `https://up.storacha.network`
 
 ### `STORACHA_SERVICE_DID`
 
-`storacha` CLI will use the w3up `did:web:upload.storacha.network` as the service DID. If you would like
+`storacha` CLI will use the w3up `did:web:up.storacha.network` as the service DID. If you would like
 to use a different w3up-compatible service, set `STORACHA_SERVICE_DID` and `STORACHA_SERVICE_URL` environment variables to set the service DID and URL endpoint.
 
-Default `did:web:upload.storacha.network`
+Default `did:web:up.storacha.network`
 
 ### `STORACHA_RECEIPTS_URL`
 
 The URL at which UCAN receipts issued by the service may be fetched.
 
-Default `https://upload.storacha.network/receipt/`
+Default `https://up.storacha.network/receipt/`
 
 ## FAQ
 

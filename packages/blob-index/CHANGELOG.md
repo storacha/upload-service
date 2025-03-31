@@ -1,4 +1,8 @@
-# Changelog
+## 1.0.5 (2025-03-27)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/capabilities to 1.4.0
 
 ## [1.0.1](https://github.com/storacha/upload-service/compare/blob-index-v1.0.0...blob-index-v1.0.1) (2025-01-22)
 

@@ -5,7 +5,7 @@ import { conclude } from '@storacha/capabilities/ucan'
 import * as BlobAccept from '../blob/accept.js'
 
 /**
- * @param {API.ConcludeServiceContext} context
+ * @param {API.ConcludeServiceContext & API.LegacyConcludeServiceContext} context
  * @returns {API.ServiceMethod<API.UCANConclude, API.UCANConcludeSuccess, API.UCANConcludeFailure>}
  */
 export const ucanConcludeProvider = (context) =>
@@ -46,6 +46,13 @@ export function getConcludeReceipt(concludeFx) {
     blocks: receiptBlocks,
   })
 }
+
+// * @template {API.Signer} Signer
+// * @template {API.Principal} Principal
+// * @template {API.Receipt} Receipt
+// * @param {Signer} id
+// * @param {Principal} serviceDid
+// * @param {Receipt} receipt
 
 /**
  * @param {API.Signer} id

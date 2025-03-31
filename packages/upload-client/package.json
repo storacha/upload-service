@@ -1,7 +1,10 @@
 {
   "name": "@storacha/upload-client",
-  "version": "1.0.4",
+  "version": "1.0.9",
   "description": "The storacha.network upload client",
+  "publishConfig": {
+    "access": "public"
+  },
   "homepage": "https://storacha.network",
   "repository": {
     "type": "git",
@@ -11,14 +14,12 @@
   "author": "Alan Shaw",
   "license": "Apache-2.0 OR MIT",
   "type": "module",
-  "types": "dist/src/index.d.ts",
-  "main": "dist/src/index.js",
+  "types": "dist/index.d.ts",
+  "main": "dist/index.js",
   "// scripts": "The `test-:*` scripts are internal only, to be run by `npm-run-all` in parallel with the mock servers.",
   "scripts": {
     "dev": "tsc --build --watch --preserveWatchOutput",
-    "build": "tsc --build",
-    "clean": "rm -rf dist",
-    "typecheck": "tsc --build",
+    "clean": "rm -rf dist *.tsbuildinfo",
     "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "test:node": "npm-run-all --parallel --race --npm-path pnpm mock:* 'test-:node'",
@@ -34,90 +35,58 @@
     "rc": "npm version prerelease --preid rc"
   },
   "exports": {
-    ".": "./dist/src/index.js",
-    "./blob": "./dist/src/blob/index.js",
-    "./car": "./dist/src/car.js",
-    "./fetch-with-upload-progress": "./dist/src/fetch-with-upload-progress.js",
-    "./index": "./dist/src/index/index.js",
-    "./sharding": "./dist/src/sharding.js",
-    "./upload": "./dist/src/upload/index.js",
-    "./unixfs": "./dist/src/unixfs.js",
-    "./types": "./dist/src/types.js"
-  },
-  "typesVersions": {
-    "*": {
-      "blob": [
-        "dist/src/blob/index.d.ts"
-      ],
-      "car": [
-        "dist/src/car.d.ts"
-      ],
-      "fetch-with-upload-progress": [
-        "dist/src/fetch-with-upload-progress.d.ts"
-      ],
-      "index": [
-        "dist/src/index/index.d.ts"
-      ],
-      "sharding": [
-        "dist/src/sharding.d.ts"
-      ],
-      "upload": [
-        "dist/src/upload/index.d.ts"
-      ],
-      "store": [
-        "dist/src/store.d.ts"
-      ],
-      "unixfs": [
-        "dist/src/unixfs.d.ts"
-      ],
-      "types": [
-        "dist/src/types.d.ts"
-      ]
-    }
+    ".": "./dist/index.js",
+    "./blob": "./dist/blob/index.js",
+    "./car": "./dist/car.js",
+    "./fetch-with-upload-progress": "./dist/fetch-with-upload-progress.js",
+    "./index": "./dist/index/index.js",
+    "./sharding": "./dist/sharding.js",
+    "./upload": "./dist/upload/index.js",
+    "./unixfs": "./dist/unixfs.js",
+    "./types": "./dist/types.js"
   },
   "files": [
-    "dist/src/**/*.js",
-    "dist/src/**/*.js.map",
-    "dist/src/**/*.d.ts",
-    "dist/src/**/*.d.ts.map"
+    "dist",
+    "!dist/**/*.js.map"
   ],
   "dependencies": {
     "@ipld/car": "^5.2.2",
-    "@ipld/dag-cbor": "^9.0.6",
+    "@ipld/dag-cbor": "catalog:",
     "@ipld/dag-ucan": "^3.4.5",
-    "@ipld/unixfs": "^3.0.0",
+    "@ipld/unixfs": "catalog:",
     "@storacha/blob-index": "workspace:^",
     "@storacha/capabilities": "workspace:^",
     "@storacha/filecoin-client": "workspace:^",
-    "@ucanto/client": "^9.0.1",
-    "@ucanto/core": "^10.2.1",
-    "@ucanto/interface": "^10.1.1",
-    "@ucanto/transport": "^9.1.1",
+    "@ucanto/client": "catalog:",
+    "@ucanto/core": "catalog:",
+    "@ucanto/interface": "catalog:",
+    "@ucanto/transport": "catalog:",
     "@web3-storage/data-segment": "^5.1.0",
-    "ipfs-utils": "^9.0.14",
-    "multiformats": "^13.3.1",
-    "p-retry": "^5.1.2",
-    "varint": "^6.0.0"
+    "ipfs-utils": "catalog:",
+    "multiformats": "catalog:",
+    "p-retry": "catalog:",
+    "varint": "catalog:"
   },
   "devDependencies": {
-    "@arethetypeswrong/cli": "^0.17.3",
+    "@arethetypeswrong/cli": "catalog:",
     "@storacha/eslint-config": "workspace:^",
     "@types/assert": "^1.5.6",
     "@types/mocha": "^10.0.1",
     "@types/node": "^20.8.4",
-    "@types/varint": "^6.0.1",
-    "@ucanto/principal": "^9.0.2",
-    "@ucanto/server": "^10.1.0",
+    "@types/varint": "catalog:",
+    "@typescript-eslint/eslint-plugin": "catalog:",
+    "@ucanto/principal": "catalog:",
+    "@ucanto/server": "catalog:",
     "@web3-storage/content-claims": "^5.1.3",
-    "assert": "^2.0.0",
-    "blockstore-core": "^3.0.0",
+    "assert": "catalog:",
+    "blockstore-core": "catalog:",
     "c8": "^7.13.0",
-    "hundreds": "^0.0.9",
-    "ipfs-unixfs-exporter": "^10.0.0",
+    "hundreds": "catalog:",
+    "ipfs-unixfs-exporter": "catalog:",
     "mocha": "^10.2.0",
-    "npm-run-all": "^4.1.5",
-    "playwright-test": "^12.3.4",
-    "typescript": "5.2.2"
+    "npm-run-all": "catalog:",
+    "playwright-test": "catalog:",
+    "typescript": "catalog:"
   },
   "eslintConfig": {
     "extends": [
@@ -131,6 +100,9 @@
       "mocha": true,
       "browser": true,
       "node": true
+    },
+    "globals": {
+      "AsyncIterator": "readonly"
     },
     "ignorePatterns": [
       "dist",

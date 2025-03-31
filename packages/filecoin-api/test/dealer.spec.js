@@ -1,12 +1,12 @@
 import * as assert from 'assert'
 import * as Signer from '@ucanto/principal/ed25519'
 
-import * as DealerService from './services/dealer.js'
-import * as DealerEvents from './events/dealer.js'
+import * as DealerService from '../src/test/services/dealer.js'
+import * as DealerEvents from '../src/test/events/dealer.js'
 
-import { getStoreImplementations } from './context/store-implementations.js'
-import { getMockService, getConnection } from './context/service.js'
-import { validateAuthorization } from './utils.js'
+import { getStoreImplementations } from '../src/test/context/store-implementations.js'
+import { getMockService, getConnection } from '../src/test/context/service.js'
+import { validateAuthorization } from '../src/test/utils.js'
 
 describe('Dealer', () => {
   describe('aggregate/*', () => {

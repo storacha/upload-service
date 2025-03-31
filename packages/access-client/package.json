@@ -1,7 +1,10 @@
 {
   "name": "@storacha/access",
-  "version": "1.0.2",
+  "version": "1.1.1",
   "description": "access client",
+  "publishConfig": {
+    "access": "public"
+  },
   "homepage": "https://storacha.network",
   "repository": {
     "type": "git",
@@ -11,13 +14,11 @@
   "author": "Hugo Dias <hugomrdias@gmail.com> (hugodias.me)",
   "license": "(Apache-2.0 OR MIT)",
   "type": "module",
-  "types": "dist/src/index.d.ts",
-  "main": "dist/src/index.js",
+  "types": "dist/index.d.ts",
+  "main": "dist/index.js",
   "scripts": {
     "dev": "tsc --build --watch --preserveWatchOutput",
-    "build": "tsc --build",
-    "clean": "rm -rf dist",
-    "typecheck": "tsc --build",
+    "clean": "rm -rf dist *.tsbuildinfo",
     "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "test:node": "mocha 'test/**/!(*.browser).test.js' -n experimental-vm-modules -n no-warnings",
@@ -28,121 +29,89 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/src/index.d.ts",
-      "import": "./dist/src/index.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./agent": {
-      "types": "./dist/src/agent.d.ts",
-      "import": "./dist/src/agent.js"
+      "types": "./dist/agent.d.ts",
+      "import": "./dist/agent.js"
     },
     "./space": {
-      "types": "./dist/src/space.d.ts",
-      "import": "./dist/src/space.js"
+      "types": "./dist/space.d.ts",
+      "import": "./dist/space.js"
     },
     "./provider": {
-      "types": "./dist/src/provider.d.ts",
-      "import": "./dist/src/provider.js"
+      "types": "./dist/provider.d.ts",
+      "import": "./dist/provider.js"
     },
     "./access": {
-      "types": "./dist/src/access.d.ts",
-      "import": "./dist/src/access.js"
+      "types": "./dist/access.d.ts",
+      "import": "./dist/access.js"
     },
     "./encoding": {
-      "types": "./dist/src/encoding.d.ts",
-      "import": "./dist/src/encoding.js"
+      "types": "./dist/encoding.d.ts",
+      "import": "./dist/encoding.js"
     },
     "./types": {
-      "types": "./dist/src/types.d.ts",
-      "import": "./dist/src/types.js"
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
     },
     "./drivers/*": {
-      "types": "./dist/src/drivers/*.d.ts",
-      "import": "./dist/src/drivers/*.js"
+      "types": "./dist/drivers/*.d.ts",
+      "import": "./dist/drivers/*.js"
     },
     "./stores/*": {
-      "types": "./dist/src/stores/*.d.ts",
-      "import": "./dist/src/stores/*.js"
-    }
-  },
-  "typesVersions": {
-    "*": {
-      "agent": [
-        "dist/src/agent"
-      ],
-      "space": [
-        "dist/src/space"
-      ],
-      "access": [
-        "dist/src/access"
-      ],
-      "provider": [
-        "dist/src/provider"
-      ],
-      "types": [
-        "dist/src/types"
-      ],
-      "drivers/*": [
-        "dist/src/drivers/*"
-      ],
-      "stores/*": [
-        "dist/src/stores/*"
-      ],
-      "encoding": [
-        "dist/src/encoding"
-      ]
+      "types": "./dist/stores/*.d.ts",
+      "import": "./dist/stores/*.js"
     }
   },
   "files": [
-    "dist/src/**/*.js",
-    "dist/src/**/*.js.map",
-    "dist/src/**/*.d.ts",
-    "dist/src/**/*.d.ts.map"
+    "dist",
+    "!dist/**/*.js.map"
   ],
   "dependencies": {
     "@ipld/car": "^5.1.1",
     "@ipld/dag-ucan": "^3.4.5",
-    "@scure/bip39": "^1.2.1",
+    "@scure/bip39": "catalog:",
     "@storacha/capabilities": "workspace:^",
     "@storacha/did-mailto": "workspace:^",
-    "@storacha/one-webcrypto": "^1.0.1",
-    "@ucanto/client": "^9.0.1",
-    "@ucanto/core": "^10.2.1",
-    "@ucanto/interface": "^10.1.1",
-    "@ucanto/principal": "^9.0.2",
-    "@ucanto/transport": "^9.1.1",
-    "@ucanto/validator": "^9.0.3",
-    "bigint-mod-arith": "^3.1.2",
-    "conf": "11.0.2",
-    "multiformats": "^13.3.1",
-    "p-defer": "^4.0.0",
+    "@storacha/one-webcrypto": "catalog:",
+    "@ucanto/client": "catalog:",
+    "@ucanto/core": "catalog:",
+    "@ucanto/interface": "catalog:",
+    "@ucanto/principal": "catalog:",
+    "@ucanto/transport": "catalog:",
+    "@ucanto/validator": "catalog:",
+    "bigint-mod-arith": "catalog:",
+    "conf": "catalog:",
+    "multiformats": "catalog:",
+    "p-defer": "catalog:",
     "type-fest": "^4.9.0",
     "uint8arrays": "^5.1.0"
   },
   "devDependencies": {
-    "@arethetypeswrong/cli": "^0.17.3",
+    "@arethetypeswrong/cli": "catalog:",
     "@storacha/eslint-config": "workspace:^",
     "@types/assert": "^1.5.6",
-    "@types/inquirer": "^9.0.4",
+    "@types/inquirer": "catalog:",
     "@types/mocha": "^10.0.1",
     "@types/node": "^20.8.4",
-    "@types/sinon": "^10.0.19",
-    "@types/varint": "^6.0.1",
-    "@types/ws": "^8.5.4",
-    "@ucanto/server": "^10.1.0",
-    "assert": "^2.0.0",
+    "@types/sinon": "catalog:",
+    "@types/varint": "catalog:",
+    "@types/ws": "catalog:",
+    "@typescript-eslint/eslint-plugin": "catalog:",
+    "@ucanto/server": "catalog:",
+    "assert": "catalog:",
     "mocha": "^10.2.0",
-    "playwright-test": "^12.3.4",
-    "sinon": "^15.0.3",
-    "typescript": "5.2.2",
-    "watch": "^1.0.2"
+    "playwright-test": "catalog:",
+    "sinon": "catalog:",
+    "typescript": "catalog:",
+    "watch": "catalog:"
   },
   "eslintConfig": {
     "extends": [
       "@storacha/eslint-config"
     ],
-    "parserOptions": {
-      "project": "./tsconfig.json"
-    },
     "env": {
       "browser": true,
       "es2022": true,

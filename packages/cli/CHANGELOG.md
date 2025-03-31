@@ -1,4 +1,93 @@
-# Changelog
+## 1.2.9 (2025-03-27)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.1.1
+- Updated @storacha/capabilities to 1.4.0
+- Updated @storacha/client to 1.2.4
+- Updated @storacha/upload-api to 1.4.3
+
+## 1.2.3 (2025-03-25)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.2.2
+- Updated @storacha/upload-api to 1.4.1
+
+## 1.2.1 (2025-03-25)
+
+### 🩹 Fixes
+
+- fix(cli): select login method ([#203](https://github.com/storacha/upload-service/pull/203))
+
+### ❤️ Thank You
+
+- ash
+
+## 1.2.0 (2025-03-25)
+
+### 🚀 Features
+
+- feat: external login ([d177feab](https://github.com/storacha/upload-service/commit/d177feab))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.1.0
+- Updated @storacha/capabilities to 1.3.0
+- Updated @storacha/client to 1.2.0
+- Updated @storacha/upload-api to 1.4.0
+
+### ❤️ Thank You
+
+- Alan Shaw
+
+## 1.1.16 (2025-03-24)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.1.11
+- Updated @storacha/upload-api to 1.3.10
+
+## 1.1.15 (2025-03-17)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.1.10
+- Updated @storacha/upload-api to 1.3.9
+
+## 1.1.14 (2025-03-14)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.0.5
+- Updated @storacha/capabilities to 1.2.4
+- Updated @storacha/client to 1.1.9
+- Updated @storacha/upload-api to 1.3.8
+
+## 1.1.8 (2025-03-13)
+
+### 🩹 Fixes
+
+- Start releasing packages with Nx! ([72a3a97e](https://github.com/storacha/upload-service/commit/72a3a97e))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.0.4
+- Updated @storacha/capabilities to 1.2.3
+- Updated @storacha/client to 1.1.7
+- Updated @storacha/did-mailto to 1.0.2
+- Updated @storacha/upload-api to 1.3.6
+
+### ❤️ Thank You
+
+- Petra Jaros
+
+## [1.1.2](https://github.com/storacha/upload-service/compare/cli-v1.1.1...cli-v1.1.2) (2025-02-11)
+
+
+### Fixes
+
+* use up.storacha.network ([#144](https://github.com/storacha/upload-service/issues/144)) ([ac6b5b4](https://github.com/storacha/upload-service/commit/ac6b5b4b9881f9889e99e18b38fbfb302b4fb3b5))
 
 ## [1.1.1](https://github.com/storacha/upload-service/compare/cli-v1.1.0...cli-v1.1.1) (2025-01-22)
 

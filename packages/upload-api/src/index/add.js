@@ -69,12 +69,14 @@ const add = async ({ capability }, context) => {
 
   // TODO: randomly validate slices in the index correspond to slices in the blob
 
-  const publishRes = await publishIndexClaim(context, {
-    content: idxRes.ok.content,
-    index: idxLink,
-  })
-  if (publishRes.error) {
-    return publishRes
+  const publishRes = await Promise.all([
+    // publish the index data to IPNI
+    context.ipniService.publish(idxRes.ok),
+    // publish a content claim for the index
+    publishIndexClaim(context, { content: idxRes.ok.content, index: idxLink }),
+  ])
+  for (const res of publishRes) {
+    if (res.error) return res
   }
   return ok({})
 }

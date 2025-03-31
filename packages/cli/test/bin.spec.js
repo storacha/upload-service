@@ -47,7 +47,7 @@ export const testStoracha = {
     const { output, status } = await storacha.args(['--version']).join()
 
     assert.equal(status.code, 0)
-    assert.match(output, /storacha, \d.\d.\d/)
+    assert.match(output, /storacha, \d+\.\d+\.\d+/)
   }),
 
   'storacha whoami': test(async (assert) => {
@@ -607,7 +607,7 @@ export const testSpace = {
     })
 
     /** @type {import('@storacha/client/types').DID<'web'>} */
-    const providerDID = 'did:web:test.upload.storacha.network'
+    const providerDID = 'did:web:test.up.storacha.network'
 
     const infoWithoutProvider = await storacha
       .args(['space', 'info'])
@@ -927,7 +927,6 @@ export const testDelegation = {
         blocks.push(block)
       }
 
-      // @ts-expect-error
       const delegation = importDAG(blocks)
       assert.equal(delegation.audience.did(), bob.did())
       assert.equal(delegation.capabilities[0].can, 'store/*')
@@ -977,7 +976,6 @@ export const testDelegation = {
         blocks.push(block)
       }
 
-      // @ts-expect-error
       const delegation = importDAG(blocks)
       assert.equal(delegation.audience.did(), bob.did())
       assert.equal(delegation.capabilities[0].can, 'store/add')

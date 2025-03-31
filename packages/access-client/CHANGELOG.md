@@ -1,4 +1,51 @@
-# Changelog
+## 1.1.1 (2025-03-27)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/capabilities to 1.4.0
+
+## 1.1.0 (2025-03-25)
+
+### 🚀 Features
+
+- feat: external login ([d177feab](https://github.com/storacha/upload-service/commit/d177feab))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/capabilities to 1.3.0
+
+### ❤️ Thank You
+
+- Alan Shaw
+
+## 1.0.5 (2025-03-14)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/capabilities to 1.2.4
+
+## 1.0.4 (2025-03-13)
+
+### 🩹 Fixes
+
+- Start releasing packages with Nx! ([72a3a97e](https://github.com/storacha/upload-service/commit/72a3a97e))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/capabilities to 1.2.3
+- Updated @storacha/did-mailto to 1.0.2
+
+### ❤️ Thank You
+
+- Petra Jaros
+
+## [1.0.3](https://github.com/storacha/upload-service/compare/access-v1.0.2...access-v1.0.3) (2025-02-11)
+
+
+### Fixes
+
+* dedupe proofs ([#143](https://github.com/storacha/upload-service/issues/143)) ([de2ac67](https://github.com/storacha/upload-service/commit/de2ac67c1af1f968cdb359f96e4be5fbd8254b7d))
+* use up.storacha.network ([#144](https://github.com/storacha/upload-service/issues/144)) ([ac6b5b4](https://github.com/storacha/upload-service/commit/ac6b5b4b9881f9889e99e18b38fbfb302b4fb3b5))
 
 ## [1.0.2](https://github.com/storacha/upload-service/compare/access-v1.0.1...access-v1.0.2) (2025-01-22)
 

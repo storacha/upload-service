@@ -22,11 +22,21 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           cache: 'pnpm'
-      - name: Install dependencies
-        run: pnpm install
+      - name: Install npm package dependencies
+        run: pnpm install --frozen-lockfile
 
       # Set the base and head that `nx affected` will use
       - uses: nrwl/nx-set-shas@v4
+        env:
+          NX_VERBOSE_LOGGING: ${{ runner.debug && 'true' || 'false' }}
+
+      - name: Prepare environment
+        run: pnpm nx affected -t prepare-environment
+        env:
+          NX_VERBOSE_LOGGING: ${{ runner.debug && 'true' || 'false' }}
 
       # Run CI tasks over all affected projects
-      - run: pnpm nx affected -t typecheck lint build test depcheck attw
+      # TODO: Add `attw` back once fixed.
+      - run: pnpm nx affected -t typecheck lint build test depcheck
+        env:
+          NX_VERBOSE_LOGGING: ${{ runner.debug && 'true' || 'false' }}

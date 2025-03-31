@@ -1,7 +1,6 @@
 import * as Server from '@ucanto/server'
 import { Message, Receipt } from '@ucanto/core'
 import * as Transport from '@ucanto/transport/car'
-import { ed25519 } from '@ucanto/principal'
 import * as Blob from '@storacha/capabilities/blob'
 import * as SpaceBlob from '@storacha/capabilities/space/blob'
 import * as W3sBlob from '@storacha/capabilities/web3.storage/blob'
@@ -11,16 +10,10 @@ import * as DID from '@ipld/dag-ucan/did'
 import * as API from '../types.js'
 import { allocate as spaceAllocate } from '../space-allocate.js'
 import { createConcludeInvocation } from '../ucan/conclude.js'
-import { AwaitError } from './lib.js'
+import { AwaitError, deriveDID } from './lib.js'
 import { AgentMessage } from '../lib.js'
-
-/**
- * Derives did:key principal from (blob) multihash that can be used to
- * sign ucan invocations/receipts for the the subject (blob) multihash.
- *
- * @param {API.Multihash} multihash
- */
-export const deriveDID = (multihash) => ed25519.derive(multihash.subarray(-32))
+import * as W3sBlobAdd from '../web3.storage/blob/add.js'
+import { isW3sProvider } from '../web3.storage/blob/lib.js'
 
 /**
  * @param {API.Receipt} receipt
@@ -31,15 +24,37 @@ const conclude = (receipt, issuer, audience = issuer) =>
   createConcludeInvocation(issuer, audience, receipt).delegate()
 
 /**
- * @param {API.BlobServiceContext} context
+ * @param {API.BlobServiceContext & API.LegacyBlobServiceContext} context
  * @returns {API.ServiceMethod<API.SpaceBlobAdd, API.SpaceBlobAddSuccess, API.SpaceBlobAddFailure>}
  */
 export function blobAddProvider(context) {
+  const w3sHandler = W3sBlobAdd.w3sBlobAddHandler(context)
+
   return Server.provideAdvanced({
     capability: SpaceBlob.add,
-    handler: async ({ capability, invocation }) => {
+    handler: async ({ capability, invocation, context: invocationContext }) => {
       const { with: space, nb } = capability
       const { blob } = nb
+
+      // First we check if space has storage provider associated. If it does not
+      // we return `InsufficientStorage` error as storage capacity is considered
+      // to be 0.
+      const provisioned = await spaceAllocate(
+        { capability: { with: space } },
+        context
+      )
+      if (provisioned.error) {
+        return provisioned
+      }
+
+      // if legacy provider, use legacy handler
+      if (provisioned.ok.providers.some(isW3sProvider)) {
+        return w3sHandler({
+          capability,
+          invocation,
+          context: invocationContext,
+        })
+      }
 
       const allocation = await allocate({
         context,
@@ -69,7 +84,8 @@ export function blobAddProvider(context) {
         provider: allocation.ok.provider,
         blob,
         space,
-        delivery: delivery,
+        cause: invocation.link(),
+        delivery,
       })
       if (acceptance.error) {
         return acceptance
@@ -79,17 +95,18 @@ export function blobAddProvider(context) {
         context,
         blob,
         space,
-        delivery: delivery,
+        delivery,
         acceptance: acceptance.ok,
       })
 
       // Create a result describing this invocation workflow
-      let result = Server.ok({
-        /** @type {API.SpaceBlobAddSuccess['site']} */
-        site: {
-          'ucan/await': ['.out.ok.site', acceptance.ok.task.link()],
-        },
-      })
+      let result = Server.ok(
+        /** @type {API.SpaceBlobAddSuccess} */ ({
+          site: {
+            'ucan/await': ['.out.ok.site', acceptance.ok.task.link()],
+          },
+        })
+      )
         .fork(allocation.ok.task)
         .fork(allocationW3s.task)
         .fork(delivery.task)
@@ -125,17 +142,6 @@ export function blobAddProvider(context) {
  * @param {API.Link} allocate.cause
  */
 async function allocate({ context, blob, space, cause }) {
-  // First we check if space has storage provider associated. If it does not
-  // we return `InsufficientStorage` error as storage capacity is considered
-  // to be 0.
-  const provisioned = await spaceAllocate(
-    { capability: { with: space } },
-    context
-  )
-  if (provisioned.error) {
-    return provisioned
-  }
-
   // 1. Create blob/allocate invocation and task
   const { router } = context
   const digest = Digest.decode(blob.digest)
@@ -248,7 +254,7 @@ async function allocateW3s({ context, blob, space, cause, receipt }) {
  * @param {object} put
  * @param {API.BlobModel} put.blob
  * @param {object} put.allocation
- * @param {API.Receipt<API.BlobAllocateSuccess, API.BlobAcceptFailure>} put.allocation.receipt
+ * @param {API.Receipt<API.BlobAllocateSuccess, API.BlobAllocateFailure>} put.allocation.receipt
  */
 async function put({ blob, allocation: { receipt: allocationReceipt } }) {
   // Derive the principal that will provide the blob from the blob digest.
@@ -327,6 +333,7 @@ async function put({ blob, allocation: { receipt: allocationReceipt } }) {
  * @param {API.Principal} input.provider
  * @param {API.BlobModel} input.blob
  * @param {API.DIDKey} input.space
+ * @param {API.Link} input.cause Original `space/blob/add` invocation.
  * @param {object} input.delivery
  * @param {API.Invocation<API.HTTPPut>} input.delivery.task
  * @param {API.Receipt|null} input.delivery.receipt
@@ -336,6 +343,7 @@ async function accept({
   provider,
   blob,
   space,
+  cause,
   delivery: { task: deliveryTask, receipt: deliveryReceipt },
 }) {
   // 1. Create blob/accept invocation and task
@@ -376,6 +384,32 @@ async function accept({
   // If put has already succeeded, we can execute `blob/accept` right away.
   else if (deliveryReceipt?.out.ok) {
     receipt = await configure.ok.invocation.execute(configure.ok.connection)
+
+    // record the invocation and the receipt
+    const message = await Message.build({
+      invocations: [configure.ok.invocation],
+      receipts: [receipt],
+    })
+    const messageWrite = await context.agentStore.messages.write({
+      source: await Transport.outbound.encode(message),
+      data: message,
+      index: [...AgentMessage.index(message)],
+    })
+    if (messageWrite.error) {
+      return messageWrite
+    }
+
+    const register = await context.registry.register({
+      space,
+      cause,
+      blob: { digest: Digest.decode(blob.digest), size: blob.size },
+    })
+    if (register.error) {
+      // it's ok if there's already a registration of this blob in this space
+      if (register.error.name !== 'EntryExists') {
+        return register
+      }
+    }
   }
 
   return Server.ok({
@@ -419,6 +453,7 @@ async function acceptW3s({
       space,
       _put: { 'ucan/await': ['.out.ok', deliveryTask.link()] },
     },
+    expiration: Infinity,
   })
   const w3sAcceptTask = await w3sAccept.delegate()
 
@@ -444,6 +479,7 @@ async function acceptW3s({
       issuer: context.id,
       ran: w3sAcceptTask,
       result: acceptanceReceipt.out,
+      fx: acceptanceReceipt.fx,
     })
   }
 

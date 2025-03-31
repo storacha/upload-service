@@ -1,7 +1,10 @@
 {
   "name": "@storacha/upload-api",
   "description": "The upload api for storacha.network",
-  "version": "1.3.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "version": "1.4.3",
   "type": "module",
   "main": "./src/lib.js",
   "homepage": "https://storacha.network",
@@ -11,185 +14,115 @@
     "directory": "packages/upload-api"
   },
   "files": [
-    "src",
-    "test",
-    "dist/**/*.d.ts",
-    "dist/**/*.d.ts.map"
+    "dist",
+    "!dist/**/*.js.map"
   ],
-  "typesVersions": {
-    "*": {
-      "src/lib.js": [
-        "dist/src/lib.d.ts"
-      ],
-      "access": [
-        "dist/src/access.d.ts"
-      ],
-      "admin": [
-        "dist/src/admin.d.ts"
-      ],
-      "blob": [
-        "dist/src/blob.d.ts"
-      ],
-      "console": [
-        "dist/src/console.d.ts"
-      ],
-      "consumer": [
-        "dist/src/consumer.d.ts"
-      ],
-      "customer": [
-        "dist/src/customer.d.ts"
-      ],
-      "errors": [
-        "dist/src/errors.d.ts"
-      ],
-      "index": [
-        "dist/src/index.d.ts"
-      ],
-      "plan": [
-        "dist/src/plan.d.ts"
-      ],
-      "provider": [
-        "dist/src/provider.d.ts"
-      ],
-      "rate-limit": [
-        "dist/src/rate-limit.d.ts"
-      ],
-      "space": [
-        "dist/src/space.d.ts"
-      ],
-      "subscription": [
-        "dist/src/subscription.d.ts"
-      ],
-      "ucan": [
-        "dist/src/ucan.d.ts"
-      ],
-      "upload": [
-        "dist/src/upload.d.ts"
-      ],
-      "usage": [
-        "dist/src/usage.d.ts"
-      ],
-      "types": [
-        "dist/src/types.d.ts"
-      ],
-      "utils/revocation": [
-        "dist/src/utils/revocation.d.ts"
-      ],
-      "validate": [
-        "dist/src/validate.d.ts"
-      ],
-      "test": [
-        "dist/test/lib.d.ts"
-      ],
-      "test/context": [
-        "dist/test/helpers/context.d.ts"
-      ]
-    }
-  },
   "exports": {
     ".": {
-      "types": "./dist/src/lib.d.ts",
-      "import": "./src/lib.js"
+      "types": "./dist/lib.d.ts",
+      "import": "./dist/lib.js"
     },
     "./types": {
-      "types": "./dist/src/types.d.ts",
-      "import": "./src/types.js"
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
     },
     "./access": {
-      "types": "./dist/src/access.d.ts",
-      "import": "./src/access.js"
+      "types": "./dist/access.d.ts",
+      "import": "./dist/access.js"
     },
     "./admin": {
-      "types": "./dist/src/admin.d.ts",
-      "import": "./src/admin.js"
+      "types": "./dist/admin.d.ts",
+      "import": "./dist/admin.js"
     },
     "./blob": {
-      "types": "./dist/src/blob.d.ts",
-      "import": "./src/blob.js"
+      "types": "./dist/blob.d.ts",
+      "import": "./dist/blob.js"
     },
     "./console": {
-      "types": "./dist/src/console.d.ts",
-      "import": "./src/console.js"
+      "types": "./dist/console.d.ts",
+      "import": "./dist/console.js"
     },
     "./consumer": {
-      "types": "./dist/src/consumer.d.ts",
-      "import": "./src/consumer.js"
+      "types": "./dist/consumer.d.ts",
+      "import": "./dist/consumer.js"
     },
     "./customer": {
-      "types": "./dist/src/customer.d.ts",
-      "import": "./src/customer.js"
+      "types": "./dist/customer.d.ts",
+      "import": "./dist/customer.js"
     },
     "./errors": {
-      "types": "./dist/src/errors.d.ts",
-      "import": "./src/errors.js"
+      "types": "./dist/errors.d.ts",
+      "import": "./dist/errors.js"
     },
     "./index": {
-      "types": "./dist/src/index.d.ts",
-      "import": "./src/index.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./plan": {
-      "types": "./dist/src/plan.d.ts",
-      "import": "./src/plan.js"
+      "types": "./dist/plan.d.ts",
+      "import": "./dist/plan.js"
     },
     "./provider": {
-      "types": "./dist/src/provider.d.ts",
-      "import": "./src/provider.js"
+      "types": "./dist/provider.d.ts",
+      "import": "./dist/provider.js"
     },
     "./rate-limit": {
-      "types": "./dist/src/rate-limit.d.ts",
-      "import": "./src/rate-limit.js"
+      "types": "./dist/rate-limit.d.ts",
+      "import": "./dist/rate-limit.js"
     },
     "./space": {
-      "types": "./dist/src/space.d.ts",
-      "import": "./src/space.js"
+      "types": "./dist/space.d.ts",
+      "import": "./dist/space.js"
     },
     "./subscription": {
-      "types": "./dist/src/subscription.d.ts",
-      "import": "./src/subscription.js"
+      "types": "./dist/subscription.d.ts",
+      "import": "./dist/subscription.js"
     },
     "./ucan": {
-      "types": "./dist/src/ucan.d.ts",
-      "import": "./src/ucan.js"
+      "types": "./dist/ucan.d.ts",
+      "import": "./dist/ucan.js"
     },
     "./upload": {
-      "types": "./dist/src/upload.d.ts",
-      "import": "./src/upload.js"
+      "types": "./dist/upload.d.ts",
+      "import": "./dist/upload.js"
     },
     "./usage": {
-      "types": "./dist/src/usage.d.ts",
-      "import": "./src/usage.js"
+      "types": "./dist/usage.d.ts",
+      "import": "./dist/usage.js"
     },
     "./utils/revocation": {
-      "types": "./dist/src/utils/revocation.d.ts",
-      "import": "./src/utils/revocation.js"
+      "types": "./dist/utils/revocation.d.ts",
+      "import": "./dist/utils/revocation.js"
     },
     "./validate": {
-      "types": "./dist/src/validate.d.ts",
-      "import": "./src/validate.js"
+      "types": "./dist/validate.d.ts",
+      "import": "./dist/validate.js"
     },
     "./test": {
       "types": "./dist/test/lib.d.ts",
-      "import": "./test/lib.js"
+      "import": "./dist/test/lib.js"
     },
     "./test/context": {
       "types": "./dist/test/helpers/context.d.ts",
-      "import": "./test/helpers/context.js"
+      "import": "./dist/test/helpers/context.js"
     },
     "./test/external-service": {
       "types": "./dist/test/external-service/index.d.ts",
-      "import": "./test/external-service/index.js"
+      "import": "./dist/test/external-service/index.js"
+    },
+    "./test/utils": {
+      "types": "./dist/test/helpers/utils.d.ts",
+      "import": "./dist/test/helpers/utils.js"
     }
   },
   "scripts": {
     "dev": "tsc --build --watch --preserveWatchOutput",
-    "build": "tsc --build",
-    "clean": "rm -rf dist",
-    "typecheck": "tsc --build",
+    "clean": "rm -rf dist *.tsbuildinfo",
     "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "test": "mocha --bail --timeout 10s -n no-warnings -n experimental-vm-modules -n experimental-fetch 'test/**/*.spec.js'",
     "test-watch": "pnpm build && mocha --bail --timeout 10s --watch --parallel -n no-warnings -n experimental-vm-modules -n experimental-fetch --watch-files src,test",
-    "attw": "attw --profile node16 --pack ."
+    "attw": "attw --pack ."
   },
   "dependencies": {
     "@storacha/access": "workspace:^",
@@ -197,38 +130,37 @@
     "@storacha/capabilities": "workspace:^",
     "@storacha/did-mailto": "workspace:^",
     "@storacha/filecoin-api": "workspace:^",
-    "@ucanto/client": "^9.0.1",
-    "@ucanto/interface": "^10.1.1",
-    "@ucanto/principal": "^9.0.2",
-    "@ucanto/server": "^10.0.0",
-    "@ucanto/transport": "^9.1.1",
-    "@ucanto/validator": "^9.0.3",
+    "@ucanto/client": "catalog:",
+    "@ucanto/interface": "catalog:",
+    "@ucanto/principal": "catalog:",
+    "@ucanto/server": "catalog:",
+    "@ucanto/transport": "catalog:",
+    "@ucanto/validator": "catalog:",
     "@web3-storage/content-claims": "^5.1.3",
-    "@web3-storage/upload-api": "^19.0.0",
-    "multiformats": "^13.3.1",
+    "@web3-storage/upload-api": "catalog:",
+    "multiformats": "catalog:",
     "uint8arrays": "^5.0.3"
   },
   "devDependencies": {
-    "@arethetypeswrong/cli": "^0.17.3",
+    "@arethetypeswrong/cli": "catalog:",
     "@ipld/car": "^5.1.1",
     "@ipld/dag-ucan": "^3.4.5",
     "@storacha/blob-index": "workspace:^",
     "@storacha/eslint-config": "workspace:^",
-    "@storacha/one-webcrypto": "^1.0.1",
+    "@storacha/one-webcrypto": "catalog:",
     "@types/mocha": "^10.0.1",
-    "@ucanto/core": "^10.2.1",
-    "@web-std/blob": "^3.0.5",
-    "is-subset": "^0.1.1",
+    "@typescript-eslint/eslint-plugin": "catalog:",
+    "@ucanto/core": "catalog:",
+    "@web-std/blob": "catalog:",
+    "@web3-storage/sigv4": "^1.0.2",
+    "is-subset": "catalog:",
     "mocha": "^10.2.0",
-    "typescript": "5.2.2"
+    "typescript": "catalog:"
   },
   "eslintConfig": {
     "extends": [
       "@storacha/eslint-config"
     ],
-    "parserOptions": {
-      "project": "./tsconfig.json"
-    },
     "env": {
       "es2022": true,
       "mocha": true,
@@ -239,8 +171,11 @@
       "dist",
       "coverage",
       "src/types.js",
-      "test/types.js"
-    ]
+      "src/test/types.js"
+    ],
+    "rules": {
+      "@typescript-eslint/no-empty-object-type": "off"
+    }
   },
   "depcheck": {
     "specials": [

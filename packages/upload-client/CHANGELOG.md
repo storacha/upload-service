@@ -1,4 +1,58 @@
-# Changelog
+## 1.0.9 (2025-03-27)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-client to 1.0.6
+- Updated @storacha/capabilities to 1.4.0
+- Updated @storacha/blob-index to 1.0.5
+
+## 1.0.8 (2025-03-25)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-client to 1.0.5
+- Updated @storacha/capabilities to 1.3.0
+- Updated @storacha/blob-index to 1.0.4
+
+## 1.0.7 (2025-03-14)
+
+### 🩹 Fixes
+
+- fix: do not add space to location claim for legacy provisioned spaces ([#178](https://github.com/storacha/upload-service/pull/178))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-client to 1.0.4
+- Updated @storacha/capabilities to 1.2.4
+- Updated @storacha/blob-index to 1.0.3
+
+### ❤️ Thank You
+
+- ash
+
+## 1.0.6 (2025-03-13)
+
+### 🩹 Fixes
+
+- Start releasing packages with Nx! ([72a3a97e](https://github.com/storacha/upload-service/commit/72a3a97e))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-client to 1.0.3
+- Updated @storacha/capabilities to 1.2.3
+- Updated @storacha/blob-index to 1.0.2
+
+### ❤️ Thank You
+
+- Petra Jaros
+
+## [1.0.5](https://github.com/storacha/upload-service/compare/upload-client-v1.0.4...upload-client-v1.0.5) (2025-02-11)
+
+
+### Fixes
+
+* use correct object in cause ([#140](https://github.com/storacha/upload-service/issues/140)) ([372f839](https://github.com/storacha/upload-service/commit/372f8391e3385cc7f810d31e6de852d6d1100688))
+* use up.storacha.network ([#144](https://github.com/storacha/upload-service/issues/144)) ([ac6b5b4](https://github.com/storacha/upload-service/commit/ac6b5b4b9881f9889e99e18b38fbfb302b4fb3b5))
 
 ## [1.0.4](https://github.com/storacha/upload-service/compare/upload-client-v1.0.3...upload-client-v1.0.4) (2025-01-22)
 

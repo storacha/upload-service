@@ -47,13 +47,26 @@
       "dependsOn": [
         "build"
       ]
+    },
+    "nx-release-publish": {
+      "dependsOn": ["build"]
     }
   },
   "defaultBase": "main",
   "release": {
     "projects": [
       "packages/*"
-    ]
+    ],
+    "projectsRelationship": "independent",
+    "versionPlans": true,
+    "version": {
+      "generatorOptions": {
+        "preserveLocalDependencyProtocols": true
+      }
+    },
+    "changelog": {
+      "projectChangelogs": true
+    }
   },
   "plugins": [
     {
@@ -63,6 +76,12 @@
         "buildTargetName": "next:build",
         "devTargetName": "next:dev",
         "serveStaticTargetName": "serve-static"
+      }
+    },
+    {
+      "plugin": "@nx/js/typescript",
+      "options": {
+        "build": true
       }
     }
   ]
