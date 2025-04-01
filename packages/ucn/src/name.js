@@ -68,14 +68,20 @@ export const from = (agent, proof) => new Name(agent, proof)
  * @param {number} [options.expiration] Timestamp in seconds from Unix epoch
  * after which the delegation is invalid. The default is NO EXPIRATION.
  */
-export const grant = (name, recipient, options) => {
+export const grant = async (name, recipient, options) => {
   const readOnly = options?.readOnly ?? false
+  if (!readOnly) {
+    const canWrite = name.proof.capabilities.some(c => ['*', ClockCaps.clock.can, ClockCaps.advance.can].includes(c.can))
+    if (!canWrite) {
+      throw new Error(`granting write capability: name not writable: delegated capability not found: "${ClockCaps.advance.can}"`)
+    }
+  }
   return delegate({
     issuer: name.agent,
     audience: parse(recipient),
     capabilities: [
       { can: ClockCaps.head.can, with: name.did() },
-      ...readOnly ? [{ can: ClockCaps.advance.can, with: name.did() }] : [],
+      ...readOnly ? [] : [{ can: ClockCaps.advance.can, with: name.did() }],
     ],
     proofs: [name.proof],
     expiration: options?.expiration ?? Infinity

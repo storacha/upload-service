@@ -1175,6 +1175,9 @@ importers:
         specifier: ^6.2.1
         version: 6.2.1
     devDependencies:
+      '@types/mocha':
+        specifier: ^10.0.10
+        version: 10.0.10
       c8:
         specifier: ^10.1.3
         version: 10.1.3

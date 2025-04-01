@@ -67,6 +67,8 @@ const name = await Name.create(agent)
 const val0 = '/ipfs/bafkreiem4twkqzsq2aj4shbycd4yvoj2cx72vezicletlhi7dijjciqpui'
 const rev0 = await Name.v0(val0)
 
+await Name.publish(name, rev0)
+
 // ...later
 
 const val1 = '/ipfs/bafybeiauyddeo2axgargy56kwxirquxaxso3nobtjtjvoqu552oqciudrm'
