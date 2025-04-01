@@ -7,6 +7,8 @@ import * as Value from './value.js'
 
 /** @import * as API from './api.js' */
 
+const version = 'ucn/revision@0.0.1'
+
 class Revision {
   /** @param {API.EventBlockView} event */
   constructor (event) {
@@ -58,7 +60,7 @@ export const archive = async revision => {
   const blocks = new Map()
   blocks.set(revision.event.cid.toString(), revision.event)
   // Create a descriptor block to describe what this DAG represents.
-  const variant = await CBOR.write({ ['ucn/revision@1.0.0']: revision.event.cid })
+  const variant = await CBOR.write({ [version]: revision.event.cid })
   blocks.set(variant.cid.toString(), variant)
   return CAR.encode({ roots: [variant], blocks })
 }
@@ -71,11 +73,11 @@ export const extract = async bytes => {
   }
 
   const variant = CBOR.decode(roots[0].bytes)
-  if (!variant || typeof variant != 'object' || !('ucn/revision@1.0.0' in variant)) {
+  if (!variant || typeof variant != 'object' || !(version in variant)) {
     throw new Error('invalid or unsupported revision')
   }
 
-  const event = blocks.get(String(variant['ucn/revision@1.0.0']))
+  const event = blocks.get(String(variant[version]))
   if (!event) {
     throw new Error('missing revision block')
   }
