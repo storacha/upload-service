@@ -2,15 +2,7 @@
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "targetDefaults": {
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
-      "cache": true
-    },
-    "typecheck": {
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "cache": true
     },
     "lint": {
@@ -20,22 +12,15 @@
       "cache": true
     },
     "test": {
-      "dependsOn": [
-        "^build",
-        "test:!(watch)"
-      ],
+      "dependsOn": ["^build", "test:!(watch)"],
       "cache": true
     },
     "test:!(watch)": {
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "cache": true
     },
     "test:watch": {
-      "dependsOn": [
-        "^build"
-      ]
+      "dependsOn": ["^build"]
     },
     "testw": {
       "cache": true
@@ -44,9 +29,7 @@
       "cache": true
     },
     "attw": {
-      "dependsOn": [
-        "build"
-      ]
+      "dependsOn": ["build"]
     },
     "nx-release-publish": {
       "dependsOn": ["build"]
@@ -54,9 +37,6 @@
   },
   "defaultBase": "main",
   "release": {
-    "projects": [
-      "packages/*"
-    ],
     "projectsRelationship": "independent",
     "versionPlans": true,
     "version": {
@@ -73,7 +53,7 @@
       "plugin": "@nx/next/plugin",
       "options": {
         "startTargetName": "next:start",
-        "buildTargetName": "next:build",
+        "buildTargetName": "pages:build",
         "devTargetName": "next:dev",
         "serveStaticTargetName": "serve-static"
       }
