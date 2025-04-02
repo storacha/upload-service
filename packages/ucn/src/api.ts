@@ -80,7 +80,7 @@ export interface Value {
   /**
    * The resolved value.
    */
-  get: () => Promise<RawValue>
+  value: RawValue
   /**
    * Revision(s) this resolution was calculated from.
    */
@@ -99,6 +99,10 @@ export interface Revision {
    * The mutation event that backs this revision.
    */
   event: EventBlockView
+  /**
+   * Export the revision as IPLD blocks.
+   */
+  export: () => AsyncIterable<Block>
   /**
    * Encode the revision as a CAR file.
    */

@@ -17,21 +17,13 @@ class Name {
     if (proof.audience.did() !== agent.did()) {
       throw new Error(`invalid proof: delegation is for ${proof.audience.did()} but agent is ${agent.did()}`)
     }
-    this._agent = agent
-    this._id = parse(proof.capabilities[0]?.with)
-    this._proof = proof
+    this.agent = agent
+    this.id = parse(proof.capabilities[0]?.with)
+    this.proof = proof
   }
 
   did () {
-    return this._id.did()
-  }
-
-  get agent () {
-    return this._agent
-  }
-
-  get proof () {
-    return this._proof
+    return this.id.did()
   }
 
   toString () {

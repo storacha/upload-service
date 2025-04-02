@@ -46,11 +46,9 @@ const agent = Agent.parse(privateKey)
 const proof = Proof.parse(proofYouCan)
 
 const name = Name.from(agent, proof)
-const value = await Name.resolve(name)
+const { value } = await Name.resolve(name)
 
-console.log(value.name.toString())
-// e.g. did:key:z6MkoE1Qx89dAWThVPWU4WuGPscA9AsA8Q5paP9GhVuCcTCp
-console.log(await value.get())
+console.log(value)
 // e.g. /ipfs/bafkreiem4twkqzsq2aj4shbycd4yvoj2cx72vezicletlhi7dijjciqpui
 ```
 
