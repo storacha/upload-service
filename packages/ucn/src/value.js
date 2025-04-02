@@ -7,21 +7,9 @@ class Value {
    * @param {API.Revision[]} revision
    */
   constructor (name, value, revision) {
-    this._name = name
-    this._value = value
-    this._revision = revision
-  }
-
-  get name () {
-    return this._name
-  }
-
-  async get () {
-    return this._value
-  }
-
-  get revision () {
-    return this._revision
+    this.name = name
+    this.value = value
+    this.revision = revision
   }
 }
 

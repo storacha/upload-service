@@ -18,6 +18,16 @@ export interface HeadStorage {
 }
 
 export interface Context {
+  /**
+   * Storage for clock head events.
+   */
   headStore: HeadStorage
+  /**
+   * For fetching blocks from the network.
+   */
+  blockFetcher: BlockFetcher
+  /**
+   * For fetching and putting blocks to local cache.
+   */
   blockCache: BlockFetcher & BlockPutter
 }

@@ -15,15 +15,15 @@ const version = 'ucn/revision@1.0.0'
 class Revision {
   /** @param {API.EventBlockView} event */
   constructor (event) {
-    this._event = event
+    this.event = event
   }
 
   get value () {
-    return this._event.value.data
+    return this.event.value.data
   }
 
-  get event () {
-    return this._event
+  async * export () {
+    yield this.event
   }
 
   async archive () {
@@ -66,10 +66,11 @@ export const from = (event) => new Revision(event)
  */
 export const archive = async revision => {
   const blocks = new Map()
-  blocks.set(revision.event.cid.toString(), revision.event)
+  for await (const block of revision.export()) {
+    blocks.set(block.cid.toString(), block)
+  }
   // Create a descriptor block to describe what this DAG represents.
   const variant = await CBOR.write({ [version]: revision.event.cid })
-  blocks.set(variant.cid.toString(), variant)
   return CAR.encode({ roots: [variant], blocks })
 }
 
@@ -114,7 +115,7 @@ export const parse = (str) => {
   return extract(link.multihash.digest)
 }
 
-export const defaultRemote = connect()
+export const defaultRemotes = [connect()]
 
 /**
  * Publish a revision for the passed name to the network. Fails only if the
@@ -128,7 +129,7 @@ export const defaultRemote = connect()
  */
 export const publish = async (name, revision, options) => {
   const remotes = [...(options?.remotes ?? [])]
-  if (!remotes.length) remotes.push(connect())
+  if (!remotes.length) remotes.push(...defaultRemotes)
 
   const fetcher = withInFlight(
     withCache(
@@ -139,6 +140,8 @@ export const publish = async (name, revision, options) => {
     )
   )
 
+  /** @type {unknown[]} */
+  let errors = []
   const heads = (await Promise.all(remotes.map(async r => {
     try {
       const invocation = ClockCaps.advance.invoke({
@@ -153,13 +156,14 @@ export const publish = async (name, revision, options) => {
       if (receipt.out.error) throw receipt.out.error
       return receipt.out.ok.head
     } catch (err) {
-      console.error(`advancing remote: ${r.id}`, err)
+      errors.push(err)
       return []
     }
   }))).flat()
 
   if (!heads.length) {
-    throw new Error('publishing revision: no remotes advanced their clock')
+    if (errors.length === 1) throw errors[0]
+    throw new Error('publishing revision: no remotes advanced their clock', { cause: errors })
   }
 
   let head = revision.event.value.parents
@@ -182,20 +186,22 @@ export const publish = async (name, revision, options) => {
  * respond successfully.
  *
  * @param {API.Name} name
- * @param {API.Value} [base] A known base value to use as the resolution base.
  * @param {object} [options]
+ * @param {API.Value} [options.base] A known base value to use as the resolution base.
  * @param {API.ClockConnection[]} [options.remotes]
  * @param {API.BlockFetcher} [options.fetcher]
  * @returns {Promise<API.Value>}
  */
-export const resolve = async (name, base, options) => {
+export const resolve = async (name, options) => {
   const remotes = [...(options?.remotes ?? [])]
-  if (!remotes.length) remotes.push(connect())
+  if (!remotes.length) remotes.push(...defaultRemotes)
 
   const fetcher = withInFlight(
     withCache(options?.fetcher ?? new GatewayBlockFetcher())
   )
 
+  /** @type {unknown[]} */
+  let errors = []
   let heads = await Promise.all(remotes.map(async r => {
     try {
       const invocation = ClockCaps.head.invoke({
@@ -208,17 +214,18 @@ export const resolve = async (name, base, options) => {
       if (receipt.out.error) throw receipt.out.error
       return receipt.out.ok.head
     } catch (err) {
-      console.error(`fetching remote head: ${r.id}`, err)
+      errors.push(err)
       return []
     }
   }))
 
   if (!heads.flat().length) {
-    throw new Error('resolving name: no remotes responded successfully')
+    if (errors.length === 1) throw errors[0]
+    throw new Error('resolving name: no remotes responded successfully', { cause: errors })
   }
 
   heads = heads.filter(h => h.length !== 0)
-  let head = base?.revision.map(r => r.event.cid) ?? heads[0]
+  let head = options?.base?.revision.map(r => r.event.cid) ?? heads[0]
 
   for (const h of heads.flat()) {
     head = await advance(fetcher, head, h)

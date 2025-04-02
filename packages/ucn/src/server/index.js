@@ -4,7 +4,7 @@ import { create, provide, ok } from '@ucanto/server'
 import * as CAR from '@ucanto/transport/car'
 import * as dagCBOR from '@ipld/dag-cbor'
 import * as DID from '@ipld/dag-ucan/did'
-import { GatewayBlockFetcher, MemoryBlockstore, TieredBlockFetcher, withCache, withInFlight } from '../block.js'
+import { MemoryBlockstore, TieredBlockFetcher, withCache, withInFlight } from '../block.js'
 
 /** @import * as API from './api.js' */
 
@@ -23,11 +23,12 @@ export const createServer = (signer, service) =>
   })
 
 /**
+ * TODO: move to w3clock?
  * @param {API.Context} context
  * @returns {API.Service<API.RawValue>}
  */
-export const createService = ({ headStore, blockCache }) => {
-  const baseFetcher = withInFlight(withCache(new GatewayBlockFetcher(), blockCache))
+export const createService = ({ headStore, blockFetcher, blockCache }) => {
+  const baseFetcher = withInFlight(withCache(blockFetcher, blockCache))
   return {
     clock: {
       advance: provide(
@@ -38,18 +39,19 @@ export const createService = ({ headStore, blockCache }) => {
           const resource = DID.parse(capability.with).did()
 
           const headGet = await headStore.get(resource)
-          if (headGet.error) {
+          if (headGet.error && headGet.error.name !== 'NotFound') {
             return headGet
           }
+          const headEvents = headGet.ok ?? []
 
           const fetcher = new TieredBlockFetcher(new MemoryBlockstore(blocks), baseFetcher)
-          const head = await Clock.advance(fetcher, headGet.ok.map(h => h.event), event)
+          const head = await Clock.advance(fetcher, headEvents.map(h => h.event), event)
 
           for (const b of blocks) {
             blockCache.put(b).catch(err => console.error(`caching block: ${b.cid}`, err))
           }
 
-          const nextHeadEvents = headGet.ok.filter(nh => head.some(h => h.toString() === nh.event.toString()))
+          const nextHeadEvents = headEvents.filter(nh => head.some(h => h.toString() === nh.event.toString()))
           if (!nextHeadEvents.some(e => e.event.toString() === event.toString())) {
             nextHeadEvents.push({ event, cause: invocation })
           }
