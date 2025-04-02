@@ -4,20 +4,20 @@ import * as ed25519 from '@ucanto/principal/ed25519'
 /** @import * as API from '../src/server/api.js' */
 
 export class MemoryHeadStorage {
-  constructor () {
+  constructor() {
     /** @type {Record<string, API.HeadEvent[]>} */
     this.heads = {}
   }
 
   /** @type {API.HeadStorage['get']} */
-  async get (clock) {
+  async get(clock) {
     return this.heads[clock]
       ? ok(this.heads[clock])
       : error(/** @type {API.NotFound} */ ({ name: 'NotFound' }))
   }
 
   /** @type {API.HeadStorage['put']} */
-  async put (clock, head) {
+  async put(clock, head) {
     this.heads[clock] = head
     return ok({})
   }
@@ -44,5 +44,5 @@ export const fixtures = {
   ),
   service: ed25519.parse(
     'MgCYKXoHVy7Vk4/QjcEGi+MCqjntUiasxXJ8uJKY0qh11e+0Bs8WsdqGK7xothgrDzzWD0ME7ynPjz2okXDh8537lId8='
-  )
+  ),
 }

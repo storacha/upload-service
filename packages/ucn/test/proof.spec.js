@@ -10,7 +10,7 @@ describe('proof', () => {
       issuer: id,
       audience: await generate(),
       capabilities: [{ can: '*', with: id.did() }],
-      expiration: Infinity
+      expiration: Infinity,
     })
     const str = await Proof.format(proof)
     const parsed = await Proof.parse(str)
