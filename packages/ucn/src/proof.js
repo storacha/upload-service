@@ -1,5 +1,5 @@
 import { CAR } from '@ucanto/core'
-import { importDAG, archive, extract } from '@ucanto/core/delegation'
+import { importDAG, extract } from '@ucanto/core/delegation'
 import { create as createLink, parse as parseLink } from 'multiformats/link'
 import { base64 } from 'multiformats/bases/base64'
 import { identity } from 'multiformats/hashes/identity'
@@ -54,7 +54,7 @@ const legacyExtract = async (bytes) => {
  * @param {API.Delegation} proof 
  */
 export const format = async (proof) => {
-  const res = await archive(proof)
+  const res = await proof.archive()
   if (res.error) throw res.error
   const idCid = createLink(CAR.code, identity.digest(res.ok))
   return idCid.toString(base64)

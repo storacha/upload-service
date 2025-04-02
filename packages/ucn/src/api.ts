@@ -4,7 +4,7 @@ import { Service } from '@web3-storage/clock/api'
 import { BlockFetcher } from '@web3-storage/pail/api'
 import { Block } from 'multiformats'
 
-export type { Block, BlockFetcher, ConnectionView, Delegation, DID, Principal, Signer }
+export type { Block, BlockFetcher, ConnectionView, Delegation, DID, Principal, Service, Signer }
 
 export type ClockConnection = ConnectionView<Service<RawValue>>
 
@@ -23,6 +23,23 @@ export interface Name extends Principal {
    * access the agent must be delegated the `clock/advance` capability.
    */
   proof: Delegation
+  /**
+   * Create a delegation allowing the passed receipient to read and/or mutate
+   * the current value of the name.
+   */
+  grant: (receipent: DID, options?: GrantOptions) => Promise<Delegation>
+}
+
+export interface GrantOptions {
+  /**
+   * Set to `true` to create a delegation that allows read but not write.
+   */
+  readOnly?: boolean
+  /**
+   * Timestamp in seconds from Unix epoch after which the delegation is invalid.
+   * The default is NO EXPIRATION.
+   */
+  expiration?: number
 }
 
 /**
@@ -36,6 +53,11 @@ export type RawValue = string
  * A link to a name mutation event.
  */
 export type EventLink = ClockEventLink<RawValue>
+
+/**
+ * A name mutation event.
+ */
+export type EventView = ClockEventView<RawValue>
 
 /**
  * A name mutation event block.
@@ -78,8 +100,11 @@ export interface Revision {
    */
   event: EventBlockView
   /**
-   * Encode the revision as a CAR file. Note this does not include any known
-   * siblings.
+   * Encode the revision as a CAR file.
    */
   archive: () => Promise<Uint8Array>
+}
+
+export interface BlockPutter {
+  put: (block: Block) => Promise<void>
 }

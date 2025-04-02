@@ -8,10 +8,6 @@ import { equals } from 'multiformats/bytes'
  * @import * as API from './api.js'
  */
 
-/**
- * @typedef {{ put: (block: API.Block) => Promise<void> }} BlockPutter
- */
-
 export class MemoryBlockstore {
   /** @param {Array<API.Block>} [blocks] */
   constructor (blocks = []) {
@@ -45,7 +41,7 @@ const defaultCache = new LRUBlockstore()
 
 /**
  * @param {API.BlockFetcher} fetcher
- * @param {API.BlockFetcher & BlockPutter} [cache]
+ * @param {API.BlockFetcher & API.BlockPutter} [cache]
  */
 export function withCache (fetcher, cache) {
   cache = cache ?? defaultCache

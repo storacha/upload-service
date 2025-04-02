@@ -72,7 +72,7 @@ await Name.publish(name, rev0)
 // ...later
 
 const val1 = '/ipfs/bafybeiauyddeo2axgargy56kwxirquxaxso3nobtjtjvoqu552oqciudrm'
-const rev1 = await Name.increment(Value.from(name, [rev0]), val1)
+const rev1 = await Name.increment(Value.from(name, rev0), val1)
 
 await Name.publish(name, rev1)
 
