@@ -110,7 +110,8 @@
       "docs",
       "docs-generated",
       "coverage",
-      "src/api.js"
+      "src/api.js",
+      "src/server/api.js"
     ]
   },
   "directories": {

@@ -1,10 +1,29 @@
-import { ConnectionView, Delegation, DID, Principal, Signer } from '@ucanto/interface'
-import { EventLink as ClockEventLink, EventView as ClockEventView, EventBlockView as ClockEventBlockView } from '@web3-storage/pail/clock/api'
+import {
+  ConnectionView,
+  Delegation,
+  DID,
+  Principal,
+  Signer,
+} from '@ucanto/interface'
+import {
+  EventLink as ClockEventLink,
+  EventView as ClockEventView,
+  EventBlockView as ClockEventBlockView,
+} from '@web3-storage/pail/clock/api'
 import { Service } from '@web3-storage/clock/api'
 import { BlockFetcher } from '@web3-storage/pail/api'
 import { Block } from 'multiformats'
 
-export type { Block, BlockFetcher, ConnectionView, Delegation, DID, Principal, Service, Signer }
+export type {
+  Block,
+  BlockFetcher,
+  ConnectionView,
+  Delegation,
+  DID,
+  Principal,
+  Service,
+  Signer,
+}
 
 export type ClockConnection = ConnectionView<Service<RawValue>>
 
@@ -44,7 +63,7 @@ export interface GrantOptions {
 
 /**
  * Value of a name. Typically a multibase encoded CID prefixed with `/ipfs/`.
- * 
+ *
  * e.g. /ipfs/bafkreiem4twkqzsq2aj4shbycd4yvoj2cx72vezicletlhi7dijjciqpui
  */
 export type RawValue = string

@@ -30,11 +30,17 @@ describe('revision', () => {
   it('should increment revision', async () => {
     const name = await Name.create()
     const rev0 = await Revision.v0(fixtures.values[0])
-    const rev1 = await Revision.increment(Value.from(name, rev0), fixtures.values[1])
+    const rev1 = await Revision.increment(
+      Value.from(name, rev0),
+      fixtures.values[1]
+    )
     assert.equal(rev1.value, fixtures.values[1])
     assert.equal(rev1.event.value.data, fixtures.values[1])
     assert.equal(rev1.event.value.parents.length, 1)
-    assert.equal(rev1.event.value.parents[0].toString(), rev0.event.cid.toString())
+    assert.equal(
+      rev1.event.value.parents[0].toString(),
+      rev0.event.cid.toString()
+    )
   })
 
   it('should increment revision multi parent', async () => {
@@ -48,20 +54,31 @@ describe('revision', () => {
     const rev2 = await Revision.increment(cur0, fixtures.values[2])
 
     // create a third revision from the 2 conflicting revisions
-    const rev3 = await Revision.increment(Value.from(name, rev1, rev2), fixtures.values[3])
+    const rev3 = await Revision.increment(
+      Value.from(name, rev1, rev2),
+      fixtures.values[3]
+    )
 
     assert.equal(rev3.value, fixtures.values[3])
     assert.equal(rev3.event.value.data, fixtures.values[3])
     assert.equal(rev3.event.value.parents.length, 2)
-    assert(rev3.event.value.parents.some(p => p.toString() === rev1.event.cid.toString()))
-    assert(rev3.event.value.parents.some(p => p.toString() === rev2.event.cid.toString()))
+    assert(
+      rev3.event.value.parents.some(
+        (p) => p.toString() === rev1.event.cid.toString()
+      )
+    )
+    assert(
+      rev3.event.value.parents.some(
+        (p) => p.toString() === rev2.event.cid.toString()
+      )
+    )
   })
 
   it('should publish and resolve', async () => {
     const service = createService({
       headStore: new MemoryHeadStorage(),
       blockFetcher: { get: async () => undefined },
-      blockCache: new MemoryBlockstore()
+      blockCache: new MemoryBlockstore(),
     })
 
     const id = fixtures.service
@@ -82,7 +99,7 @@ describe('revision', () => {
     const service = createService({
       headStore: new MemoryHeadStorage(),
       blockFetcher: { get: async () => undefined },
-      blockCache: new MemoryBlockstore()
+      blockCache: new MemoryBlockstore(),
     })
 
     const id = fixtures.service
@@ -108,8 +125,8 @@ describe('revision', () => {
     const blocks = {}
     const service = createService({
       headStore: new MemoryHeadStorage(),
-      blockFetcher: { get: async cid => blocks[cid.toString()] },
-      blockCache: new MemoryBlockstore()
+      blockFetcher: { get: async (cid) => blocks[cid.toString()] },
+      blockCache: new MemoryBlockstore(),
     })
 
     const id = fixtures.service
@@ -121,8 +138,14 @@ describe('revision', () => {
 
     await Revision.publish(name, rev0, { remotes: [remote] })
 
-    const rev1 = await Revision.increment(Value.from(name, rev0), fixtures.values[1])
-    const rev2 = await Revision.increment(Value.from(name, rev1), fixtures.values[2])
+    const rev1 = await Revision.increment(
+      Value.from(name, rev0),
+      fixtures.values[1]
+    )
+    const rev2 = await Revision.increment(
+      Value.from(name, rev1),
+      fixtures.values[2]
+    )
 
     // make the skipped revision block available
     for await (const block of rev1.export()) {
@@ -140,7 +163,7 @@ describe('revision', () => {
     const service = createService({
       headStore: new MemoryHeadStorage(),
       blockFetcher: { get: async () => undefined },
-      blockCache: new MemoryBlockstore()
+      blockCache: new MemoryBlockstore(),
     })
 
     const id = fixtures.service
@@ -167,7 +190,7 @@ describe('revision', () => {
     const service = createService({
       headStore: new MemoryHeadStorage(),
       blockFetcher: { get: async () => undefined },
-      blockCache: new MemoryBlockstore()
+      blockCache: new MemoryBlockstore(),
     })
 
     const id = fixtures.service
@@ -179,21 +202,24 @@ describe('revision', () => {
 
     await Revision.publish(name0, rev0, { remotes: [remote] })
 
-    const proof = await Name.grant(name0, fixtures.bob.did(), { readOnly: true })
+    const proof = await Name.grant(name0, fixtures.bob.did(), {
+      readOnly: true,
+    })
     const name1 = Name.from(fixtures.bob, proof)
 
     const res0 = await Revision.resolve(name1, { remotes: [remote] })
     const rev1 = await Revision.increment(res0, fixtures.values[1])
 
-    await expect(Revision.publish(name1, rev1, { remotes: [remote] }))
-      .rejects.toThrow(/Claim {"can":"clock\/advance"} is not authorized/)
+    await expect(
+      Revision.publish(name1, rev1, { remotes: [remote] })
+    ).rejects.toThrow(/Claim {"can":"clock\/advance"} is not authorized/)
   })
 
   it('should allow conflicts', async () => {
     const service = createService({
       headStore: new MemoryHeadStorage(),
       blockFetcher: { get: async () => undefined },
-      blockCache: new MemoryBlockstore()
+      blockCache: new MemoryBlockstore(),
     })
 
     const id = fixtures.service
@@ -215,7 +241,10 @@ describe('revision', () => {
     await Revision.publish(name1, rev1, { remotes: [remote] })
 
     // alice also publishes on top of rev0
-    const rev2 = await Revision.increment(Value.from(name0, rev0), fixtures.values[2])
+    const rev2 = await Revision.increment(
+      Value.from(name0, rev0),
+      fixtures.values[2]
+    )
     await Revision.publish(name0, rev2, { remotes: [remote] })
 
     const res1 = await Revision.resolve(name1, { remotes: [remote] })

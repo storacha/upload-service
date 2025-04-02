@@ -1,7 +1,15 @@
 import { Result, DID, Failure, Unit, Invocation } from '@ucanto/interface'
 import { BlockFetcher, BlockPutter, EventLink } from '../api.js'
 
-export type { Service, RawValue, EventLink, EventBlock, EventView, Block, Signer } from '../api.js'
+export type {
+  Service,
+  RawValue,
+  EventLink,
+  EventBlock,
+  EventView,
+  Block,
+  Signer,
+} from '../api.js'
 
 export interface NotFound extends Failure {
   name: 'NotFound'

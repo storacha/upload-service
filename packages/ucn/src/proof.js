@@ -51,7 +51,7 @@ const legacyExtract = async (bytes) => {
 }
 
 /**
- * @param {API.Delegation} proof 
+ * @param {API.Delegation} proof
  */
 export const format = async (proof) => {
   const res = await proof.archive()
