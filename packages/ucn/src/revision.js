@@ -2,12 +2,15 @@ import { advance, decodeEventBlock, encodeEventBlock } from '@web3-storage/pail/
 import { CAR, CBOR } from '@ucanto/core'
 import { connect } from '@web3-storage/clock/client'
 import * as ClockCaps from '@web3-storage/clock/capabilities'
+import { create as createLink, parse as parseLink } from 'multiformats/link'
+import { base64 } from 'multiformats/bases/base64'
+import { identity } from 'multiformats/hashes/identity'
 import { MemoryBlockstore, withCache, TieredBlockFetcher, GatewayBlockFetcher, withInFlight } from './block.js'
 import * as Value from './value.js'
 
 /** @import * as API from './api.js' */
 
-const version = 'ucn/revision@0.0.1'
+const version = 'ucn/revision@1.0.0'
 
 class Revision {
   /** @param {API.EventBlockView} event */
@@ -29,6 +32,8 @@ class Revision {
 }
 
 /**
+ * Create an initial revision.
+ *
  * @param {string} value
  */
 export const v0 = async (value) => {
@@ -37,6 +42,8 @@ export const v0 = async (value) => {
 }
 
 /**
+ * Create a revision of a previous _value_.
+ *
  * @param {API.Value} previous
  * @param {API.RawValue} next
  */
@@ -49,10 +56,11 @@ export const increment = async (previous, next) => {
 }
 
 /** @param {API.EventBlockView} event */
-export const from = (event) =>
-  new Revision(event)
+export const from = (event) => new Revision(event)
 
 /**
+ * Encode the revision as a CAR file.
+ *
  * @param {API.Revision} revision
  * @returns {Promise<Uint8Array>}
  */
@@ -83,6 +91,27 @@ export const extract = async bytes => {
   }
 
   return new Revision(await decodeEventBlock(event.bytes))
+}
+
+/** @param {API.Revision} revision */
+export const format = async (revision) => {
+  const bytes = await revision.archive()
+  const link = createLink(CAR.code, identity.digest(bytes))
+  return link.toString(base64)
+}
+
+/** @param {string} str */
+export const parse = (str) => {
+  const link = parseLink(str, base64)
+  if (link.code !== CAR.code) {
+    throw new Error(`non CAR codec found: 0x${link.code.toString(16)}`)
+  }
+  if (link.multihash.code !== identity.code) {
+    throw new Error(
+      `non identity multihash: 0x${link.multihash.code.toString(16)}`
+    )
+  }
+  return extract(link.multihash.digest)
 }
 
 export const defaultRemote = connect()
@@ -145,7 +174,7 @@ export const publish = async (name, revision, options) => {
     return new Revision(await decodeEventBlock(block.bytes))
   }))
 
-  return Value.from(name, revisions)
+  return Value.from(name, ...revisions)
 }
 
 /**
@@ -202,5 +231,5 @@ export const resolve = async (name, base, options) => {
     return new Revision(await decodeEventBlock(block.bytes))
   }))
 
-  return Value.from(name, revisions)
+  return Value.from(name, ...revisions)
 }

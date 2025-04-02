@@ -1,5 +1,4 @@
-import { describe, it } from 'mocha'
-import assert from 'assert'
+import { describe, it, assert, expect } from 'vitest'
 import { Schema, DID } from '@ucanto/core'
 import * as ed25519 from '@ucanto/principal/ed25519'
 import * as ClockCaps from '@web3-storage/clock/capabilities'
@@ -64,6 +63,12 @@ describe('name', () => {
     const name0 = await Name.create()
     const proof = await Name.grant(name0, receipient0.did(), { readOnly: true })
     const name1 = Name.from(receipient0, proof)
-    await assert.rejects(Name.grant(name1, receipient1.did(), { readOnly: false }), /name not writable/)
+    await expect(Name.grant(name1, receipient1.did(), { readOnly: false })).rejects.toThrow(/name not writable/)
+  })
+
+  it('should fail to instantiate name for agent and proof mismatch', async () => {
+    const name0 = await Name.create()
+    const name1 = await Name.create()
+    assert.throws(() => Name.from(name0.agent, name1.proof), /invalid proof/)
   })
 })

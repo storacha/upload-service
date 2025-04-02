@@ -14,6 +14,9 @@ class Name {
    * @param {API.Delegation} proof
    */
   constructor (agent, proof) {
+    if (proof.audience.did() !== agent.did()) {
+      throw new Error(`invalid proof: delegation is for ${proof.audience.did()} but agent is ${agent.did()}`)
+    }
     this._agent = agent
     this._id = parse(proof.capabilities[0]?.with)
     this._proof = proof
@@ -33,6 +36,11 @@ class Name {
 
   toString () {
     return this.did()
+  }
+
+  /** @type {API.Name['grant']} */
+  grant (receipient, options) {
+    return grant(this, receipient, options)
   }
 }
 
@@ -60,13 +68,12 @@ export const create = async agent => {
 export const from = (agent, proof) => new Name(agent, proof)
 
 /**
+ * Create a delegation allowing the passed receipient to read and/or mutate
+ * the current value of the name.
+ *
  * @param {API.Name} name
  * @param {API.DID} recipient
- * @param {object} [options]
- * @param {boolean} [options.readOnly] Set to `true` to create a delegation that
- * allows read but not write.
- * @param {number} [options.expiration] Timestamp in seconds from Unix epoch
- * after which the delegation is invalid. The default is NO EXPIRATION.
+ * @param {API.GrantOptions} [options]
  */
 export const grant = async (name, recipient, options) => {
   const readOnly = options?.readOnly ?? false
