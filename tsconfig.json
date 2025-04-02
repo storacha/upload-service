@@ -66,6 +66,9 @@
     },
     {
       "path": "./packages/console"
+    },
+    {
+      "path": "./packages/ucn"
     }
   ]
 }
