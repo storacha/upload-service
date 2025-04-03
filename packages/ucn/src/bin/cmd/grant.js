@@ -17,7 +17,7 @@ export const handler = async (id, recipient, options) => {
   }
   const name = Name.from(agent, names[nameID])
   const delegation = await name.grant(DID.parse(recipient).did(), {
-    readOnly: options?.['read-only']
+    readOnly: options?.['read-only'],
   })
   console.log(await Proof.format(delegation))
 }

@@ -4,8 +4,7 @@ import sade from 'sade'
 
 const cli = sade('ucn')
 
-cli
-  .version("1.0.0")
+cli.version('1.0.0')
 
 cli
   .command('whoami')
@@ -36,7 +35,11 @@ cli
   .command('resolve <name>')
   .alias('r')
   .describe('Resolve the current value for the name.')
-  .option('-l, --local', 'Resolve the current value using local data only.', false)
+  .option(
+    '-l, --local',
+    'Resolve the current value using local data only.',
+    false
+  )
   .action(async (name, options) => {
     const { handler } = await import('./cmd/resolve.js')
     await handler(name, options)
