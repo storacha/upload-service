@@ -1,10 +1,17 @@
 import * as DID from '@ipld/dag-ucan/did'
-import { getAgent, getValue, getNames, setValue, storeRevision, isReadOnly } from '../lib.js'
+import {
+  getAgent,
+  getValue,
+  getNames,
+  setValue,
+  storeRevision,
+  isReadOnly,
+} from '../lib.js'
 import * as Name from '../../name.js'
 
 /**
- * @param {string} id 
- * @param {string} value 
+ * @param {string} id
+ * @param {string} value
  */
 export const handler = async (id, value) => {
   const [agent, names] = await Promise.all([getAgent(), getNames()])
@@ -51,6 +58,8 @@ export const handler = async (id, value) => {
       }
     }
   }
-  console.log(`Value${current.revision.length > 1 ? ' (resolved from conflict)' : ''}:`)
+  console.log(
+    `Value${current.revision.length > 1 ? ' (resolved from conflict)' : ''}:`
+  )
   console.log(`  ${current.value}`)
 }

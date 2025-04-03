@@ -3,7 +3,7 @@ import { getAgent, getValue, getNames, setValue } from '../lib.js'
 import * as Name from '../../name.js'
 
 /**
- * @param {string} id 
+ * @param {string} id
  * @param {{ local?: boolean }} [options]
  */
 export const handler = async (id, options) => {

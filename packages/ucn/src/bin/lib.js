@@ -20,7 +20,7 @@ export const getAgent = async () => {
     const signer = await ed25519.generate()
     const data = dagJSON.encode({
       default: signer.did(),
-      [signer.did()]: signer.encode()
+      [signer.did()]: signer.encode(),
     })
     await fs.writeFile(keyPath, data, { mode: 0o600 })
     return signer
@@ -130,8 +130,8 @@ const getDataDir = async () => {
 }
 
 /** @param {API.Capability} c */
-const isWritable = c => ['*', 'clock/*', 'clock/advance'].includes(c.can)
+const isWritable = (c) => ['*', 'clock/*', 'clock/advance'].includes(c.can)
 
 /** @param {API.Delegation} delegation */
-export const isReadOnly = (delegation) => !delegation.capabilities.some(isWritable)
-
+export const isReadOnly = (delegation) =>
+  !delegation.capabilities.some(isWritable)
