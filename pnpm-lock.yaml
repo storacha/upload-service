@@ -1141,6 +1141,9 @@ importers:
       '@ipld/dag-cbor':
         specifier: 'catalog:'
         version: 9.2.2
+      '@ipld/dag-json':
+        specifier: 'catalog:'
+        version: 10.2.3
       '@ipld/dag-ucan':
         specifier: 'catalog:'
         version: 3.4.5
@@ -1180,6 +1183,9 @@ importers:
       p-retry:
         specifier: 'catalog:'
         version: 5.1.2
+      sade:
+        specifier: ^1.8.1
+        version: 1.8.1
     devDependencies:
       '@vitest/coverage-v8':
         specifier: 3.1.1

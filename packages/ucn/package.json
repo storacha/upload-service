@@ -4,6 +4,9 @@
   "description": "User Controlled Names. Mutable references authorized by UCAN, backed by merkle clocks.",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "ucn": "src/bin/index.js"
+  },
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
@@ -74,6 +77,7 @@
   "license": "Apache-2.0 OR MIT",
   "dependencies": {
     "@ipld/dag-cbor": "catalog:",
+    "@ipld/dag-json": "catalog:",
     "@ipld/dag-ucan": "catalog:",
     "@ucanto/client": "catalog:",
     "@ucanto/core": "catalog:",
@@ -86,7 +90,8 @@
     "hashlru": "^2.3.0",
     "multiformats": "catalog:",
     "p-defer": "catalog:",
-    "p-retry": "catalog:"
+    "p-retry": "catalog:",
+    "sade": "^1.8.1"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "3.1.1",
@@ -111,6 +116,7 @@
       "docs-generated",
       "coverage",
       "src/api.js",
+      "src/bin/api.js",
       "src/server/api.js"
     ]
   },
@@ -121,5 +127,8 @@
     "type": "git",
     "url": "https://github.com/storacha/upload-service.git",
     "directory": "packages/ucn"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
