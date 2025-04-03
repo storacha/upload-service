@@ -1,5 +1,5 @@
 import * as DID from '@ipld/dag-ucan/did'
-import { getAgent, getValue, getNames } from '../lib.js'
+import { getAgent, getValue, getNames, setValue } from '../lib.js'
 import * as Name from '../../name.js'
 
 /**
@@ -33,5 +33,6 @@ export const handler = async (id, options) => {
     process.exit(1)
   }
 
+  await setValue(current)
   console.log(current.value)
 }
