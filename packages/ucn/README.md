@@ -14,7 +14,7 @@ npm install @storacha/ucn
 ### Create and Publish
 
 ```js
-import * as Name from '@storacha/ucn'
+import { Name } from '@storacha/ucn'
 
 // create a new name
 const name = await Name.create()
@@ -59,7 +59,7 @@ Updating involves creating a new _revision_ from the previous value.
 ```js
 import { Name, Value, Agent, Proof } from '@storacha/ucn'
 
-const agent = Agent.generate()
+const agent = await Agent.generate()
 const name = await Name.create(agent)
 
 const val0 = '/ipfs/bafkreiem4twkqzsq2aj4shbycd4yvoj2cx72vezicletlhi7dijjciqpui'
@@ -93,9 +93,9 @@ becoming the current value.
 Granting authorizes other agents to read and/or update the name. 
 
 ```js
-import { Name, DID } from '@storacha/ucn'
+import { Name, DID, Proof } from '@storacha/ucn'
 
-const agent = Agent.generate()
+const agent = await Agent.generate()
 const name = await Name.create(agent)
 
 // agent that should be granted access to update the name
@@ -103,7 +103,7 @@ const recipient = DID.parse('did:key:z6Mkve9LRa8nvXx6Gj2GXevZFN5zHb476FZLS7o1q7f
 
 const proof = await Name.grant(name, recipient, { readOnly: false })
 
-console.log(proof.format())
+console.log(await Proof.format(proof))
 // e.g. mAYIEAL3bDhGiZXJvb3RzgGd2ZXJzaW9uAbcCAXESIPa/Vl+6QuagDVY...
 ```
 
@@ -112,21 +112,21 @@ console.log(proof.format())
 The **agent private key** is the key used to sign UCAN invocations to update the
 name.
 
-The **proof** is a UCAN delegation from the _name_ to the agent authorizing it
-to read (`clock/head`) and write (`clock/advance`) to the name.
+The **proof** is a UCAN delegation from the _name_ to the agent, authorizing it
+to read (`clock/head`) and/or mutate (`clock/advance`) the current value.
 
-Both of these values MUST be saved if a revision needs to be created in the
+Both of these items MUST be saved if a revision needs to be created in the
 future.
 
 ```js
 import fs from 'node:fs'
-await fs.promises.writeFile('agent.priv', agent.bytes())
-await fs.promises.writeFile('proof.ucan', name.proof.archive())
+await fs.promises.writeFile('agent.priv', agent.encode())
+await fs.promises.writeFile('proof.ucan', await name.proof.archive())
 
 // or
 
 console.log(Agent.format(agent)) // base64 encoded string
-console.log(Proof.format(name.proof)) // base64 encoded string
+console.log(await Proof.format(name.proof)) // base64 encoded string
 ```
 
 ### Revision Persistence
@@ -144,7 +144,7 @@ const current = await Name.resolve(name)
 const value = '/ipfs/bafybeiauyddeo2axgargy56kwxirquxaxso3nobtjtjvoqu552oqciudrm'
 const revision = await Name.increment(current, value)
 
-const storage = Storage.create(/* ... */)
+const storage = await Storage.create(/* ... */)
 await storage.uploadCAR(revision.archive())
 
 await Name.publish(name, revision)
