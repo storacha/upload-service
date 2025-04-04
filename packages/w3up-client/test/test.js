@@ -96,6 +96,7 @@ export const setup = async () => {
         access: context.connection,
         upload: context.connection,
         filecoin: context.connection,
+        gateway: context.connection,
       },
       receiptsEndpoint: new URL(receiptsEndpoint),
     })

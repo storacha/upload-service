@@ -82,11 +82,32 @@ export const filecoinServiceConnection = (options = {}) =>
     }),
   })
 
+export const gatewayServiceURL = new URL('https://w3s.link')
+export const gatewayServicePrincipal = DID.parse('did:web:w3s.link')
+
+/**
+ * Create a connection to a gateway service.
+ *
+ * @param {object} [options]
+ * @param {import('./types.js').Principal} [options.id]
+ * @param {URL} [options.url]
+ */
+export const gatewayServiceConnection = ({ id, url } = {}) =>
+  client.connect({
+    id: id ?? gatewayServicePrincipal,
+    codec: CAR.outbound,
+    channel: HTTP.open({
+      url: url ?? gatewayServiceURL,
+      method: 'POST',
+    }),
+  })
+
 /** @type {() => import('./types.js').ServiceConf} */
 export const serviceConf = () => ({
   access: accessServiceConnection(),
   upload: uploadServiceConnection(),
   filecoin: filecoinServiceConnection(),
+  gateway: gatewayServiceConnection(),
 })
 
 export { receiptsEndpoint }
