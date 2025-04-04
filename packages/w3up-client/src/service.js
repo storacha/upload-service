@@ -8,6 +8,7 @@ import { receiptsEndpoint } from '@storacha/upload-client'
 export const accessServiceURL = new URL('https://up.storacha.network')
 export const accessServicePrincipal = DID.parse('did:web:up.storacha.network')
 
+/* c8 ignore start */
 const envName = isBrowser
   ? 'Browser'
   : isNode
@@ -22,6 +23,7 @@ const envName = isBrowser
 export const defaultHeaders = {
   'X-Client': `Storacha/1 (js; ${envName})`,
 }
+/* c8 ignore end */
 
 /**
  * @param {object} [options]
