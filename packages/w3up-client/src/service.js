@@ -15,18 +15,19 @@ export const defaultHeaders = {
 
 /**
  * @param {object} [options]
- * @param {Record<string, any>} [options.headers]
+ * @param {Record<string, string>} [options.headers]
+ * @param {import('./types.js').Principal} [options.id]
+ * @param {URL} [options.url]
  */
 export const accessServiceConnection = (options = {}) =>
   client.connect({
-    id: accessServicePrincipal,
+    id: options.id ?? accessServicePrincipal,
     codec: CAR.outbound,
     channel: HTTP.open({
-      url: accessServiceURL,
+      url: options.url ?? accessServiceURL,
       method: 'POST',
       headers: { ...defaultHeaders, ...options.headers },
     }),
-    ...options,
   })
 
 export const uploadServiceURL = new URL('https://up.storacha.network')
@@ -34,14 +35,16 @@ export const uploadServicePrincipal = DID.parse('did:web:up.storacha.network')
 
 /**
  * @param {object} [options]
- * @param {Record<string, any>} [options.headers]
+ * @param {Record<string, string>} [options.headers]
+ * @param {import('./types.js').Principal} [options.id]
+ * @param {URL} [options.url]
  */
 export const uploadServiceConnection = (options = {}) =>
   client.connect({
-    id: uploadServicePrincipal,
+    id: options.id ?? uploadServicePrincipal,
     codec: CAR.outbound,
     channel: HTTP.open({
-      url: accessServiceURL,
+      url: options.url ?? accessServiceURL,
       method: 'POST',
       headers: { ...defaultHeaders, ...options.headers },
     }),
@@ -52,14 +55,16 @@ export const filecoinServicePrincipal = DID.parse('did:web:up.storacha.network')
 
 /**
  * @param {object} [options]
- * @param {Record<string, any>} [options.headers]
+ * @param {Record<string, string>} [options.headers]
+ * @param {import('./types.js').Principal} [options.id]
+ * @param {URL} [options.url]
  */
 export const filecoinServiceConnection = (options = {}) =>
   client.connect({
-    id: filecoinServicePrincipal,
+    id: options.id ?? filecoinServicePrincipal,
     codec: CAR.outbound,
     channel: HTTP.open({
-      url: filecoinServiceURL,
+      url: options.url ?? filecoinServiceURL,
       method: 'POST',
       headers: { ...defaultHeaders, ...options.headers },
     }),
