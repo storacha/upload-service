@@ -76,13 +76,13 @@ const testUploadFile = async (
     const bytes = await randomBytes(128)
     const file = new Blob([bytes])
 
-    const serviceConf = { access: conn, upload: conn, filecoin: conn }
+    const serviceConf = { access: conn, upload: conn, filecoin: conn, gateway: conn }
     const clientOptions = { serviceConf, receiptsEndpoint }
     const alice = legacy.client
       ? new LegacyClient(await LegacyAgentData.create(), clientOptions)
       : new Client(await AgentData.create(), clientOptions)
 
-    const space = await alice.createSpace('upload-test')
+    const space = await alice.createSpace('upload-test', { skipGatewayAuthorization: true })
     const auth = await space.createAuthorization(alice)
     await alice.addSpace(auth)
     await alice.setCurrentSpace(space.did())

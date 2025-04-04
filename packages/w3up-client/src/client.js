@@ -29,9 +29,6 @@ import { FilecoinClient } from './capability/filecoin.js'
 import { CouponAPI } from './coupon.js'
 export * as Access from './capability/access.js'
 import * as Result from './result.js'
-import * as UcantoClient from '@ucanto/client'
-import { HTTP } from '@ucanto/transport'
-import * as CAR from '@ucanto/transport/car'
 
 export {
   AccessClient,
@@ -72,7 +69,7 @@ export class Client extends Base {
     return this._agent.did()
   }
 
-  /* c8 ignore start - testing websockets is hard */
+  /* c8 ignore start */
   /**
    * @deprecated - Use client.login instead.
    *
@@ -87,6 +84,7 @@ export class Client extends Base {
   async authorize(email, options) {
     await this.capability.access.authorize(email, options)
   }
+  /* c8 ignore stop */
 
   /**
    * @param {Account.EmailAddress} email
@@ -98,7 +96,6 @@ export class Client extends Base {
     Result.unwrap(await account.save())
     return account
   }
-  /* c8 ignore stop */
 
   /**
    * List all accounts that agent has stored access to.
@@ -309,24 +306,7 @@ export class Client extends Base {
       let authorizeGatewayServices = options?.authorizeGatewayServices
       if (!authorizeGatewayServices || authorizeGatewayServices.length === 0) {
         // If no Gateway Services are provided, authorize the Storacha Gateway Service
-        authorizeGatewayServices = [
-          UcantoClient.connect({
-            id: {
-              did: () =>
-                /** @type {`did:${string}:${string}`} */ (
-                  /* c8 ignore next - default prod gateway id is not used in tests */
-                  process.env.DEFAULT_GATEWAY_ID ?? 'did:web:w3s.link'
-                ),
-            },
-            codec: CAR.outbound,
-            channel: HTTP.open({
-              url: new URL(
-                /* c8 ignore next - default prod gateway url is not used in tests */
-                process.env.DEFAULT_GATEWAY_URL ?? 'https://w3s.link'
-              ),
-            }),
-          }),
-        ]
+        authorizeGatewayServices = [this._serviceConf.gateway]
       }
 
       // Save the space to authorize the client to use the space

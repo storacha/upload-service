@@ -23,6 +23,7 @@ import {
 } from '@storacha/upload-api/test/utils'
 import * as SpaceCapability from '@storacha/capabilities/space'
 import { getConnection, getContentServeMockService } from './mocks/service.js'
+import { gatewayServiceConnection } from '../src/service.js'
 
 /** @type {Test.Suite} */
 export const testClient = {
@@ -657,6 +658,10 @@ export const testClient = {
             serviceConf: {
               access: connection,
               upload: connection,
+              gateway: gatewayServiceConnection({
+                id: gateway,
+                url: new URL('http://localhost:5001'),
+              })
             },
           }
         )
@@ -667,9 +672,6 @@ export const testClient = {
         assert.deepEqual(message.to, aliceEmail)
         await grantAccess(message)
         const aliceAccount = await aliceLogin
-
-        process.env.DEFAULT_GATEWAY_ID = gateway.did()
-        process.env.DEFAULT_GATEWAY_URL = 'http://localhost:5001'
 
         const spaceA = await aliceClient.createSpace(
           'authorize-gateway-space',
