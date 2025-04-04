@@ -105,6 +105,7 @@
       "docs",
       "docs-generated",
       "coverage",
+      "lit-actions",
       "src/types.js",
       "*.min.js"
     ]

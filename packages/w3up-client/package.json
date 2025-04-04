@@ -95,6 +95,10 @@
       "types": "./dist/stores/memory.d.ts",
       "import": "./dist/stores/memory.js"
     },
+    "./service": {
+      "types": "./dist/service.d.ts",
+      "import": "./dist/service.js"
+    },
     "./types": "./dist/types.js"
   },
   "files": [

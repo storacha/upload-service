@@ -661,7 +661,7 @@ export const testClient = {
               gateway: gatewayServiceConnection({
                 id: gateway,
                 url: new URL('http://localhost:5001'),
-              })
+              }),
             },
           }
         )

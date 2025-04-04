@@ -30,8 +30,8 @@ export const filecoinServiceConnection = client.connect({
   channel: HTTP.open({ url: accessServiceURL, method: 'POST' }),
 })
 
-export const gatewayServiceURL = new URL('https://storacha.link')
-export const gatewayServicePrincipal = DID.parse('did:web:storacha.link')
+export const gatewayServiceURL = new URL('https://w3s.link')
+export const gatewayServicePrincipal = DID.parse('did:web:w3s.link')
 
 /**
  * Create a connection to a gateway service.
@@ -46,7 +46,7 @@ export const gatewayServiceConnection = ({ id, url } = {}) =>
     codec: CAR.outbound,
     channel: HTTP.open({
       url: url ?? gatewayServiceURL,
-      method: 'POST'
+      method: 'POST',
     }),
   })
 
