@@ -1,0 +1,6 @@
+export * as Agent from './agent.js'
+export * as DID from '@ipld/dag-ucan/did'
+export * as Name from './name.js'
+export * as Proof from './proof.js'
+export * as Revision from './revision.js'
+export * as Value from './value.js'
