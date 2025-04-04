@@ -95,6 +95,10 @@
       "types": "./dist/stores/memory.d.ts",
       "import": "./dist/stores/memory.js"
     },
+    "./service": {
+      "types": "./dist/service.d.ts",
+      "import": "./dist/service.js"
+    },
     "./types": "./dist/types.js"
   },
   "files": [
@@ -131,7 +135,8 @@
     "@ucanto/core": "catalog:",
     "@ucanto/interface": "catalog:",
     "@ucanto/principal": "catalog:",
-    "@ucanto/transport": "catalog:"
+    "@ucanto/transport": "catalog:",
+    "environment": "^1.1.0"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "catalog:",
@@ -175,7 +180,8 @@
       "docs",
       "docs-generated",
       "coverage",
-      "src/types.js"
+      "src/types.js",
+      "browser.min.js"
     ]
   },
   "directories": {
