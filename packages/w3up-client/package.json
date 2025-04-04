@@ -180,7 +180,8 @@
       "docs",
       "docs-generated",
       "coverage",
-      "src/types.js"
+      "src/types.js",
+      "browser.min.js"
     ]
   },
   "directories": {

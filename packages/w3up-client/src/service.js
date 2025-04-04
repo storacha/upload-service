@@ -8,7 +8,17 @@ import { receiptsEndpoint } from '@storacha/upload-client'
 export const accessServiceURL = new URL('https://up.storacha.network')
 export const accessServicePrincipal = DID.parse('did:web:up.storacha.network')
 
-const envName = isBrowser ? 'Browser' : isNode ? 'Node' : isBun ? 'Bun' : isDeno ? 'Deno' : isElectron ? 'Electron' : 'Unknown'
+const envName = isBrowser
+  ? 'Browser'
+  : isNode
+  ? 'Node'
+  : isBun
+  ? 'Bun'
+  : isDeno
+  ? 'Deno'
+  : isElectron
+  ? 'Electron'
+  : 'Unknown'
 export const defaultHeaders = {
   'X-Client': `Storacha/1 (js; ${envName})`,
 }
@@ -44,7 +54,7 @@ export const uploadServiceConnection = (options = {}) =>
     id: options.id ?? uploadServicePrincipal,
     codec: CAR.outbound,
     channel: HTTP.open({
-      url: options.url ?? accessServiceURL,
+      url: options.url ?? uploadServiceURL,
       method: 'POST',
       headers: { ...defaultHeaders, ...options.headers },
     }),
