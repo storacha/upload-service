@@ -1009,3 +1009,5 @@ Dual-licensed under [MIT + Apache 2.0](https://github.com/storacha/upload-servic
 [docs-create]: #create
 [docs-ClientFactoryOptions]: https://web3-storage.github.io/Storacha/interfaces/_web3_storage_Storacha_client.unknown.ClientFactoryOptions.html
 [access-docs-Agent]: https://web3-storage.github.io/Storacha/classes/_web3_storage_access.Agent.html
+
+---
