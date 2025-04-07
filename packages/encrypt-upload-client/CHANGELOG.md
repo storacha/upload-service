@@ -1,3 +1,17 @@
+## 0.0.8 (2025-04-07)
+
+### 🩹 Fixes
+
+- fix: do not assume nodejs environment ([91dd3479](https://github.com/storacha/upload-service/commit/91dd3479))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.2.5
+
+### ❤️ Thank You
+
+- Alan Shaw
+
 ## 0.0.8-0 (2025-03-27)
 
 ### 🩹 Fixes
