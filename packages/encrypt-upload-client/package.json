@@ -1,7 +1,7 @@
 {
   "name": "@storacha/encrypt-upload-client",
   "type": "module",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "license": "Apache-2.0 OR MIT",
   "description": "Client for upload and download encrypted files",
   "author": "Storacha",

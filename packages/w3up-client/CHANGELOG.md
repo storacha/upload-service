@@ -1,3 +1,13 @@
+## 1.2.6 (2025-04-07)
+
+### 🩹 Fixes
+
+- fix: export authorizeContentServe in Node.js ([#220](https://github.com/storacha/upload-service/pull/220))
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.2.5 (2025-04-07)
 
 ### 🩹 Fixes
