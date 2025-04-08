@@ -1,0 +1,134 @@
+{
+  "name": "@storacha/ucn",
+  "version": "0.0.0",
+  "description": "User Controlled Names. Mutable references authorized by UCAN, backed by merkle clocks.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "ucn": "src/bin/index.js"
+  },
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./agent": {
+      "types": "./dist/agent.d.ts",
+      "import": "./dist/agent.js"
+    },
+    "./api": {
+      "types": "./dist/api.d.ts",
+      "import": "./dist/api.js"
+    },
+    "./block": {
+      "types": "./dist/block.d.ts",
+      "import": "./dist/block.js"
+    },
+    "./name": {
+      "types": "./dist/name.d.ts",
+      "import": "./dist/name.js"
+    },
+    "./proof": {
+      "types": "./dist/proof.d.ts",
+      "import": "./dist/proof.js"
+    },
+    "./revision": {
+      "types": "./dist/revision.d.ts",
+      "import": "./dist/revision.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.js"
+    },
+    "./server/api": {
+      "types": "./dist/server/api.d.ts",
+      "import": "./dist/server/api.js"
+    },
+    "./value": {
+      "types": "./dist/value.d.ts",
+      "import": "./dist/value.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.js.map"
+  ],
+  "scripts": {
+    "dev": "tsc --build --watch --preserveWatchOutput",
+    "clean": "rm -rf dist *.tsbuildinfo coverage",
+    "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+    "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+    "test": "npm run test:node",
+    "test:node": "vitest",
+    "coverage": "vitest --coverage"
+  },
+  "keywords": [
+    "mutable",
+    "mutability",
+    "reference",
+    "IPFS",
+    "IPNS",
+    "UCAN",
+    "merkle",
+    "clock"
+  ],
+  "author": "Alan Shaw",
+  "license": "Apache-2.0 OR MIT",
+  "dependencies": {
+    "@ipld/dag-cbor": "catalog:",
+    "@ipld/dag-json": "catalog:",
+    "@ipld/dag-ucan": "catalog:",
+    "@ucanto/client": "catalog:",
+    "@ucanto/core": "catalog:",
+    "@ucanto/interface": "catalog:",
+    "@ucanto/principal": "catalog:",
+    "@ucanto/server": "catalog:",
+    "@ucanto/transport": "catalog:",
+    "@web3-storage/clock": "^0.4.1",
+    "@web3-storage/pail": "^0.6.0",
+    "hashlru": "^2.3.0",
+    "multiformats": "catalog:",
+    "p-defer": "catalog:",
+    "p-retry": "catalog:",
+    "sade": "^1.8.1"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "3.1.1",
+    "vitest": "^3.1.1"
+  },
+  "eslintConfig": {
+    "extends": [
+      "@storacha/eslint-config"
+    ],
+    "parserOptions": {
+      "project": "./tsconfig.json"
+    },
+    "env": {
+      "es2022": true,
+      "mocha": true,
+      "browser": true,
+      "node": true
+    },
+    "ignorePatterns": [
+      "dist",
+      "docs",
+      "docs-generated",
+      "coverage",
+      "src/api.js",
+      "src/bin/api.js",
+      "src/server/api.js"
+    ]
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storacha/upload-service.git",
+    "directory": "packages/ucn"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
