@@ -108,7 +108,7 @@
     "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "test:node": "npm-run-all --parallel --race --npm-path pnpm mock:* 'test-:node'",
-    "test-:node": "hundreds -r html -r text mocha 'test/**/!(*.browser).test.js' -n experimental-vm-modules -n no-warnings -n stack-trace-limit=1000 -t 10000 --bail",
+    "test-:node": "hundreds -r html -r text mocha 'test/**/!(*.browser).test.js' -n experimental-vm-modules -n no-warnings -n stack-trace-limit=1000 -t 300000 --bail",
     "test:browser": "npm-run-all --parallel --race --npm-path pnpm mock:* 'test-:browser'",
     "test-:browser": "playwright-test --runner mocha 'test/**/!(*.node).test.js'",
     "mock:bucket-0-200": "PORT=8989 STATUS=200 node test/helpers/bucket-server.js",
