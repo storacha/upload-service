@@ -18,7 +18,7 @@ jobs:
       run:
         working-directory: ./packages/console
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/pnpm
       - run: pnpm lint
       - run: pnpm test
@@ -37,7 +37,7 @@ jobs:
       run:
         working-directory: ./packages/console
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/pnpm
       - name: create .env from .env.tpl setting env variables used by `pnpm run pages:build`
         run: |
@@ -140,7 +140,7 @@ jobs:
       run:
         working-directory: ./packages/console
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: 'main'
       - uses: ./.github/actions/pnpm
