@@ -147,9 +147,9 @@ export const equalBody = (claimed, delegated) => {
     claimed.nb.body.size !== undefined &&
     delegated.nb.body.size !== undefined
   ) {
-    return claimed.nb.body.size > delegated.nb.body.size
+    return claimed.nb.body.size !== delegated.nb.body.size
       ? fail(
-          `Size constraint violation: ${claimed.nb.body.size} > ${delegated.nb.body.size}`
+          `Size constraint violation: ${claimed.nb.body.size} !== ${delegated.nb.body.size}`
         )
       : ok({})
   } else {
