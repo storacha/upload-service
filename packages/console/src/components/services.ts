@@ -1,4 +1,4 @@
-import type { Service, UnknownLink } from '@w3ui/react'
+import type { Service, UnknownLink } from '@storacha/ui-react'
 import { connect } from '@ucanto/client'
 import { CAR, HTTP } from '@ucanto/transport'
 import * as DID from '@ipld/dag-ucan/did'

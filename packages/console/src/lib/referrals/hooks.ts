@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import useSWR from "swr"
-import { useAuthenticator, useW3 } from "@w3ui/react"
+import { useAuthenticator, useW3 } from "@storacha/ui-react"
 import { createRefcode, createReferral, REFERRALS_SERVICE } from '../referrals'
 import { useSearchParams } from 'next/navigation'
 

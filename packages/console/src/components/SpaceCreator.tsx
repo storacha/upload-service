@@ -1,7 +1,7 @@
 import type { ChangeEvent } from 'react'
 
 import React, { useState } from 'react'
-import { ContentServeService, Space, useW3 } from '@w3ui/react'
+import { ContentServeService, Space, useW3 } from '@storacha/ui-react'
 import Loader from '../components/Loader'
 import { DIDKey } from '@ucanto/interface'
 import { DidIcon } from './DidIcon'

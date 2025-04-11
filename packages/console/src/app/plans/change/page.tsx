@@ -1,7 +1,7 @@
 'use client'
 
 import { usePlan } from "@/hooks"
-import { useW3, DID, Client, AccountDID, Account } from "@w3ui/react"
+import { useW3, DID, Client, AccountDID, Account } from "@storacha/ui-react"
 import { ArrowTopRightOnSquareIcon, RocketLaunchIcon, CheckIcon, LinkIcon } from '@heroicons/react/24/outline'
 import DefaultLoader from "@/components/Loader"
 import { useState } from "react"
@@ -11,10 +11,10 @@ import { ucantoast } from "@/toaster"
 import { ArrowPathIcon } from "@heroicons/react/20/solid"
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { delegate } from "@ucanto/core/delegation"
-import * as Access from "@web3-storage/access/access"
-import * as DidMailto from "@web3-storage/did-mailto"
+import * as Access from "@storacha/access/access"
+import * as DidMailto from "@storacha/did-mailto"
 import * as Ucanto from "@ucanto/core"
-import { Plan, Access as AccessCaps } from "@web3-storage/capabilities"
+import { Plan, Access as AccessCaps } from "@storacha/capabilities"
 import { H1, H2 } from "@/components/Text"
 import { Ability, Capability, Delegation } from "@ucanto/interface"
 import { SettingsNav } from "@/app/settings/layout"

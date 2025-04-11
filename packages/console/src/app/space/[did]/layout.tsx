@@ -1,7 +1,7 @@
 'use client'
 
 import { PropsWithChildren } from 'react'
-import { useW3 } from '@w3ui/react'
+import { useW3 } from '@storacha/ui-react'
 import { DidIcon } from '@/components/DidIcon'
 import { Nav, NavLink } from '@/components/Nav'
 import { QueueListIcon, ShareIcon, CloudArrowUpIcon } from '@heroicons/react/24/outline'

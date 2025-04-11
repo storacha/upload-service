@@ -4,7 +4,7 @@ import * as dagJSON from '@ipld/dag-json'
 import { DataSourceConfiguration, Shard, Upload } from './api'
 import * as Gateway from './gateway'
 import { Result, Failure } from '@ucanto/interface'
-import { CARLink } from '@w3ui/react'
+import { CARLink } from '@storacha/ui-react'
 import { logAndCaptureError } from '@/sentry'
 
 export const id = 'psa.old.web3.storage'

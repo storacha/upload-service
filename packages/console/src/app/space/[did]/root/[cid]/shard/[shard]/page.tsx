@@ -2,7 +2,7 @@
 
 import { CAR } from '@ucanto/transport'
 import { H2 } from '@/components/Text'
-import { useW3, FilecoinInfoSuccess, CARLink } from '@w3ui/react'
+import { useW3, FilecoinInfoSuccess, CARLink } from '@storacha/ui-react'
 import useSWR from 'swr'
 import { Link, parse as parseLink } from 'multiformats/link'
 import DefaultLoader from '@/components/Loader'

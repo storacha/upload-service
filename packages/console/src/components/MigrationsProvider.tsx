@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react'
 import { Migration, MigrationConfiguration, MigrationID, Progress } from '@/lib/migrations/api'
-import { useW3 } from '@w3ui/react'
+import { useW3 } from '@storacha/ui-react'
 import * as Migrations from '@/lib/migrations'
 import { MigrationsStorage } from '@/lib/migrations/store'
 import { serviceConnection } from './services'

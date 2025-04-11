@@ -1,7 +1,7 @@
 'use client'
 
 import { ReactNode, useState } from 'react'
-import { useW3 } from '@w3ui/react'
+import { useW3 } from '@storacha/ui-react'
 import StripePricingTable, { StripeTrialPricingTable } from './PricingTable';
 import { TopLevelLoader } from './Loader';
 import { Logo } from '@/brand';

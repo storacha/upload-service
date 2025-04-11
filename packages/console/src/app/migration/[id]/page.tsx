@@ -10,7 +10,7 @@ import CopyIcon from '@/components/CopyIcon'
 import { CheckCircleIcon, ClockIcon, FlagIcon } from '@heroicons/react/20/solid'
 import { Migration, Progress } from '@/lib/migrations/api'
 import { useRouter } from 'next/navigation'
-import { UnknownLink } from '@w3ui/react'
+import { UnknownLink } from '@storacha/ui-react'
 import { dataSources } from '@/app/migration/data-sources'
 
 interface PageProps {

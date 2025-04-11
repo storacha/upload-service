@@ -1,6 +1,6 @@
 import React from 'react'
 import { ChevronLeftIcon, ChevronRightIcon, ArrowPathIcon } from '@heroicons/react/20/solid'
-import { Space, UnknownLink, UploadListSuccess } from '@w3ui/react'
+import { Space, UnknownLink, UploadListSuccess } from '@storacha/ui-react'
 import Link from 'next/link'
 
 interface UploadsProps {

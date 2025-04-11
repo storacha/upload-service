@@ -1,4 +1,4 @@
-import type { Space } from '@w3ui/react'
+import type { Space } from '@storacha/ui-react'
 
 import React, { Fragment, useState } from 'react'
 import { Combobox, Transition } from '@headlessui/react'

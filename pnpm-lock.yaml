@@ -688,53 +688,53 @@ importers:
         specifier: ^2.0.18
         version: 2.2.0(react@19.0.0)
       '@ipld/car':
-        specifier: ^5.2.4
+        specifier: 'catalog:'
         version: 5.4.0
       '@ipld/dag-json':
-        specifier: ^10.2.2
+        specifier: 'catalog:'
         version: 10.2.3
       '@ipld/dag-ucan':
-        specifier: ^3.4.0
+        specifier: 'catalog:'
         version: 3.4.5
       '@sentry/nextjs':
         specifier: 8.35.0
         version: 8.35.0(@opentelemetry/api@1.9.0)(@opentelemetry/core@1.30.1(@opentelemetry/api@1.9.0))(@opentelemetry/instrumentation@0.53.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@1.30.1(@opentelemetry/api@1.9.0))(encoding@0.1.13)(next@13.5.11(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.86.1))(react@19.0.0)(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15))(esbuild@0.17.19))
+      '@storacha/access':
+        specifier: workspace:^
+        version: link:../access-client
+      '@storacha/capabilities':
+        specifier: workspace:^
+        version: link:../capabilities
+      '@storacha/client':
+        specifier: workspace:^
+        version: link:../w3up-client
+      '@storacha/did-mailto':
+        specifier: workspace:^
+        version: link:../did-mailto
+      '@storacha/ui-react':
+        specifier: workspace:^
+        version: link:../ui/packages/react
       '@tailwindcss/postcss':
         specifier: ^4.0.3
         version: 4.0.17
       '@ucanto/client':
-        specifier: ^9.0.1
+        specifier: 'catalog:'
         version: 9.0.1
       '@ucanto/core':
-        specifier: ^10.0.1
-        version: 10.2.1
+        specifier: 'catalog:'
+        version: 10.3.1
       '@ucanto/interface':
-        specifier: ^10.0.1
-        version: 10.1.1
+        specifier: 'catalog:'
+        version: 10.2.0
       '@ucanto/transport':
-        specifier: ^9.1.1
-        version: 9.1.1
-      '@w3ui/react':
-        specifier: 2.5.5
-        version: 2.5.5(@types/react@19.0.12)(encoding@0.1.13)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      '@web3-storage/access':
-        specifier: ^20.1.1
-        version: 20.1.1
-      '@web3-storage/capabilities':
-        specifier: ^18.0.1
-        version: 18.0.1
+        specifier: 'catalog:'
+        version: 9.2.0
       '@web3-storage/content-claims':
         specifier: ^5.1.3
         version: 5.1.3
       '@web3-storage/data-segment':
         specifier: ^5.3.0
         version: 5.3.0
-      '@web3-storage/did-mailto':
-        specifier: ^2.1.0
-        version: 2.1.0
-      '@web3-storage/w3up-client':
-        specifier: 17.1.2
-        version: 17.1.2(encoding@0.1.13)
       archy:
         specifier: ^1.0.0
         version: 1.0.0
@@ -5715,14 +5715,8 @@ packages:
   '@ucanto/client@9.0.1':
     resolution: {integrity: sha512-cV8w3AnaZaYCdUmyFFICj8YhFckDoy2DvWgAzGDMkPz0WbUW4lw9Tjm4hEE8x5kiP47wYej/pHKWCcoELiU0qw==}
 
-  '@ucanto/core@10.2.1':
-    resolution: {integrity: sha512-tPLrQUQEbo4d+vFB7hZdbMYaFqqJwczGz3LiGZMW7uWC9g1imFryJcedeLBqiKNYdQmBY70Yuj9QFDEope6mfQ==}
-
   '@ucanto/core@10.3.1':
     resolution: {integrity: sha512-P4McvR1T7a+FJknWgn8B62WZs/tnL5qTpZWkaRI4dL85AICjfGmnns4ebAq0R0rkz2wrcGuBZEOB7/mwnxbH9w==}
-
-  '@ucanto/interface@10.1.1':
-    resolution: {integrity: sha512-FHSA7eAN1pbJyzcMRFs9ioHlPQUpE3CfHxLGkCF9AU4HMl7G2YdgzeeOdiD3Li7Ur7EFUwEhZDoVMNKGH+7h1g==}
 
   '@ucanto/interface@10.2.0':
     resolution: {integrity: sha512-k49byxjAKJEW+ru1RBJ8VNCBCxWSMY7P25DqOocCGECUfod38uqj4Z5dmvlM8ax3HRd7U5MTp+B9Q/gzWXnjfQ==}
@@ -5732,9 +5726,6 @@ packages:
 
   '@ucanto/server@10.2.0':
     resolution: {integrity: sha512-RKoh7m86V97Kk8LZRaKmF1f2HdT3iQNyAGYShx9gasEV3qUuTaq2k6gXBTBRiEaYjX27C3C/KSaTrmVCEPwp1g==}
-
-  '@ucanto/transport@9.1.1':
-    resolution: {integrity: sha512-3CR17nEemOVaTuMZa6waWgVL4sLxSPcxYvpaNeJ6NZo1rfsqdyRXOtbVV/RcI2BtUL0Cao6JM6P9+gdghfc5ng==}
 
   '@ucanto/transport@9.2.0':
     resolution: {integrity: sha512-w/CtD5LYEpGo/CxV78IiWalW99gNRPHKZ/DoOpart5QShozvnU//PwUqyqnGimZCDIrIq4LH6x92z2L/2k5OKQ==}
@@ -5913,14 +5904,6 @@ packages:
   '@vue/shared@3.5.13':
     resolution: {integrity: sha512-/hnE/qP5ZoGpol0a5mDi45bOd7t3tjYJBjsgCsivow7D48cJeV5l05RD82lPqi7gRiphZM37rnhW1l6ZoCNNnQ==}
 
-  '@w3ui/core@2.4.3':
-    resolution: {integrity: sha512-jIF/Bg83DUcgHq0c9IYl2fDy9dku/+AY/TK//ZqCoaFgAr0ogW9cEbHAr3Gv54VdFwZrx9uTHjcx0yH8JwAokg==}
-
-  '@w3ui/react@2.5.5':
-    resolution: {integrity: sha512-CB/X7SJJBlAU3BU+Ylx3g47pJ4SNo2EnnQhd3R6gRlKxRjxLW0bWF8pNXOSi7jzmbThWdCQ4TPq+F62uPALkAA==}
-    peerDependencies:
-      react: ^16.8.0 || ^17.0.0 || ^18.0.0
-
   '@walletconnect/core@2.9.2':
     resolution: {integrity: sha512-VARMPAx8sIgodeyngDHbealP3B621PQqjqKsByFUTOep8ZI1/R/20zU+cmq6j9RCrL+kLKZcrZqeVzs8Z7OlqQ==}
 
@@ -6077,10 +6060,6 @@ packages:
 
   '@web3-storage/w3up-client@16.5.2':
     resolution: {integrity: sha512-yJNh3r2QWZbn2jQ1ZfsnDJ1HIyhv9akEXeFWx+xFxKViT6df8IzT6BtCnxxFL2ED3Tx7rKVVG1pNatKRO3T+Uw==}
-    engines: {node: '>=18'}
-
-  '@web3-storage/w3up-client@17.1.2':
-    resolution: {integrity: sha512-vS6pvbIfr0iUorH7LBGm24GDBMQ4xdJRlFTlLWktfEAqzBiPE3v7lXDDF4suXl9DzjkLYK8+eSuSqb5+zru2eA==}
     engines: {node: '>=18'}
 
   '@webassemblyjs/ast@1.14.1':
@@ -13554,25 +13533,11 @@ snapshots:
       react-dom: 19.0.0(react@18.3.1)
       use-sync-external-store: 1.4.0(react@18.3.1)
 
-  '@ariakit/react-core@0.3.14(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
-    dependencies:
-      '@ariakit/core': 0.3.11
-      '@floating-ui/dom': 1.6.13
-      react: 19.0.0
-      react-dom: 19.0.0(react@19.0.0)
-      use-sync-external-store: 1.4.0(react@19.0.0)
-
   '@ariakit/react@0.3.14(react-dom@19.0.0(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@ariakit/react-core': 0.3.14(react-dom@19.0.0(react@18.3.1))(react@18.3.1)
       react: 18.3.1
       react-dom: 19.0.0(react@18.3.1)
-
-  '@ariakit/react@0.3.14(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
-    dependencies:
-      '@ariakit/react-core': 0.3.14(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      react: 19.0.0
-      react-dom: 19.0.0(react@19.0.0)
 
   '@arr/every@1.0.1': {}
 
@@ -16525,7 +16490,7 @@ snapshots:
   '@multiformats/blake2@2.0.2':
     dependencies:
       blakejs: 1.2.1
-      multiformats: 13.3.1
+      multiformats: 13.3.2
 
   '@multiformats/murmur3@1.1.3':
     dependencies:
@@ -16540,7 +16505,7 @@ snapshots:
   '@multiformats/sha3@3.0.2':
     dependencies:
       js-sha3: 0.9.3
-      multiformats: 13.3.1
+      multiformats: 13.3.2
 
   '@napi-rs/wasm-runtime@0.2.4':
     dependencies:
@@ -18847,14 +18812,6 @@ snapshots:
       '@ucanto/core': 10.3.1
       '@ucanto/interface': 10.2.0
 
-  '@ucanto/core@10.2.1':
-    dependencies:
-      '@ipld/car': 5.4.0
-      '@ipld/dag-cbor': 9.2.2
-      '@ipld/dag-ucan': 3.4.5
-      '@ucanto/interface': 10.1.1
-      multiformats: 13.3.1
-
   '@ucanto/core@10.3.1':
     dependencies:
       '@ipld/car': 5.4.0
@@ -18862,11 +18819,6 @@ snapshots:
       '@ipld/dag-ucan': 3.4.5
       '@ucanto/interface': 10.2.0
       multiformats: 13.3.2
-
-  '@ucanto/interface@10.1.1':
-    dependencies:
-      '@ipld/dag-ucan': 3.4.5
-      multiformats: 13.3.1
 
   '@ucanto/interface@10.2.0':
     dependencies:
@@ -18890,11 +18842,6 @@ snapshots:
       '@ucanto/principal': 9.0.2
       '@ucanto/validator': 9.1.0
 
-  '@ucanto/transport@9.1.1':
-    dependencies:
-      '@ucanto/core': 10.3.1
-      '@ucanto/interface': 10.2.0
-
   '@ucanto/transport@9.2.0':
     dependencies:
       '@ucanto/core': 10.3.1
@@ -18904,9 +18851,9 @@ snapshots:
     dependencies:
       '@ipld/car': 5.4.0
       '@ipld/dag-cbor': 9.2.2
-      '@ucanto/core': 10.2.1
-      '@ucanto/interface': 10.1.1
-      multiformats: 13.3.1
+      '@ucanto/core': 10.3.1
+      '@ucanto/interface': 10.2.0
+      multiformats: 13.3.2
 
   '@ucanto/validator@9.1.0':
     dependencies:
@@ -19178,31 +19125,6 @@ snapshots:
       '@vue/shared': 3.5.13
 
   '@vue/shared@3.5.13': {}
-
-  '@w3ui/core@2.4.3(encoding@0.1.13)':
-    dependencies:
-      '@ipld/dag-ucan': 3.4.5
-      '@ucanto/client': 9.0.1
-      '@ucanto/interface': 10.1.1
-      '@ucanto/principal': 9.0.2
-      '@ucanto/transport': 9.1.1
-      '@web3-storage/access': 20.1.1
-      '@web3-storage/did-mailto': 2.1.0
-      '@web3-storage/w3up-client': 17.1.2(encoding@0.1.13)
-    transitivePeerDependencies:
-      - encoding
-
-  '@w3ui/react@2.5.5(@types/react@19.0.12)(encoding@0.1.13)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
-    dependencies:
-      '@ariakit/react': 0.3.14(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      '@ariakit/react-core': 0.3.14(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      '@w3ui/core': 2.4.3(encoding@0.1.13)
-      ariakit-react-utils: 0.17.0-next.27(@types/react@19.0.12)(react@19.0.0)
-      react: 19.0.0
-    transitivePeerDependencies:
-      - '@types/react'
-      - encoding
-      - react-dom
 
   '@walletconnect/core@2.9.2':
     dependencies:
@@ -19572,7 +19494,7 @@ snapshots:
       '@ucanto/core': 10.3.1
       '@ucanto/interface': 10.2.0
       '@ucanto/principal': 9.0.2
-      '@ucanto/transport': 9.1.1
+      '@ucanto/transport': 9.2.0
       '@ucanto/validator': 9.0.3
       '@web3-storage/capabilities': 18.0.1
       '@web3-storage/did-mailto': 2.1.0
@@ -19606,10 +19528,10 @@ snapshots:
 
   '@web3-storage/capabilities@18.0.1':
     dependencies:
-      '@ucanto/core': 10.2.1
-      '@ucanto/interface': 10.1.1
+      '@ucanto/core': 10.3.1
+      '@ucanto/interface': 10.2.0
       '@ucanto/principal': 9.0.2
-      '@ucanto/transport': 9.1.1
+      '@ucanto/transport': 9.2.0
       '@ucanto/validator': 9.0.3
       '@web3-storage/data-segment': 5.3.0
       uint8arrays: 5.1.0
@@ -19619,7 +19541,7 @@ snapshots:
       '@multiformats/blake2': 2.0.2
       '@multiformats/murmur3': 2.1.8
       '@multiformats/sha3': 3.0.2
-      multiformats: 13.3.1
+      multiformats: 13.3.2
       uint8arrays: 5.1.0
 
   '@web3-storage/content-claims@4.0.5':
@@ -19668,7 +19590,7 @@ snapshots:
       '@ucanto/client': 9.0.1
       '@ucanto/core': 10.3.1
       '@ucanto/interface': 10.2.0
-      '@ucanto/transport': 9.1.1
+      '@ucanto/transport': 9.2.0
       '@web3-storage/capabilities': 18.0.1
 
   '@web3-storage/multipart-parser@1.0.0': {}
@@ -19705,7 +19627,7 @@ snapshots:
       '@ucanto/client': 9.0.1
       '@ucanto/core': 10.3.1
       '@ucanto/interface': 10.2.0
-      '@ucanto/transport': 9.1.1
+      '@ucanto/transport': 9.2.0
       '@web3-storage/blob-index': 1.0.5
       '@web3-storage/capabilities': 18.0.1
       '@web3-storage/data-segment': 5.3.0
@@ -19728,23 +19650,6 @@ snapshots:
       '@web3-storage/access': 20.1.1
       '@web3-storage/blob-index': 1.0.5
       '@web3-storage/capabilities': 17.4.1
-      '@web3-storage/did-mailto': 2.1.0
-      '@web3-storage/filecoin-client': 3.3.5
-      '@web3-storage/upload-client': 17.1.3(encoding@0.1.13)
-    transitivePeerDependencies:
-      - encoding
-
-  '@web3-storage/w3up-client@17.1.2(encoding@0.1.13)':
-    dependencies:
-      '@ipld/dag-ucan': 3.4.5
-      '@ucanto/client': 9.0.1
-      '@ucanto/core': 10.2.1
-      '@ucanto/interface': 10.1.1
-      '@ucanto/principal': 9.0.2
-      '@ucanto/transport': 9.1.1
-      '@web3-storage/access': 20.1.1
-      '@web3-storage/blob-index': 1.0.5
-      '@web3-storage/capabilities': 18.0.1
       '@web3-storage/did-mailto': 2.1.0
       '@web3-storage/filecoin-client': 3.3.5
       '@web3-storage/upload-client': 17.1.3(encoding@0.1.13)
@@ -20035,12 +19940,6 @@ snapshots:
       '@types/react': 18.3.18
       ariakit-utils: 0.17.0-next.27
       react: 18.3.1
-
-  ariakit-react-utils@0.17.0-next.27(@types/react@19.0.12)(react@19.0.0):
-    dependencies:
-      '@types/react': 19.0.12
-      ariakit-utils: 0.17.0-next.27
-      react: 19.0.0
 
   ariakit-utils@0.17.0-next.27: {}
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useW3 } from '@w3ui/react'
+import { useW3 } from '@storacha/ui-react'
 import { SpaceCreatorForm } from './SpaceCreator';
 import { Logo } from '@/brand';
 

@@ -1,4 +1,4 @@
-import { DID, UnknownLink } from '@w3ui/react'
+import { DID, UnknownLink } from '@storacha/ui-react'
 
 export const B = 1024
 export const MB = 1024 * B

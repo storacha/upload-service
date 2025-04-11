@@ -1,7 +1,7 @@
 'use client'
 
 import { UploadsList } from '@/components/UploadsList'
-import { useW3, UnknownLink, UploadListSuccess } from '@w3ui/react'
+import { useW3, UnknownLink, UploadListSuccess } from '@storacha/ui-react'
 import useSWR from 'swr'
 import { useRouter, usePathname } from 'next/navigation'
 import { createUploadsListKey } from '@/cache'

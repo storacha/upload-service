@@ -1,6 +1,6 @@
 'use client'
 
-import { useW3, Space } from '@w3ui/react'
+import { useW3, Space } from '@storacha/ui-react'
 import { DidIcon } from '@/components/DidIcon'
 import Link from 'next/link'
 import { SpacesNav } from './space/layout'

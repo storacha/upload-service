@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { ChevronRightIcon } from '@heroicons/react/24/outline'
-import { SpaceDID, UnknownLink } from '@w3ui/react'
+import { SpaceDID, UnknownLink } from '@storacha/ui-react'
 import { shortenCID, shortenDID } from '@/lib'
 
 export function Breadcrumbs ({ space, root, shard }: { space: SpaceDID, root?: UnknownLink, shard?: UnknownLink }) {

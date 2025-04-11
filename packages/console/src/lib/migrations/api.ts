@@ -1,4 +1,4 @@
-import { CARLink, DIDKey, UnknownLink } from '@w3ui/react'
+import { CARLink, DIDKey, UnknownLink } from '@storacha/ui-react'
 
 /** A data source for a migration. */
 export interface DataSource {
