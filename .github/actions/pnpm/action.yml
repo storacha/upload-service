@@ -9,4 +9,5 @@ runs:
       with:
         cache: 'pnpm'
     - name: Install npm package dependencies
+      shell: bash
       run: pnpm install --frozen-lockfile
