@@ -4,10 +4,10 @@
   "private": true,
   "packageManager": "pnpm@9.9.0+sha256.7a4261e50d9a44d9240baf6c9d6e10089dcf0a79d0007f2a26985a6927324177",
   "scripts": {
-    "dev": "nx next:dev",
-    "build": "nx next:build",
-    "build:fresh": "nx next:build --skip-nx-cache",
-    "start": "nx next:start --configuration=production",
+    "dev": "next dev",
+    "build": "next build",
+    "build:fresh": "nx build --skip-nx-cache",
+    "start": "nx start --configuration=production",
     "test": "pnpm lint",
     "lint": "next lint",
     "pages:build": "pnpm dlx @cloudflare/next-on-pages@1",
@@ -65,5 +65,10 @@
     "typescript": "5.3.3",
     "vercel": "33.2.0",
     "wrangler": "^3.11.0"
+  },
+  "nx": {
+    "name": "console",
+    "projectType": "application",
+    "sourceRoot": "packages/console"
   }
 }
