@@ -114,6 +114,12 @@ catalogs:
     '@web-std/blob':
       specifier: ^3.0.5
       version: 3.0.5
+    '@web3-storage/content-claims':
+      specifier: ^5.2.0
+      version: 5.2.0
+    '@web3-storage/data-segment':
+      specifier: ^5.3.0
+      version: 5.3.0
     '@web3-storage/sigv4':
       specifier: ^1.0.2
       version: 1.0.2
@@ -295,7 +301,7 @@ importers:
         version: 20.3.2(@babel/traverse@7.26.5)(@swc/core@1.10.11(@swc/helpers@0.5.15))(@types/node@22.13.1)(nx@20.3.2(@swc/core@1.10.11(@swc/helpers@0.5.15)))(typescript@5.7.3)
       '@nx/next':
         specifier: 20.3.2
-        version: 20.3.2(@babel/core@7.26.0)(@babel/traverse@7.26.5)(@rspack/core@1.3.0(@swc/helpers@0.5.15))(@swc/core@1.10.11(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)(@types/node@22.13.1)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(html-webpack-plugin@5.6.3(@rspack/core@1.3.0(@swc/helpers@0.5.15))(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15))))(next@14.2.16(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.50.0)(react-dom@19.0.0(react@18.3.1))(react@18.3.1)(sass@1.86.1))(nx@20.3.2(@swc/core@1.10.11(@swc/helpers@0.5.15)))(react-dom@19.0.0(react@18.3.1))(react@18.3.1)(typescript@5.7.3)(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15)))
+        version: 20.3.2(@babel/core@7.26.0)(@babel/traverse@7.26.5)(@rspack/core@1.3.0(@swc/helpers@0.5.15))(@swc/core@1.10.11(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)(@types/node@22.13.1)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(html-webpack-plugin@5.6.3(@rspack/core@1.3.0(@swc/helpers@0.5.15))(webpack@5.88.0(@swc/core@1.10.11(@swc/helpers@0.5.15))))(next@14.2.16(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.50.0)(react-dom@19.0.0(react@18.3.1))(react@18.3.1)(sass@1.86.1))(nx@20.3.2(@swc/core@1.10.11(@swc/helpers@0.5.15)))(react-dom@19.0.0(react@18.3.1))(react@18.3.1)(typescript@5.7.3)(webpack@5.88.0(@swc/core@1.10.11(@swc/helpers@0.5.15)))
       '@types/npm-registry-fetch':
         specifier: ^8.0.7
         version: 8.0.7
@@ -594,10 +600,10 @@ importers:
         specifier: 'catalog:'
         version: 9.2.0
       '@web3-storage/content-claims':
-        specifier: ^5.1.3
-        version: 5.1.3
+        specifier: 'catalog:'
+        version: 5.2.0
       '@web3-storage/data-segment':
-        specifier: ^5.0.0
+        specifier: 'catalog:'
         version: 5.3.0
       ansi-escapes:
         specifier: 'catalog:'
@@ -730,10 +736,10 @@ importers:
         specifier: 'catalog:'
         version: 9.2.0
       '@web3-storage/content-claims':
-        specifier: ^5.1.3
-        version: 5.1.3
+        specifier: 'catalog:'
+        version: 5.2.0
       '@web3-storage/data-segment':
-        specifier: ^5.3.0
+        specifier: 'catalog:'
         version: 5.3.0
       archy:
         specifier: ^1.0.0
@@ -748,8 +754,8 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
       multiformats:
-        specifier: ^12.1.3
-        version: 12.1.3
+        specifier: 'catalog:'
+        version: 13.3.2
       next:
         specifier: ^13.5.4
         version: 13.5.11(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.86.1)
@@ -966,7 +972,7 @@ importers:
   packages/filecoin-api:
     dependencies:
       '@ipld/dag-ucan':
-        specifier: ^3.4.5
+        specifier: 'catalog:'
         version: 3.4.5
       '@storacha/capabilities':
         specifier: workspace:^
@@ -987,10 +993,10 @@ importers:
         specifier: 'catalog:'
         version: 9.2.0
       '@web3-storage/content-claims':
-        specifier: ^5.0.0
-        version: 5.1.3
+        specifier: 'catalog:'
+        version: 5.2.0
       '@web3-storage/data-segment':
-        specifier: ^5.2.0
+        specifier: 'catalog:'
         version: 5.3.0
       fr32-sha2-256-trunc254-padded-binary-tree-multihash:
         specifier: 'catalog:'
@@ -1528,8 +1534,8 @@ importers:
         specifier: 'catalog:'
         version: 9.1.0
       '@web3-storage/content-claims':
-        specifier: ^5.1.3
-        version: 5.1.3
+        specifier: 'catalog:'
+        version: 5.2.0
       '@web3-storage/upload-api':
         specifier: 'catalog:'
         version: 19.0.0
@@ -1659,8 +1665,8 @@ importers:
         specifier: 'catalog:'
         version: 10.2.0
       '@web3-storage/content-claims':
-        specifier: ^5.1.3
-        version: 5.1.3
+        specifier: 'catalog:'
+        version: 5.2.0
       assert:
         specifier: 'catalog:'
         version: 2.1.0
@@ -1765,10 +1771,10 @@ importers:
         specifier: ^20.1.0
         version: 20.1.1
       '@web3-storage/content-claims':
-        specifier: ^4.0.4
-        version: 4.0.5
+        specifier: 'catalog:'
+        version: 5.2.0
       '@web3-storage/data-segment':
-        specifier: ^5.0.0
+        specifier: 'catalog:'
         version: 5.3.0
       '@web3-storage/w3up-client':
         specifier: ^16.5.1
@@ -6022,11 +6028,8 @@ packages:
   '@web3-storage/car-block-validator@1.2.2':
     resolution: {integrity: sha512-lR9l+ZszhTid5HfZE8ohnGf2RJp2kaBOnoejmsACs3iTNiy+3K09dnPm8MhgBE9RCIgPBKM0CCWXO9l+I6jrKA==}
 
-  '@web3-storage/content-claims@4.0.5':
-    resolution: {integrity: sha512-+WpCkTN8aRfUCrCm0kOMZad+FRnFymVDFvS6/+PJMPGP17cci1/c5lqYdrjFV+5MkhL+BkUJVtRTx02G31FHmQ==}
-
-  '@web3-storage/content-claims@5.1.3':
-    resolution: {integrity: sha512-X+Cpm+EmGuEvFyM8oX1NqsBkuSje836B72yuvnVmgd80XPt+McpOhM6ko7rfs9Dx9UmpiZq+998jlvBhg2W5ZA==}
+  '@web3-storage/content-claims@5.2.0':
+    resolution: {integrity: sha512-FV1WIfo+lL9igjkAtHU2dl2blJfoWCWnmCAO4bhFpZD2MwojUWlVHP1t6y6qL7QU1+o7Ax9tpiAWYsb1U7Pixg==}
 
   '@web3-storage/data-segment@5.3.0':
     resolution: {integrity: sha512-zFJ4m+pEKqtKatJNsFrk/2lHeFSbkXZ6KKXjBe7/2ayA9wAar7T/unewnOcZrrZTnCWmaxKsXWqdMFy9bXK9dw==}
@@ -6792,9 +6795,6 @@ packages:
 
   carbites@1.0.6:
     resolution: {integrity: sha512-dS9IQvnrb5VIRvSTNz5Ff+mB9d2MFfi5mojtJi7Rlss79VeF190jr0sZdA7eW0CGHotvHkZaWuM6wgfD9PEFRg==}
-
-  carstream@1.1.1:
-    resolution: {integrity: sha512-cgn3TqHo6SPsHBTfM5QgXngv6HtwgO1bKCHcdS35vBrweLcYrIG/+UboCbvnIGA0k8NtAYl/DvDdej/9pZGZxQ==}
 
   carstream@2.3.0:
     resolution: {integrity: sha512-2YwFg5Kxs2tqVCJv7sthWbYoUpALCYBBfTdpQcpicV7ipi6bBb1h9M4MNb1vm+724f39lUNp5VWhW43IFxfPlA==}
@@ -16784,19 +16784,19 @@ snapshots:
       - vue-tsc
       - webpack-cli
 
-  '@nx/next@20.3.2(@babel/core@7.26.0)(@babel/traverse@7.26.5)(@rspack/core@1.3.0(@swc/helpers@0.5.15))(@swc/core@1.10.11(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)(@types/node@22.13.1)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(html-webpack-plugin@5.6.3(@rspack/core@1.3.0(@swc/helpers@0.5.15))(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15))))(next@14.2.16(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.50.0)(react-dom@19.0.0(react@18.3.1))(react@18.3.1)(sass@1.86.1))(nx@20.3.2(@swc/core@1.10.11(@swc/helpers@0.5.15)))(react-dom@19.0.0(react@18.3.1))(react@18.3.1)(typescript@5.7.3)(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15)))':
+  '@nx/next@20.3.2(@babel/core@7.26.0)(@babel/traverse@7.26.5)(@rspack/core@1.3.0(@swc/helpers@0.5.15))(@swc/core@1.10.11(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)(@types/node@22.13.1)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(html-webpack-plugin@5.6.3(@rspack/core@1.3.0(@swc/helpers@0.5.15))(webpack@5.88.0(@swc/core@1.10.11(@swc/helpers@0.5.15))))(next@14.2.16(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.50.0)(react-dom@19.0.0(react@18.3.1))(react@18.3.1)(sass@1.86.1))(nx@20.3.2(@swc/core@1.10.11(@swc/helpers@0.5.15)))(react-dom@19.0.0(react@18.3.1))(react@18.3.1)(typescript@5.7.3)(webpack@5.88.0(@swc/core@1.10.11(@swc/helpers@0.5.15)))':
     dependencies:
       '@babel/plugin-proposal-decorators': 7.25.9(@babel/core@7.26.0)
       '@nx/devkit': 20.3.2(nx@20.3.2(@swc/core@1.10.11(@swc/helpers@0.5.15)))
       '@nx/eslint': 20.3.2(@babel/traverse@7.26.5)(@swc/core@1.10.11(@swc/helpers@0.5.15))(@types/node@22.13.1)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(nx@20.3.2(@swc/core@1.10.11(@swc/helpers@0.5.15)))
       '@nx/js': 20.3.2(@babel/traverse@7.26.5)(@swc/core@1.10.11(@swc/helpers@0.5.15))(@types/node@22.13.1)(nx@20.3.2(@swc/core@1.10.11(@swc/helpers@0.5.15)))(typescript@5.7.3)
-      '@nx/react': 20.3.2(@babel/traverse@7.26.5)(@swc/core@1.10.11(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)(@types/node@22.13.1)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(next@14.2.16(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.50.0)(react-dom@19.0.0(react@18.3.1))(react@18.3.1)(sass@1.86.1))(nx@20.3.2(@swc/core@1.10.11(@swc/helpers@0.5.15)))(react-dom@19.0.0(react@18.3.1))(react@18.3.1)(typescript@5.7.3)(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15)))
+      '@nx/react': 20.3.2(@babel/traverse@7.26.5)(@swc/core@1.10.11(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)(@types/node@22.13.1)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(next@14.2.16(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.50.0)(react-dom@19.0.0(react@18.3.1))(react@18.3.1)(sass@1.86.1))(nx@20.3.2(@swc/core@1.10.11(@swc/helpers@0.5.15)))(react-dom@19.0.0(react@18.3.1))(react@18.3.1)(typescript@5.7.3)(webpack@5.88.0(@swc/core@1.10.11(@swc/helpers@0.5.15)))
       '@nx/web': 20.3.2(@babel/traverse@7.26.5)(@swc/core@1.10.11(@swc/helpers@0.5.15))(@types/node@22.13.1)(nx@20.3.2(@swc/core@1.10.11(@swc/helpers@0.5.15)))(typescript@5.7.3)
-      '@nx/webpack': 20.3.2(@babel/traverse@7.26.5)(@rspack/core@1.3.0(@swc/helpers@0.5.15))(@swc/core@1.10.11(@swc/helpers@0.5.15))(@types/node@22.13.1)(html-webpack-plugin@5.6.3(@rspack/core@1.3.0(@swc/helpers@0.5.15))(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15))))(nx@20.3.2(@swc/core@1.10.11(@swc/helpers@0.5.15)))(typescript@5.7.3)
+      '@nx/webpack': 20.3.2(@babel/traverse@7.26.5)(@rspack/core@1.3.0(@swc/helpers@0.5.15))(@swc/core@1.10.11(@swc/helpers@0.5.15))(@types/node@22.13.1)(html-webpack-plugin@5.6.3(@rspack/core@1.3.0(@swc/helpers@0.5.15))(webpack@5.88.0(@swc/core@1.10.11(@swc/helpers@0.5.15))))(nx@20.3.2(@swc/core@1.10.11(@swc/helpers@0.5.15)))(typescript@5.7.3)
       '@phenomnomnominal/tsquery': 5.0.1(typescript@5.7.3)
       '@svgr/webpack': 8.1.0(typescript@5.7.3)
-      copy-webpack-plugin: 10.2.4(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15)))
-      file-loader: 6.2.0(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15)))
+      copy-webpack-plugin: 10.2.4(webpack@5.88.0(@swc/core@1.10.11(@swc/helpers@0.5.15)))
+      file-loader: 6.2.0(webpack@5.88.0(@swc/core@1.10.11(@swc/helpers@0.5.15)))
       ignore: 5.3.2
       next: 14.2.16(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.50.0)(react-dom@19.0.0(react@18.3.1))(react@18.3.1)(sass@1.86.1)
       semver: 7.6.3
@@ -16869,7 +16869,7 @@ snapshots:
   '@nx/nx-win32-x64-msvc@20.3.2':
     optional: true
 
-  '@nx/react@20.3.2(@babel/traverse@7.26.5)(@swc/core@1.10.11(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)(@types/node@22.13.1)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(next@14.2.16(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.50.0)(react-dom@19.0.0(react@18.3.1))(react@18.3.1)(sass@1.86.1))(nx@20.3.2(@swc/core@1.10.11(@swc/helpers@0.5.15)))(react-dom@19.0.0(react@18.3.1))(react@18.3.1)(typescript@5.7.3)(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15)))':
+  '@nx/react@20.3.2(@babel/traverse@7.26.5)(@swc/core@1.10.11(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)(@types/node@22.13.1)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(next@14.2.16(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.50.0)(react-dom@19.0.0(react@18.3.1))(react@18.3.1)(sass@1.86.1))(nx@20.3.2(@swc/core@1.10.11(@swc/helpers@0.5.15)))(react-dom@19.0.0(react@18.3.1))(react@18.3.1)(typescript@5.7.3)(webpack@5.88.0(@swc/core@1.10.11(@swc/helpers@0.5.15)))':
     dependencies:
       '@nx/devkit': 20.3.2(nx@20.3.2(@swc/core@1.10.11(@swc/helpers@0.5.15)))
       '@nx/eslint': 20.3.2(@babel/traverse@7.26.5)(@swc/core@1.10.11(@swc/helpers@0.5.15))(@types/node@22.13.1)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(nx@20.3.2(@swc/core@1.10.11(@swc/helpers@0.5.15)))
@@ -16879,7 +16879,7 @@ snapshots:
       '@phenomnomnominal/tsquery': 5.0.1(typescript@5.7.3)
       '@svgr/webpack': 8.1.0(typescript@5.7.3)
       express: 4.21.2
-      file-loader: 6.2.0(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15)))
+      file-loader: 6.2.0(webpack@5.88.0(@swc/core@1.10.11(@swc/helpers@0.5.15)))
       http-proxy-middleware: 3.0.3
       minimatch: 9.0.3
       picocolors: 1.1.1
@@ -16930,7 +16930,7 @@ snapshots:
       - typescript
       - verdaccio
 
-  '@nx/webpack@20.3.2(@babel/traverse@7.26.5)(@rspack/core@1.3.0(@swc/helpers@0.5.15))(@swc/core@1.10.11(@swc/helpers@0.5.15))(@types/node@22.13.1)(html-webpack-plugin@5.6.3(@rspack/core@1.3.0(@swc/helpers@0.5.15))(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15))))(nx@20.3.2(@swc/core@1.10.11(@swc/helpers@0.5.15)))(typescript@5.7.3)':
+  '@nx/webpack@20.3.2(@babel/traverse@7.26.5)(@rspack/core@1.3.0(@swc/helpers@0.5.15))(@swc/core@1.10.11(@swc/helpers@0.5.15))(@types/node@22.13.1)(html-webpack-plugin@5.6.3(@rspack/core@1.3.0(@swc/helpers@0.5.15))(webpack@5.88.0(@swc/core@1.10.11(@swc/helpers@0.5.15))))(nx@20.3.2(@swc/core@1.10.11(@swc/helpers@0.5.15)))(typescript@5.7.3)':
     dependencies:
       '@babel/core': 7.26.0
       '@nx/devkit': 20.3.2(nx@20.3.2(@swc/core@1.10.11(@swc/helpers@0.5.15)))
@@ -16968,7 +16968,7 @@ snapshots:
       webpack: 5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15))
       webpack-dev-server: 5.2.1(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15)))
       webpack-node-externals: 3.0.0
-      webpack-subresource-integrity: 5.1.0(html-webpack-plugin@5.6.3(@rspack/core@1.3.0(@swc/helpers@0.5.15))(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15))))(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15)))
+      webpack-subresource-integrity: 5.1.0(html-webpack-plugin@5.6.3(@rspack/core@1.3.0(@swc/helpers@0.5.15))(webpack@5.88.0(@swc/core@1.10.11(@swc/helpers@0.5.15))))(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15)))
     transitivePeerDependencies:
       - '@babel/traverse'
       - '@parcel/css'
@@ -19544,18 +19544,10 @@ snapshots:
       multiformats: 13.3.2
       uint8arrays: 5.1.0
 
-  '@web3-storage/content-claims@4.0.5':
+  '@web3-storage/content-claims@5.2.0':
     dependencies:
       '@ucanto/client': 9.0.1
-      '@ucanto/interface': 10.2.0
-      '@ucanto/server': 10.2.0
-      '@ucanto/transport': 9.2.0
-      carstream: 1.1.1
-      multiformats: 12.1.3
-
-  '@web3-storage/content-claims@5.1.3':
-    dependencies:
-      '@ucanto/client': 9.0.1
+      '@ucanto/core': 10.3.1
       '@ucanto/interface': 10.2.0
       '@ucanto/server': 10.2.0
       '@ucanto/transport': 9.2.0
@@ -19579,7 +19571,7 @@ snapshots:
       '@ucanto/server': 10.2.0
       '@ucanto/transport': 9.2.0
       '@web3-storage/capabilities': 18.0.1
-      '@web3-storage/content-claims': 5.1.3
+      '@web3-storage/content-claims': 5.2.0
       '@web3-storage/data-segment': 5.3.0
       fr32-sha2-256-trunc254-padded-binary-tree-multihash: 3.3.0
       p-map: 6.0.0
@@ -19612,7 +19604,7 @@ snapshots:
       '@web3-storage/access': 20.1.1
       '@web3-storage/blob-index': 1.0.5
       '@web3-storage/capabilities': 18.0.1
-      '@web3-storage/content-claims': 5.1.3
+      '@web3-storage/content-claims': 5.2.0
       '@web3-storage/did-mailto': 2.1.0
       '@web3-storage/filecoin-api': 8.0.0
       multiformats: 12.1.3
@@ -20487,12 +20479,6 @@ snapshots:
       '@ipld/dag-pb': 2.1.18
       multiformats: 9.9.0
 
-  carstream@1.1.1:
-    dependencies:
-      '@ipld/dag-cbor': 9.2.2
-      multiformats: 12.1.3
-      uint8arraylist: 2.4.8
-
   carstream@2.3.0:
     dependencies:
       '@ipld/dag-cbor': 9.2.2
@@ -20829,6 +20815,16 @@ snapshots:
     dependencies:
       graceful-fs: 4.2.11
       p-event: 6.0.1
+
+  copy-webpack-plugin@10.2.4(webpack@5.88.0(@swc/core@1.10.11(@swc/helpers@0.5.15))):
+    dependencies:
+      fast-glob: 3.3.3
+      glob-parent: 6.0.2
+      globby: 12.2.0
+      normalize-path: 3.0.0
+      schema-utils: 4.3.0
+      serialize-javascript: 6.0.2
+      webpack: 5.88.0(@swc/core@1.10.11(@swc/helpers@0.5.15))
 
   copy-webpack-plugin@10.2.4(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15))):
     dependencies:
@@ -22544,11 +22540,11 @@ snapshots:
     dependencies:
       flat-cache: 3.2.0
 
-  file-loader@6.2.0(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15))):
+  file-loader@6.2.0(webpack@5.88.0(@swc/core@1.10.11(@swc/helpers@0.5.15))):
     dependencies:
       loader-utils: 2.0.4
       schema-utils: 3.3.0
-      webpack: 5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15))
+      webpack: 5.88.0(@swc/core@1.10.11(@swc/helpers@0.5.15))
 
   file-uri-to-path@1.0.0: {}
 
@@ -23103,7 +23099,7 @@ snapshots:
       terser: 5.37.0
     optional: true
 
-  html-webpack-plugin@5.6.3(@rspack/core@1.3.0(@swc/helpers@0.5.15))(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15))):
+  html-webpack-plugin@5.6.3(@rspack/core@1.3.0(@swc/helpers@0.5.15))(webpack@5.88.0(@swc/core@1.10.11(@swc/helpers@0.5.15))):
     dependencies:
       '@types/html-minifier-terser': 6.1.0
       html-minifier-terser: 6.1.0
@@ -23112,7 +23108,7 @@ snapshots:
       tapable: 2.2.1
     optionalDependencies:
       '@rspack/core': 1.3.0(@swc/helpers@0.5.15)
-      webpack: 5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15))
+      webpack: 5.88.0(@swc/core@1.10.11(@swc/helpers@0.5.15))
     optional: true
 
   htmlparser2@6.1.0:
@@ -28130,12 +28126,12 @@ snapshots:
 
   webpack-sources@3.2.3: {}
 
-  webpack-subresource-integrity@5.1.0(html-webpack-plugin@5.6.3(@rspack/core@1.3.0(@swc/helpers@0.5.15))(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15))))(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15))):
+  webpack-subresource-integrity@5.1.0(html-webpack-plugin@5.6.3(@rspack/core@1.3.0(@swc/helpers@0.5.15))(webpack@5.88.0(@swc/core@1.10.11(@swc/helpers@0.5.15))))(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15))):
     dependencies:
       typed-assert: 1.0.9
       webpack: 5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15))
     optionalDependencies:
-      html-webpack-plugin: 5.6.3(@rspack/core@1.3.0(@swc/helpers@0.5.15))(webpack@5.98.0(@swc/core@1.10.11(@swc/helpers@0.5.15)))
+      html-webpack-plugin: 5.6.3(@rspack/core@1.3.0(@swc/helpers@0.5.15))(webpack@5.88.0(@swc/core@1.10.11(@swc/helpers@0.5.15)))
 
   webpack-virtual-modules@0.5.0: {}
 
