@@ -10,4 +10,5 @@ runs:
       shell: bash
       run: pnpm install --frozen-lockfile
     - name: Build all dependencies
+      shell: bash
       run: pnpm nx build
