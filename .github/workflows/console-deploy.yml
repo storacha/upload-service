@@ -39,6 +39,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/pnpm
+      - name: Build all dependencies
+        shell: bash
+        run: pnpm nx build
       - name: create .env from .env.tpl setting env variables used by `pnpm run pages:build`
         run: |
           # set env vars from template
@@ -144,6 +147,9 @@ jobs:
         with:
           ref: 'main'
       - uses: ./.github/actions/pnpm
+      - name: Build all dependencies
+        shell: bash
+        run: pnpm nx build
       - name: create .env from .env.tpl setting env variables used by `pnpm run pages:build`
         run: |
           # set env vars from template
