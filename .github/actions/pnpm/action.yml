@@ -9,3 +9,5 @@ runs:
     - name: Install npm package dependencies
       shell: bash
       run: pnpm install --frozen-lockfile
+    - name: Build all dependencies
+      run: pnpm nx build
