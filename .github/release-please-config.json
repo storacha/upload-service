@@ -5,6 +5,6 @@
     { "type": "chore", "section": "Other Changes", "hidden": false }
   ],
   "packages": {
-    "packages/console": {}
+    "packages/console": "1.17.6"
   }
 }
