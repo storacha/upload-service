@@ -122,7 +122,7 @@ jobs:
       releases_created: ${{ steps.tag-release.outputs.releases_created }}
     steps:
       - uses: google-github-actions/release-please-action@v3
-        id: release
+        id: tag-release
         with:
           command: manifest
           config-file: .github/release-please-config.json
