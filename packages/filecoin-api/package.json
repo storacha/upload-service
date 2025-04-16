@@ -94,15 +94,15 @@
     "coverage": "c8 -r text -r html npm run test"
   },
   "dependencies": {
-    "@ipld/dag-ucan": "^3.4.5",
+    "@ipld/dag-ucan": "catalog:",
     "@storacha/capabilities": "workspace:^",
     "@ucanto/client": "catalog:",
     "@ucanto/core": "catalog:",
     "@ucanto/interface": "catalog:",
     "@ucanto/server": "catalog:",
     "@ucanto/transport": "catalog:",
-    "@web3-storage/content-claims": "^5.0.0",
-    "@web3-storage/data-segment": "^5.2.0",
+    "@web3-storage/content-claims": "catalog:",
+    "@web3-storage/data-segment": "catalog:",
     "fr32-sha2-256-trunc254-padded-binary-tree-multihash": "catalog:",
     "p-map": "catalog:"
   },
