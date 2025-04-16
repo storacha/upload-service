@@ -1,0 +1,10 @@
+{
+  "changelog-sections": [
+    { "type": "feat", "section": "Features", "hidden": false },
+    { "type": "fix", "section": "Fixes", "hidden": false },
+    { "type": "chore", "section": "Other Changes", "hidden": false }
+  ],
+  "packages": {
+    "packages/console": {}
+  }
+}
