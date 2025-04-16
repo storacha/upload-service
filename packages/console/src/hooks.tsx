@@ -1,5 +1,5 @@
 import { Account, DID, PlanGetSuccess, PlanSetSuccess, PlanSetFailure, Result } from '@storacha/ui-react'
-import useSWR, { SWRResponse, useSWRConfig } from 'swr'
+import useSWR, { SWRResponse } from 'swr'
 import { logAndCaptureError } from './sentry'
 
 /**
