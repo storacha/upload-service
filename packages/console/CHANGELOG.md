@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.0.0](https://github.com/storacha/upload-service/compare/console-v1.18.0...console-v2.0.0) (2025-04-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* fix production deploy by getting release state name right ([#232](https://github.com/storacha/upload-service/issues/232))
+* fix production deploy by getting release state name right
+
+### Fixes
+
+* fix production deploy by getting release state name right ([546fb2c](https://github.com/storacha/upload-service/commit/546fb2c22af70542352a23cb2917655e467f25fb))
+* fix production deploy by getting release state name right ([#232](https://github.com/storacha/upload-service/issues/232)) ([408da70](https://github.com/storacha/upload-service/commit/408da705090bc8e2e5ca0bf11db3b6d95f3358a0))
+
 ## [1.18.0](https://github.com/storacha/upload-service/compare/console-v1.17.6...console-v1.18.0) (2025-04-16)
 
 
