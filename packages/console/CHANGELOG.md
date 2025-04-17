@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.1](https://github.com/storacha/upload-service/compare/console-v2.0.0...console-v2.0.1) (2025-04-17)
+
+
+### Other Changes
+
+* remove errant e from deploy script ([ef259f7](https://github.com/storacha/upload-service/commit/ef259f708c7094f622b3431ee9a6d9f495bf2d45))
+* remove errant e from deploy script ([#234](https://github.com/storacha/upload-service/issues/234)) ([1130e4e](https://github.com/storacha/upload-service/commit/1130e4e8b27e1e33afe48e7ad197e4ac8416ebd1))
+
 ## [2.0.0](https://github.com/storacha/upload-service/compare/console-v1.18.0...console-v2.0.0) (2025-04-16)
 
 
