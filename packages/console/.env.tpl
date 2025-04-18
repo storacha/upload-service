@@ -1,8 +1,8 @@
 # set these to your upload API service URL and the DID your service is using as its service DID
-NEXT_PUBLIC_W3UP_SERVICE_URL=https://staging.up.web3.storage
-NEXT_PUBLIC_W3UP_RECEIPTS_URL=https://staging.up.web3.storage/receipt/
-NEXT_PUBLIC_W3UP_SERVICE_DID=did:web:staging.web3.storage
-NEXT_PUBLIC_W3UP_PROVIDER=did:web:staging.web3.storage
+NEXT_PUBLIC_W3UP_SERVICE_URL=https://staging.up.storacha.network
+NEXT_PUBLIC_W3UP_RECEIPTS_URL=https://staging.up.storacha.network/receipt/
+NEXT_PUBLIC_W3UP_SERVICE_DID=did:web:staging.storacha.network
+NEXT_PUBLIC_W3UP_PROVIDER=did:web:staging.storacha.network
 NEXT_PUBLIC_IPFS_GATEWAY_URL=https://%ROOT_CID%.ipfs-staging.w3s.link
 
 # set these to your gateway service URL and DID 
@@ -31,3 +31,8 @@ NEXT_PUBLIC_SENTRY_DSN=https://bf79c216fe3c72328219f04aabeebc99@o609598.ingest.u
 NEXT_PUBLIC_SENTRY_ORG=storacha-it
 NEXT_PUBLIC_SENTRY_PROJECT=console
 NEXT_PUBLIC_SENTRY_ENV=development
+
+# Humanode
+NEXT_PUBLIC_HUMANODE_AUTH_URL=https://auth.demo-storacha-2025-03-31.oauth2.humanode.io/oauth2/auth
+NEXT_PUBLIC_HUMANODE_CLIENT_ID=e9756297-b2d1-4bbe-a139-a9ad1cdc43ee
+NEXT_PUBLIC_HUMANODE_OAUTH_CALLBACK_URL=https://staging.up.storacha.network/oauth/humanode/callback

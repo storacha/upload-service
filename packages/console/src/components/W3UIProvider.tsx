@@ -1,5 +1,5 @@
 'use client'
-import { Provider } from '@w3ui/react'
+import { Provider } from '@storacha/ui-react'
 import { serviceConnection, servicePrincipal, receiptsURL } from '@/components/services'
 import { ReactNode } from 'react'
 

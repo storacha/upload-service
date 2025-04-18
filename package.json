@@ -13,11 +13,13 @@
     "eslint": "catalog:",
     "lint-staged": "catalog:",
     "loglevel": "^1.9.2",
+    "next": "catalog:",
     "npm-registry-fetch": "^18.0.2",
     "nx": "catalog:",
     "octokit": "^4.1.2",
     "prettier": "2.8.3",
     "react": "catalog:",
+    "react-dom": "catalog:",
     "simple-git": "^3.27.0",
     "tsx": "^4.19.3",
     "typescript": "catalog:"

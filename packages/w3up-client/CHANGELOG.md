@@ -1,3 +1,25 @@
+## 1.2.6 (2025-04-07)
+
+### 🩹 Fixes
+
+- fix: export authorizeContentServe in Node.js ([#220](https://github.com/storacha/upload-service/pull/220))
+
+### ❤️ Thank You
+
+- ash
+
+## 1.2.5 (2025-04-07)
+
+### 🩹 Fixes
+
+- feat(access-client): support for custom headers ([#217](https://github.com/storacha/upload-service/pull/217))
+- fix: do not assume nodejs environment ([91dd3479](https://github.com/storacha/upload-service/commit/91dd3479))
+
+### ❤️ Thank You
+
+- Alan Shaw
+- Felipe Forbeck @fforbeck
+
 ## 1.2.4 (2025-03-27)
 
 ### 🧱 Updated Dependencies

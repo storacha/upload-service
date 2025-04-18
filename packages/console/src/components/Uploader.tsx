@@ -4,14 +4,14 @@ import type {
   UploadProgress,
   CARMetadata,
   AnyLink
-} from '@w3ui/react'
+} from '@storacha/ui-react'
 import { ArrowPathIcon, CloudArrowUpIcon } from '@heroicons/react/24/outline'
 import {
   UploadStatus,
   Uploader as W3Uploader,
   WrapInDirectoryCheckbox,
   useUploader
-} from '@w3ui/react'
+} from '@storacha/ui-react'
 import { ipfsGatewayURL } from '../components/services'
 import { useEffect, useState } from 'react'
 import { RadioGroup } from '@headlessui/react'

@@ -1,6 +1,6 @@
 import { createElement } from 'react'
 import Script from 'next/script'
-import { useW3 } from '@w3ui/react'
+import { useW3 } from '@storacha/ui-react'
 
 export default function StripePricingTable ({ className = '' }) {
   const [{ accounts }] = useW3()

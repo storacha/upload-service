@@ -1,6 +1,6 @@
 'use client'
 
-import { useW3, SpaceDID } from '@w3ui/react'
+import { useW3, SpaceDID } from '@storacha/ui-react'
 import useSWR from 'swr'
 import Link from 'next/link'
 import { usePlan } from '@/hooks'

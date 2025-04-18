@@ -1,5 +1,136 @@
 # Changelog
 
+## [2.0.1](https://github.com/storacha/upload-service/compare/console-v2.0.0...console-v2.0.1) (2025-04-17)
+
+
+### Other Changes
+
+* remove errant e from deploy script ([ef259f7](https://github.com/storacha/upload-service/commit/ef259f708c7094f622b3431ee9a6d9f495bf2d45))
+* remove errant e from deploy script ([#234](https://github.com/storacha/upload-service/issues/234)) ([1130e4e](https://github.com/storacha/upload-service/commit/1130e4e8b27e1e33afe48e7ad197e4ac8416ebd1))
+
+## [2.0.0](https://github.com/storacha/upload-service/compare/console-v1.18.0...console-v2.0.0) (2025-04-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* fix production deploy by getting release state name right ([#232](https://github.com/storacha/upload-service/issues/232))
+* fix production deploy by getting release state name right
+
+### Fixes
+
+* fix production deploy by getting release state name right ([546fb2c](https://github.com/storacha/upload-service/commit/546fb2c22af70542352a23cb2917655e467f25fb))
+* fix production deploy by getting release state name right ([#232](https://github.com/storacha/upload-service/issues/232)) ([408da70](https://github.com/storacha/upload-service/commit/408da705090bc8e2e5ca0bf11db3b6d95f3358a0))
+
+## [1.18.0](https://github.com/storacha/upload-service/compare/console-v1.17.6...console-v1.18.0) (2025-04-16)
+
+
+### Features
+
+* Actually put error in console, as promised ([#131](https://github.com/storacha/upload-service/issues/131)) ([2f438d5](https://github.com/storacha/upload-service/commit/2f438d5ecf9ff54ebeaf7cc407aae4fb9e353991))
+* add a PNG version of our logo ([#153](https://github.com/storacha/upload-service/issues/153)) ([52a7854](https://github.com/storacha/upload-service/commit/52a785438a51bb748b777fc4f032a20d6c23a663))
+* add old web3 storage migrator ([#129](https://github.com/storacha/upload-service/issues/129)) ([8cbd2bb](https://github.com/storacha/upload-service/commit/8cbd2bb9a822065c08cb9d47846af4ca2e0dee0f))
+* add Sentry error tracking ([#165](https://github.com/storacha/upload-service/issues/165)) ([5188e07](https://github.com/storacha/upload-service/commit/5188e0745a07d6e086c51718088b07ff4bb18204))
+* change email ([b624f1d](https://github.com/storacha/upload-service/commit/b624f1d35b004d7f650e8eb1405ce429954af244))
+* **copy:** Add missing comma ([#115](https://github.com/storacha/upload-service/issues/115)) ([6e231eb](https://github.com/storacha/upload-service/commit/6e231ebf7f2c772f8f8edeabd9e6a3f68f806387))
+* Improved layout styling, and other tales ([#114](https://github.com/storacha/upload-service/issues/114)) ([5484d36](https://github.com/storacha/upload-service/commit/5484d367f5c96a70300a75ce7f6379de224ef02c))
+* more styles ([a9f0172](https://github.com/storacha/upload-service/commit/a9f017257ac3bbadb33072cdb3431e1e926147f7))
+* point staging env referral link at staging marketing site ([0073963](https://github.com/storacha/upload-service/commit/007396396cb0256b64210e3de0b5eeb70faa9b52))
+* prototype of referral system in console ([#142](https://github.com/storacha/upload-service/issues/142)) ([d2b284b](https://github.com/storacha/upload-service/commit/d2b284b28f77e28e237f19731a1e202da03470bc))
+* referrals tweaks ([#155](https://github.com/storacha/upload-service/issues/155)) ([32cc78f](https://github.com/storacha/upload-service/commit/32cc78f1692373e53e6a6fb3ae1c44f8f0a4389e))
+* **repo:** merge main from https://github.com/storacha/console ([152954e](https://github.com/storacha/upload-service/commit/152954ee26c66bdd9bb686581b100d66ca0bcfca))
+* share spaces via email ([#123](https://github.com/storacha/upload-service/issues/123)) ([b0dd61a](https://github.com/storacha/upload-service/commit/b0dd61aa1708c768d2e86d673b072554d0c90f3f))
+* styles for upload page ([9cdac7c](https://github.com/storacha/upload-service/commit/9cdac7cf0bc281bd3e4fdfc75b912f7cca95f854))
+* trigger deploy ([a5ae681](https://github.com/storacha/upload-service/commit/a5ae6818d3bde34eeff10292f10b5cd68533a32f))
+* update TOS links to point to the Storacha docs ([#148](https://github.com/storacha/upload-service/issues/148)) ([7d5ad13](https://github.com/storacha/upload-service/commit/7d5ad1328295b619a9ab1647450c1b5b64bb2298))
+* Use Blob protocol ([#132](https://github.com/storacha/upload-service/issues/132)) ([0fd47ba](https://github.com/storacha/upload-service/commit/0fd47baef22b1d4c056e1d51c66a802d891b1801))
+* Use latest `w3ui` to support reloading spaces ([#138](https://github.com/storacha/upload-service/issues/138)) ([5a886bf](https://github.com/storacha/upload-service/commit/5a886bf3cad33ce7c17ef9afa4cae1559af21e8b))
+* wording ([032218e](https://github.com/storacha/upload-service/commit/032218eb7f446d7e8523ce026524bcfcd97b7a4e))
+
+
+### Fixes
+
+* a little package.json cleanup ([13859fc](https://github.com/storacha/upload-service/commit/13859fc29757cf85653db741be6f980f11fe5eb0))
+* add missing receiptsEndpoint to W3UIProvider ([#144](https://github.com/storacha/upload-service/issues/144)) ([e8ca3d3](https://github.com/storacha/upload-service/commit/e8ca3d33cf40e086a7f597822ecbbe75c44a4dcf))
+* add more deps to the catalog and pin eslint typescript plugin ([e00af97](https://github.com/storacha/upload-service/commit/e00af972f0a2710f673a6ea367ed6f81912e4145))
+* add sentry auth token to enable sourcemap upload ([#168](https://github.com/storacha/upload-service/issues/168)) ([bec52c9](https://github.com/storacha/upload-service/commit/bec52c91226165f1518501ac26da0a93ca5433a3))
+* apostrophe ([ee51ff9](https://github.com/storacha/upload-service/commit/ee51ff973298463082c8a5db0c35728557fc5f5f))
+* capture some errors we were logging to console ([#188](https://github.com/storacha/upload-service/issues/188)) ([673043a](https://github.com/storacha/upload-service/commit/673043ab6e5bc8166229c6021f45b81191b917fa))
+* catalog more dependencies ([cc52f81](https://github.com/storacha/upload-service/commit/cc52f81f40e6d28ebe1e1c910e67b0de9d324a42))
+* check ref ([b1c985f](https://github.com/storacha/upload-service/commit/b1c985f225e355c7c16548a5b03c2e388ec8f372))
+* **console:** pnpm run dev + nx configs(sentry,tailwind) ([ad5db7e](https://github.com/storacha/upload-service/commit/ad5db7e3b2a9630185600d31e4de159abe27578a))
+* cors preflight issue in production ([#178](https://github.com/storacha/upload-service/issues/178)) ([583abb3](https://github.com/storacha/upload-service/commit/583abb3e03bf34c07b6dd61b33d7b8c6e80882cd))
+* create space ([#173](https://github.com/storacha/upload-service/issues/173)) ([7ac4478](https://github.com/storacha/upload-service/commit/7ac4478a8ed6c92ac86eb9cb286294defae47ca8))
+* create space using the latest w3up-client version ([#171](https://github.com/storacha/upload-service/issues/171)) ([5c67bdb](https://github.com/storacha/upload-service/commit/5c67bdbf643077c8262b5ee8d05ba511f6180d20))
+* **createSpace:** using the latest w3ui with w3up-client ([#176](https://github.com/storacha/upload-service/issues/176)) ([fdd5895](https://github.com/storacha/upload-service/commit/fdd5895688589a899ccf0c837106f6d96cb2c755))
+* deploy-storacha.yml needs to use the new main branch ([#122](https://github.com/storacha/upload-service/issues/122)) ([3240385](https://github.com/storacha/upload-service/commit/324038556a21e9eadabc09b5f2017a7afd9ebeae))
+* deploy.yml needs to use the old-main branch ([#120](https://github.com/storacha/upload-service/issues/120)) ([6252d89](https://github.com/storacha/upload-service/commit/6252d897ef8af0a75b4cc06412d7141923cc5e6d))
+* fix linting ([0c5f06b](https://github.com/storacha/upload-service/commit/0c5f06b7c95c86b0e1e40d38916800682cd30dc6))
+* gateway authorization based on env ([#174](https://github.com/storacha/upload-service/issues/174)) ([f446ab9](https://github.com/storacha/upload-service/commit/f446ab9d7b07f3be2c902234e48bfdacca61a356))
+* Humanode config tweaks ([b3debc4](https://github.com/storacha/upload-service/commit/b3debc4f1ecdb003b403e89e674f0c56cdb04dd8))
+* import space preview ([#127](https://github.com/storacha/upload-service/issues/127)) ([d935f5f](https://github.com/storacha/upload-service/commit/d935f5fee09de48577eb057d4ee6c5b75bd7cf4f))
+* init page loading right after button click + stop on errors ([220df2d](https://github.com/storacha/upload-service/commit/220df2d38333f3ae17827483edf9dae92918c244))
+* is this enough? ([ac552ac](https://github.com/storacha/upload-service/commit/ac552ac18c8292c7a9b38a9f68fbac2e4bf6c75a))
+* lock down next and react versions ([4d316af](https://github.com/storacha/upload-service/commit/4d316afa44902ca76523a324520d4090a434bd71))
+* make it possible to skip the plan gate after Stripe checkout ([#162](https://github.com/storacha/upload-service/issues/162)) ([e50d81f](https://github.com/storacha/upload-service/commit/e50d81f2a5784405b1972610a12520c0901e0288))
+* **prod:** gateway host ([#180](https://github.com/storacha/upload-service/issues/180)) ([14c8c38](https://github.com/storacha/upload-service/commit/14c8c38343731cae4f4ae9a1aa213a54018e0c7f))
+* quotes ([9fb1aba](https://github.com/storacha/upload-service/commit/9fb1abaad00232623f5eb641fa7a7e5ebc4d98d6))
+* remove console github configs ([b5a2307](https://github.com/storacha/upload-service/commit/b5a23077aaec5ba63108b5b16e7d333adececdc5))
+* remove console github configs ([#227](https://github.com/storacha/upload-service/issues/227)) ([71db228](https://github.com/storacha/upload-service/commit/71db2284f902194581d6ccb95b88f92822e3cfee))
+* remove referrals feature flag ([#161](https://github.com/storacha/upload-service/issues/161)) ([9c774dd](https://github.com/storacha/upload-service/commit/9c774dd0eb95bbe2733a72794a6d576d3817edb8))
+* remove sentry test page ([b442306](https://github.com/storacha/upload-service/commit/b4423060dbfd8f82f3792244610953bb51562833))
+* remove sentry test page ([#231](https://github.com/storacha/upload-service/issues/231)) ([f4071dc](https://github.com/storacha/upload-service/commit/f4071dca72132e41716b658edb1e783b7fc33798))
+* Revert "feat: Use Blob protocol" ([#134](https://github.com/storacha/upload-service/issues/134)) ([9611be0](https://github.com/storacha/upload-service/commit/9611be0ba353229783e882e2f515818adf5022af))
+* Revert "fix: Revert "feat: Use Blob protocol"" (😩) ([#136](https://github.com/storacha/upload-service/issues/136)) ([2ec041b](https://github.com/storacha/upload-service/commit/2ec041bedfd2383a676850bdbdd828cc2f00757c))
+* set ipfs gateway url based on env var ([#177](https://github.com/storacha/upload-service/issues/177)) ([49727f7](https://github.com/storacha/upload-service/commit/49727f73da6aee859f4e99eace7cf20105ae64b8))
+* share space via ucan file ([#126](https://github.com/storacha/upload-service/issues/126)) ([2b7b623](https://github.com/storacha/upload-service/commit/2b7b6233f83d27c7e30a8a5b53e847c35e920e3e))
+* **space-creator:** check provision result before proceeding ([#119](https://github.com/storacha/upload-service/issues/119)) ([92e087a](https://github.com/storacha/upload-service/commit/92e087a5c3c7e946341d8e427709e042f9014f2d))
+* **staging:** gateway host ([794a856](https://github.com/storacha/upload-service/commit/794a8567d07588a41478b28a70242221ac5bad30))
+* trigger a console release ([b9862a1](https://github.com/storacha/upload-service/commit/b9862a1bd2092a1f37c817f21475ddb31c975cf3))
+* trigger a console release ([#228](https://github.com/storacha/upload-service/issues/228)) ([d9677d8](https://github.com/storacha/upload-service/commit/d9677d8b256750ce2acfda3927a94e3cc674405c))
+* tweak plan gate query param ([#163](https://github.com/storacha/upload-service/issues/163)) ([2346d15](https://github.com/storacha/upload-service/commit/2346d15ea0b241319194cc31f96f40030d8de9f8))
+* typo on space page ([#187](https://github.com/storacha/upload-service/issues/187)) ([12e2b02](https://github.com/storacha/upload-service/commit/12e2b02770b7f6d3cc7285126771b84c58741031))
+* update packages to use catalog dependencies ([9191594](https://github.com/storacha/upload-service/commit/9191594fb49a1e7aee6fb609fa772dfff91ae1e2))
+* use correct branch name ([374fb0c](https://github.com/storacha/upload-service/commit/374fb0c0499ccc9621e25f08d52d3edb572d8d9d))
+* use main branch ([ea0a170](https://github.com/storacha/upload-service/commit/ea0a17008ccd8a8d14b7ffdaa9c1ba2ca4407642))
+* use the correct referral URL ([#149](https://github.com/storacha/upload-service/issues/149)) ([728ae7e](https://github.com/storacha/upload-service/commit/728ae7ed66df10279a576b8cef7ab02362638e14))
+* use the same Sentry project for different envs ([#167](https://github.com/storacha/upload-service/issues/167)) ([1bf2d13](https://github.com/storacha/upload-service/commit/1bf2d13d6c05f68819ad5680fa96f3a4994ed303))
+* Use Ucanto 10 across the board ([#140](https://github.com/storacha/upload-service/issues/140)) ([b38477a](https://github.com/storacha/upload-service/commit/b38477abd7aed826e2a081407de7dc680a726abf))
+* using the correct gateway host ([#183](https://github.com/storacha/upload-service/issues/183)) ([83e0582](https://github.com/storacha/upload-service/commit/83e058217a74dbbde0c5061e58f48e654159bfdc))
+
+
+### Other Changes
+
+* add storacha deploy action ([617b096](https://github.com/storacha/upload-service/commit/617b096a1625d417300edc0522329041b45e1f4b))
+* import console ([#139](https://github.com/storacha/upload-service/issues/139)) ([59ebc4e](https://github.com/storacha/upload-service/commit/59ebc4ecdb83cd35a35044d19821e8ea95c33121))
+* **main:** release client 1.0.6 ([27cb383](https://github.com/storacha/upload-service/commit/27cb383ea5aae32ca44cc2986f781458130fbffb))
+* **main:** release client 1.0.6 ([#104](https://github.com/storacha/upload-service/issues/104)) ([07f27a2](https://github.com/storacha/upload-service/commit/07f27a22a942bde67b55e785b2e3785906d63422))
+* **main:** release upload-api 1.1.8 ([aec53e7](https://github.com/storacha/upload-service/commit/aec53e714ea581421e1c55a6e282b765f5badaaa))
+* **main:** release upload-api 1.1.8 ([#103](https://github.com/storacha/upload-service/issues/103)) ([e71494a](https://github.com/storacha/upload-service/commit/e71494a12fbd6a93bf2871eec1b101d4b02af38f))
+* **main:** release w3console 1.10.0 ([#125](https://github.com/storacha/upload-service/issues/125)) ([d7484f7](https://github.com/storacha/upload-service/commit/d7484f75dd05245bdc8f2a8bc3590e22d20a07ac))
+* **main:** release w3console 1.11.0 ([#128](https://github.com/storacha/upload-service/issues/128)) ([4a9cd39](https://github.com/storacha/upload-service/commit/4a9cd39614b122828dc00dbd8e4168eb65ceb138))
+* **main:** release w3console 1.12.0 ([#130](https://github.com/storacha/upload-service/issues/130)) ([c1b894d](https://github.com/storacha/upload-service/commit/c1b894d47005297b7375fbc5e6a6a56493f4fa12))
+* **main:** release w3console 1.13.0 ([#133](https://github.com/storacha/upload-service/issues/133)) ([a5cdbf5](https://github.com/storacha/upload-service/commit/a5cdbf57042780a320c7c1d996a7027cb7cf44b9))
+* **main:** release w3console 1.13.1 ([#135](https://github.com/storacha/upload-service/issues/135)) ([0cf946d](https://github.com/storacha/upload-service/commit/0cf946d446e2243a20a1153855553724c3cbee5c))
+* **main:** release w3console 1.14.0 ([#137](https://github.com/storacha/upload-service/issues/137)) ([928cd1e](https://github.com/storacha/upload-service/commit/928cd1e35504c3e44291b977c210b677cd89fb27))
+* **main:** release w3console 1.15.0 ([#139](https://github.com/storacha/upload-service/issues/139)) ([18c33d3](https://github.com/storacha/upload-service/commit/18c33d31dd2f0457e77a401eaea2b1d62ac33570))
+* **main:** release w3console 1.15.1 ([#141](https://github.com/storacha/upload-service/issues/141)) ([d82d22e](https://github.com/storacha/upload-service/commit/d82d22e712c61570c09a31052b759fa90ec71bc7))
+* **main:** release w3console 1.15.2 ([#145](https://github.com/storacha/upload-service/issues/145)) ([810224b](https://github.com/storacha/upload-service/commit/810224be91efbbc16889ba8e00d5047663bd6731))
+* **main:** release w3console 1.16.0 ([#146](https://github.com/storacha/upload-service/issues/146)) ([2a7dcaa](https://github.com/storacha/upload-service/commit/2a7dcaa1cb515ff3b4c5c6c2a814f3db9123d092))
+* **main:** release w3console 1.16.1 ([#160](https://github.com/storacha/upload-service/issues/160)) ([145b288](https://github.com/storacha/upload-service/commit/145b2883d26da1d9324e73eb6a5858ed71e7a28c))
+* **main:** release w3console 1.16.2 ([#164](https://github.com/storacha/upload-service/issues/164)) ([c3ea3be](https://github.com/storacha/upload-service/commit/c3ea3be5567ff17571ab68d5fc74aeb0de2d11aa))
+* **main:** release w3console 1.17.0 ([#166](https://github.com/storacha/upload-service/issues/166)) ([0ea9a86](https://github.com/storacha/upload-service/commit/0ea9a86a69e1974b33ab0ba07dc310b27ade33dc))
+* **main:** release w3console 1.17.1 ([#169](https://github.com/storacha/upload-service/issues/169)) ([7a77c70](https://github.com/storacha/upload-service/commit/7a77c7098d7c749d5037068c58d836e8b812d948))
+* **main:** release w3console 1.17.2 ([#172](https://github.com/storacha/upload-service/issues/172)) ([a118e11](https://github.com/storacha/upload-service/commit/a118e11a22c02c06f68a43b6e5d1e131cf7d44bd))
+* **main:** release w3console 1.17.3 ([#179](https://github.com/storacha/upload-service/issues/179)) ([7c1948e](https://github.com/storacha/upload-service/commit/7c1948ee997868e85f3e361fb7a91904e039a14c))
+* **main:** release w3console 1.17.4 ([#181](https://github.com/storacha/upload-service/issues/181)) ([217cd1e](https://github.com/storacha/upload-service/commit/217cd1ecd47a5862abfb85e4551217a9424ab5b8))
+* **main:** release w3console 1.17.5 ([#182](https://github.com/storacha/upload-service/issues/182)) ([9db003e](https://github.com/storacha/upload-service/commit/9db003e97e5e20f2967de240b4cb70f4f3cb6d64))
+* **main:** release w3console 1.17.6 ([#185](https://github.com/storacha/upload-service/issues/185)) ([152e230](https://github.com/storacha/upload-service/commit/152e230c4f6c1ef77d0d8e53e6882b149c483756))
+* nx sync ([5933677](https://github.com/storacha/upload-service/commit/5933677dff7326ecb53316e0081fc8ebc1a7a077))
+* Set `packageManager` ([#117](https://github.com/storacha/upload-service/issues/117)) ([a8c7c93](https://github.com/storacha/upload-service/commit/a8c7c93d33149f85907e9d81e4baf806fb59b4f1))
+* trigger deployment ([8051d81](https://github.com/storacha/upload-service/commit/8051d81827e9ca174874fe95459bf5f64b05f93b))
+* update copy ([#159](https://github.com/storacha/upload-service/issues/159)) ([60250f1](https://github.com/storacha/upload-service/commit/60250f11efd1bb87ae284028e543e6a160fa153d))
+* update deploy name ([184fe57](https://github.com/storacha/upload-service/commit/184fe577e892f856c153d27d6411c774908140c7))
+
 ## [1.17.6](https://github.com/storacha/console/compare/w3console-v1.17.5...w3console-v1.17.6) (2025-01-13)
 
 

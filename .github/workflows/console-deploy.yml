@@ -2,13 +2,26 @@ name: Deploy
 on:
   push:
     branches:
-      - old-main
+      - 'main'
+    paths:
+      - packages/console/**
   pull_request:
     branches:
-      - old-main
+      - 'main'
+    paths:
+      - packages/console/**
 jobs:
   test:
-    uses: ./.github/workflows/test.yml
+    name: Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./packages/console
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/pnpm
+      - run: pnpm lint
+      - run: pnpm test
 
   preview:
     name: Preview
@@ -18,11 +31,17 @@ jobs:
     permissions:
       pull-requests: write
     environment:
-      name: ${{ (github.ref_name == 'old-main') && 'staging' || format('preview-{0}', github.ref_name) }}
-      url: ${{ (github.ref_name == 'old-main') && 'https://staging.console.web3.storage/' || steps.cloudflare_url.outputs.stdout }}
+      name: ${{ (github.ref_name == 'main') && 'staging' || format('preview-{0}', github.ref_name) }}
+      url: ${{ (github.ref_name == 'main') && 'https://staging.console.web3.storage/' || steps.cloudflare_url.outputs.stdout }}
+    defaults:
+      run:
+        working-directory: ./packages/console
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/pnpm
+      - name: Build all dependencies
+        shell: bash
+        run: pnpm nx build
       - name: create .env from .env.tpl setting env variables used by `pnpm run pages:build`
         run: |
           # set env vars from template
@@ -37,32 +56,41 @@ jobs:
 
           # add vars configuring console frontend to use staging w3up as backend
           echo "NEXT_PUBLIC_W3UP_SERVICE_DID=did:web:staging.web3.storage" >> .env
-          echo "NEXT_PUBLIC_W3UP_SERVICE_URL=https://staging.up.web3.storage" >> .env
-          echo "NEXT_PUBLIC_W3UP_RECEIPTS_URL=https://staging.up.web3.storage/receipt/" >> .env
+          echo "NEXT_PUBLIC_W3UP_SERVICE_URL=https://staging.up.storacha.network" >> .env
+          echo "NEXT_PUBLIC_W3UP_RECEIPTS_URL=https://staging.up.storacha.network/receipt/" >> .env
           echo "NEXT_PUBLIC_W3UP_PROVIDER=did:web:staging.web3.storage" >> .env
           echo "NEXT_PUBLIC_W3UP_GATEWAY_HOST=https://staging.w3s.link" >> .env
           echo "NEXT_PUBLIC_W3UP_GATEWAY_ID=did:web:staging.w3s.link" >> .env
           echo "NEXT_PUBLIC_IPFS_GATEWAY_URL=https://%ROOT_CID%.ipfs-staging.w3s.link" >> .env
           echo "NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID=prctbl_1NzhdvF6A5ufQX5vKNZuRhie" >> .env
+          echo "NEXT_PUBLIC_STRIPE_TRIAL_PRICING_TABLE_ID=prctbl_1QIDHGF6A5ufQX5vOK9Xl8Up" >> .env
           echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51LO87hF6A5ufQX5viNsPTbuErzfavdrEFoBuaJJPfoIhzQXdOUdefwL70YewaXA32ZrSRbK4U4fqebC7SVtyeNcz00qmgNgueC" >> .env
           echo "NEXT_PUBLIC_STRIPE_CUSTOMER_PORTAL_LINK=https://billing.stripe.com/p/login/test_6oE29Gff99KO6mk8ww" >> .env
+          echo "NEXT_PUBLIC_REFERRAL_URL=http://staging.storacha.network/referred" >> .env
+          echo "NEXT_PUBLIC_REFERRALS_SERVICE_URL=https://staging-referrals.storacha.network" >> .env
+          echo "NEXT_PUBLIC_SENTRY_ENV=staging" >> .env
+          echo "NEXT_PUBLIC_HUMANODE_OAUTH_CALLBACK_URL=https://staging.up.storacha.network/oauth/humanode/callback" >> .env
+          echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" >> .env
       # as long as this uses https://github.com/cloudflare/next-on-pages/blob/dc529d7efa8f8568ea8f71b5cdcf78df89be6c12/packages/next-on-pages/bin/index.js,
       # env vars won't get passed through to wrangler, so if wrangler will need them, write them to .env like the previous step
       - run: pnpm pages:build
       - name: Deploy preview build to Cloudflare Pages
-        uses: mathiasvr/command-output@v1.1.0
         id: cloudflare
-        with:
-          run: npx wrangler pages deploy --project-name "$CLOUDFLARE_PAGES_PROJECT_NAME" --branch "$GITHUB_REF_NAME" --commit-hash "$GITHUB_SHA" .vercel/output/static
+        run: | 
+              {
+                echo 'WRANGLER_OUTPUT<<EOF'
+                pnpm wrangler pages deploy --project-name "$CLOUDFLARE_PAGES_PROJECT_NAME" --branch "$GITHUB_REF_NAME" --commit-hash "$GITHUB_SHA" .vercel/output/static
+                echo EOF
+              } >> "$GITHUB_OUTPUT"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CLOUDFLARE_PAGES_PROJECT_NAME: ${{ (github.ref_name == 'old-main') && 'console-web3-storage-staging' || 'console-web3-storage-preview' }}
+          CLOUDFLARE_PAGES_PROJECT_NAME: ${{ (github.ref_name == 'main') && 'console-web3-storage-staging' || 'console-web3-storage-preview' }}
       - name: Find Cloudflare Pages preview URL
         uses: mathiasvr/command-output@v1.1.0
         id: cloudflare_url
         with:
-          run: egrep -o 'https?://[^ ]+' <(echo "${{ steps.cloudflare.outputs.stdout }}")
+          run: egrep -o 'https?://[^ ]+' <(echo "${{ steps.cloudflare.outputs.WRANGLER_OUTPUT }}")
       - name: Find Current Pull Request
         uses: jwalton/gh-find-current-pr@v1.3.0
         id: finder
@@ -84,7 +112,7 @@ jobs:
             [build log](/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
 
   changelog:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/old-main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     name: Changelog
     runs-on: ubuntu-latest
     permissions:
@@ -93,27 +121,35 @@ jobs:
     outputs:
       releases_created: ${{ steps.tag-release.outputs.releases_created }}
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v3
+      - uses: google-github-actions/release-please-action@v3
         id: tag-release
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          command: manifest
+          config-file: .github/release-please-config.json
+          manifest-file: .github/release-please-manifest.json
+          default-branch: main
           release-type: node
-          monorepo-tags: true
-          changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Other Changes","hidden":false}]'
-
   release:
     name: Release
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/old-main' && needs.changelog.outputs.releases_created) || inputs.force_release
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changelog.outputs.releases_created)
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://console.web3.storage
+      url: https://console.storacha.network
     needs:
       - test
       - changelog
+    defaults:
+      run:
+        working-directory: ./packages/console
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          ref: 'main'
       - uses: ./.github/actions/pnpm
+      - name: Build all dependencies
+        shell: bash
+        run: pnpm nx build
       - name: create .env from .env.tpl setting env variables used by `pnpm run pages:build`
         run: |
           # set env vars from template
@@ -128,24 +164,28 @@ jobs:
 
           # add vars configuring console frontend to use staging w3up as backend
           echo "NEXT_PUBLIC_W3UP_SERVICE_DID=did:web:web3.storage" >> .env
-          echo "NEXT_PUBLIC_W3UP_SERVICE_URL=https://up.web3.storage" >> .env
-          echo "NEXT_PUBLIC_W3UP_RECEIPTS_URL=https://up.web3.storage/receipt/" >> .env
+          echo "NEXT_PUBLIC_W3UP_SERVICE_URL=https://up.storacha.network" >> .env
+          echo "NEXT_PUBLIC_W3UP_RECEIPTS_URL=https://up.storacha.network/receipt/" >> .env
           echo "NEXT_PUBLIC_W3UP_PROVIDER=did:web:web3.storage" >> .env
           echo "NEXT_PUBLIC_W3UP_GATEWAY_HOST=https://w3s.link" >> .env
           echo "NEXT_PUBLIC_W3UP_GATEWAY_ID=did:web:w3s.link" >> .env
           echo "NEXT_PUBLIC_IPFS_GATEWAY_URL=https://%ROOT_CID%.ipfs.w3s.link" >> .env
           echo "NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID=prctbl_1OCJ1qF6A5ufQX5vM5DWg4rA" >> .env
+          echo "NEXT_PUBLIC_STRIPE_TRIAL_PRICING_TABLE_ID=prctbl_1QPYsuF6A5ufQX5vdIGAe54g" >> .env
           echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_51LO87hF6A5ufQX5vQTO5BHyz8y9ybJp4kg1GsBjYuqwluuwtQTkbeZzkoQweFQDlv7JaGjuIdUWAyuwXp3tmCfsM005lJK9aS8" >> .env
           echo "NEXT_PUBLIC_STRIPE_CUSTOMER_PORTAL_LINK=https://billing.stripe.com/p/login/cN22aA62U6bO1sA9AA" >> .env
+          echo "NEXT_PUBLIC_REFERRAL_URL=http://storacha.network/referred" >> .env
+          echo "NEXT_PUBLIC_REFERRALS_SERVICE_URL=https://referrals.storacha.network" >> .env
+          echo "NEXT_PUBLIC_SENTRY_ENV=production" >> .env
+          echo "NEXT_PUBLIC_HUMANODE_OAUTH_CALLBACK_URL=https://up.storacha.network/oauth/humanode/callback" >> .env
+          echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" >> .env
       - run: pnpm pages:build
         # as long as this uses https://github.com/cloudflare/next-on-pages/blob/dc529d7efa8f8568ea8f71b5cdcf78df89be6c12/packages/next-on-pages/bin/index.js,
         # env vars won't get passed through to wrangler, so if wrangler will need them, write them to .env like the previous step
         env: {}
-      - name: Deploy preview build to Cloudflare Pages
-        uses: mathiasvr/command-output@v1.1.0
+      - name: Deploy production build to Cloudflare Pages
         id: cloudflare
-        with:
-          run: npx wrangler pages deploy --project-name console-web3-storage --branch "old-main" --commit-hash "$GITHUB_SHA" .vercel/output/static
+        run: npx wrangler pages deploy --project-name console-storacha --branch "main" --commit-hash "$GITHUB_SHA" .vercel/output/static
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}

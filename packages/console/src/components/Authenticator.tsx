@@ -3,7 +3,7 @@
 import {
   Authenticator as AuthCore,
   useAuthenticator
-} from '@w3ui/react'
+} from '@storacha/ui-react'
 import { Logo } from '../brand'
 import { TopLevelLoader } from './Loader'
 

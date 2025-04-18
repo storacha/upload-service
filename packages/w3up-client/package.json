@@ -1,6 +1,6 @@
 {
   "name": "@storacha/client",
-  "version": "1.2.4",
+  "version": "1.2.6",
   "description": "Client for the storacha.network w3up api",
   "publishConfig": {
     "access": "public"
@@ -95,6 +95,10 @@
       "types": "./dist/stores/memory.d.ts",
       "import": "./dist/stores/memory.js"
     },
+    "./service": {
+      "types": "./dist/service.d.ts",
+      "import": "./dist/service.js"
+    },
     "./types": "./dist/types.js"
   },
   "files": [
@@ -131,7 +135,8 @@
     "@ucanto/core": "catalog:",
     "@ucanto/interface": "catalog:",
     "@ucanto/principal": "catalog:",
-    "@ucanto/transport": "catalog:"
+    "@ucanto/transport": "catalog:",
+    "environment": "^1.1.0"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "catalog:",
@@ -145,8 +150,8 @@
     "@typescript-eslint/eslint-plugin": "catalog:",
     "@ucanto/server": "catalog:",
     "@web3-storage/access": "^20.1.0",
-    "@web3-storage/content-claims": "^4.0.4",
-    "@web3-storage/data-segment": "^5.0.0",
+    "@web3-storage/content-claims": "catalog:",
+    "@web3-storage/data-segment": "catalog:",
     "@web3-storage/w3up-client": "^16.5.1",
     "assert": "catalog:",
     "c8": "^7.13.0",
@@ -175,7 +180,8 @@
       "docs",
       "docs-generated",
       "coverage",
-      "src/types.js"
+      "src/types.js",
+      "browser.min.js"
     ]
   },
   "directories": {

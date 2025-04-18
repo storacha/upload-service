@@ -1,7 +1,7 @@
 'use client'
 
 import { ReactNode, useEffect, useState } from 'react'
-import { useW3 } from '@w3ui/react'
+import { useW3 } from '@storacha/ui-react'
 import StripePricingTable, { StripeTrialPricingTable } from './PricingTable';
 import { TopLevelLoader } from './Loader';
 import { Logo } from '@/brand';
@@ -9,7 +9,7 @@ import { usePlan } from '@/hooks';
 import { useRecordRefcode } from '@/lib/referrals/hooks';
 import { useSearchParams } from 'next/navigation';
 import { base64url } from 'multiformats/bases/base64'
-import { authorize } from '@web3-storage/capabilities/access';
+import { authorize } from '@storacha/capabilities/access';
 
 function HumanodeAuthLink ({className}: {className?: string}) {
   const [{ accounts, client }] = useW3()

@@ -1,5 +1,5 @@
 'use client'
-import { useW3 } from "@w3ui/react"
+import { useW3 } from "@storacha/ui-react"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 

@@ -38,6 +38,7 @@ export interface ServiceConf {
   access: ConnectionView<AccessService>
   upload: ConnectionView<UploadService>
   filecoin: ConnectionView<StorefrontService>
+  gateway: ConnectionView<ContentServeService>
 }
 
 export interface ContentServeService {
