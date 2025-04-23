@@ -3,6 +3,10 @@
 User Controlled Names. Mutable references authorized by UCAN, backed by merkle
 clocks.
 
+## Background
+
+Check out the [READMOAR.md](./READMOAR.md) and the [blog post](https://medium.com/@storacha/the-only-constant-in-life-is-mutability-938658692223).
+
 ## Install 
 
 ```sh
