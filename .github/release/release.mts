@@ -140,7 +140,16 @@ if (versionsArePending) {
         graph.nodes[project].data.sourceRoot ?? '.',
         'CHANGELOG.md'
       )
-      const changelogContents = fs.readFileSync(changelogPath).toString()
+      let changelogContents = ''
+      try {
+        changelogContents = fs.readFileSync(changelogPath).toString()
+      } catch (e) {
+        if (e && typeof e === 'object' && 'code' in e && e.code === 'ENOENT') {
+          log.debug('Changelog not found', changelogPath)
+        } else {
+          throw e
+        }
+      }
       const changelog = parseChangelogMarkdown(changelogContents)
       const changelogEntry =
         changelog.releases.find((release) => release.version === currentVersion)
