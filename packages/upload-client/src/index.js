@@ -131,7 +131,7 @@ export async function uploadCAR(conf, car, options = {}) {
  * @param {import('./types.js').UploadOptions} [options]
  * @returns {Promise<import('./types.js').AnyLink>}
  */
-async function uploadBlockStream(
+export async function uploadBlockStream(
   conf,
   blocks,
   { pieceHasher = PieceHasher, ...options } = {}
