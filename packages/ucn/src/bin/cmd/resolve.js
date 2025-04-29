@@ -7,14 +7,15 @@ import * as Name from '../../name.js'
  * @param {{ local?: boolean }} [options]
  */
 export const handler = async (id, options) => {
-  const [agent, names] = await Promise.all([getAgent(), getNames()])
+  const agent = await getAgent()
+  const names = await getNames(agent)
   const nameID = DID.parse(id).did()
   if (!names[nameID]) {
     console.error(`unknown name: ${nameID}`)
     process.exit(1)
   }
 
-  const name = Name.from(agent, names[nameID])
+  const name = names[nameID]
   const base = await getValue(name)
 
   let current
