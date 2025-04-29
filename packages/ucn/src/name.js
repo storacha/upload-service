@@ -183,9 +183,9 @@ export const extract = async (agent, bytes) => {
   return new Name(agent, rootValue.id, proofs)
 }
 
-/** @param {API.Revision} revision */
-export const format = async (revision) => {
-  const bytes = await revision.archive()
+/** @param {API.Name} name */
+export const format = async (name) => {
+  const bytes = await name.archive()
   const link = createLink(CAR.code, identity.digest(bytes))
   return link.toString(base64)
 }

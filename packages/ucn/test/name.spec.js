@@ -81,4 +81,26 @@ describe('name', () => {
     const name1 = await Name.create()
     assert.throws(() => Name.from(name0.agent, name1.proofs, { id: name1.did() }), /invalid proof/)
   })
+
+  it('should roundtrip archive/extract', async () => {
+    const name = await Name.create()
+    const bytes = await name.archive()
+    const extracted = await Name.extract(name.agent, bytes)
+    assert.equal(extracted.did(), name.did())
+    for (const p of name.proofs) {
+      const proofLink = isDelegation(p) ? p.cid : p
+      assert(extracted.proofs.some(ep => String(proofLink) === String(isDelegation(ep) ? ep.cid : ep)))
+    }
+  })
+
+  it('should roundtrip format/parse', async () => {
+    const name = await Name.create()
+    const str = await Name.format(name)
+    const extracted = await Name.parse(name.agent, str)
+    assert.equal(extracted.did(), name.did())
+    for (const p of name.proofs) {
+      const proofLink = isDelegation(p) ? p.cid : p
+      assert(extracted.proofs.some(ep => String(proofLink) === String(isDelegation(ep) ? ep.cid : ep)))
+    }
+  })
 })
