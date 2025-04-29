@@ -2,8 +2,10 @@ import {
   ConnectionView,
   Delegation,
   DID,
+  Proof,
   Principal,
   Signer,
+  UCANLink,
 } from '@ucanto/interface'
 import {
   EventLink as ClockEventLink,
@@ -20,9 +22,11 @@ export type {
   ConnectionView,
   Delegation,
   DID,
+  Proof,
   Principal,
   Service,
   Signer,
+  UCANLink,
 }
 
 export type ClockConnection = ConnectionView<Service<RawValue>>
@@ -41,12 +45,24 @@ export interface Name extends Principal {
    * the agent must be delegated the `clock/head` capability. For write
    * access the agent must be delegated the `clock/advance` capability.
    */
-  proof: Delegation
+  proofs: Proof[]
   /**
    * Create a delegation allowing the passed receipient to read and/or mutate
    * the current value of the name.
    */
   grant: (receipent: DID, options?: GrantOptions) => Promise<Delegation>
+  /**
+   * Export the name as IPLD blocks.
+   * 
+   * Note: this does NOT include signer information (the private key).
+   */
+  export: () => AsyncIterable<Block>
+  /**
+   * Encode the name as a CAR file.
+   * 
+   * Note: this does NOT include signer information (the private key).
+   */
+  archive: () => Promise<Uint8Array>
 }
 
 export interface GrantOptions {

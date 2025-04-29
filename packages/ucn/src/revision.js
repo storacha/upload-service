@@ -3,7 +3,7 @@ import {
   decodeEventBlock,
   encodeEventBlock,
 } from '@web3-storage/pail/clock'
-import { CAR, CBOR } from '@ucanto/core'
+import { CAR, CBOR, Schema } from '@ucanto/core'
 import { connect } from '@web3-storage/clock/client'
 import * as ClockCaps from '@web3-storage/clock/capabilities'
 import { create as createLink, parse as parseLink } from 'multiformats/link'
@@ -21,6 +21,10 @@ import * as Value from './value.js'
 /** @import * as API from './api.js' */
 
 const version = 'ucn/revision@1.0.0'
+
+export const ArchiveSchema = Schema.variant({
+  [version]: Schema.link({ version: 1 }),
+})
 
 class Revision {
   /** @param {API.EventBlockView} event */
@@ -92,13 +96,11 @@ export const extract = async (bytes) => {
   }
 
   const variant = CBOR.decode(roots[0].bytes)
-  if (!variant || typeof variant != 'object' || !(version in variant)) {
-    throw new Error('invalid or unsupported revision')
-  }
+  const [, link] = ArchiveSchema.match(variant)
 
-  const event = blocks.get(String(variant[version]))
+  const event = blocks.get(String(link))
   if (!event) {
-    throw new Error('missing revision block')
+    throw new Error('missing archive root block')
   }
 
   return new Revision(await decodeEventBlock(event.bytes))
@@ -161,7 +163,7 @@ export const publish = async (name, revision, options) => {
             audience: r.id,
             with: name.did(),
             nb: { event: revision.event.cid },
-            proofs: [name.proof],
+            proofs: name.proofs,
           })
           invocation.attach(revision.event)
           const receipt = await invocation.execute(r)
@@ -227,7 +229,7 @@ export const resolve = async (name, options) => {
           issuer: name.agent,
           audience: r.id,
           with: name.did(),
-          proofs: [name.proof],
+          proofs: name.proofs,
         })
         const receipt = await invocation.execute(r)
         if (receipt.out.error) throw receipt.out.error
