@@ -1,4 +1,12 @@
-import { CAR, CBOR, delegate, Schema, Delegation, sha256, isDelegation } from '@ucanto/core'
+import {
+  CAR,
+  CBOR,
+  delegate,
+  Schema,
+  Delegation,
+  sha256,
+  isDelegation,
+} from '@ucanto/core'
 import { generate } from '@ucanto/principal/ed25519'
 import { parse as parseDID } from '@ipld/dag-ucan/did'
 import { create as createLink, parse as parseLink } from 'multiformats/link'
@@ -42,8 +50,8 @@ class Name {
     return grant(this, receipient, options)
   }
 
-  async * export() {
-    yield * exportDAG(this)
+  async *export() {
+    yield* exportDAG(this)
   }
 
   async archive() {
@@ -86,7 +94,9 @@ export const from = (agent, proofs, options) => {
     for (const p of proofs) {
       if (!isDelegation(p)) continue
       if (p.audience.did() !== agent.did()) continue
-      const cap = p.capabilities.find(c => c.can === '*' || c.can.startsWith('clock/'))
+      const cap = p.capabilities.find(
+        (c) => c.can === '*' || c.can.startsWith('clock/')
+      )
       if (!cap || !cap.with.startsWith('did:')) continue
       id = parseDID(cap.with).did()
       break
@@ -107,7 +117,9 @@ export const from = (agent, proofs, options) => {
     }
     const isAudienceMatch = p.audience.did() === agent.did()
     if (!isAudienceMatch) continue
-    const cap = p.capabilities.find(c => c.can === '*' || c.can.startsWith('clock/'))
+    const cap = p.capabilities.find(
+      (c) => c.can === '*' || c.can.startsWith('clock/')
+    )
     if (!cap) continue
     const isIDMatch = cap.with === id
     if (!isIDMatch) continue
@@ -115,7 +127,9 @@ export const from = (agent, proofs, options) => {
     break
   }
   if (!hasProofMatch && !hasProofLinks) {
-    throw new Error(`invalid proof: could not find merkle clock proof for agent: ${agent.did()}`)
+    throw new Error(
+      `invalid proof: could not find merkle clock proof for agent: ${agent.did()}`
+    )
   }
 
   return new Name(agent, id, proofs)
@@ -128,12 +142,12 @@ export const from = (agent, proofs, options) => {
 export const exportDAG = async function* (name) {
   for (const p of name.proofs) {
     if (isDelegation(p)) {
-      yield * p.export()
+      yield* p.export()
     }
   }
   const bytes = CBOR.encode({
     id: name.did(),
-    proofs: name.proofs.map(p => isDelegation(p) ? p.cid : p)
+    proofs: name.proofs.map((p) => (isDelegation(p) ? p.cid : p)),
   })
   const digest = await sha256.digest(bytes)
   const cid = createLink(CBOR.code, digest)
@@ -175,11 +189,13 @@ export const extract = async (agent, bytes) => {
     throw new Error('missing archive root block')
   }
 
-  const rootValue = 
+  const rootValue =
     /** @type {{ id: API.DID, proofs: API.UCANLink[] }} */
     (CBOR.decode(rootBlock.bytes))
 
-  const proofs = rootValue.proofs.map(p => Delegation.view({ root: p, blocks }))
+  const proofs = rootValue.proofs.map((p) =>
+    Delegation.view({ root: p, blocks })
+  )
   return new Name(agent, rootValue.id, proofs)
 }
 

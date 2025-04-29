@@ -79,7 +79,10 @@ describe('name', () => {
   it('should fail to instantiate name for agent and proof mismatch', async () => {
     const name0 = await Name.create()
     const name1 = await Name.create()
-    assert.throws(() => Name.from(name0.agent, name1.proofs, { id: name1.did() }), /invalid proof/)
+    assert.throws(
+      () => Name.from(name0.agent, name1.proofs, { id: name1.did() }),
+      /invalid proof/
+    )
   })
 
   it('should roundtrip archive/extract', async () => {
@@ -89,7 +92,11 @@ describe('name', () => {
     assert.equal(extracted.did(), name.did())
     for (const p of name.proofs) {
       const proofLink = isDelegation(p) ? p.cid : p
-      assert(extracted.proofs.some(ep => String(proofLink) === String(isDelegation(ep) ? ep.cid : ep)))
+      assert(
+        extracted.proofs.some(
+          (ep) => String(proofLink) === String(isDelegation(ep) ? ep.cid : ep)
+        )
+      )
     }
   })
 
@@ -100,7 +107,11 @@ describe('name', () => {
     assert.equal(extracted.did(), name.did())
     for (const p of name.proofs) {
       const proofLink = isDelegation(p) ? p.cid : p
-      assert(extracted.proofs.some(ep => String(proofLink) === String(isDelegation(ep) ? ep.cid : ep)))
+      assert(
+        extracted.proofs.some(
+          (ep) => String(proofLink) === String(isDelegation(ep) ? ep.cid : ep)
+        )
+      )
     }
   })
 })

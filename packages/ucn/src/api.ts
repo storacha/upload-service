@@ -53,13 +53,13 @@ export interface Name extends Principal {
   grant: (receipent: DID, options?: GrantOptions) => Promise<Delegation>
   /**
    * Export the name as IPLD blocks.
-   * 
+   *
    * Note: this does NOT include signer information (the private key).
    */
   export: () => AsyncIterable<Block>
   /**
    * Encode the name as a CAR file.
-   * 
+   *
    * Note: this does NOT include signer information (the private key).
    */
   archive: () => Promise<Uint8Array>

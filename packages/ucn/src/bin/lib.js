@@ -136,4 +136,4 @@ const isWritable = (c) => ['*', 'clock/*', 'clock/advance'].includes(c.can)
 
 /** @param {API.Proof[]} proofs */
 export const isReadOnly = (proofs) =>
-  proofs.some(p => isDelegation(p) && p.capabilities.some(isWritable))
+  proofs.some((p) => isDelegation(p) && p.capabilities.some(isWritable))
