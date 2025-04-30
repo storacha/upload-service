@@ -121,7 +121,7 @@ export const from = (agent, proofs, options) => {
       (c) => c.can === '*' || c.can.startsWith('clock/')
     )
     if (!cap) continue
-    const isIDMatch = cap.with === id
+    const isIDMatch = cap.with === 'ucan:*' || cap.with === id
     if (!isIDMatch) continue
     hasProofMatch = true
     break
