@@ -204,12 +204,17 @@ export const publish = async (name, revision, options) => {
 /**
  * Resolve the current value for the given name. Fails only if no remotes
  * respond successfully.
+ * 
+ * If all remotes respond with an empty head, i.e. there is no event published
+ * to the merkle clock to set the current value then an `NoValueError` is
+ * thrown, with a `ERR_NO_VALUE` code.
  *
  * @param {API.NameView} name
  * @param {object} [options]
  * @param {API.ValueView} [options.base] A known base value to use as the resolution base.
  * @param {API.ClockConnection[]} [options.remotes]
  * @param {API.BlockFetcher} [options.fetcher]
+ * @throws {NoValueError}
  * @returns {Promise<API.ValueView>}
  */
 export const resolve = async (name, options) => {
@@ -242,6 +247,7 @@ export const resolve = async (name, options) => {
   )
 
   if (!heads.flat().length) {
+    if (!errors.length) throw new NoValueError(`resolving name: no value`)
     if (errors.length === 1) throw errors[0]
     throw new Error('resolving name: no remotes responded successfully', {
       cause: errors,
@@ -265,4 +271,9 @@ export const resolve = async (name, options) => {
   )
 
   return Value.from(name, ...revisions)
+}
+
+export class NoValueError extends Error {
+  static code = /** @type {const} */ ('ERR_NO_VALUE')
+  code = NoValueError.code
 }

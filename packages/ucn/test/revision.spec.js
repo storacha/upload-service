@@ -260,4 +260,21 @@ describe('revision', () => {
   })
 
   it.skip('should publish to multiple remotes')
+
+  it('should throw when resolving but no value is published', async () => {
+    const service = createService({
+      headStore: new MemoryHeadStorage(),
+      blockFetcher: { get: async () => undefined },
+      blockCache: new MemoryBlockstore(),
+    })
+
+    const id = fixtures.service
+    const server = createServer(id, service)
+    const remote = connect({ id, codec: CAR.outbound, channel: server })
+    const name = await Name.create(fixtures.alice)
+
+    await expect(
+      Revision.resolve(name, { remotes: [remote] })
+    ).rejects.toThrow(/no value/)
+  })
 })

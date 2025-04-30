@@ -43,16 +43,23 @@ requests to remote peer(s). If no remote peers are specified, then the Storacha
 rendezvous peer is used.
 
 ```js
-import { Name, Agent, Proof } from '@storacha/ucn'
+import { Name, Agent, Proof, NoValueError } from '@storacha/ucn'
 
 // see "Signing Key and Proof Management" below.
 const agent = Agent.parse(privateKey)
 const name = Name.parse(agent, nameArchive)
 
-const { value } = await Name.resolve(name)
+try {
+  const { value } = await Name.resolve(name)
 
-console.log(value)
-// e.g. /ipfs/bafkreiem4twkqzsq2aj4shbycd4yvoj2cx72vezicletlhi7dijjciqpui
+  console.log(value)
+  // e.g. /ipfs/bafkreiem4twkqzsq2aj4shbycd4yvoj2cx72vezicletlhi7dijjciqpui
+} catch (err) {
+  if (err instanceof NoValueError) {
+    console.log(`No value has been published for ${name}`)
+  }
+  throw err
+}
 ```
 
 ### Update

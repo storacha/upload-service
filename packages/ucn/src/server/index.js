@@ -100,6 +100,9 @@ export const createService = ({ headStore, blockFetcher, blockCache }) => {
         const resource = DID.parse(capability.with).did()
         const headGet = await headStore.get(resource)
         if (headGet.error) {
+          if (headGet.error.name === 'NotFound') {
+            return ok({ head: [] })
+          }
           return headGet
         }
 
