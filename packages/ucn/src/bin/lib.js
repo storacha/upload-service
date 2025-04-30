@@ -32,7 +32,7 @@ export const getAgent = async () => {
 
 /**
  * @param {API.Signer} agent
- * @returns {Promise<Record<API.DID, API.Name>>}
+ * @returns {Promise<Record<API.DID, API.NameView>>}
  */
 export const getNames = async (agent) => {
   const namesPath = path.join(await getDataDir(), 'names.json')
@@ -44,7 +44,7 @@ export const getNames = async (agent) => {
     return {}
   }
   const data = dagJSON.decode(namesBytes)
-  /** @type {Record<API.DID, API.Name>} */
+  /** @type {Record<API.DID, API.NameView>} */
   const result = {}
   for (const [k, v] of Object.entries(data)) {
     const extracted = await Name.extract(agent, v)
@@ -53,7 +53,7 @@ export const getNames = async (agent) => {
   return result
 }
 
-/** @param {Record<API.DID, API.Name>} names */
+/** @param {Record<API.DID, API.NameView>} names */
 export const setNames = async (names) => {
   const namesPath = path.join(await getDataDir(), 'names.json')
   /** @type {Record<string, Uint8Array>} */
@@ -65,21 +65,21 @@ export const setNames = async (names) => {
   await fs.writeFile(namesPath, dagJSON.encode(data), { mode: 0o770 })
 }
 
-/** @param {API.Name} name */
+/** @param {API.NameView} name */
 export const addName = async (name) => {
   const names = await getNames(name.agent)
   names[name.did()] = name
   await setNames(names)
 }
 
-/** @param {API.Name} name */
+/** @param {API.NameView} name */
 export const removeName = async (name) => {
   const names = await getNames(name.agent)
   delete names[name.did()]
   await setNames(names)
 }
 
-/** @param {API.Revision} revision */
+/** @param {API.RevisionView} revision */
 export const storeRevision = async (revision) => {
   const bytes = await revision.archive()
   const tmpPath = path.join(os.tmpdir(), revision.event.cid.toString())
@@ -88,8 +88,8 @@ export const storeRevision = async (revision) => {
 }
 
 /**
- * @param {API.Name} name
- * @returns {Promise<API.Value|undefined>}
+ * @param {API.NameView} name
+ * @returns {Promise<API.ValueView|undefined>}
  */
 export const getValue = async (name) => {
   const valuePath = await getValuePath(name)
@@ -108,7 +108,7 @@ export const getValue = async (name) => {
   return Value.from(name, ...revision)
 }
 
-/** @param {API.Value} value */
+/** @param {API.ValueView} value */
 export const setValue = async (value) => {
   const valuePath = await getValuePath(value.name)
   const data = { revision: /** @type {Uint8Array[]} */ ([]) }
@@ -118,7 +118,7 @@ export const setValue = async (value) => {
   return fs.writeFile(valuePath, dagJSON.encode(data), { mode: 0o770 })
 }
 
-/** @param {API.Name} name */
+/** @param {API.NameView} name */
 const getValuePath = async (name) => {
   const dir = path.join(await getDataDir(), 'values')
   await fs.mkdir(dir, { recursive: true, mode: 0o700 })

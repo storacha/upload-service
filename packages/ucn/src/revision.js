@@ -58,8 +58,8 @@ export const v0 = async (value) => {
 /**
  * Create a revision of a previous _value_.
  *
- * @param {API.Value} previous
- * @param {API.RawValue} next
+ * @param {API.ValueView} previous
+ * @param {API.Value} next
  */
 export const increment = async (previous, next) => {
   const event = await encodeEventBlock({
@@ -75,7 +75,7 @@ export const from = (event) => new Revision(event)
 /**
  * Encode the revision as a CAR file.
  *
- * @param {API.Revision} revision
+ * @param {API.RevisionView} revision
  * @returns {Promise<Uint8Array>}
  */
 export const archive = async (revision) => {
@@ -106,7 +106,7 @@ export const extract = async (bytes) => {
   return new Revision(await decodeEventBlock(event.bytes))
 }
 
-/** @param {API.Revision} revision */
+/** @param {API.RevisionView} revision */
 export const format = async (revision) => {
   const bytes = await revision.archive()
   const link = createLink(CAR.code, identity.digest(bytes))
@@ -133,8 +133,8 @@ export const defaultRemotes = [connect()]
  * Publish a revision for the passed name to the network. Fails only if the
  * revision was not able to be published to at least 1 remote.
  *
- * @param {API.Name} name
- * @param {API.Revision} revision
+ * @param {API.NameView} name
+ * @param {API.RevisionView} revision
  * @param {object} [options]
  * @param {API.ClockConnection[]} [options.remotes]
  * @param {API.BlockFetcher} [options.fetcher]
@@ -205,12 +205,12 @@ export const publish = async (name, revision, options) => {
  * Resolve the current value for the given name. Fails only if no remotes
  * respond successfully.
  *
- * @param {API.Name} name
+ * @param {API.NameView} name
  * @param {object} [options]
- * @param {API.Value} [options.base] A known base value to use as the resolution base.
+ * @param {API.ValueView} [options.base] A known base value to use as the resolution base.
  * @param {API.ClockConnection[]} [options.remotes]
  * @param {API.BlockFetcher} [options.fetcher]
- * @returns {Promise<API.Value>}
+ * @returns {Promise<API.ValueView>}
  */
 export const resolve = async (name, options) => {
   const remotes = [...(options?.remotes ?? [])]

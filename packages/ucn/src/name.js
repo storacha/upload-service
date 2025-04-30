@@ -45,7 +45,7 @@ class Name {
     return this.did()
   }
 
-  /** @type {API.Name['grant']} */
+  /** @type {API.NameView['grant']} */
   grant(receipient, options) {
     return grant(this, receipient, options)
   }
@@ -61,7 +61,7 @@ class Name {
 
 /**
  * @param {API.Signer} [agent]
- * @returns {Promise<API.Name>}
+ * @returns {Promise<API.NameView>}
  */
 export const create = async (agent) => {
   agent = agent ?? (await generate())
@@ -93,7 +93,7 @@ export const create = async (agent) => {
  * @param {object} [options]
  * @param {API.DID} [options.id] DID of the name. If not provided it will be
  * derived from the proofs if possible.
- * @returns {API.Name}
+ * @returns {API.NameView}
  */
 export const from = (agent, proofs, options) => {
   let id = options?.id
@@ -144,7 +144,7 @@ export const from = (agent, proofs, options) => {
 }
 
 /**
- * @param {API.Name} name
+ * @param {API.NameView} name
  * @returns {AsyncIterableIterator<API.Block>}
  */
 export const exportDAG = async function* (name) {
@@ -165,7 +165,7 @@ export const exportDAG = async function* (name) {
 /**
  * Encode the name as a CAR file.
  *
- * @param {API.Name} name
+ * @param {API.NameView} name
  * @returns {Promise<Uint8Array>}
  */
 export const archive = async (name) => {
@@ -207,7 +207,7 @@ export const extract = async (agent, bytes) => {
   return new Name(agent, rootValue.id, proofs)
 }
 
-/** @param {API.Name} name */
+/** @param {API.NameView} name */
 export const format = async (name) => {
   const bytes = await name.archive()
   const link = createLink(CAR.code, identity.digest(bytes))
@@ -238,7 +238,7 @@ export const parse = (agent, str) => {
  * Note: if the passed name is _read only_ and proofs contain links then this
  * function will NOT error, since resolution happens at invocation time.
  *
- * @param {API.Name} name
+ * @param {API.NameView} name
  * @param {API.DID} recipient
  * @param {API.GrantOptions} [options]
  */

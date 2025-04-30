@@ -29,13 +29,12 @@ export type {
   UCANLink,
 }
 
-export type ClockConnection = ConnectionView<Service<RawValue>>
+export type ClockConnection = ConnectionView<Service<Value>>
 
 /**
- * Name is a merkle clock backed, UCAN authorized, mutable reference to a
- * resource.
+ * A merkle clock backed, UCAN authorized, mutable reference to a resource.
  */
-export interface Name extends Principal {
+export interface NameView extends Principal {
   /**
    * The agent that signs request to read/update the mutable reference.
    */
@@ -82,54 +81,54 @@ export interface GrantOptions {
  *
  * e.g. /ipfs/bafkreiem4twkqzsq2aj4shbycd4yvoj2cx72vezicletlhi7dijjciqpui
  */
-export type RawValue = string
+export type Value = string
 
 /**
  * A link to a name mutation event.
  */
-export type EventLink = ClockEventLink<RawValue>
+export type EventLink = ClockEventLink<Value>
 
 /**
  * A name mutation event.
  */
-export type EventView = ClockEventView<RawValue>
+export type EventView = ClockEventView<Value>
 
 /**
  * A name mutation event block.
  */
-export type EventBlock = Block<ClockEventView<RawValue>>
+export type EventBlock = Block<ClockEventView<Value>>
 
 /**
  * A name mutation event block with value.
  */
-export type EventBlockView = ClockEventBlockView<RawValue>
+export type EventBlockView = ClockEventBlockView<Value>
 
 /**
- * Value is the result of resolving the value of one or more revisions.
+ * The result of resolving the value of one or more revisions.
  */
-export interface Value {
+export interface ValueView {
   /**
    * The name the resolved value is associated with.
    */
-  name: Name
+  name: NameView
   /**
    * The resolved value.
    */
-  value: RawValue
+  value: Value
   /**
    * Revision(s) this resolution was calculated from.
    */
-  revision: Revision[]
+  revision: RevisionView[]
 }
 
 /**
- * Revision is a representation of a past, current or future value for a name.
+ * A representation of a past, current or future value for a name.
  */
-export interface Revision {
+export interface RevisionView {
   /**
    * The value associated with this revision.
    */
-  value: RawValue
+  value: Value
   /**
    * The mutation event that backs this revision.
    */
