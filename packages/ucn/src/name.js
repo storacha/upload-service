@@ -89,7 +89,7 @@ export const create = async (agent) => {
  * @param {API.Signer} agent Signer for invocations to read from or write to the
  * merkle clock.
  * @param {API.Proof[]} proofs Proof the passed agent can read from
- * (`clock/head`) or write to (`clock/advance`) the merkle clock. 
+ * (`clock/head`) or write to (`clock/advance`) the merkle clock.
  * @param {object} [options]
  * @param {API.DID} [options.id] DID of the name. If not provided it will be
  * derived from the proofs if possible.

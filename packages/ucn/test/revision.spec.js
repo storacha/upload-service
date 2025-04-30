@@ -273,8 +273,8 @@ describe('revision', () => {
     const remote = connect({ id, codec: CAR.outbound, channel: server })
     const name = await Name.create(fixtures.alice)
 
-    await expect(
-      Revision.resolve(name, { remotes: [remote] })
-    ).rejects.toThrow(/no value/)
+    await expect(Revision.resolve(name, { remotes: [remote] })).rejects.toThrow(
+      /no value/
+    )
   })
 })

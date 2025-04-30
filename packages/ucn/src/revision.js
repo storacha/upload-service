@@ -204,7 +204,7 @@ export const publish = async (name, revision, options) => {
 /**
  * Resolve the current value for the given name. Fails only if no remotes
  * respond successfully.
- * 
+ *
  * If all remotes respond with an empty head, i.e. there is no event published
  * to the merkle clock to set the current value then an `NoValueError` is
  * thrown, with a `ERR_NO_VALUE` code.
