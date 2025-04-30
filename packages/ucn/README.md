@@ -55,7 +55,7 @@ try {
   console.log(value)
   // e.g. /ipfs/bafkreiem4twkqzsq2aj4shbycd4yvoj2cx72vezicletlhi7dijjciqpui
 } catch (err) {
-  if (err instanceof NoValueError) {
+  if (err.code === NoValueError.code) {
     console.log(`No value has been published for ${name}`)
   }
   throw err
