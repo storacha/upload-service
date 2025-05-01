@@ -92,10 +92,6 @@ cli
     '--shard-size',
     'Shard uploads into CAR files of approximately this size in bytes.'
   )
-  .option(
-    '--concurrent-requests',
-    'Send up to this many CAR shards concurrently.'
-  )
   .action(upload)
 
 cli

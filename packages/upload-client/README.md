@@ -201,7 +201,6 @@ function uploadDirectory(
     onShardStored?: ShardStoredCallback
     onDirectoryEntryLink?: DirectoryEntryLinkCallback
     shardSize?: number
-    concurrentRequests?: number
   } = {}
 ): Promise<CID>
 ```
@@ -223,7 +222,6 @@ function uploadFile(
     signal?: AbortSignal
     onShardStored?: ShardStoredCallback
     shardSize?: number
-    concurrentRequests?: number
   } = {}
 ): Promise<CID>
 ```
@@ -245,7 +243,6 @@ function uploadCAR(
     signal?: AbortSignal
     onShardStored?: ShardStoredCallback
     shardSize?: number
-    concurrentRequests?: number
     rootCID?: CID
   } = {}
 ): Promise<CID>
