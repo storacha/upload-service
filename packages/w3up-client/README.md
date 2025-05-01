@@ -767,7 +767,7 @@ Register a set of stored CAR files as an "upload" in the system. A DAG can be sp
 
 ```ts
 function list(
-  options: { retries?: number; signal?: AbortSignal } = {}
+  options: { cursor?: string, size?: number, retries?: number; signal?: AbortSignal } = {}
 ): Promise<ListResponse<UploadListResult>>
 ```
 
