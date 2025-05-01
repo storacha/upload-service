@@ -110,7 +110,6 @@ export async function authorize(email, opts = {}) {
  *   verbose?: boolean
  *   wrap?: boolean
  *   'shard-size'?: number
- *   'concurrent-requests'?: number
  * }} [opts]
  */
 export async function upload(firstPath, opts) {
@@ -203,9 +202,6 @@ export async function upload(firstPath, opts) {
       }
     },
     shardSize: opts?.['shard-size'] && parseInt(String(opts?.['shard-size'])),
-    concurrentRequests:
-      opts?.['concurrent-requests'] &&
-      parseInt(String(opts?.['concurrent-requests'])),
     receiptsEndpoint: client._receiptsEndpoint.toString(),
   })
   spinner.stopAndPersist({

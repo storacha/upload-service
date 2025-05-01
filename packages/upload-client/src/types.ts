@@ -363,12 +363,7 @@ export interface ShardingOptions {
 
 export interface ShardStoringOptions
   extends RequestOptions,
-    UploadProgressTrackable {
-  /**
-   * The number of concurrent requests to store shards. Default 3.
-   */
-  concurrentRequests?: number
-}
+    UploadProgressTrackable {}
 
 export interface UploadOptions
   extends RequestOptions,

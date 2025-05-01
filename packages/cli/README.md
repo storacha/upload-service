@@ -84,7 +84,6 @@ Upload file(s) to web3.storage. The IPFS Content ID (CID) for your files is calc
 - `-H, --hidden` Include paths that start with ".".
 - `-c, --car` File is a CAR file.
 - `--shard-size` Shard uploads into CAR files of approximately this size in bytes.
-- `--concurrent-requests` Send up to this many CAR shards concurrently.
 
 ### `storacha ls`
 
