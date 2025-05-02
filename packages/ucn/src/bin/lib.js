@@ -126,7 +126,7 @@ const getValuePath = async (name) => {
 }
 
 const getDataDir = async () => {
-  const dir = path.join(os.homedir(), '.ucn')
+  const dir = process.env.UCN_DATA_DIR ?? path.join(os.homedir(), '.ucn')
   await fs.mkdir(dir, { recursive: true, mode: 0o700 })
   return dir
 }

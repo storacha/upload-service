@@ -81,4 +81,38 @@ cli
     await handler(proof)
   })
 
+cli
+  .command('server')
+  .describe('Start a UCN server for receiving name updates.')
+  .option('-p, --port', 'Port to start the server on.', 3000)
+  .action(async (options) => {
+    const { handler } = await import('./cmd/server.js')
+    await handler(options)
+  })
+
+// cli
+//   .command('remote')
+//   .alias('remote ls')
+//   .describe('List configured remotes.')
+//   .action(async (options) => {
+//     const { handler } = await import('./cmd/remote/ls.js')
+//     await handler(options)
+//   })
+
+// cli
+//   .command('remote add <id> <url>')
+//   .describe('Add a remote.')
+//   .action(async (options) => {
+//     const { handler } = await import('./cmd/remote/add.js')
+//     await handler(options)
+//   })
+
+// cli
+//   .command('remote rm <id>')
+//   .describe('Remove a remote.')
+//   .action(async (options) => {
+//     const { handler } = await import('./cmd/remote/remove.js')
+//     await handler(options)
+//   })
+
 cli.parse(process.argv)
