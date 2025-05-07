@@ -1,7 +1,22 @@
 import type { Client, Space, Account, ServiceConfig } from '@storacha/ui-core'
 
-import { useState, useEffect, useCallback } from 'react'
+import {
+  useState,
+  useEffect,
+  useCallback,
+  startTransition as reactStartTransition,
+} from 'react'
 import { STORE_SAVE_EVENT, createClient } from '@storacha/ui-core'
+
+// `startTransition` is a new API in React 18. If we're on an older React,
+// that's fine, we can just skip the transition. Older versions of React don't
+// do anything that would need to have this marked for them.
+const startTransition =
+  typeof reactStartTransition === 'function'
+    ? reactStartTransition
+    : (callback: () => void) => {
+        callback()
+      }
 
 export type DatamodelProps = ServiceConfig & {
   receiptsEndpoint?: URL
@@ -31,10 +46,12 @@ export function useDatamodel({
       connection,
       receiptsEndpoint,
     })
-    setClient(client)
-    setEvents(events)
-    setAccounts(Object.values(client.accounts()))
-    setSpaces(client.spaces())
+    startTransition(() => {
+      setClient(client)
+      setEvents(events)
+      setAccounts(Object.values(client.accounts()))
+      setSpaces(client.spaces())
+    })
     await client.capability.access.claim()
   }, [servicePrincipal, connection])
 
@@ -49,8 +66,10 @@ export function useDatamodel({
     if (client === undefined || events === undefined) return
 
     const handleStoreSave: () => void = () => {
-      setAccounts(Object.values(client.accounts()))
-      setSpaces(client.spaces())
+      startTransition(() => {
+        setAccounts(Object.values(client.accounts()))
+        setSpaces(client.spaces())
+      })
     }
 
     events.addEventListener(STORE_SAVE_EVENT, handleStoreSave)
@@ -65,10 +84,12 @@ export function useDatamodel({
     const { store } = await createClient({ servicePrincipal, connection })
     await store.reset()
     // set state back to defaults
-    setClient(undefined)
-    setEvents(undefined)
-    setAccounts([])
-    setSpaces([])
+    startTransition(() => {
+      setClient(undefined)
+      setEvents(undefined)
+      setAccounts([])
+      setSpaces([])
+    })
     // set state up again
     await setupClient()
   }
