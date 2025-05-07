@@ -160,6 +160,8 @@ describe('space/blob capabilities', function () {
       validateAuthorization,
     })
     assert.ok(result.error)
-    assert(result.error.message.includes('violates imposed replicas constraint'))
+    assert(
+      result.error.message.includes('violates imposed replicas constraint')
+    )
   })
 })

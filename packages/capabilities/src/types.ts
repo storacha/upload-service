@@ -532,8 +532,12 @@ export type Blob = InferInvokedCapability<typeof BlobCaps.blob>
 export type BlobAllocate = InferInvokedCapability<typeof BlobCaps.allocate>
 export type BlobAccept = InferInvokedCapability<typeof BlobCaps.accept>
 export type BlobReplica = InferInvokedCapability<typeof BlobReplicaCaps.replica>
-export type BlobReplicaAllocate = InferInvokedCapability<typeof BlobReplicaCaps.allocate>
-export type BlobReplicaTransfer = InferInvokedCapability<typeof BlobReplicaCaps.transfer>
+export type BlobReplicaAllocate = InferInvokedCapability<
+  typeof BlobReplicaCaps.allocate
+>
+export type BlobReplicaTransfer = InferInvokedCapability<
+  typeof BlobReplicaCaps.transfer
+>
 export type SpaceBlob = InferInvokedCapability<typeof SpaceBlobCaps.blob>
 export type SpaceBlobAdd = InferInvokedCapability<typeof SpaceBlobCaps.add>
 export type SpaceBlobRemove = InferInvokedCapability<

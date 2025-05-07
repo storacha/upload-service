@@ -32,7 +32,7 @@ export const replica = capability({
 /**
  * The `blob/replica/allocate` capability that allows an agent to allocate a
  * Blob for replication into a space identified by did:key in the `with` field.
- * 
+ *
  * The Allocate task receipt includes an async task that will be performed by
  * a storage node: `blob/replica/transfer`. The `blob/replica/transfer` task is
  * completed when the storage node has transferred the blob from its location to

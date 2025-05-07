@@ -13,7 +13,14 @@
  */
 import { equals as SpaceBlobCapabilities } from 'uint8arrays/equals'
 import { capability, Schema, fail, ok } from '@ucanto/validator'
-import { equalBlob, equalWith, SpaceDID, and, equal, checkLink } from '../utils.js'
+import {
+  equalBlob,
+  equalWith,
+  SpaceDID,
+  and,
+  equal,
+  checkLink,
+} from '../utils.js'
 
 /**
  * Agent capabilities for Blob protocol
