@@ -613,9 +613,14 @@ export interface SpaceBlobReplicateSuccess {
   site: UCANAwait<'.out.ok.site'>[]
 }
 
+/** Too many or too few replicas were instructed. */
+export interface ReplicationCountRangeError extends Failure {
+  name: 'ReplicationCountRangeError'
+}
+
 /** There are not enough replication nodes available to replicate the data. */
-export interface InsufficientReplicationNodes extends Failure {
-  name: 'InsufficientReplicationNodes'
+export interface ReplicationCandidateUnavailable extends Failure {
+  name: 'ReplicationCandidateUnavailable'
 }
 
 /** Blob to replicate was not found in the space. */
@@ -623,8 +628,9 @@ export interface ReplicationSourceNotFound extends Failure {
   name: 'ReplicationSourceNotFound'
 }
 
-export type SpaceBlobReplicateFailure = 
-  | InsufficientReplicationNodes
+export type SpaceBlobReplicateFailure =
+  | ReplicationCountRangeError
+  | ReplicationCandidateUnavailable
   | ReplicationSourceNotFound
   | Failure
 
