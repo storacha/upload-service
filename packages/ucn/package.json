@@ -1,6 +1,6 @@
 {
   "name": "@storacha/ucn",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "User Controlled Names. Mutable references authorized by UCAN, backed by merkle clocks.",
   "type": "module",
   "main": "dist/index.js",

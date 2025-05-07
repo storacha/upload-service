@@ -1,3 +1,17 @@
+## 1.2.15 (2025-05-07)
+
+### 🩹 Fixes
+
+- fix: remove unused option for concurrent requests ([#244](https://github.com/storacha/upload-service/pull/244))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.2.8
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.2.13 (2025-04-28)
 
 ### 🧱 Updated Dependencies
