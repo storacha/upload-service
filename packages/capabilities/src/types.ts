@@ -21,7 +21,8 @@ import {
 import * as SpaceCaps from './space.js'
 import * as provider from './provider.js'
 import { top } from './top.js'
-import * as BlobCaps from './blob.js'
+import * as BlobCaps from './blob/index.js'
+import * as BlobReplicaCaps from './blob/replica/index.js'
 import * as SpaceBlobCaps from './space/blob.js'
 import * as W3sBlobCaps from './web3.storage/blob.js'
 import * as HTTPCaps from './http.js'
@@ -530,6 +531,9 @@ export interface SliceNotFound extends Failure {
 export type Blob = InferInvokedCapability<typeof BlobCaps.blob>
 export type BlobAllocate = InferInvokedCapability<typeof BlobCaps.allocate>
 export type BlobAccept = InferInvokedCapability<typeof BlobCaps.accept>
+export type BlobReplica = InferInvokedCapability<typeof BlobReplicaCaps.replica>
+export type BlobReplicaAllocate = InferInvokedCapability<typeof BlobReplicaCaps.allocate>
+export type BlobReplicaTransfer = InferInvokedCapability<typeof BlobReplicaCaps.transfer>
 export type SpaceBlob = InferInvokedCapability<typeof SpaceBlobCaps.blob>
 export type SpaceBlobAdd = InferInvokedCapability<typeof SpaceBlobCaps.add>
 export type SpaceBlobRemove = InferInvokedCapability<
@@ -537,6 +541,9 @@ export type SpaceBlobRemove = InferInvokedCapability<
 >
 export type SpaceBlobList = InferInvokedCapability<typeof SpaceBlobCaps.list>
 export type SpaceBlobGet = InferInvokedCapability<typeof SpaceBlobCaps.get>
+export type SpaceBlobReplicate = InferInvokedCapability<
+  typeof SpaceBlobCaps.replicate
+>
 /** @deprecated */
 export type W3sBlob = InferInvokedCapability<typeof W3sBlobCaps.blob>
 /** @deprecated */
@@ -597,6 +604,13 @@ export interface SpaceBlobGetSuccess extends BlobItem {}
 // TODO: make types more specific
 export type SpaceBlobGetFailure = Ucanto.Failure
 
+// Blob replicate
+export interface SpaceBlobReplicateSuccess {
+  site: UCANAwait<'.out.ok.site'>[]
+}
+
+export type SpaceBlobReplicateFailure = Ucanto.Failure
+
 // Blob allocate
 export interface BlobAllocateSuccess {
   size: number
@@ -630,6 +644,21 @@ export interface AllocatedMemoryHadNotBeenWrittenTo extends Ucanto.Failure {
 export type BlobAcceptFailure =
   | AllocatedMemoryHadNotBeenWrittenTo
   | Ucanto.Failure
+
+// Blob replica allocate
+export interface BlobReplicaAllocateSuccess {
+  size: number
+}
+
+export type BlobReplicaAllocateFailure = Ucanto.Failure
+
+// Blob replica transfer
+export interface BlobReplicaTransferSuccess {
+  // A Link for a delegation with location commitment for the replicated blob.
+  site: Link
+}
+
+export type BlobReplicaTransferFailure = Ucanto.Failure
 
 // Storage errors
 export type StoragePutError = StorageOperationError
@@ -970,11 +999,15 @@ export type ServiceAbilityArray = [
   Blob['can'],
   BlobAllocate['can'],
   BlobAccept['can'],
+  BlobReplica['can'],
+  BlobReplicaAllocate['can'],
+  BlobReplicaTransfer['can'],
   SpaceBlob['can'],
   SpaceBlobAdd['can'],
   SpaceBlobRemove['can'],
   SpaceBlobList['can'],
   SpaceBlobGet['can'],
+  SpaceBlobReplicate['can'],
   W3sBlob['can'],
   W3sBlobAllocate['can'],
   W3sBlobAccept['can'],

@@ -13,7 +13,7 @@
  */
 import { equals as SpaceBlobCapabilities } from 'uint8arrays/equals'
 import { capability, Schema, fail, ok } from '@ucanto/validator'
-import { equalBlob, equalWith, SpaceDID } from '../utils.js'
+import { equalBlob, equalWith, SpaceDID, and, equal, checkLink } from '../utils.js'
 
 /**
  * Agent capabilities for Blob protocol
@@ -170,6 +170,47 @@ export const get = capability({
     }
     return ok({})
   },
+})
+
+/**
+ * The `space/blob/replicate` capability allows an agent to replicate a Blob
+ * into a space identified by did:key in the `with` field.
+ *
+ * A replicate capability may only be invoked after a `blob/accept` receipt has
+ * been receieved, indicating the source node has successfully received the
+ * blob.
+ *
+ * Each Replicate task MUST target a different node, and they MUST NOT target
+ * the original upload target.
+ *
+ * The Replicate task receipt includes async tasks for `blob/replica/allocate`
+ * and `blob/replica/transfer`. Successful completion of the
+ * `blob/replica/transfer` task indicates the replication target has transferred
+ * and stored the blob. The number of `blob/replica/allocate` and
+ * `blob/replica/transfer` tasks corresponds directly to number of replicas
+ * requested.
+ */
+export const replicate = capability({
+  can: 'space/blob/replicate',
+  /** Space DID. */
+  with: Schema.did(),
+  nb: Schema.struct({
+    /** Blob to replicate. */
+    blob: content,
+    /**
+     * The number of replicas to ensure. e.g. `replicas: 2` will ensure 3 copies
+     * of the data exist in the network.
+     */
+    replicas: Schema.integer().greaterThan(0),
+    /** Link to a location commitment indicating where the Blob must be fetched from. */
+    site: Schema.link({ version: 1 }),
+  }),
+  derives: (claimed, delegated) =>
+    and(equalWith(claimed, delegated)) ||
+    and(equalBlob(claimed, delegated)) ||
+    and(equal(claimed.nb.replicas, delegated.nb.replicas, 'replicas')) ||
+    and(checkLink(claimed.nb.site, delegated.nb.site, 'site')) ||
+    ok({}),
 })
 
 // ⚠️ We export imports here so they are not omitted in generated typedefs
