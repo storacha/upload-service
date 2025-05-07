@@ -1,6 +1,6 @@
 {
   "name": "@storacha/ui-react",
-  "version": "2.6.8",
+  "version": "2.6.9",
   "description": "React adapter for w3ui.",
   "publishConfig": {
     "access": "public"
