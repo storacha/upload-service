@@ -613,7 +613,20 @@ export interface SpaceBlobReplicateSuccess {
   site: UCANAwait<'.out.ok.site'>[]
 }
 
-export type SpaceBlobReplicateFailure = Ucanto.Failure
+/** There are not enough replication nodes available to replicate the data. */
+export interface InsufficientReplicationNodes extends Failure {
+  name: 'InsufficientReplicationNodes'
+}
+
+/** Blob to replicate was not found in the space. */
+export interface ReplicationSourceNotFound extends Failure {
+  name: 'ReplicationSourceNotFound'
+}
+
+export type SpaceBlobReplicateFailure = 
+  | InsufficientReplicationNodes
+  | ReplicationSourceNotFound
+  | Failure
 
 // Blob allocate
 export interface BlobAllocateSuccess {
@@ -654,7 +667,7 @@ export interface BlobReplicaAllocateSuccess {
   size: number
 }
 
-export type BlobReplicaAllocateFailure = Ucanto.Failure
+export type BlobReplicaAllocateFailure = Failure
 
 // Blob replica transfer
 export interface BlobReplicaTransferSuccess {
@@ -662,7 +675,7 @@ export interface BlobReplicaTransferSuccess {
   site: Link
 }
 
-export type BlobReplicaTransferFailure = Ucanto.Failure
+export type BlobReplicaTransferFailure = Failure
 
 // Storage errors
 export type StoragePutError = StorageOperationError
