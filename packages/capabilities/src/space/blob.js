@@ -199,8 +199,7 @@ export const get = capability({
  */
 export const replicate = capability({
   can: 'space/blob/replicate',
-  /** Space DID. */
-  with: Schema.did(),
+  with: SpaceDID,
   nb: Schema.struct({
     /** Blob to replicate. */
     blob: content,
