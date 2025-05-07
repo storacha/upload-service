@@ -14,8 +14,8 @@ export const handler = async (b64proof) => {
     process.exit(1)
   }
 
-  const name = Name.from(agent, proof)
+  const name = Name.from(agent, [proof])
   await addName(name)
 
-  console.log(`${isReadOnly(proof) ? 'r-' : 'rw'}\t${name.did()}`)
+  console.log(`${isReadOnly([proof]) ? 'r-' : 'rw'}\t${name.did()}`)
 }

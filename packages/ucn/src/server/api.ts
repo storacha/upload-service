@@ -3,7 +3,7 @@ import { BlockFetcher, BlockPutter, EventLink } from '../api.js'
 
 export type {
   Service,
-  RawValue,
+  Value,
   EventLink,
   EventBlock,
   EventView,

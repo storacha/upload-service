@@ -176,7 +176,7 @@ describe('revision', () => {
     await Revision.publish(name0, rev0, { remotes: [remote] })
 
     const proof = await Name.grant(name0, fixtures.bob.did())
-    const name1 = Name.from(fixtures.bob, proof)
+    const name1 = Name.from(fixtures.bob, [proof])
 
     const res0 = await Revision.resolve(name1, { remotes: [remote] })
     assert.equal(res0.value, fixtures.values[0])
@@ -205,7 +205,7 @@ describe('revision', () => {
     const proof = await Name.grant(name0, fixtures.bob.did(), {
       readOnly: true,
     })
-    const name1 = Name.from(fixtures.bob, proof)
+    const name1 = Name.from(fixtures.bob, [proof])
 
     const res0 = await Revision.resolve(name1, { remotes: [remote] })
     const rev1 = await Revision.increment(res0, fixtures.values[1])
@@ -233,7 +233,7 @@ describe('revision', () => {
     assert.equal(pub0.value, fixtures.values[0])
 
     const proof = await Name.grant(name0, fixtures.bob.did())
-    const name1 = Name.from(fixtures.bob, proof)
+    const name1 = Name.from(fixtures.bob, [proof])
 
     // bob publishes on top of rev0
     const res0 = await Revision.resolve(name1, { remotes: [remote] })
@@ -260,4 +260,21 @@ describe('revision', () => {
   })
 
   it.skip('should publish to multiple remotes')
+
+  it('should throw when resolving but no value is published', async () => {
+    const service = createService({
+      headStore: new MemoryHeadStorage(),
+      blockFetcher: { get: async () => undefined },
+      blockCache: new MemoryBlockstore(),
+    })
+
+    const id = fixtures.service
+    const server = createServer(id, service)
+    const remote = connect({ id, codec: CAR.outbound, channel: server })
+    const name = await Name.create(fixtures.alice)
+
+    await expect(Revision.resolve(name, { remotes: [remote] })).rejects.toThrow(
+      /no value/
+    )
+  })
 })

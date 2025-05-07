@@ -14,20 +14,21 @@ import * as Name from '../../name.js'
  * @param {string} value
  */
 export const handler = async (id, value) => {
-  const [agent, names] = await Promise.all([getAgent(), getNames()])
+  const agent = await getAgent()
+  const names = await getNames(agent)
   const nameID = DID.parse(id).did()
   if (!names[nameID]) {
     console.error(`unknown name: ${nameID}`)
     process.exit(1)
   }
-  if (isReadOnly(names[nameID])) {
+
+  const name = names[nameID]
+  if (isReadOnly(name.proofs)) {
     console.error('unable to update read only name')
     process.exit(1)
   }
 
-  const name = Name.from(agent, names[nameID])
   const base = await getValue(name)
-
   let current
   try {
     current = await Name.resolve(name, { base })

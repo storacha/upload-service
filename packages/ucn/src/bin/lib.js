@@ -3,11 +3,12 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import childProcess from 'node:child_process'
 import * as ed25519 from '@ucanto/principal/ed25519'
-import * as Delegation from '@ucanto/core/delegation'
 import * as dagJSON from '@ipld/dag-json'
 import * as DID from '@ipld/dag-ucan/did'
 import * as Revision from '../revision.js'
 import * as Value from '../value.js'
+import { Name } from '../index.js'
+import { isDelegation } from '@ucanto/core'
 
 /** @import * as API from './api.js' */
 
@@ -29,8 +30,11 @@ export const getAgent = async () => {
   return ed25519.decode(data[data['default']])
 }
 
-/** @returns {Promise<Record<API.DID, API.Delegation>>} */
-export const getNames = async () => {
+/**
+ * @param {API.Signer} agent
+ * @returns {Promise<Record<API.DID, API.NameView>>}
+ */
+export const getNames = async (agent) => {
   const namesPath = path.join(await getDataDir(), 'names.json')
   let namesBytes
   try {
@@ -40,44 +44,42 @@ export const getNames = async () => {
     return {}
   }
   const data = dagJSON.decode(namesBytes)
-  /** @type {Record<API.DID, API.Delegation>} */
+  /** @type {Record<API.DID, API.NameView>} */
   const result = {}
   for (const [k, v] of Object.entries(data)) {
-    const extracted = await Delegation.extract(v)
-    if (extracted.error) throw extracted.error
-    result[DID.parse(k).did()] = extracted.ok
+    const extracted = await Name.extract(agent, v)
+    result[DID.parse(k).did()] = extracted
   }
   return result
 }
 
-/** @param {Record<API.DID, API.Delegation>} names */
+/** @param {Record<API.DID, API.NameView>} names */
 export const setNames = async (names) => {
   const namesPath = path.join(await getDataDir(), 'names.json')
   /** @type {Record<string, Uint8Array>} */
   const data = {}
   for (const [k, v] of Object.entries(names)) {
-    const archived = await Delegation.archive(v)
-    if (archived.error) throw archived.error
-    data[k] = archived.ok
+    const archived = await v.archive()
+    data[k] = archived
   }
   await fs.writeFile(namesPath, dagJSON.encode(data), { mode: 0o770 })
 }
 
-/** @param {API.Name} name */
+/** @param {API.NameView} name */
 export const addName = async (name) => {
-  const names = await getNames()
-  names[name.did()] = name.proof
+  const names = await getNames(name.agent)
+  names[name.did()] = name
   await setNames(names)
 }
 
-/** @param {API.DID} id */
-export const removeName = async (id) => {
-  const names = await getNames()
-  delete names[id]
+/** @param {API.NameView} name */
+export const removeName = async (name) => {
+  const names = await getNames(name.agent)
+  delete names[name.did()]
   await setNames(names)
 }
 
-/** @param {API.Revision} revision */
+/** @param {API.RevisionView} revision */
 export const storeRevision = async (revision) => {
   const bytes = await revision.archive()
   const tmpPath = path.join(os.tmpdir(), revision.event.cid.toString())
@@ -86,8 +88,8 @@ export const storeRevision = async (revision) => {
 }
 
 /**
- * @param {API.Name} name
- * @returns {Promise<API.Value|undefined>}
+ * @param {API.NameView} name
+ * @returns {Promise<API.ValueView|undefined>}
  */
 export const getValue = async (name) => {
   const valuePath = await getValuePath(name)
@@ -106,7 +108,7 @@ export const getValue = async (name) => {
   return Value.from(name, ...revision)
 }
 
-/** @param {API.Value} value */
+/** @param {API.ValueView} value */
 export const setValue = async (value) => {
   const valuePath = await getValuePath(value.name)
   const data = { revision: /** @type {Uint8Array[]} */ ([]) }
@@ -116,7 +118,7 @@ export const setValue = async (value) => {
   return fs.writeFile(valuePath, dagJSON.encode(data), { mode: 0o770 })
 }
 
-/** @param {API.Name} name */
+/** @param {API.NameView} name */
 const getValuePath = async (name) => {
   const dir = path.join(await getDataDir(), 'values')
   await fs.mkdir(dir, { recursive: true, mode: 0o700 })
@@ -132,6 +134,6 @@ const getDataDir = async () => {
 /** @param {API.Capability} c */
 const isWritable = (c) => ['*', 'clock/*', 'clock/advance'].includes(c.can)
 
-/** @param {API.Delegation} delegation */
-export const isReadOnly = (delegation) =>
-  !delegation.capabilities.some(isWritable)
+/** @param {API.Proof[]} proofs */
+export const isReadOnly = (proofs) =>
+  !proofs.some((p) => isDelegation(p) && p.capabilities.some(isWritable))

@@ -43,17 +43,23 @@ requests to remote peer(s). If no remote peers are specified, then the Storacha
 rendezvous peer is used.
 
 ```js
-import { Name, Agent, Proof } from '@storacha/ucn'
+import { Name, Agent, Proof, NoValueError } from '@storacha/ucn'
 
-// See "Signing Key and Proof Management" below.
+// see "Signing Key and Proof Management" below.
 const agent = Agent.parse(privateKey)
-const proof = Proof.parse(proofYouCan)
+const name = Name.parse(agent, nameArchive)
 
-const name = Name.from(agent, proof)
-const { value } = await Name.resolve(name)
+try {
+  const { value } = await Name.resolve(name)
 
-console.log(value)
-// e.g. /ipfs/bafkreiem4twkqzsq2aj4shbycd4yvoj2cx72vezicletlhi7dijjciqpui
+  console.log(value)
+  // e.g. /ipfs/bafkreiem4twkqzsq2aj4shbycd4yvoj2cx72vezicletlhi7dijjciqpui
+} catch (err) {
+  if (err.code === NoValueError.code) {
+    console.log(`No value has been published for ${name}`)
+  }
+  throw err
+}
 ```
 
 ### Update
@@ -103,6 +109,7 @@ const agent = await Agent.generate()
 const name = await Name.create(agent)
 
 // agent that should be granted access to update the name
+// use `agent.did()` to obtain
 const recipient = DID.parse('did:key:z6Mkve9LRa8nvXx6Gj2GXevZFN5zHb476FZLS7o1q7fJThFV')
 
 const proof = await Name.grant(name, recipient, { readOnly: false })
@@ -111,12 +118,27 @@ console.log(await Proof.format(proof))
 // e.g. mAYIEAL3bDhGiZXJvb3RzgGd2ZXJzaW9uAbcCAXESIPa/Vl+6QuagDVY...
 ```
 
+Using grant:
+
+```js
+import { Agent, Name, Proof } from '@storacha/ucn'
+
+// the private key that corresponds to `did:key:z6Mkve9LRa8nvXx6Gj2GXevZFN5zHb476FZLS7o1q7fJThFV`
+const agent = Agent.parse(process.env.UCN_PRIVATE_KEY)
+// the grant created by the other party
+const proof = await Proof.parse('mAYIEAL3bDhGiZXJvb3RzgGd2ZXJzaW9uAbcCAXESIPa/Vl+6QuagDVY...')
+const name = Name.from(agent, [proof])
+
+// ready to use! e.g.
+// `const current = await Name.resolve(name)`
+```
+
 ### Signing Key and Proof Management
 
 The **agent private key** is the key used to sign UCAN invocations to update the
 name.
 
-The **proof** is a UCAN delegation from the _name_ to the agent, authorizing it
+The **proofs** are UCAN delegations from the _name_ to the agent, authorizing it
 to read (`clock/head`) and/or mutate (`clock/advance`) the current value.
 
 Both of these items MUST be saved if a revision needs to be created in the
@@ -125,12 +147,28 @@ future.
 ```js
 import fs from 'node:fs'
 await fs.promises.writeFile('agent.priv', agent.encode())
-await fs.promises.writeFile('proof.ucan', await name.proof.archive())
+await fs.promises.writeFile('name.car', await name.archive())
 
 // or
 
+import { Agent, Name } from '@storacha/ucn'
 console.log(Agent.format(agent)) // base64 encoded string
-console.log(await Proof.format(name.proof)) // base64 encoded string
+console.log(await Name.format(name)) // base64 encoded string
+```
+
+Restoring exising credentials:
+
+```js
+import fs from 'node:fs'
+import { Agent, Name } from '@storacha/ucn'
+
+const agent = Agent.decode(await fs.promises.readFile('agent.priv'))
+const name = await Name.extract(agent, await fs.promises.readFile('name.car'))
+
+// or
+
+const agent = Agent.parse(process.env.UCN_PRIVATE_KEY)
+const name = await Name.parse(agent, process.env.UCN_NAME_ARCHIVE)
 ```
 
 ### Revision Persistence

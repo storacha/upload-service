@@ -3,7 +3,7 @@ import {
   decodeEventBlock,
   encodeEventBlock,
 } from '@web3-storage/pail/clock'
-import { CAR, CBOR } from '@ucanto/core'
+import { CAR, CBOR, Schema } from '@ucanto/core'
 import { connect } from '@web3-storage/clock/client'
 import * as ClockCaps from '@web3-storage/clock/capabilities'
 import { create as createLink, parse as parseLink } from 'multiformats/link'
@@ -21,6 +21,10 @@ import * as Value from './value.js'
 /** @import * as API from './api.js' */
 
 const version = 'ucn/revision@1.0.0'
+
+export const ArchiveSchema = Schema.variant({
+  [version]: Schema.link({ version: 1 }),
+})
 
 class Revision {
   /** @param {API.EventBlockView} event */
@@ -54,8 +58,8 @@ export const v0 = async (value) => {
 /**
  * Create a revision of a previous _value_.
  *
- * @param {API.Value} previous
- * @param {API.RawValue} next
+ * @param {API.ValueView} previous
+ * @param {API.Value} next
  */
 export const increment = async (previous, next) => {
   const event = await encodeEventBlock({
@@ -71,7 +75,7 @@ export const from = (event) => new Revision(event)
 /**
  * Encode the revision as a CAR file.
  *
- * @param {API.Revision} revision
+ * @param {API.RevisionView} revision
  * @returns {Promise<Uint8Array>}
  */
 export const archive = async (revision) => {
@@ -92,19 +96,17 @@ export const extract = async (bytes) => {
   }
 
   const variant = CBOR.decode(roots[0].bytes)
-  if (!variant || typeof variant != 'object' || !(version in variant)) {
-    throw new Error('invalid or unsupported revision')
-  }
+  const [, link] = ArchiveSchema.match(variant)
 
-  const event = blocks.get(String(variant[version]))
+  const event = blocks.get(String(link))
   if (!event) {
-    throw new Error('missing revision block')
+    throw new Error('missing archive root block')
   }
 
   return new Revision(await decodeEventBlock(event.bytes))
 }
 
-/** @param {API.Revision} revision */
+/** @param {API.RevisionView} revision */
 export const format = async (revision) => {
   const bytes = await revision.archive()
   const link = createLink(CAR.code, identity.digest(bytes))
@@ -131,8 +133,8 @@ export const defaultRemotes = [connect()]
  * Publish a revision for the passed name to the network. Fails only if the
  * revision was not able to be published to at least 1 remote.
  *
- * @param {API.Name} name
- * @param {API.Revision} revision
+ * @param {API.NameView} name
+ * @param {API.RevisionView} revision
  * @param {object} [options]
  * @param {API.ClockConnection[]} [options.remotes]
  * @param {API.BlockFetcher} [options.fetcher]
@@ -161,7 +163,7 @@ export const publish = async (name, revision, options) => {
             audience: r.id,
             with: name.did(),
             nb: { event: revision.event.cid },
-            proofs: [name.proof],
+            proofs: name.proofs,
           })
           invocation.attach(revision.event)
           const receipt = await invocation.execute(r)
@@ -203,12 +205,17 @@ export const publish = async (name, revision, options) => {
  * Resolve the current value for the given name. Fails only if no remotes
  * respond successfully.
  *
- * @param {API.Name} name
+ * If all remotes respond with an empty head, i.e. there is no event published
+ * to the merkle clock to set the current value then an `NoValueError` is
+ * thrown, with a `ERR_NO_VALUE` code.
+ *
+ * @param {API.NameView} name
  * @param {object} [options]
- * @param {API.Value} [options.base] A known base value to use as the resolution base.
+ * @param {API.ValueView} [options.base] A known base value to use as the resolution base.
  * @param {API.ClockConnection[]} [options.remotes]
  * @param {API.BlockFetcher} [options.fetcher]
- * @returns {Promise<API.Value>}
+ * @throws {NoValueError}
+ * @returns {Promise<API.ValueView>}
  */
 export const resolve = async (name, options) => {
   const remotes = [...(options?.remotes ?? [])]
@@ -227,7 +234,7 @@ export const resolve = async (name, options) => {
           issuer: name.agent,
           audience: r.id,
           with: name.did(),
-          proofs: [name.proof],
+          proofs: name.proofs,
         })
         const receipt = await invocation.execute(r)
         if (receipt.out.error) throw receipt.out.error
@@ -240,6 +247,7 @@ export const resolve = async (name, options) => {
   )
 
   if (!heads.flat().length) {
+    if (!errors.length) throw new NoValueError(`resolving name: no value`)
     if (errors.length === 1) throw errors[0]
     throw new Error('resolving name: no remotes responded successfully', {
       cause: errors,
@@ -263,4 +271,9 @@ export const resolve = async (name, options) => {
   )
 
   return Value.from(name, ...revisions)
+}
+
+export class NoValueError extends Error {
+  static code = /** @type {const} */ ('ERR_NO_VALUE')
+  code = NoValueError.code
 }
