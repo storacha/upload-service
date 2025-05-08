@@ -188,7 +188,7 @@ export type { SubscriptionsStorage }
 import { UsageStorage } from './types/usage.js'
 export type { UsageStorage }
 import { StorageGetError } from './types/storage.js'
-import { Registry as BlobRegistry, RoutingService } from './types/blob.js'
+import { Registry as BlobRegistry, ReplicaStorage, RoutingService } from './types/blob.js'
 export type * as BlobAPI from './types/blob.js'
 import { IPNIService, IndexServiceContext } from './types/index.js'
 import { Claim } from '@web3-storage/content-claims/client/api'
@@ -406,6 +406,9 @@ export type BlobServiceContext = SpaceServiceContext & {
   agentStore: AgentStore
   router: RoutingService
   registry: BlobRegistry
+  replicaStore: ReplicaStorage
+  /** The maximum number of replicas a client is allowed to request. */
+  maxReplicas?: number
 }
 
 export type UploadServiceContext = ConsumerServiceContext &
