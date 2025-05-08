@@ -17,7 +17,7 @@ export class Base {
   /**
    * @param {import('@storacha/access').AgentData} agentData
    * @param {object} [options]
-   * @param {import('./types.js').ServiceConf} [options.serviceConf]
+   * @param {Partial<import('./types.js').ServiceConfOptions>} [options.serviceConf]
    * @param {URL} [options.receiptsEndpoint]
    */
   constructor(agentData, options = {}) {

@@ -42,6 +42,20 @@ export interface ServiceConf {
   gateway: ConnectionView<ContentServeService>
 }
 
+export interface ServiceConfOptions {
+  access:
+    | ConnectionView<AccessService>
+    | { id?: import('./types.js').Principal<DID>; url: URL }
+  upload:
+    | ConnectionView<UploadService>
+    | { id?: import('./types.js').Principal<DID>; url: URL }
+  filecoin:
+    | ConnectionView<StorefrontService>
+    | { id?: import('./types.js').Principal<DID>; url: URL }
+  gateway:
+    | ConnectionView<ContentServeService>
+    | { id?: import('./types.js').Principal<DID>; url: URL }
+}
 export interface ContentServeService {
   access: {
     delegate: ServiceMethod<

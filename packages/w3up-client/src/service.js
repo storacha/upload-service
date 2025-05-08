@@ -116,7 +116,7 @@ export const gatewayServiceConnection = ({ id, url } = {}) =>
     }),
   })
 
-/** @type {(options: Partial<Record<'access'|'upload'|'filecoin'|'gateway', import('./types.js').ConnectionView<any> | { id?: import('./types.js').Principal<any>, url: URL }>>) => import('./types.js').ServiceConf} */
+/** @type {(options: Partial<import('./types.js').ServiceConfOptions>) => import('./types.js').ServiceConf} */
 export const serviceConf = (options = {}) => ({
   access:
     options.access && 'channel' in options.access
