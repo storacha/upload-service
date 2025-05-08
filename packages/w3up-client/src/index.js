@@ -11,6 +11,7 @@ import { generate } from '@ucanto/principal/rsa'
 import { Client } from './client.js'
 export * as Result from './result.js'
 export * as Account from './account.js'
+export * as Service from './service.js' // Allow access of serviceConf and connection creators.
 export * from './ability.js'
 export { authorizeContentServe } from './client.js'
 

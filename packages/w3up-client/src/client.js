@@ -569,7 +569,7 @@ export const authorizeContentServe = async (
       audience,
       [SpaceCapabilities.contentServe.can],
       {
-        expiration: options.expiration ?? Infinity,
+        expiration: options.expiration ?? Number.POSITIVE_INFINITY,
       }
     )
 
