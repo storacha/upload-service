@@ -1,3 +1,13 @@
+## 2.6.9 (2025-05-07)
+
+### 🩹 Fixes
+
+- Use `startTransition` in the hook implementations, on React versions where it's available. This marks state changes as lower priority, so (eg.) updating the list of spaces doesn't interrupt more immediate UI feedback. ([672e392b](https://github.com/storacha/upload-service/commit/672e392b))
+
+### ❤️ Thank You
+
+- Petra Jaros
+
 ## 2.6.8 (2025-05-07)
 
 ### 🧱 Updated Dependencies
