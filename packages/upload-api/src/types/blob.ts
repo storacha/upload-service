@@ -19,6 +19,8 @@ import {
   BlobAllocateSuccess,
   BlobAcceptSuccess,
   BlobReplicaAllocate,
+  BlobReplicaAllocateSuccess,
+  BlobReplicaAllocateFailure,
 } from '@storacha/capabilities/types'
 import { MultihashDigest } from 'multiformats'
 import { DID, ListResponse, SpaceDID, UCANLink } from '../types.js'
@@ -90,6 +92,9 @@ export interface BlobService {
   blob: {
     allocate: ServiceMethod<BlobAllocate, BlobAllocateSuccess, Failure>
     accept: ServiceMethod<BlobAccept, BlobAcceptSuccess, Failure>
+    replica: {
+      allocate: ServiceMethod<BlobReplicaAllocate, BlobReplicaAllocateSuccess, BlobReplicaAllocateFailure>
+    }
   }
 }
 
@@ -172,9 +177,9 @@ export interface RoutingService {
  *   success receipt for `blob/replica/allocate` from the replica node.
  * - `transferred` - The service has received a success receipt from the replica
  *   node for the `blob/replica/transfer` task.
- * - `failed` - The service has either received an error receipt for the
- *   `blob/replica/transfer` task or the receipt was never communicated and the
- *   task has expired.
+ * - `failed` - The service has either failed to allocate on a replica node or
+ *   received an error receipt for the `blob/replica/transfer` task or the
+ *   receipt was never communicated and the task has expired.
  */
 export type ReplicationStatus =
   | 'allocated'
@@ -190,29 +195,25 @@ export interface Replica {
   digest: MultihashDigest
   /** Status of the replication. */
   status: ReplicationStatus
-  /** Link to `space/blob/replicate` invocation instructing the replication. */
+  /** Link to `blob/replica/allocate` invocation instructing the replication. */
   cause: UCANLink
 }
 
 export interface ReplicaStorage {
-  /** Add a replica the store with status: allocated. */
-  addAllocated: (
+  /** Add a replica to the store. */
+  add: (
     provider: DID,
     space: SpaceDID,
     digest: MultihashDigest,
+    status: ReplicationStatus,
     cause: UCANLink
   ) => Promise<Result<Unit, Failure>>
-  /** Update the replication status: transferred. */
-  setTransferred: (
+  /** Update the replication status. */
+  setStatus: (
     provider: DID,
     space: SpaceDID,
-    digest: MultihashDigest
-  ) => Promise<Result<Unit, Failure>>
-  /** Update the replication status: failed. */
-  setFailed: (
-    provider: DID,
-    space: SpaceDID,
-    digest: MultihashDigest
+    digest: MultihashDigest,
+    status: ReplicationStatus
   ) => Promise<Result<Unit, Failure>>
   /** List replicas for the given space/blob. */
   list: (
