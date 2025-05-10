@@ -17,6 +17,11 @@ NEXT_PUBLIC_STRIPE_CUSTOMER_PORTAL_LINK=https://billing.stripe.com/p/login/test_
 # set this to skip forcing users to pick a Stripe plan
 NEXT_PUBLIC_DISABLE_PLAN_GATE=false
 
+# set this to enable Humanode identity auth as a way to pick plans
+NEXT_PUBLIC_HUMANODE_AUTH_URL=https://auth.demo-storacha-2025-03-31.oauth2.humanode.io/oauth2/auth
+NEXT_PUBLIC_HUMANODE_CLIENT_ID=e9756297-b2d1-4bbe-a139-a9ad1cdc43ee
+NEXT_PUBLIC_HUMANODE_OAUTH_CALLBACK_URL=https://staging.up.web3.storage/oauth/humanode/callback
+
 # point these at the marketing website and referrals service 
 NEXT_PUBLIC_REFERRAL_URL=http://localhost:3001/referred
 NEXT_PUBLIC_REFERRALS_SERVICE_URL=http://localhost:4001
