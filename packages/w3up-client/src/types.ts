@@ -73,7 +73,7 @@ export interface ClientFactoryOptions {
   /**
    * Service DID and URL configuration.
    */
-  serviceConf?: ServiceConf
+  serviceConf?: Partial<ServiceConfOptions>
   /**
    * Use this principal to sign UCANs. Note: if the store is non-empty and the
    * principal saved in the store is not the same principal as the one passed
