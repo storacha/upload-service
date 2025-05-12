@@ -31,8 +31,8 @@ import { getFilecoinOfferResponse } from './helpers/filecoin.js'
 import { defaultFileComparator } from '../src/sharding.js'
 
 /**
- * @param {Uint8Array} bytes 
- * @param {'known'|'unknown'} sizeVariant 
+ * @param {Uint8Array} bytes
+ * @param {'known'|'unknown'} sizeVariant
  */
 const toBlob = (bytes, sizeVariant) => {
   const blob = new Blob([bytes])
@@ -41,8 +41,8 @@ const toBlob = (bytes, sizeVariant) => {
 
 /**
  * @param {string} name
- * @param {Uint8Array} bytes 
- * @param {'known'|'unknown'} sizeVariant 
+ * @param {Uint8Array} bytes
+ * @param {'known'|'unknown'} sizeVariant
  */
 const toFile = (name, bytes, sizeVariant) => {
   const file = new File([bytes], name)
@@ -372,7 +372,10 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
       // when size is known, we are below shard threshold and will make 2 blob
       // add invocations regardless because we parallelize blob add for the
       // data and blob add for the index.
-      assert.equal(service.space.blob.add.callCount, sizeVariant === 'known' ? 2 : 1)
+      assert.equal(
+        service.space.blob.add.callCount,
+        sizeVariant === 'known' ? 2 : 1
+      )
       assert(service.filecoin.offer.called)
       assert.equal(service.filecoin.offer.callCount, 1)
     })
@@ -383,8 +386,8 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
       const space = await Signer.generate()
       const agent = await Signer.generate()
       const bytesList = [await randomBytes(128), await randomBytes(32)]
-      const files = bytesList.map(
-        (bytes, index) => toFile(`${index}.txt`, bytes, sizeVariant)
+      const files = bytesList.map((bytes, index) =>
+        toFile(`${index}.txt`, bytes, sizeVariant)
       )
       const pieces = bytesList.map((bytes) => Piece.fromPayload(bytes).link)
 
@@ -510,8 +513,8 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
       const space = await Signer.generate()
       const agent = await Signer.generate() // The "user" that will ask the service to accept the upload
       const bytesList = [await randomBytes(500_000)]
-      const files = bytesList.map(
-        (bytes, index) => toFile(`${index}.txt`, bytes, sizeVariant)
+      const files = bytesList.map((bytes, index) =>
+        toFile(`${index}.txt`, bytes, sizeVariant)
       )
       const pieces = bytesList.map((bytes) => Piece.fromPayload(bytes).link)
       /** @type {import('../src/types.js').CARLink[]} */
@@ -812,7 +815,14 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
         await randomBlock(128),
       ]
       const _car = await encode(blocks, blocks.at(-1)?.cid)
-      const car = sizeVariant === 'known' ? _car : { version: _car.version, roots: _car.roots, stream: () => _car.stream() }
+      const car =
+        sizeVariant === 'known'
+          ? _car
+          : {
+              version: _car.version,
+              roots: _car.roots,
+              stream: () => _car.stream(),
+            }
       const someBytes = new Uint8Array(await _car.arrayBuffer())
       const piece = Piece.fromPayload(someBytes).link
       // Wanted: 2 shards
@@ -951,7 +961,14 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
         await toBlock(new Uint8Array([1, 1, 3, 8])),
       ]
       const _car = await encode(blocks, blocks.at(-1)?.cid)
-      const car = sizeVariant === 'known' ? _car : { version: _car.version, roots: _car.roots, stream: () => _car.stream() }
+      const car =
+        sizeVariant === 'known'
+          ? _car
+          : {
+              version: _car.version,
+              roots: _car.roots,
+              stream: () => _car.stream(),
+            }
       const someBytes = new Uint8Array(await _car.arrayBuffer())
       const piece = Piece.fromPayload(someBytes).link
 

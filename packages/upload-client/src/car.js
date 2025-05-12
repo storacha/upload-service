@@ -64,8 +64,13 @@ export async function encode(blocks, root) {
 export async function decode(car) {
   const stream = new BlockStream(car)
   const blocks = /** @type {Block[]} */ ([])
-  await stream
-    .pipeTo(new WritableStream({ write: (block) => { blocks.push(block) } }))
+  await stream.pipeTo(
+    new WritableStream({
+      write: (block) => {
+        blocks.push(block)
+      },
+    })
+  )
   const roots = await stream.getRoots()
   return { blocks, roots }
 }

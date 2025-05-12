@@ -11,7 +11,11 @@ import * as Upload from './upload/index.js'
 import * as UploadAdd from './upload/add.js'
 import * as UnixFS from './unixfs.js'
 import * as CAR from './car.js'
-import { ShardingStream, defaultFileComparator, SHARD_SIZE } from './sharding.js'
+import {
+  ShardingStream,
+  defaultFileComparator,
+  SHARD_SIZE,
+} from './sharding.js'
 import { ShardedDAGIndex, indexShardedDAG } from '@storacha/blob-index'
 
 export { Blob, Index, Upload, UnixFS, CAR }
@@ -299,18 +303,24 @@ export async function uploadBlocks(
   /** @type {import('./types.js').IndexedCARFile} */
   let car
   const blockStream = new ReadableStream({
-    pull (controller) {
+    pull(controller) {
       for (const b of blocks) {
         controller.enqueue(b)
       }
       controller.close()
-    }
+    },
   })
 
   // encode indexed CAR
   await blockStream
     .pipeThrough(new ShardingStream({ ...options, shardSize: Infinity }))
-    .pipeTo(new WritableStream({ write: c => { car = c } }))
+    .pipeTo(
+      new WritableStream({
+        write: (c) => {
+          car = c
+        },
+      })
+    )
 
   /* c8 ignore next 2 */
   // @ts-expect-error no used before defined
@@ -375,7 +385,9 @@ export async function uploadBlocks(
       const indexBytes = await index.archive()
       /* c8 ignore next 3 */
       if (!indexBytes.ok) {
-        throw new Error('failed to archive DAG index', { cause: indexBytes.error })
+        throw new Error('failed to archive DAG index', {
+          cause: indexBytes.error,
+        })
       }
 
       const indexDigest = await sha256.digest(indexBytes.ok)
@@ -391,7 +403,7 @@ export async function uploadBlocks(
       // Store the index in the space
       await Blob.add(conf, indexDigest, indexBytes.ok, options)
       return indexLink
-    })()
+    })(),
   ])
 
   await Promise.all([
@@ -414,7 +426,7 @@ export async function uploadBlocks(
       ])
       // Register an upload with the service
       await Upload.add(conf, root, [shardLink], options)
-    })()
+    })(),
   ])
 
   return root
