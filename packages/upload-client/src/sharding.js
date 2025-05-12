@@ -11,7 +11,7 @@ import {
  */
 
 // https://observablehq.com/@gozala/w3up-shard-size
-const SHARD_SIZE = 133_169_152
+export const SHARD_SIZE = 133_169_152
 
 /**
  * Shard a set of blocks into a set of CAR files. By default the last block
