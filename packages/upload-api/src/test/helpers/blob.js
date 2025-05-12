@@ -1,10 +1,12 @@
 import * as API from '../../types.js'
 import { ed25519 } from '@ucanto/principal'
-import { Delegation, Receipt } from '@ucanto/core'
+import { Delegation, Receipt, Schema } from '@ucanto/core'
 import * as BlobCapabilities from '@storacha/capabilities/blob'
 import * as SpaceBlobCapabilities from '@storacha/capabilities/space/blob'
 import * as HTTPCapabilities from '@storacha/capabilities/http'
 import * as UCAN from '@storacha/capabilities/ucan'
+import { Assert } from '@web3-storage/content-claims/capability'
+import * as DID from '@ipld/dag-ucan/did'
 import {
   createConcludeInvocation,
   getConcludeReceipt,
@@ -172,3 +174,37 @@ export const uploadBlob = async (
   const ucanConclude = await httpPutConcludeInvocation.execute(connection)
   Result.try(ucanConclude.out)
 }
+
+/**
+ * @param {{
+ *   issuer: API.Signer
+ *   audience: API.Principal
+ *   with: API.URI<'did:'>
+ *   proofs?: API.Proof[]
+ *   digest: API.MultihashDigest
+ *   location: API.URI
+ *   space: API.SpaceDID
+ * }} params
+ */
+export const createLocationCommitment = ({
+  issuer,
+  audience,
+  with: resource,
+  proofs,
+  digest,
+  location,
+  space
+}) =>
+  Assert.location.invoke({
+    issuer,
+    audience,
+    with: resource,
+    nb: {
+      content: { digest: digest.bytes },
+      location: [location],
+      // @ts-expect-error should accept a Uint8Array
+      space: DID.parse(space)
+    },
+    expiration: Infinity,
+    proofs,
+  })

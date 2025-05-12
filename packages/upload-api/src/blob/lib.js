@@ -1,8 +1,12 @@
+import * as Delegation from '@ucanto/core/delegation'
 import { Failure } from '@ucanto/server'
 import { ed25519 } from '@ucanto/principal'
 import { base58btc } from 'multiformats/bases/base58'
 import * as HTTP from '@storacha/capabilities/http'
+import * as BlobReplica from '@storacha/capabilities/blob/replica'
 import * as API from '../types.js'
+
+/** @import { AssertLocation } from '@web3-storage/content-claims/capability/api' */
 
 export const AwaitErrorName = 'AwaitError'
 
@@ -131,3 +135,23 @@ export const deriveDID = (multihash) => ed25519.derive(multihash.subarray(-32))
  */
 export const isHttpPutTask = (i) =>
   i.capabilities.some((c) => c.can === HTTP.put.can)
+
+/**
+ * @param {API.Link} root 
+ * @param {Iterable<API.Block>} blocks
+ * @returns {API.Delegation<[AssertLocation]>}
+ */
+export const toLocationCommitmentView = (root, blocks) => {
+  const blockStore = new Map()
+  for (const b of blocks) {
+    blockStore.set(b.cid.toString(), b)
+  }
+  return Delegation.view({ root, blocks: blockStore })
+}
+
+/**
+ * @param {API.Effect} fx
+ * @returns {fx is API.Delegation<[API.BlobReplicaTransfer]>}
+ */
+export const isBlobReplicaTransfer = fx =>
+  Delegation.isDelegation(fx) && fx.capabilities[0].can === BlobReplica.transfer.can

@@ -2,18 +2,17 @@ import * as Server from '@ucanto/server'
 import { Delegation, Message } from '@ucanto/core'
 import * as Validator from '@ucanto/validator'
 import * as Transport from '@ucanto/transport/car'
-import { Verifier } from '@ucanto/principal'
 import * as SpaceBlob from '@storacha/capabilities/space/blob'
 import * as BlobReplica from '@storacha/capabilities/blob/replica'
 import * as Assert from '@web3-storage/content-claims/capability/assert'
 import * as Digest from 'multiformats/hashes/digest'
 import { base58btc } from 'multiformats/bases/base58'
+import { equals } from 'multiformats/bytes'
 import * as DID from '@ipld/dag-ucan/did'
-import { AgentMessage } from '../lib.js'
 import * as API from '../types.js'
+import { AgentMessage } from '../lib.js'
+import { isBlobReplicaTransfer, toLocationCommitmentView } from './lib.js'
 import { createConcludeInvocation } from '../ucan/conclude.js'
-
-/** @import { AssertLocation } from '@web3-storage/content-claims/capability/api' */
 
 /**
  * @param {API.BlobServiceContext} context
@@ -24,7 +23,7 @@ export const blobReplicateProvider = (context) => {
   const maxReplicas = context.maxReplicas ?? 2
   return Server.provideAdvanced({
     capability: SpaceBlob.replicate,
-    handler: async ({ capability, invocation }) => {
+    handler: async ({ capability, invocation, context: invContext }) => {
       const { with: space, nb } = capability
 
       if (nb.replicas > maxReplicas) {
@@ -62,15 +61,27 @@ export const blobReplicateProvider = (context) => {
         }))
       }
 
-      const lcomm = locationCommitmentView(nb.site, invocation.export())
+      const lcomm = toLocationCommitmentView(nb.site, invocation.export())
       const authRes = await Validator.claim(Assert.location, [lcomm], {
         authority: context.id,
-        principal: Verifier,
-        // TODO: check revocation status
-        validateAuthorization: async () => ({ ok: true }),
+        ...invContext
       })
       if (authRes.error) {
-        return authRes
+        return Server.error(/** @type {API.InvalidReplicationSite} */ ({
+          name: 'InvalidReplicationSite',
+          message: `location commitment validation error: ${authRes.error.message}`
+        }))
+      }
+
+      // validate location commitment is for the digest we want to replicate
+      const lcommDigest = 'multihash' in lcomm.capabilities[0].nb.content
+        ? lcomm.capabilities[0].nb.content.multihash
+        : Digest.decode(lcomm.capabilities[0].nb.content.digest)
+      if (!equals(lcommDigest.bytes, digest.bytes)) {
+        return Server.error(/** @type {API.InvalidReplicationSite} */ ({
+          name: 'InvalidReplicationSite',
+          message: `location commitment blob (${base58btc.encode(lcommDigest.bytes)}) does not reference replication blob: ${base58btc.encode(digest.bytes)}`
+        }))
       }
 
       const selectRes = await router.selectReplicationProviders(
@@ -134,7 +145,7 @@ export const blobReplicateProvider = (context) => {
       }))
 
       const allocReceipts = []
-      const transferInvs = []
+      const transferTasks = []
       for (const receipt of allocRes) {
         if ('error' in receipt) {
           return receipt
@@ -146,10 +157,10 @@ export const blobReplicateProvider = (context) => {
         }
 
         allocReceipts.push(receipt)
-        transferInvs.push(transfer)
+        transferTasks.push(transfer)
       }
 
-      const site = transferInvs.map(t => ({
+      const site = transferTasks.map(t => ({
         'ucan/await': ['.out.ok.site', t.cid]
       }))
       let result = Server
@@ -160,7 +171,7 @@ export const blobReplicateProvider = (context) => {
         result = result.fork(r.ran)
       }
       // add transfer tasks
-      for (const t of transferInvs) {
+      for (const t of transferTasks) {
         result = result.fork(t)
       }
       // add allocation reciepts
@@ -176,23 +187,3 @@ export const blobReplicateProvider = (context) => {
     },
   })
 }
-
-/**
- * @param {API.Link} root 
- * @param {Iterable<API.Block>} blocks
- * @returns {API.Delegation<[AssertLocation]>}
- */
-const locationCommitmentView = (root, blocks) => {
-  const blockStore = new Map()
-  for (const b of blocks) {
-    blockStore.set(b.cid.toString(), b)
-  }
-  return Delegation.view({ root, blocks: blockStore })
-}
-
-/**
- * @param {API.Effect} fx
- * @returns {fx is API.Delegation<[API.BlobReplicaTransfer]>}
- */
-const isBlobReplicaTransfer = fx =>
-  Delegation.isDelegation(fx) && fx.capabilities[0].can === BlobReplica.transfer.can

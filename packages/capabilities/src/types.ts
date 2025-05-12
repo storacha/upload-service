@@ -628,10 +628,20 @@ export interface ReplicationSourceNotFound extends Failure {
   name: 'ReplicationSourceNotFound'
 }
 
+/**
+ * The location commitment was invalid in some way. For example, it has expired,
+ * is revoked, had a signature that did not verify or referenced a blob that was
+ * not requested to be replicated.
+ */
+export interface InvalidReplicationSite extends Failure {
+  name: 'InvalidReplicationSite'
+}
+
 export type SpaceBlobReplicateFailure =
   | ReplicationCountRangeError
   | ReplicationCandidateUnavailable
   | ReplicationSourceNotFound
+  | InvalidReplicationSite
   | Failure
 
 // Blob allocate
@@ -671,6 +681,7 @@ export type BlobAcceptFailure =
 // Blob replica allocate
 export interface BlobReplicaAllocateSuccess {
   size: number
+  site: UCANAwait<'.out.ok.site'>
 }
 
 export type BlobReplicaAllocateFailure = Failure

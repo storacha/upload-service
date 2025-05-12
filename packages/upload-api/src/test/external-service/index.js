@@ -44,6 +44,11 @@ export const getExternalServiceImplementations = async (config) => {
             claimsService,
             ...principalResolver,
           }),
+          StorageNode.activate({
+            http: config.http,
+            claimsService,
+            ...principalResolver,
+          }),
         ]
       : [
           BrowserStorageNode.activate({
@@ -53,6 +58,11 @@ export const getExternalServiceImplementations = async (config) => {
           }),
           BrowserStorageNode.activate({
             port: 8990,
+            claimsService,
+            ...principalResolver,
+          }),
+          BrowserStorageNode.activate({
+            port: 8991,
             claimsService,
             ...principalResolver,
           }),
