@@ -50,12 +50,17 @@ export const encryptAndUpload = async (
  * @param {import('@storacha/client').Client} storachaClient - The Storacha client
  * @param {Type.EncryptedPayload} encryptedPayload - The encrypted payload
  * @param {import('@lit-protocol/types').AccessControlConditions} accessControlConditions - The access control conditions
+ * @param {Object} [options] - The upload options
+ * @param {boolean} [options.publishToFilecoin] - Whether to publish the data to Filecoin
  * @returns {Promise<Type.AnyLink>} - The link to the uploaded metadata
  */
 const uploadEncryptedMetadata = async (
   storachaClient,
   encryptedPayload,
-  accessControlConditions
+  accessControlConditions,
+  options = {
+    publishToFilecoin: false,
+  }
 ) => {
   const { identityBoundCiphertext, plaintextKeyHash, encryptedBlobLike } =
     encryptedPayload
@@ -91,8 +96,12 @@ const uploadEncryptedMetadata = async (
           })
         )
         .pipeThrough(new CARWriterStream())
-    },
-  })
+    }},
+    {
+      // if publishToFilecoin is false, the data won't be published to Filecoin, so we need to set pieceHasher to undefined
+      ...(options.publishToFilecoin === true ? {} : { pieceHasher: undefined }),
+    }
+  )
 }
 
 /**
