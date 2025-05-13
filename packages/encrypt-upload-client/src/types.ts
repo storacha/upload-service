@@ -39,12 +39,12 @@ export type EncryptedClientOptions = {
 }
 
 export interface CryptoAdapter {
-  encryptStream(data: BlobLike): EncryptOutput
+  encryptStream(data: BlobLike): Promise<EncryptOutput>
   decryptStream(
     encryptedData: ReadableStream,
     key: Uint8Array,
     iv: Uint8Array
-  ): ReadableStream
+  ): Promise<ReadableStream>
 }
 
 export interface EncryptOutput {

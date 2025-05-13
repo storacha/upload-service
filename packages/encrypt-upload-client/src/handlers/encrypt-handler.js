@@ -111,7 +111,7 @@ const encryptFile = async (
   file,
   accessControlConditions
 ) => {
-  const { key, iv, encryptedStream } = cryptoAdapter.encryptStream(file)
+  const { key, iv, encryptedStream } = await cryptoAdapter.encryptStream(file)
 
   // Combine key and initializationVector for Lit encryption
   const dataToEncrypt = base64.encode(new Uint8Array([...key, ...iv]))

@@ -3,7 +3,7 @@
 
 ## About
 
-This library leverages @storacha/cli and @lit-protocol/lit-node-client to provide a simple interface for encrypting files with Lit Protocol and uploading them to the Storacha Network. It also enables anyone with a valid space/content/decrypt UCAN delegation to decrypt the file. With Lit Protocol, encryption keys are managed in a decentralized way, so you don’t have to handle them yourself.
+This library leverages @storacha/cli and @lit-protocol/lit-node-client to provide a simple interface for encrypting files with Lit Protocol and uploading them to the Storacha Network. It also enables anyone with a valid space/content/decrypt UCAN delegation to decrypt the file. With Lit Protocol, encryption keys are managed in a decentralized way, so you don't have to handle them yourself.
 
 ## Install
 
@@ -41,9 +41,22 @@ const encryptedClient = await EncryptClient.create({
 })
 ```
 
+### Browser Usage
+
+For browser apps, use the `BrowserCryptoAdapter`:
+
+```js
+import { BrowserCryptoAdapter } from '@storacha/encrypt-upload-client/dist/crypto-adapters/browser-crypto-adapter.js'
+
+const encryptedClient = await EncryptClient.create({
+  storachaClient: client,
+  cryptoAdapter: new BrowserCryptoAdapter(),
+})
+```
+
 ### Encryption
 
-The encryption process automatically generates a custom Access Control Condition (ACC) based on the current space setup in your Storacha client. It then creates a symmetric key to encrypt the file and uses Lit Protocol to encrypt that key, so you don’t have to manage it yourself. Once encrypted, both the file and the generated encrypted metadata are uploaded to Storacha.
+The encryption process automatically generates a custom Access Control Condition (ACC) based on the current space setup in your Storacha client. It then creates a symmetric key to encrypt the file and uses Lit Protocol to encrypt that key, so you don't have to manage it yourself. Once encrypted, both the file and the generated encrypted metadata are uploaded to Storacha.
 
 #### Example Usage
 
