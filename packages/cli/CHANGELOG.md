@@ -1,3 +1,13 @@
+## 1.2.18 (2025-05-13)
+
+### 🩹 Fixes
+
+- fix: prompt for email if not provided ([45330bce](https://github.com/storacha/upload-service/commit/45330bce))
+
+### ❤️ Thank You
+
+- Alan Shaw
+
 ## 1.2.17 (2025-05-13)
 
 ### 🧱 Updated Dependencies
