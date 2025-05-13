@@ -46,7 +46,7 @@ export const allocate = capability({
     /** Blob to allocate. */
     blob: content,
     /** DID of the user space where the allocation takes place. */
-    space: Schema.bytes(),
+    space: Schema.principal({ method: 'key' }),
     /** Link to a location commitment indicating where the Blob must be fetched from. */
     site: Schema.link({ version: 1 }),
     /** Link to the `space/blob/replicate` task that initiated the allocation. */
@@ -55,7 +55,7 @@ export const allocate = capability({
   derives: (claimed, delegated) =>
     and(equalWith(claimed, delegated)) ||
     and(equalBlob(claimed, delegated)) ||
-    and(equal(claimed.nb.space, delegated.nb.space, 'space')) ||
+    and(equal(claimed.nb.space?.did(), delegated.nb.space?.did(), 'space')) ||
     and(checkLink(claimed.nb.site, delegated.nb.site, 'site')) ||
     and(checkLink(claimed.nb.cause, delegated.nb.cause, 'cause')) ||
     ok({}),
@@ -73,7 +73,7 @@ export const transfer = capability({
     /** Blob to transfer. */
     blob: content,
     /** DID of the user space where the allocation takes place. */
-    space: Schema.bytes(),
+    space: Schema.principal({ method: 'key' }),
     /** Link to a location commitment indicating where the Blob must be fetched from. */
     site: Schema.link({ version: 1 }),
     /** Link to the `blob/replica/allocate` task that initiated the transfer. */
@@ -82,7 +82,7 @@ export const transfer = capability({
   derives: (claimed, delegated) =>
     and(equalWith(claimed, delegated)) ||
     and(equalBlob(claimed, delegated)) ||
-    and(equal(claimed.nb.space, delegated.nb.space, 'space')) ||
+    and(equal(claimed.nb.space?.did(), delegated.nb.space?.did(), 'space')) ||
     and(checkLink(claimed.nb.site, delegated.nb.site, 'site')) ||
     and(checkLink(claimed.nb.cause, delegated.nb.cause, 'cause')) ||
     ok({}),

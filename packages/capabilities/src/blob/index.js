@@ -42,13 +42,13 @@ export const allocate = capability({
     /** Link to the add blob task that initiated the allocation. */
     cause: Schema.link({ version: 1 }),
     /** DID of the user space where the allocation takes place. */
-    space: Schema.bytes(),
+    space: Schema.principal({ method: 'key' }),
   }),
   derives: (claimed, delegated) =>
     and(equalWith(claimed, delegated)) ||
     and(equalBlob(claimed, delegated)) ||
     and(checkLink(claimed.nb.cause, delegated.nb.cause, 'cause')) ||
-    and(equal(claimed.nb.space, delegated.nb.space, 'space')) ||
+    and(equal(claimed.nb.space?.did(), delegated.nb.space?.did(), 'space')) ||
     ok({}),
 })
 
@@ -65,14 +65,14 @@ export const accept = capability({
     /** Blob to accept. */
     blob: content,
     /** DID of the user space where allocation took place. */
-    space: Schema.bytes(),
+    space: Schema.principal({ method: 'key' }),
     /** This task is blocked on `http/put` receipt available */
     _put: Await,
   }),
   derives: (claimed, delegated) =>
     and(equalWith(claimed, delegated)) ||
     and(equalBlob(claimed, delegated)) ||
-    and(equal(claimed.nb.space, delegated.nb.space, 'space')) ||
+    and(equal(claimed.nb.space?.did(), delegated.nb.space?.did(), 'space')) ||
     ok({}),
 })
 

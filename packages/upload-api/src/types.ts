@@ -158,6 +158,9 @@ import {
   SpaceIndexAdd,
   SpaceIndexAddSuccess,
   SpaceIndexAddFailure,
+  SpaceBlobReplicate,
+  SpaceBlobReplicateSuccess,
+  SpaceBlobReplicateFailure,
 } from '@storacha/capabilities/types'
 import * as Capabilities from '@storacha/capabilities'
 import { RevocationsStorage } from './types/revocations.js'
@@ -325,6 +328,11 @@ export interface Service extends StorefrontService {
         SpaceBlobRemoveSuccess,
         SpaceBlobRemoveFailure
       >
+      replicate: ServiceMethod<
+        SpaceBlobReplicate,
+        SpaceBlobReplicateSuccess,
+        SpaceBlobReplicateFailure
+      >,
       list: ServiceMethod<
         SpaceBlobList,
         SpaceBlobListSuccess,

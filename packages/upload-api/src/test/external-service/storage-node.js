@@ -2,16 +2,14 @@ import * as API from '../../types.js'
 import * as BlobCapabilities from '@storacha/capabilities/blob'
 import * as BlobReplicaCapabilities from '@storacha/capabilities/blob/replica'
 import { base64pad } from 'multiformats/bases/base64'
-import { Assert } from '@web3-storage/content-claims/capability'
 import { base58btc } from 'multiformats/bases/base58'
 import { sha256 } from 'multiformats/hashes/sha2'
 import * as Digest from 'multiformats/hashes/digest'
-import { ok, error, Delegation, Receipt, Schema } from '@ucanto/core'
+import { ok, error, Delegation, Receipt } from '@ucanto/core'
 import { ed25519 } from '@ucanto/principal'
 import { CAR, HTTP } from '@ucanto/transport'
 import * as Server from '@ucanto/server'
 import { connect } from '@ucanto/client'
-import * as DID from '@ipld/dag-ucan/did'
 import {
   AllocatedMemoryNotWrittenError,
   BlobSizeLimitExceededError,
@@ -107,11 +105,11 @@ const createService = ({
         const receipt = await createLocationCommitment(
           {
             ...claimsService.invocationConfig,
-            space: Schema.did({ method: 'key' }).from(DID.decode(capability.nb.space).did()),
             digest,
             location:
               /** @type {API.URI} */
               (new URL(contentKey(digest), baseURL()).toString()),
+            space: capability.nb.space,
           }
         ).execute(claimsService.connection)
         if (receipt.out.error) {
@@ -145,11 +143,11 @@ const createService = ({
             const claimRcpt = await createLocationCommitment(
               {
                 ...claimsService.invocationConfig,
-                space: Schema.did({ method: 'key' }).from(DID.decode(capability.nb.space).did()),
                 digest,
                 location:
                   /** @type {API.URI} */
                   (new URL(contentKey(digest), baseURL()).toString()),
+                space: capability.nb.space,
               }
             ).execute(claimsService.connection)
             if (claimRcpt.out.error) {
