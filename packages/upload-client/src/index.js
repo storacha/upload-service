@@ -383,7 +383,7 @@ export async function uploadBlocks(
       index.setSlice(digest, digest, [0, car.size])
 
       const indexBytes = await index.archive()
-      /* c8 ignore next 3 */
+      /* c8 ignore next 5 */
       if (!indexBytes.ok) {
         throw new Error('failed to archive DAG index', {
           cause: indexBytes.error,
