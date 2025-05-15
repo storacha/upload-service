@@ -1,19 +1,19 @@
-import * as API from '../../types.js'
+import * as API from '../../../../types.js'
 import { sha256 } from 'multiformats/hashes/sha2'
 import { ed25519 } from '@ucanto/principal'
 import { Receipt } from '@ucanto/core'
-import * as BlobCapabilities from '@storacha/capabilities/space/blob'
-import { createServer, connect } from '../../lib.js'
-import { alice, registerSpace } from '../util.js'
-import { createConcludeInvocation } from '../../ucan/conclude.js'
-import { parseBlobAddReceiptNext, uploadBlob } from '../helpers/blob.js'
-import { BlobSizeLimitExceededError } from '../../blob.js'
+import * as SpaceBlobCapabilities from '@storacha/capabilities/space/blob'
+import { createServer, connect } from '../../../../lib.js'
+import { alice, registerSpace } from '../../../util.js'
+import { createConcludeInvocation } from '../../../../ucan/conclude.js'
+import { parseBlobAddReceiptNext } from '../../../helpers/blob.js'
+import { BlobSizeLimitExceededError } from '../../../../blob.js'
 
 /**
  * @type {API.Tests}
  */
 export const test = {
-  'blob/add schedules allocation and returns effects for allocate (and its receipt), put and accept':
+  'space/blob/add schedules allocation and returns effects for allocate (and its receipt), put and accept':
     async (assert, context) => {
       const { proof, spaceDid } = await registerSpace(alice, context)
 
@@ -30,7 +30,7 @@ export const test = {
       })
 
       // invoke `blob/add`
-      const invocation = BlobCapabilities.add.invoke({
+      const invocation = SpaceBlobCapabilities.add.invoke({
         issuer: alice,
         audience: context.id,
         with: spaceDid,
@@ -83,7 +83,7 @@ export const test = {
       assert.equal(receipt.out.ok?.size, size)
       assert.ok(receipt.out.ok?.address)
     },
-  'blob/add schedules allocation only on first blob/add': async (
+  'space/blob/add schedules allocation only on first blob/add': async (
     assert,
     context
   ) => {
@@ -102,7 +102,7 @@ export const test = {
     })
 
     // create `blob/add` invocation
-    const invocation = BlobCapabilities.add.invoke({
+    const invocation = SpaceBlobCapabilities.add.invoke({
       issuer: alice,
       audience: context.id,
       with: spaceDid,
@@ -164,7 +164,7 @@ export const test = {
       secondAllocateTaskLink.toString()
     )
   },
-  'blob/add schedules allocation and returns effects for allocate, accept and put together with their receipts (when stored)':
+  'space/blob/add schedules allocation and returns effects for allocate, accept and put together with their receipts (when stored)':
     async (assert, context) => {
       const { proof, spaceDid } = await registerSpace(alice, context)
 
@@ -194,7 +194,7 @@ export const test = {
       }
 
       // create `blob/add` invocation
-      const invocation = BlobCapabilities.add.invoke(task)
+      const invocation = SpaceBlobCapabilities.add.invoke(task)
       // Invoke `blob/add` for the first time
       const firstBlobAdd = await invocation.execute(connection)
       if (!firstBlobAdd.out.ok) {
@@ -226,7 +226,7 @@ export const test = {
       const address = firstNext.allocate.receipt.out.ok.address
 
       // Invoke `blob/add` for the second time
-      const secondBlobAdd = await BlobCapabilities.add
+      const secondBlobAdd = await SpaceBlobCapabilities.add
         .invoke({ ...task, nonce: 'second' })
         .execute(connection)
       if (!secondBlobAdd.out.ok) {
@@ -290,7 +290,7 @@ export const test = {
       }
 
       // Invoke `blob/add` for the third time (after invoking conclude)
-      const thirdBlobAdd = await BlobCapabilities.add
+      const thirdBlobAdd = await SpaceBlobCapabilities.add
         .invoke({ ...task, nonce: 'third' })
         .execute(connection)
       if (!thirdBlobAdd.out.ok) {
@@ -365,7 +365,7 @@ export const test = {
     }
 
     // create `blob/add` invocation
-    const invocation = BlobCapabilities.add.invoke(task)
+    const invocation = SpaceBlobCapabilities.add.invoke(task)
     // Invoke `blob/add` for the first time
     const receipt = await invocation.execute(connection)
     if (!receipt.out.ok) {
@@ -430,7 +430,7 @@ export const test = {
       'accept was not successful'
     )
   },
-  'blob/add fails when a blob with size bigger than maximum size is added':
+  'space/blob/add fails when a blob with size bigger than maximum size is added':
     async (assert, context) => {
       const { proof, spaceDid } = await registerSpace(alice, context)
 
@@ -446,7 +446,7 @@ export const test = {
       })
 
       // invoke `blob/add`
-      const invocation = BlobCapabilities.add.invoke({
+      const invocation = SpaceBlobCapabilities.add.invoke({
         issuer: alice,
         audience: context.id,
         with: spaceDid,
@@ -480,229 +480,4 @@ export const test = {
         )
       )
     },
-  'blob/remove returns receipt with blob size for content allocated in space':
-    async (assert, context) => {
-      const { proof, spaceDid } = await registerSpace(alice, context)
-
-      // prepare data
-      const data = new Uint8Array([11, 22, 34, 44, 55])
-      const digest = await sha256.digest(data)
-      const size = data.byteLength
-
-      // create service connection
-      const connection = connect({
-        id: context.id,
-        channel: createServer(context),
-      })
-
-      await uploadBlob(
-        {
-          issuer: alice,
-          audience: context.id,
-          with: spaceDid,
-          proofs: [proof],
-          connection,
-        },
-        { digest, bytes: data }
-      )
-
-      // invoke `blob/remove`
-      const blobRemoveInvocation = BlobCapabilities.remove.invoke({
-        issuer: alice,
-        audience: context.id,
-        with: spaceDid,
-        nb: {
-          digest: digest.bytes,
-        },
-        proofs: [proof],
-      })
-      const blobRemove = await blobRemoveInvocation.execute(connection)
-      if (!blobRemove.out.ok) {
-        throw new Error('invocation failed', { cause: blobRemove.out.error })
-      }
-
-      assert.ok(blobRemove.out.ok)
-      assert.equal(blobRemove.out.ok.size, size)
-    },
-  'blob/remove returns receipt with size 0 for non existent content in space':
-    async (assert, context) => {
-      const { proof, spaceDid } = await registerSpace(alice, context)
-
-      // prepare data
-      const data = new Uint8Array([11, 22, 34, 44, 55])
-      const multihash = await sha256.digest(data)
-      const digest = multihash.bytes
-
-      // create service connection
-      const connection = connect({
-        id: context.id,
-        channel: createServer(context),
-      })
-
-      // invoke `blob/remove`
-      const blobRemoveInvocation = BlobCapabilities.remove.invoke({
-        issuer: alice,
-        audience: context.id,
-        with: spaceDid,
-        nb: {
-          digest,
-        },
-        proofs: [proof],
-      })
-      const blobRemove = await blobRemoveInvocation.execute(connection)
-      if (!blobRemove.out.ok) {
-        throw new Error('invocation failed', { cause: blobRemove.out.error })
-      }
-
-      assert.ok(blobRemove.out.ok)
-      assert.equal(blobRemove.out.ok.size, 0)
-    },
-  'blob/list does not fail for empty list': async (assert, context) => {
-    const { proof, spaceDid } = await registerSpace(alice, context)
-    const connection = connect({
-      id: context.id,
-      channel: createServer(context),
-    })
-
-    const blobList = await BlobCapabilities.list
-      .invoke({
-        issuer: alice,
-        audience: connection.id,
-        with: spaceDid,
-        proofs: [proof],
-        nb: {},
-      })
-      .execute(connection)
-
-    assert.deepEqual(blobList.out.ok, { results: [], size: 0 })
-  },
-  'blob/list returns blobs previously stored by the user': async (
-    assert,
-    context
-  ) => {
-    const { proof, spaceDid } = await registerSpace(alice, context)
-    const connection = connect({
-      id: context.id,
-      channel: createServer(context),
-    })
-
-    const data = [
-      new Uint8Array([11, 22, 34, 44, 55]),
-      new Uint8Array([22, 34, 44, 55, 66]),
-    ]
-    for (const datum of data) {
-      await uploadBlob(
-        {
-          issuer: alice,
-          audience: context.id,
-          with: spaceDid,
-          proofs: [proof],
-          connection,
-        },
-        { digest: await sha256.digest(datum), bytes: datum }
-      )
-    }
-
-    const blobList = await BlobCapabilities.list
-      .invoke({
-        issuer: alice,
-        audience: connection.id,
-        with: spaceDid,
-        proofs: [proof],
-        nb: {},
-      })
-      .execute(connection)
-
-    if (blobList.out.error) {
-      throw new Error('invocation failed', { cause: blobList })
-    }
-    assert.equal(blobList.out.ok.size, data.length)
-    // list order last-in-first-out
-    const listReverse = await Promise.all(
-      data
-        .reverse()
-        .map(async (datum) => ({ digest: (await sha256.digest(datum)).bytes }))
-    )
-    assert.deepEqual(
-      blobList.out.ok.results.map(({ blob }) => ({ digest: blob.digest })),
-      listReverse
-    )
-  },
-  'blob/list can be paginated with custom size': async (assert, context) => {
-    const { proof, spaceDid } = await registerSpace(alice, context)
-    const connection = connect({
-      id: context.id,
-      channel: createServer(context),
-    })
-
-    const data = [
-      new Uint8Array([11, 22, 34, 44, 55]),
-      new Uint8Array([22, 34, 44, 55, 66]),
-    ]
-
-    for (const datum of data) {
-      await uploadBlob(
-        {
-          issuer: alice,
-          audience: context.id,
-          with: spaceDid,
-          proofs: [proof],
-          connection,
-        },
-        { digest: await sha256.digest(datum), bytes: datum }
-      )
-    }
-
-    // Get list with page size 1 (two pages)
-    const size = 1
-    const listPages = []
-    /** @type {string} */
-    let cursor = ''
-
-    do {
-      const blobList = await BlobCapabilities.list
-        .invoke({
-          issuer: alice,
-          audience: connection.id,
-          with: spaceDid,
-          proofs: [proof],
-          nb: {
-            size,
-            ...(cursor ? { cursor } : {}),
-          },
-        })
-        .execute(connection)
-
-      if (blobList.out.error) {
-        throw new Error('invocation failed', { cause: blobList })
-      }
-
-      // Add page if it has size
-      if (blobList.out.ok.size > 0) listPages.push(blobList.out.ok.results)
-
-      if (blobList.out.ok.after) {
-        cursor = blobList.out.ok.after
-      } else {
-        break
-      }
-    } while (cursor)
-
-    assert.equal(
-      listPages.length,
-      data.length,
-      'has number of pages of added CARs'
-    )
-
-    // Inspect content
-    const blobList = listPages.flat()
-    const listReverse = await Promise.all(
-      data
-        .reverse()
-        .map(async (datum) => ({ digest: (await sha256.digest(datum)).bytes }))
-    )
-    assert.deepEqual(
-      blobList.map(({ blob }) => ({ digest: blob.digest })),
-      listReverse
-    )
-  },
 }

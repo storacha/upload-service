@@ -11,6 +11,7 @@ import { PlansStorage } from './plans-storage.js'
 import { UsageStorage } from './usage-storage.js'
 import { SubscriptionsStorage } from './subscriptions-storage.js'
 import * as AgentStore from './agent-store.js'
+import { ReplicaStorage } from './replica-storage.js'
 
 /**
  * @param {object} options
@@ -33,6 +34,7 @@ export async function getServiceStorageImplementations(options) {
   const delegationsStorage = new DelegationsStorage()
   const rateLimitsStorage = new RateLimitsStorage()
   const agentStore = AgentStore.memory()
+  const replicaStore = new ReplicaStorage()
 
   return {
     storeTable,
@@ -48,5 +50,6 @@ export async function getServiceStorageImplementations(options) {
     delegationsStorage,
     rateLimitsStorage,
     agentStore,
+    replicaStore
   }
 }
