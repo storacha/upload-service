@@ -90,7 +90,7 @@ export const equalLink = (claimed, delegated) => {
 }
 
 /**
- * @template {API.ParsedCapability<"space/blob/add"|"space/blob/remove"|"web3.storage/blob/allocate"|"web3.storage/blob/accept"|"blob/allocate"|"blob/accept", API.URI<'did:'>, {blob: { digest: Uint8Array, size: number }}>} T
+ * @template {API.ParsedCapability<API.Ability, API.URI<'did:'>, {blob: { digest: Uint8Array, size: number }}>} T
  * @param {T} claimed
  * @param {T} delegated
  * @returns {API.Result<{}, API.Failure>}

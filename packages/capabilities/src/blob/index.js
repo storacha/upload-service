@@ -14,8 +14,8 @@
  * @see https://github.com/storacha/specs/blob/main/w3-blob.md
  */
 import { capability, Schema, Link, ok } from '@ucanto/validator'
-import { content } from './space/blob.js'
-import { equalBlob, equalWith, and, equal, checkLink, Await } from './utils.js'
+import { content } from '../space/blob.js'
+import { equalBlob, equalWith, and, equal, checkLink, Await } from '../utils.js'
 
 /**
  * Capability can only be delegated (but not invoked) allowing audience to

@@ -2,19 +2,19 @@ import assert from 'assert'
 import { access } from '@ucanto/validator'
 import { ed25519, Verifier } from '@ucanto/principal'
 import * as DID from '@ipld/dag-ucan/did'
-import * as Blob from '../../src/blob.js'
-import * as Capability from '../../src/top.js'
+import * as Blob from '../../../src/blob/index.js'
+import * as Capability from '../../../src/top.js'
 import {
   alice,
   service as storageNode,
   mallory as account,
   bob,
-} from '../helpers/fixtures.js'
+} from '../../helpers/fixtures.js'
 import {
   createCar,
   createCborCid,
   validateAuthorization,
-} from '../helpers/utils.js'
+} from '../../helpers/utils.js'
 
 const top = () =>
   Capability.top.delegate({
