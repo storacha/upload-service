@@ -3,6 +3,8 @@ import type { Metadata } from 'next'
 import Provider from '@/components/W3UIProvider'
 import Toaster from '@/components/Toaster'
 import { Provider as MigrationsProvider } from '@/components/MigrationsProvider'
+import PlausibleProvider from 'next-plausible'
+
 
 export const metadata: Metadata = {
   title: 'Storacha console',
@@ -22,12 +24,21 @@ export default function RootLayout ({
         <link href="https://fonts.googleapis.com/css2?family=Epilogue:ital@0;1&display=swap" rel="stylesheet" />
       </head>
       <body className='bg-hot-red-light min-h-screen'>
-        <Provider>
-          <MigrationsProvider>
-            {children}
-          </MigrationsProvider>
-        </Provider>
-        <Toaster />
+        <PlausibleProvider
+          domain="console.storacha.network"
+          trackFileDownloads={true}
+          trackOutboundLinks={true}
+          taggedEvents={true}
+         // trackLocalhost={true}
+          enabled={true}
+        >
+          <Provider>
+            <MigrationsProvider>
+              {children}
+            </MigrationsProvider>
+          </Provider>
+          <Toaster />
+        </PlausibleProvider>
       </body>
     </html>
   )

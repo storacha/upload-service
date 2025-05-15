@@ -14,6 +14,8 @@ import { HTTP } from '@ucanto/transport'
 import * as CAR from '@ucanto/transport/car'
 import { gatewayHost } from './services'
 import { logAndCaptureError } from '@/sentry'
+import { usePlausible } from 'next-plausible'
+
 
 export function SpaceCreatorCreating(): JSX.Element {
   return (
@@ -36,6 +38,7 @@ export function SpaceCreatorForm({
   const [created, setCreated] = useState(false)
   const [name, setName] = useState('')
   const [space, setSpace] = useState<Space>()
+  const plausible = usePlausible()
 
   function resetForm(): void {
     setName('')
@@ -97,6 +100,7 @@ export function SpaceCreatorForm({
 
       setSpace(client.spaces().find(s => s.did() === space.did()))
       setCreated(true)
+      plausible('Space Created')
       resetForm()
     } catch (error) {
       setSubmitted(false)
@@ -104,6 +108,7 @@ export function SpaceCreatorForm({
       console.log(error)
       /* eslint-disable-next-line no-console */
       logAndCaptureError(error)
+      plausible('Failed Space Creation')
       throw new Error('failed to create space', { cause: error })
     }
   }
