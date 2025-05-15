@@ -416,7 +416,7 @@ export type BlobServiceContext = SpaceServiceContext & {
   registry: BlobRegistry
   replicaStore: ReplicaStorage
   /** The maximum number of replicas a client is allowed to request. */
-  maxReplicas?: number
+  maxReplicas: number
 }
 
 export type UploadServiceContext = ConsumerServiceContext &
@@ -789,5 +789,5 @@ export interface Assert {
   ok: <Actual>(actual: Actual, message?: string) => unknown
 }
 
-export type Test = (assert: Assert, context: UcantoServerTestContext) => unknown
+export type Test<C = UcantoServerTestContext> = (assert: Assert, context: C) => unknown
 export type Tests = Record<string, Test>

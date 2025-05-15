@@ -141,7 +141,7 @@ export const isHttpPutTask = (i) =>
  * @param {Iterable<API.Block>} blocks
  * @returns {API.Delegation<[AssertLocation]>}
  */
-export const toLocationCommitmentView = (root, blocks) => {
+export const toLocationCommitment = (root, blocks) => {
   const blockStore = new Map()
   for (const b of blocks) {
     blockStore.set(b.cid.toString(), b)

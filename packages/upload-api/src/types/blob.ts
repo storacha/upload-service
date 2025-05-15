@@ -187,37 +187,53 @@ export type ReplicationStatus =
   | 'failed'
 
 export interface Replica {
-  /** The node delegated to store the replica. */
-  provider: DID
   /** Space the blob is stored in. */
   space: SpaceDID
   /** Hash of the blob. */
   digest: MultihashDigest
+  /** The node delegated to store the replica. */
+  provider: DID
   /** Status of the replication. */
   status: ReplicationStatus
   /** Link to `blob/replica/allocate` invocation instructing the replication. */
   cause: UCANLink
 }
 
+/** Indicates the replica was not found. */
+export interface ReplicaNotFound extends Failure {
+  name: 'ReplicaNotFound'
+}
+
+/** Indicates the replica already exists. */
+export interface ReplicaExists extends Failure {
+  name: 'ReplicaExists'
+}
+
 export interface ReplicaStorage {
   /** Add a replica to the store. */
   add: (
-    provider: DID,
-    space: SpaceDID,
-    digest: MultihashDigest,
-    status: ReplicationStatus,
-    cause: UCANLink
-  ) => Promise<Result<Unit, Failure>>
+    data: {
+      space: SpaceDID,
+      digest: MultihashDigest,
+      provider: DID,
+      status: ReplicationStatus,
+      cause: UCANLink
+    }
+  ) => Promise<Result<Unit, ReplicaExists|Failure>>
   /** Update the replication status. */
   setStatus: (
-    provider: DID,
-    space: SpaceDID,
-    digest: MultihashDigest,
+    key: {
+      space: SpaceDID,
+      digest: MultihashDigest,
+      provider: DID,
+    },
     status: ReplicationStatus
-  ) => Promise<Result<Unit, Failure>>
+  ) => Promise<Result<Unit, ReplicaNotFound|Failure>>
   /** List replicas for the given space/blob. */
   list: (
-    space: SpaceDID,
-    digest: MultihashDigest
+    filter: {
+      space: SpaceDID,
+      digest: MultihashDigest
+    }
   ) => Promise<Result<Replica[], Failure>>
 }

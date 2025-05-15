@@ -104,7 +104,9 @@ const createService = ({
 
         const receipt = await createLocationCommitment(
           {
-            ...claimsService.invocationConfig,
+            issuer: id,
+            with: id.did(),
+            audience: claimsService.invocationConfig.audience,
             digest,
             location:
               /** @type {API.URI} */
@@ -142,7 +144,9 @@ const createService = ({
           if (hasDigest) {
             const claimRcpt = await createLocationCommitment(
               {
-                ...claimsService.invocationConfig,
+                issuer: id,
+                with: id.did(),
+                audience: claimsService.invocationConfig.audience,
                 digest,
                 location:
                   /** @type {API.URI} */
@@ -153,15 +157,15 @@ const createService = ({
             if (claimRcpt.out.error) {
               return claimRcpt.out
             }
-            const lcomm = claimRcpt.ran
-            if (!Delegation.isDelegation(lcomm)) {
+            const claim = claimRcpt.ran
+            if (!Delegation.isDelegation(claim)) {
               throw new Error('expected claim receipt ran to be a delegation')
             }
 
             const transferRcpt = await Receipt.issue({
               issuer: id,
               ran: transferTask,
-              result: Server.ok({ site: lcomm.cid }),
+              result: Server.ok({ site: claim.cid }),
               fx: {
                 // communicate the locaiton commitment
                 fork: [await createConcludeInvocation(id, id, claimRcpt).delegate()]

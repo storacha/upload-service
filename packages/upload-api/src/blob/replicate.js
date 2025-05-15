@@ -11,7 +11,7 @@ import { equals } from 'multiformats/bytes'
 import * as DID from '@ipld/dag-ucan/did'
 import * as API from '../types.js'
 import { AgentMessage } from '../lib.js'
-import { isBlobReplicaTransfer, toLocationCommitmentView } from './lib.js'
+import { isBlobReplicaTransfer, toLocationCommitment } from './lib.js'
 import { createConcludeInvocation } from '../ucan/conclude.js'
 
 /**
@@ -19,8 +19,7 @@ import { createConcludeInvocation } from '../ucan/conclude.js'
  * @returns {API.ServiceMethod<API.SpaceBlobReplicate, API.SpaceBlobReplicateSuccess, API.SpaceBlobReplicateFailure>}
  */
 export const blobReplicateProvider = (context) => {
-  const { router, registry, replicaStore, agentStore } = context
-  const maxReplicas = context.maxReplicas ?? 2
+  const { router, registry, replicaStore, agentStore, maxReplicas } = context
   return Server.provideAdvanced({
     capability: SpaceBlob.replicate,
     handler: async ({ capability, invocation, context: invContext }) => {
@@ -46,14 +45,14 @@ export const blobReplicateProvider = (context) => {
       }
 
       // check if we have any existing replicas
-      const replicaListRes = await replicaStore.list(space, digest)
+      const replicaListRes = await replicaStore.list({ space, digest })
       if (replicaListRes.error) {
         return replicaListRes
       }
 
       // TODO: handle the case where a receipt was not received and the replica
       // still exists in "allocated", but has actually timed out/failed.
-      const existingReplicas = replicaListRes.ok.filter(r => r.status === 'failed')
+      const existingReplicas = replicaListRes.ok.filter(r => r.status !== 'failed')
       if (existingReplicas.length + nb.replicas > maxReplicas) {
         return Server.error(/** @type {API.ReplicationCountRangeError} */ ({
           name: 'ReplicationCountRangeError',
@@ -61,8 +60,8 @@ export const blobReplicateProvider = (context) => {
         }))
       }
 
-      const lcomm = toLocationCommitmentView(nb.site, invocation.export())
-      const authRes = await Validator.claim(Assert.location, [lcomm], {
+      const claim = toLocationCommitment(nb.site, invocation.export())
+      const authRes = await Validator.claim(Assert.location, [claim], {
         authority: context.id,
         ...invContext
       })
@@ -74,18 +73,18 @@ export const blobReplicateProvider = (context) => {
       }
 
       // validate location commitment is for the digest we want to replicate
-      const lcommDigest = 'multihash' in lcomm.capabilities[0].nb.content
-        ? lcomm.capabilities[0].nb.content.multihash
-        : Digest.decode(lcomm.capabilities[0].nb.content.digest)
-      if (!equals(lcommDigest.bytes, digest.bytes)) {
+      const claimDigest = 'multihash' in claim.capabilities[0].nb.content
+        ? claim.capabilities[0].nb.content.multihash
+        : Digest.decode(claim.capabilities[0].nb.content.digest)
+      if (!equals(claimDigest.bytes, digest.bytes)) {
         return Server.error(/** @type {API.InvalidReplicationSite} */ ({
           name: 'InvalidReplicationSite',
-          message: `location commitment blob (${base58btc.encode(lcommDigest.bytes)}) does not reference replication blob: ${base58btc.encode(digest.bytes)}`
+          message: `location commitment blob (${base58btc.encode(claimDigest.bytes)}) does not reference replication blob: ${base58btc.encode(digest.bytes)}`
         }))
       }
 
       const selectRes = await router.selectReplicationProviders(
-        lcomm.issuer,
+        claim.issuer,
         nb.replicas,
         digest,
         nb.blob.size,
@@ -134,13 +133,13 @@ export const blobReplicateProvider = (context) => {
           return messageWriteRes
         }
 
-        const addRes = await replicaStore.add(
-          candidateDID,
+        const addRes = await replicaStore.add({
           space,
           digest,
-          receipt.out.error ? 'failed' : 'allocated',
-          task.cid
-        )
+          provider: candidateDID,
+          status: receipt.out.error ? 'failed' : 'allocated',
+          cause: task.cid
+        })
         return addRes.error ? addRes : receipt
       }))
 

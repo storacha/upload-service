@@ -17,6 +17,7 @@ import { test as agentStoreTests } from './storage/agent-store-tests.js'
 import { test as delegationsStorageTests } from './storage/delegations-storage-tests.js'
 import { test as provisionsStorageTests } from './storage/provisions-storage-tests.js'
 import { test as rateLimitsStorageTests } from './storage/rate-limits-storage-tests.js'
+import { test as replicaStorageTests } from './storage/replica-storage-tests.js'
 import { test as revocationsStorageTests } from './storage/revocations-storage-tests.js'
 import { test as plansStorageTests } from './storage/plans-storage-tests.js'
 import { DebugEmail } from '../utils/email.js'
@@ -35,6 +36,7 @@ export const storageTests = {
   ...delegationsStorageTests,
   ...provisionsStorageTests,
   ...rateLimitsStorageTests,
+  ...replicaStorageTests,
   ...revocationsStorageTests,
   ...plansStorageTests,
   ...blobRegistryTests,
@@ -66,6 +68,7 @@ export {
   delegationsStorageTests,
   provisionsStorageTests,
   rateLimitsStorageTests,
+  replicaStorageTests,
   revocationsStorageTests,
   plansStorageTests,
   blobRegistryTests,

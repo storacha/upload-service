@@ -75,5 +75,6 @@ export const getExternalServiceImplementations = async (config) => {
     storageProviders,
     blobRetriever,
     router,
+    maxReplicas: 2 // since we have 3 storage nodes, the max replicas is 2
   }
 }

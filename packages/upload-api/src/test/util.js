@@ -119,3 +119,11 @@ export async function randomCID() {
   const hash = await sha256.digest(bytes)
   return CID.create(1, raw.code, hash)
 }
+
+/**
+ * @template {any} T
+ * @param {T[]} items
+ * @returns {T}
+ */
+export const randomChoice = (items) =>
+  items[Math.floor(Math.random() * items.length)]

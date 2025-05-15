@@ -172,6 +172,8 @@ export const uploadBlob = async (
   )
   const ucanConclude = await httpPutConcludeInvocation.execute(connection)
   Result.try(ucanConclude.out)
+
+  return nextTasks
 }
 
 /**
