@@ -4,6 +4,10 @@ import { Verifier } from '@ucanto/principal'
 import { capability } from '@ucanto/server'
 import * as dagJSON from '@ipld/dag-json'
 
+const Authority = Verifier
+  .parse(DID.from('did:key:z6MkqdncRZ1wj8zxCTDUQ8CRT8NQWd63T7mZRvZUX8B7XDFi'))
+  .withDID(DID.from('did:web:web3.storage'))
+
 const Decrypt = capability({
   can: 'space/content/decrypt',
   with: DID.match({ method: 'key' }),
@@ -34,32 +38,52 @@ const Decrypt = capability({
  */
 
 /**
- * Validates a decrypt delegation
+ * Validates a decrypt delegation from an invocation if it exists
  * @param {Delegation} decryptDelegation - The delegation to validate
- * @throws {Error} If the delegation is invalid
+ * @param {string} spaceDID - The target space DID
+ * @throws {Error} If the invocation or the delegation is invalid
  */
-const validateDecryptDelegation = (decryptDelegation) => {
-  if (decryptDelegation.proofs.length !== 1) {
-    throw new Error('Expected one Decrypt delegation!')
+const validateDecryptDelegation = (wrappedInvocation, spaceDID) => {
+  const decryptCapability = wrappedInvocation.capabilities.find(
+    (cap) => cap.can === Decrypt.can
+  )
+  // Check if the invocation `with` is the same as the spaceDID
+  if (decryptCapability?.with !== spaceDID) {
+    throw new Error(
+      `Invalid "with" in the invocation. Decryption is allowed only for files associated with spaceDID: ${spaceDID}!`
+    )
   }
 
+  // Check if the invocation has exactly one delegation
+  if (wrappedInvocation.proofs.length !== 1) {
+    throw new Error(`Expected exactly one delegation!`)
+  }
+
+  // Check if the delegation contains the decryption capability
+  const delegation = wrappedInvocation.proofs[0]
   if (
-    !decryptDelegation.proofs[0].capabilities.some(
+    !delegation.capabilities.some(
       /** @param {{can: string}} c */ (c) => c.can === Decrypt.can
     )
   ) {
-    throw new Error('Delegation does not contain Decrypt capability!')
+    throw new Error(`Delegation does not contain ${Decrypt.can} capability!`)
   }
-}
 
-/**
- * Unwraps an invocation to get its delegation
- * @param {Delegation} wrappedInvocation - The invocation to unwrap
- * @returns {Delegation} The unwrapped delegation
- */
-const unwrapInvocation = (wrappedInvocation) => {
-  validateDecryptDelegation(wrappedInvocation)
-  return wrappedInvocation.proofs[0]
+  // Check if the decryption capability contains the `with` field that is the same as the spaceDID
+  if (
+    !delegation.capabilities.some(
+      /** @param {{can: string}} c */ (c) => c.with === spaceDID && c.can === Decrypt.can
+    )
+  ) {
+    throw new Error(`Invalid "with" in the delegation. Decryption is allowed only for files associated with spaceDID: ${spaceDID}!`)
+  }
+
+  // Check if the invoker is the same as the delegated audience
+  const invocationIssuer = wrappedInvocation.issuer.did()
+  const delegationAudience = delegation.audience.did()
+  if (invocationIssuer !== delegationAudience) {
+    throw new Error('The invoker must be equal to the delegated audience!')
+  }
 }
 
 /**
@@ -70,7 +94,6 @@ const decrypt = async () => {
   try {
     const wrappedInvocationCar = dagJSON.parse(wrappedInvocationJSON)
     const wrappedInvocationResult = await extract(wrappedInvocationCar)
-
     if (wrappedInvocationResult.error) {
       throw new Error(
         `Issue on extracting the wrapped invocation! Error message: ${wrappedInvocationResult.error}`
@@ -78,31 +101,11 @@ const decrypt = async () => {
     }
 
     const wrappedInvocation = wrappedInvocationResult.ok
-
-    const decryptCapability = wrappedInvocation.capabilities.find(
-      (cap) => cap.can === Decrypt.can
-    )
-
-    if (decryptCapability?.with !== spaceDID) {
-      throw new Error(
-        `Invalid "with" in delegation. Decryption is allowed only for files associated with spaceDID: ${spaceDID}!`
-      )
-    }
-
-    const decryptDelegation = unwrapInvocation(wrappedInvocation) // delegation created from the invocation
-    validateDecryptDelegation(decryptDelegation) // true delegation
-
-    const invocationIssuer = wrappedInvocation.issuer.did()
-    const delegationAudience = decryptDelegation.audience.did()
-
-    if (invocationIssuer !== delegationAudience) {
-      throw new Error('The invoker must be equal to the delegated audience!')
-    }
-
+    validateDecryptDelegation(wrappedInvocation, spaceDID)
     const authorization = await access(wrappedInvocation, {
       principal: Verifier,
       capability: Decrypt,
-      authority: 'did:web:web3.storage',
+      authority: Authority,
       validateAuthorization: () => ok({}), // TODO: check if it's not revoked
     })
 
