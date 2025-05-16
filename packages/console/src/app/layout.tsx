@@ -25,7 +25,7 @@ export default function RootLayout ({
       </head>
       <body className='bg-hot-red-light min-h-screen'>
         <PlausibleProvider
-          domain="console.storacha.network"
+          domain='console.storacha.network'
           trackFileDownloads={true}
           trackOutboundLinks={true}
           taggedEvents={true}

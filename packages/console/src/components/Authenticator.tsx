@@ -60,10 +60,9 @@ export function AuthenticationSubmitted (): JSX.Element {
         <p className='pt-2 pb-4'>
           Click the link in the email we sent to <span className='font-semibold tracking-wide'>{email}</span> to authorize this agent.
         </p>
-        <span onClick={() => plausible('Authorize Cancelled')}>
+        <span onClick={() => plausible('Login Authorization Cancelled')}>
           <AuthCore.CancelButton 
             className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap' 
-            onClick={() => plausible('Login Authorization Cancelled')}
           >
             Cancel
           </AuthCore.CancelButton>
