@@ -35,8 +35,9 @@ async function main() {
     cryptoAdapter: new NodeCryptoAdapter(),
   })
 
+  const signer = { wallet }
   const decryptedContent = await encryptedClient.retrieveAndDecryptFile(
-    wallet,
+    signer,
     cid,
     delegationCarBuffer
   )

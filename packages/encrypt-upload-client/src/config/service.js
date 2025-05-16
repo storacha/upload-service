@@ -5,7 +5,7 @@ import { gatewayServiceConnection } from '@storacha/client/service'
 
 const storachaServiceURL = 'https://up.web3.storage'
 const storachaPrincipalDID = 'did:web:web3.storage'
-
+//TODO: import from service
 export const accessServiceURL = new URL(storachaServiceURL)
 export const accessServicePrincipal = DID.parse(storachaPrincipalDID)
 

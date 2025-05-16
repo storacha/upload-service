@@ -3,7 +3,7 @@
 
 ## About
 
-This library leverages @storacha/cli and @lit-protocol/lit-node-client to provide a simple interface for encrypting files with Lit Protocol and uploading them to the Storacha Network. It also enables anyone with a valid space/content/decrypt UCAN delegation to decrypt the file. With Lit Protocol, encryption keys are managed in a decentralized way, so you don't have to handle them yourself.
+This library leverages `@storacha/cli` and `@lit-protocol/lit-node-client` to provide a simple interface for encrypting files with Lit Protocol and uploading them to the Storacha Network. It also enables anyone with a valid `space/content/decrypt` UCAN delegation to decrypt the file. With Lit Protocol, encryption keys are managed in a decentralized way, so you don't have to handle them yourself.
 
 ## Install
 
@@ -15,9 +15,9 @@ npm @storacha/encrypt-upload-client
 
 ## Usage
 
-To use this library, you'll need to install `@storacha/cli` and `@lit-protocol/lit-node-client`, as they are required for initialization—though the Lit client is optional. You must also provide a crypto adapter that implements the `CryptoAdapter` interface. A ready-to-use Node.js crypto adapter is already available.
+To use this library, you'll need to install `@storacha/cli` and `@lit-protocol/lit-node-client`, as they are required for initialization—though the Lit client is optional. You must also provide a crypto adapter that implements the `CryptoAdapter` interface. A ready-to-use Node.js & Browser crypto adapters are available.
 
-#### CryptoAdapter Interface
+### CryptoAdapter Interface
 
 ```js
 interface CryptoAdapter {
@@ -32,7 +32,7 @@ interface EncryptOutput {
 }
 ```
 
-#### Example Usage
+### Node Usage
 
 ```js
 const encryptedClient = await EncryptClient.create({
@@ -58,7 +58,7 @@ const encryptedClient = await EncryptClient.create({
 
 The encryption process automatically generates a custom Access Control Condition (ACC) based on the current space setup in your Storacha client. It then creates a symmetric key to encrypt the file and uses Lit Protocol to encrypt that key, so you don't have to manage it yourself. Once encrypted, both the file and the generated encrypted metadata are uploaded to Storacha.
 
-#### Example Usage
+#### Encryption Example
 
 ```js
 const fileContent = await fs.promises.readFile('./README.md')
@@ -74,7 +74,7 @@ To decrypt a file, you'll need the CID returned from `uploadEncryptedFile`, a UC
 
 For details on minting Capacity Credits, check out the [official documentation](https://developer.litprotocol.com/concepts/capacity-credits-concept).
 
-#### Example Usage
+#### Decryption Example
 
 ```js
 const decryptedContent = await encryptedClient.retrieveAndDecryptFile(
