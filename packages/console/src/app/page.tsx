@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { SpacesNav } from './space/layout'
 import { H1, H2 } from '@/components/Text'
 import SidebarLayout from '@/components/SidebarLayout'
-import { ReactNode } from 'react'
+import { ReactNode} from 'react'
+
 
 export default function HomePage () {
   return (
@@ -18,6 +19,7 @@ export default function HomePage () {
 
 function SpacePage (): ReactNode {
   const [{ spaces }] = useW3()
+
 
   if (spaces.length === 0) {
     return <div></div>
