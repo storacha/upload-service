@@ -1,7 +1,7 @@
 {
   "name": "@storacha/encrypt-upload-client",
   "type": "module",
-  "version": "0.0.32",
+  "version": "0.0.33",
   "license": "Apache-2.0 OR MIT",
   "description": "Client for upload and download encrypted files",
   "author": "Storacha",
@@ -62,7 +62,8 @@
     "lint:fix": "tsc --build && eslint '**/*.{js,ts}' --fix && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "build-actions": "node lit-actions/esbuild.js",
     "attw": "attw --pack .",
-    "rc": "npm version prerelease --preid rc"
+    "rc": "npm version prerelease --preid rc",
+    "test": "node --test test/**/*.spec.js"
   },
   "dependencies": {
     "@ipld/car": "catalog:",
