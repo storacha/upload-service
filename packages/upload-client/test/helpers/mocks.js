@@ -32,6 +32,7 @@ export function mockService(impl) {
             1: withCallCount(get ? get[0][1] : notImplemented),
           },
         },
+        replicate: withCallCount(impl.space?.blob?.replicate ?? notImplemented)
       },
       index: {
         add: withCallCount(impl.space?.index?.add ?? notImplemented),
