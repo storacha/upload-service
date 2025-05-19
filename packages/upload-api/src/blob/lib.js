@@ -148,10 +148,3 @@ export const toLocationCommitment = (root, blocks) => {
   }
   return Delegation.view({ root, blocks: blockStore })
 }
-
-/**
- * @param {API.Effect} fx
- * @returns {fx is API.Delegation<[API.BlobReplicaTransfer]>}
- */
-export const isBlobReplicaTransfer = fx =>
-  Delegation.isDelegation(fx) && fx.capabilities[0].can === BlobReplica.transfer.can

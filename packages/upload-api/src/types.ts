@@ -517,6 +517,7 @@ export interface ConcludeServiceContext {
   agentStore: AgentStore
   registry: BlobRegistry
   router: RoutingService
+  replicaStore: ReplicaStorage
 }
 
 export interface UcanServiceContext
@@ -664,7 +665,7 @@ export interface UcantoServerTestContext
   carStoreBucket: LegacyCarStoreBucket & Deactivator
   blobsStorage: LegacyBlobsStorage & Deactivator
   claimsService: LegacyUploadAPI.ClaimsClientConfig & ClaimReader & Deactivator
-  storageProviders: Deactivator[]
+  storageProviders: Array<{ id: Signer } & Deactivator>
 }
 
 export interface ClaimReader {

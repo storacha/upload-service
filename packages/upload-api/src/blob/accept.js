@@ -1,6 +1,6 @@
 import * as Blob from '@storacha/capabilities/blob'
 import * as W3sBlob from '@storacha/capabilities/web3.storage/blob'
-import { Message, Receipt, Invocation } from '@ucanto/core'
+import { Message, Receipt } from '@ucanto/core'
 import * as Transport from '@ucanto/transport/car'
 import * as API from '../types.js'
 import * as DID from '@ipld/dag-ucan/did'
@@ -17,22 +17,10 @@ import { isHttpPutTask } from './lib.js'
  *
  * @param {API.ConcludeServiceContext & API.LegacyConcludeServiceContext} context
  * @param {API.Receipt} receipt
+ * @param {API.Invocation} putTask The task referred to by `receipt.ran`.
  * @returns {Promise<API.Result<API.Unit, API.Failure>>}
  */
-export const poll = async (context, receipt) => {
-  const ran = Invocation.isInvocation(receipt.ran)
-    ? { ok: receipt.ran }
-    : await context.agentStore.invocations.get(receipt.ran)
-
-  // If can not find an invocation for this receipt there is nothing to do here,
-  // if it was receipt for `http/put` we would have invocation record.
-  if (!ran.ok) {
-    return { ok: {} }
-  }
-
-  // Detect if this receipt is for an `http/put` invocation
-  const putTask = ran.ok
-
+export const poll = async (context, receipt, putTask) => {
   // If it's not an http/put invocation nothing to do here.
   if (!isHttpPutTask(putTask)) {
     return { ok: {} }

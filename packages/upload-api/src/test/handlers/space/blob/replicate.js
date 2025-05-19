@@ -1,6 +1,6 @@
 import * as API from '../../../../types.js'
 import { sha256 } from 'multiformats/hashes/sha2'
-import { Schema, Receipt, DID } from '@ucanto/core'
+import { Schema, Receipt, DID, ok } from '@ucanto/core'
 import { isDelegation } from '@ucanto/core/delegation'
 import { ed25519 } from '@ucanto/principal'
 import * as SpaceBlobCapabilities from '@storacha/capabilities/space/blob'
@@ -11,6 +11,7 @@ import { alice, randomBytes, registerSpace } from '../../../util.js'
 import { createLocationCommitment, uploadBlob } from '../../../helpers/blob.js'
 import * as Result from '../../../helpers/result.js'
 import { toLocationCommitment } from '../../../../blob/lib.js'
+import { createConcludeInvocation } from '../../../../ucan/conclude.js'
 
 /**
  * @import { AssertLocation } from '@web3-storage/content-claims/capability/api'
@@ -218,28 +219,9 @@ export const test = {
       assert.equal(replicateRcpt.out.ok, undefined)
       assert.equal(replicateRcpt.out.error?.name, 'ReplicationSourceNotFound')
     }),
-  'should not replicate if total replicas exceeds max':
+  'should allow more replicas to be allocated':
     withTestContext(async (assert, context) => {
       const replicateRcpt0 = await SpaceBlobCapabilities.replicate.invoke({
-        issuer: alice,
-        audience: context.id,
-        with: context.space,
-        nb: {
-          blob: {
-            digest: context.digest.bytes,
-            size: context.data.length,
-          },
-          replicas: context.maxReplicas,
-          site: context.site.cid,
-        },
-        proofs: [context.proof, context.site],
-      }).execute(context.connection)
-
-      assert.equal(replicateRcpt0.out.error, undefined)
-      assert.ok(replicateRcpt0.out.ok)
-
-      // replicate again, exceeding the maximum replicas that can be allocated
-      const replicateRcpt1 = await SpaceBlobCapabilities.replicate.invoke({
         issuer: alice,
         audience: context.id,
         with: context.space,
@@ -254,8 +236,67 @@ export const test = {
         proofs: [context.proof, context.site],
       }).execute(context.connection)
 
-      assert.equal(replicateRcpt1.out.ok, undefined)
-      assert.equal(replicateRcpt1.out.error?.name, 'ReplicationCountRangeError')
+      assert.equal(replicateRcpt0.out.error, undefined)
+      assert.ok(replicateRcpt0.out.ok)
+
+      /** @type {API.Invocation[]} */
+      const allocateFx0 = []
+      for (const fx of replicateRcpt0.fx.fork) {
+        if (!isDelegation(fx)) {
+          continue
+        }
+        const allocateMatch = BlobReplicaCapabilities.allocate.match({
+          // @ts-expect-error unknown is not allocate caps
+          capability: fx.capabilities[0],
+          delegation: fx
+        })
+        if (allocateMatch.ok) {
+          allocateFx0.push(fx)
+          continue
+        }
+      }
+      // we should have found 1 allocation
+      assert.equal(allocateFx0.length, 1)
+
+      // replicate again, increasing the total number of replicas to 2
+      const replicateRcpt1 = await SpaceBlobCapabilities.replicate.invoke({
+        issuer: alice,
+        audience: context.id,
+        with: context.space,
+        nb: {
+          blob: {
+            digest: context.digest.bytes,
+            size: context.data.length,
+          },
+          replicas: 2,
+          site: context.site.cid,
+        },
+        proofs: [context.proof, context.site],
+      }).execute(context.connection)
+
+      assert.equal(replicateRcpt1.out.error, undefined)
+      assert.ok(replicateRcpt1.out.ok)
+
+      /** @type {API.Invocation[]} */
+      const allocateFx1 = []
+      for (const fx of replicateRcpt1.fx.fork) {
+        if (!isDelegation(fx)) {
+          continue
+        }
+        const allocateMatch = BlobReplicaCapabilities.allocate.match({
+          // @ts-expect-error unknown is not allocate caps
+          capability: fx.capabilities[0],
+          delegation: fx
+        })
+        if (allocateMatch.ok) {
+          allocateFx1.push(fx)
+          continue
+        }
+      }
+      // we should have found 2 allocations
+      assert.equal(allocateFx1.length, 2)
+      // one of the allocations should be the existing allocation
+      assert.ok(allocateFx1.some(fx => fx.cid.toString() === allocateFx0[0].cid.toString()))
     }),
   'should not replicate if location commitment is invalid':
     withTestContext(async (assert, context) => {
@@ -322,5 +363,92 @@ export const test = {
 
       assert.equal(replicateRcpt.out.ok, undefined)
       assert.equal(replicateRcpt.out.error?.name, 'InvalidReplicationSite')
+    }),
+  'should update replication status when ucan/conclude for blob/replica/transfer is received':
+    withTestContext(async (assert, context) => {
+      const replicateRcpt = await SpaceBlobCapabilities.replicate.invoke({
+        issuer: alice,
+        audience: context.id,
+        with: context.space,
+        nb: {
+          blob: {
+            digest: context.digest.bytes,
+            size: context.data.length,
+          },
+          replicas: 1,
+          site: context.site.cid,
+        },
+        proofs: [context.proof, context.site],
+      }).execute(context.connection)
+
+      assert.equal(replicateRcpt.out.error, undefined)
+      assert.ok(replicateRcpt.out.ok)
+
+      const listRes0 = await context.replicaStore.list({
+        space: context.space,
+        digest: context.digest
+      })
+      assert.equal(listRes0.error, undefined)
+      assert.equal(listRes0.ok?.length, 1)
+      assert.equal(listRes0.ok?.[0].status, 'allocated')
+
+      const transferFx = []
+      for (const fx of replicateRcpt.fx.fork) {
+        if (!isDelegation(fx)) {
+          continue
+        }
+        const transferMatch = BlobReplicaCapabilities.transfer.match({
+          // @ts-expect-error unknown is not allocate caveats
+          capability: fx.capabilities[0],
+          delegation: fx
+        })
+        if (transferMatch.ok) {
+          transferFx.push(fx)
+          continue
+        }
+      }
+      assert.equal(transferFx.length, 1)
+
+      const replicaNodeDID = transferFx[0].issuer.did()
+      const replicaNode = context.storageProviders.find(sp => sp.id.did() === replicaNodeDID)
+      if (!replicaNode) {
+        throw new Error('missing replica node')
+      }
+
+      const claimRcpt = await createLocationCommitment({
+        issuer: replicaNode.id,
+        with: replicaNode.id.did(),
+        audience: context.claimsService.invocationConfig.audience,
+        digest: context.digest,
+        location: /** @type {API.URI} */ ('http://localhost/test'),
+        space: DID.parse(context.space),
+      }).execute(context.claimsService.connection)
+      if (claimRcpt.out.error) {
+        return claimRcpt.out
+      }
+
+      const transferRcpt = await Receipt.issue({
+        issuer: replicaNode.id,
+        ran: transferFx[0].cid,
+        result: ok({
+          site: isDelegation(claimRcpt.ran) ? claimRcpt.ran.cid : claimRcpt.ran
+        }),
+        fx: {
+          // communicate the location commitment
+          fork: [await createConcludeInvocation(replicaNode.id, context.id, claimRcpt).delegate()]
+        }
+      })
+
+      const concludeRcpt = await createConcludeInvocation(replicaNode?.id, context.id, transferRcpt)
+        .execute(context.connection)
+      assert.ok(concludeRcpt.out.ok)
+
+      const listRes1 = await context.replicaStore.list({
+        space: context.space,
+        digest: context.digest
+      })
+      assert.equal(listRes1.error, undefined)
+      assert.equal(listRes1.ok?.length, 1)
+      assert.equal(listRes1.ok?.[0].status, 'transferred')
     }),
 }

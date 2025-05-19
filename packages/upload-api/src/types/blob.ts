@@ -196,7 +196,7 @@ export interface Replica {
   /** Status of the replication. */
   status: ReplicationStatus
   /** Link to `blob/replica/allocate` invocation instructing the replication. */
-  cause: UCANLink
+  cause: UCANLink<[BlobReplicaAllocate]>
 }
 
 /** Indicates the replica was not found. */
@@ -217,7 +217,7 @@ export interface ReplicaStorage {
       digest: MultihashDigest,
       provider: DID,
       status: ReplicationStatus,
-      cause: UCANLink
+      cause: UCANLink<[BlobReplicaAllocate]>
     }
   ) => Promise<Result<Unit, ReplicaExists|Failure>>
   /** Update the replication status. */
