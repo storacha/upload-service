@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["src/**/*", "test/storage/revocations-storage.spec.js", "test/storage/replica-storage.spec.js", "test/storage/rate-limits-storage.spec.js", "test/storage/provisions-storage.spec.js", "test/storage/plans-storage.spec.js", "test/storage/delegations-storage.spec.js", "test/storage/blobs-storage.spec.js", "test/storage/blob-registry.spec.js", "test/storage/agent-store.spec.js", "test/handlers/plan.spec.js"],
+  "include": ["src/**/*"],
   "references": [
     {
       "path": "../filecoin-api/tsconfig.lib.json"
