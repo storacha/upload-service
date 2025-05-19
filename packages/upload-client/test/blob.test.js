@@ -1144,15 +1144,17 @@ describe('Blob.replicate', () => {
     const replicas = 2
     const site =
       /** @type {Delegation<[AssertLocation]>} */
-      (await Assert.location.delegate({
-        issuer: agent,
-        audience: agent,
-        with: space.did(),
-        nb: {
-          content: { digest: digest.bytes },
-          location: ['http://localhost']
-        }
-      }))
+      (
+        await Assert.location.delegate({
+          issuer: agent,
+          audience: agent,
+          with: space.did(),
+          nb: {
+            content: { digest: digest.bytes },
+            location: ['http://localhost'],
+          },
+        })
+      )
 
     const proofs = [
       await BlobCapabilities.replicate.delegate({
@@ -1166,35 +1168,38 @@ describe('Blob.replicate', () => {
     const service = mockService({
       space: {
         blob: {
-          replicate: provide(BlobCapabilities.replicate, async ({ invocation }) => {
-            assert.equal(invocation.issuer.did(), agent.did())
-            assert.equal(invocation.capabilities.length, 1)
-            const invCap = invocation.capabilities[0]
-            assert.equal(invCap.can, BlobCapabilities.replicate.can)
-            assert.equal(invCap.with, space.did())
-            assert.equal(String(invCap.nb?.blob.digest), digest.bytes)
-            assert.equal(invCap.nb?.blob.size, bytes.length)
-            assert.equal(invCap.nb?.replicas, replicas)
-            assert.equal(invCap.nb?.site.toString(), site.cid.toString())
-            const replicaSite = await Assert.location.delegate({
-              issuer: serviceSigner,
-              audience: serviceSigner,
-              with: space.did(),
-              nb: {
-                content: { digest: digest.bytes },
-                location: ['http://localhost']
+          replicate: provide(
+            BlobCapabilities.replicate,
+            async ({ invocation }) => {
+              assert.equal(invocation.issuer.did(), agent.did())
+              assert.equal(invocation.capabilities.length, 1)
+              const invCap = invocation.capabilities[0]
+              assert.equal(invCap.can, BlobCapabilities.replicate.can)
+              assert.equal(invCap.with, space.did())
+              assert.equal(String(invCap.nb?.blob.digest), digest.bytes)
+              assert.equal(invCap.nb?.blob.size, bytes.length)
+              assert.equal(invCap.nb?.replicas, replicas)
+              assert.equal(invCap.nb?.site.toString(), site.cid.toString())
+              const replicaSite = await Assert.location.delegate({
+                issuer: serviceSigner,
+                audience: serviceSigner,
+                with: space.did(),
+                nb: {
+                  content: { digest: digest.bytes },
+                  location: ['http://localhost'],
+                },
+              })
+              return {
+                ok: {
+                  size: bytes.length,
+                  site: [
+                    { 'ucan/await': ['.out.ok.site', replicaSite.cid] },
+                    { 'ucan/await': ['.out.ok.site', replicaSite.cid] },
+                  ],
+                },
               }
-            })
-            return {
-              ok: {
-                size: bytes.length,
-                site: [
-                  { 'ucan/await': ['.out.ok.site', replicaSite.cid] },
-                  { 'ucan/await': ['.out.ok.site', replicaSite.cid] },
-                ]
-              },
             }
-          }),
+          ),
         },
       },
     })
@@ -1234,15 +1239,17 @@ describe('Blob.replicate', () => {
     const replicas = 2
     const site =
       /** @type {Delegation<[AssertLocation]>} */
-      (await Assert.location.delegate({
-        issuer: agent,
-        audience: agent,
-        with: space.did(),
-        nb: {
-          content: { digest: digest.bytes },
-          location: ['http://localhost']
-        }
-      }))
+      (
+        await Assert.location.delegate({
+          issuer: agent,
+          audience: agent,
+          with: space.did(),
+          nb: {
+            content: { digest: digest.bytes },
+            location: ['http://localhost'],
+          },
+        })
+      )
 
     const proofs = [
       await BlobCapabilities.get.delegate({

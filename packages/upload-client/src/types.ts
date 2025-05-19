@@ -165,7 +165,7 @@ export interface Service extends StorefrontService {
             SpaceBlobGetFailure
           >
         }
-      },
+      }
       replicate: ServiceMethod<
         SpaceBlobReplicate,
         SpaceBlobReplicateSuccess,

@@ -172,7 +172,10 @@ export const BlobClient = Test.withContext({
        *
        * @see helpers/receipts-server.js
        */
-      receiptsEndpoint: new URL(`/content/${base58btc.encode(digest.bytes)}/task/`, receiptsEndpoint),
+      receiptsEndpoint: new URL(
+        `/content/${base58btc.encode(digest.bytes)}/task/`,
+        receiptsEndpoint
+      ),
     })
 
     const space = await alice.createSpace('test', {

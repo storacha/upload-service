@@ -37,7 +37,8 @@ const server = createServer(async (req, res) => {
   }
 
   if (
-    task.toString() === 'bafyreibo6nqtvp67daj7dkmeb5c2n6bg5bunxdmxq3lghtp3pmjtzpzfma'
+    task.toString() ===
+    'bafyreibo6nqtvp67daj7dkmeb5c2n6bg5bunxdmxq3lghtp3pmjtzpzfma'
   ) {
     res.writeHead(200, {
       'Content-disposition': 'attachment; filename=' + fixtureName,

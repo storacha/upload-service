@@ -6,13 +6,12 @@ import { servicePrincipal, connection } from '../service.js'
  * @import { MultihashDigest } from 'multiformats'
  * @import { Delegation } from '@ucanto/interface'
  * @import { AssertLocation } from '@web3-storage/content-claims/capability/api'
- * @import { InvocationConfig, RequestOptions } from '../types.js'
  */
 
 /**
  * Replicate a stored Blob by digest to the specified number of nodes.
  *
- * @param {InvocationConfig} conf Configuration
+ * @param {import('../types.js').InvocationConfig} conf Configuration
  * for the UCAN invocation. An object with `issuer`, `with` and `proofs`.
  *
  * The `issuer` is the signing authority that is issuing the UCAN
@@ -31,7 +30,7 @@ import { servicePrincipal, connection } from '../service.js'
  * @param {Delegation<[AssertLocation]>} site Location commitment describing
  * where the blob may be retrieved.
  * @param {number} replicas Total number of replicas to provision.
- * @param {RequestOptions} [options]
+ * @param {import('../types.js').RequestOptions} [options]
  */
 export async function replicate(
   { issuer, with: resource, proofs, audience },
@@ -79,8 +78,8 @@ export const ability = BlobCapabilities.replicate.can
 export const input = (blob, site, replicas) => ({
   blob: {
     digest: blob.digest.bytes,
-    size: blob.size
+    size: blob.size,
   },
   site: site.cid,
-  replicas
+  replicas,
 })
