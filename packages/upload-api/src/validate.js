@@ -59,6 +59,7 @@ export async function authorize(encodedUcan, env) {
         email: DidMailto.toEmail(DidMailto.fromString(account.did())),
         audience: agent.did(),
         ucan: delegationsToString(confirmDelegations),
+        nb: request.capabilities[0].nb
       },
     }
   } catch (error) {
