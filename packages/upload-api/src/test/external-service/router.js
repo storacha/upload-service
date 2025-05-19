@@ -31,23 +31,33 @@ export const create = (serviceID, storageProviders) =>
         provider = undefined
       }
       if (!provider) {
-        provider = storageProviders[getRandomInt(storageProviders.length - 1)].id
+        provider =
+          storageProviders[getRandomInt(storageProviders.length - 1)].id
         stickySelect.set(key, provider)
       }
       return ok(provider)
     },
-    selectReplicationProviders: async (primary, count, digest, size, options) => {
-      const exclusions = [primary, ...(options?.exclude ?? [])]
-        .map(p => p.did())
+    selectReplicationProviders: async (
+      primary,
+      count,
+      digest,
+      size,
+      options
+    ) => {
+      const exclusions = [primary, ...(options?.exclude ?? [])].map((p) =>
+        p.did()
+      )
       const filteredProviders = storageProviders
-        .map(sp => sp.id)
-        .filter(id => !exclusions.includes(id.did()))
+        .map((sp) => sp.id)
+        .filter((id) => !exclusions.includes(id.did()))
 
       if (filteredProviders.length < count) {
-        return error(/** @type {API.BlobAPI.CandidateUnavailable} */ ({
-          name: 'CandidateUnavailable',
-          message: `Wanted ${count} but only ${filteredProviders.length} are available`
-        }))
+        return error(
+          /** @type {API.BlobAPI.CandidateUnavailable} */ ({
+            name: 'CandidateUnavailable',
+            message: `Wanted ${count} but only ${filteredProviders.length} are available`,
+          })
+        )
       }
 
       /** @type {API.Principal[]} */

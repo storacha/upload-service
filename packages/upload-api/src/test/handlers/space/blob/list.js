@@ -80,7 +80,10 @@ export const test = {
       listReverse
     )
   },
-  'space/blob/list can be paginated with custom size': async (assert, context) => {
+  'space/blob/list can be paginated with custom size': async (
+    assert,
+    context
+  ) => {
     const { proof, spaceDid } = await registerSpace(alice, context)
     const connection = connect({
       id: context.id,

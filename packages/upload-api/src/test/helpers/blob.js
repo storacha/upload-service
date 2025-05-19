@@ -194,7 +194,7 @@ export const createLocationCommitment = ({
   proofs,
   digest,
   location,
-  space
+  space,
 }) =>
   Assert.location.invoke({
     issuer,
@@ -203,7 +203,7 @@ export const createLocationCommitment = ({
     nb: {
       content: { digest: digest.bytes },
       location: [location],
-      space
+      space,
     },
     expiration: Infinity,
     proofs,

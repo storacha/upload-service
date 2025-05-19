@@ -22,7 +22,7 @@ export const poll = async (context, receipt, transferTask) => {
   const transferMatch = BlobReplica.transfer.match({
     // @ts-expect-error unkown is not transfer caveats
     capability: transferTask.capabilities[0],
-    delegation: transferTask
+    delegation: transferTask,
   })
   // If it's not a receipt for a blob/replica/transfer task, nothing to do here.
   if (transferMatch.error) {
@@ -30,7 +30,9 @@ export const poll = async (context, receipt, transferTask) => {
   }
 
   const allocTaskLink = transferMatch.ok.value.nb.cause
-  const allocTaskGetRes = await context.agentStore.invocations.get(allocTaskLink)
+  const allocTaskGetRes = await context.agentStore.invocations.get(
+    allocTaskLink
+  )
   if (allocTaskGetRes.error) {
     return allocTaskGetRes
   }
@@ -38,12 +40,13 @@ export const poll = async (context, receipt, transferTask) => {
   const allocMatch = BlobReplica.allocate.match({
     // @ts-expect-error unkown is not transfer caveats
     capability: allocTaskGetRes.ok.capabilities[0],
-    delegation: allocTaskGetRes.ok
+    delegation: allocTaskGetRes.ok,
   })
   if (allocMatch.error) {
     return Server.error({
       name: 'InvalidReplicaTransferCause',
-      message: 'Transfer receipt is for a task with a cause that is not an allocation task'
+      message:
+        'Transfer receipt is for a task with a cause that is not an allocation task',
     })
   }
 
@@ -51,12 +54,14 @@ export const poll = async (context, receipt, transferTask) => {
   if (allocTaskGetRes.ok.issuer.did() !== context.id.did()) {
     return Server.error({
       name: 'UnknownReplicaAllocation',
-      message: 'Allocation task was not issued by this service'
+      message: 'Allocation task was not issued by this service',
     })
   }
 
   // agent that executed the task
-  const executor = Verifier.parse((receipt.issuer ?? transferTask.audience).did())
+  const executor = Verifier.parse(
+    (receipt.issuer ?? transferTask.audience).did()
+  )
   // verify the signature was signed by the executor
   const verifyRes = await receipt.verifySignature(executor)
   if (verifyRes.error) {
@@ -81,13 +86,16 @@ export const poll = async (context, receipt, transferTask) => {
   ) {
     return Server.error({
       name: 'ReplicaTransferParameterMismatch',
-      message: 'Transfer parameters do not match allocation parameters'
+      message: 'Transfer parameters do not match allocation parameters',
     })
   }
 
-  return context.replicaStore.setStatus({
-    space: transferParams.space.did(),
-    digest: Digest.decode(transferParams.blob.digest),
-    provider: allocTaskGetRes.ok.audience.did()
-  }, receipt.out.error ? 'failed' : 'transferred')
+  return context.replicaStore.setStatus(
+    {
+      space: transferParams.space.did(),
+      digest: Digest.decode(transferParams.blob.digest),
+      provider: allocTaskGetRes.ok.audience.did(),
+    },
+    receipt.out.error ? 'failed' : 'transferred'
+  )
 }

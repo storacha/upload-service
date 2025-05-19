@@ -50,6 +50,6 @@ export async function getServiceStorageImplementations(options) {
     delegationsStorage,
     rateLimitsStorage,
     agentStore,
-    replicaStore
+    replicaStore,
   }
 }

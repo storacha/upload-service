@@ -191,7 +191,11 @@ export type { SubscriptionsStorage }
 import { UsageStorage } from './types/usage.js'
 export type { UsageStorage }
 import { StorageGetError } from './types/storage.js'
-import { Registry as BlobRegistry, ReplicaStorage, RoutingService } from './types/blob.js'
+import {
+  Registry as BlobRegistry,
+  ReplicaStorage,
+  RoutingService,
+} from './types/blob.js'
 export type * as BlobAPI from './types/blob.js'
 import { IPNIService, IndexServiceContext } from './types/index.js'
 import { Claim } from '@web3-storage/content-claims/client/api'
@@ -332,7 +336,7 @@ export interface Service extends StorefrontService {
         SpaceBlobReplicate,
         SpaceBlobReplicateSuccess,
         SpaceBlobReplicateFailure
-      >,
+      >
       list: ServiceMethod<
         SpaceBlobList,
         SpaceBlobListSuccess,
@@ -790,5 +794,8 @@ export interface Assert {
   ok: <Actual>(actual: Actual, message?: string) => unknown
 }
 
-export type Test<C = UcantoServerTestContext> = (assert: Assert, context: C) => unknown
+export type Test<C = UcantoServerTestContext> = (
+  assert: Assert,
+  context: C
+) => unknown
 export type Tests = Record<string, Test>

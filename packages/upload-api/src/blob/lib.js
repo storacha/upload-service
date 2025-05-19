@@ -136,7 +136,7 @@ export const isHttpPutTask = (i) =>
   i.capabilities.some((c) => c.can === HTTP.put.can)
 
 /**
- * @param {API.Link} root 
+ * @param {API.Link} root
  * @param {Iterable<API.Block>} blocks
  * @returns {API.Delegation<[AssertLocation]>}
  */

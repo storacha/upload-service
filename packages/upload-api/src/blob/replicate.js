@@ -26,20 +26,26 @@ export const blobReplicateProvider = (context) => {
       const { with: space, nb } = capability
 
       if (nb.replicas > maxReplicas) {
-        return Server.error(/** @type {API.ReplicationCountRangeError} */ ({
-          name: 'ReplicationCountRangeError',
-          message: `requested number of replicas is greater than maximum: ${maxReplicas}`
-        }))
+        return Server.error(
+          /** @type {API.ReplicationCountRangeError} */ ({
+            name: 'ReplicationCountRangeError',
+            message: `requested number of replicas is greater than maximum: ${maxReplicas}`,
+          })
+        )
       }
 
       const digest = Digest.decode(nb.blob.digest)
       const findRes = await registry.find(space, digest)
       if (findRes.error) {
         if (findRes.error.name === 'EntryNotFound') {
-          return Server.error(/** @type {API.ReplicationSourceNotFound} */ ({
-            name: 'ReplicationSourceNotFound',
-            message: `blob not found: ${base58btc.encode(digest.bytes)} in space: ${space}`
-          }))
+          return Server.error(
+            /** @type {API.ReplicationSourceNotFound} */ ({
+              name: 'ReplicationSourceNotFound',
+              message: `blob not found: ${base58btc.encode(
+                digest.bytes
+              )} in space: ${space}`,
+            })
+          )
         }
         return findRes
       }
@@ -54,13 +60,15 @@ export const blobReplicateProvider = (context) => {
       // still exists in "allocated", but has actually timed out/failed.
 
       const activeReplicas = []
-      const failedReplicas = replicaListRes.ok.filter(r => r.status === 'failed')
+      const failedReplicas = replicaListRes.ok.filter(
+        (r) => r.status === 'failed'
+      )
 
       // fetch fx detail for active replicas to include in receipt
       const activeReplicaDetails = await Promise.all(
         replicaListRes.ok
-          .filter(r => r.status !== 'failed')
-          .map(async r => {
+          .filter((r) => r.status !== 'failed')
+          .map(async (r) => {
             const fx = await getReplicaFxDetail(context, r.cause)
             return fx.error ? fx : Server.ok({ replica: r, fx: fx.ok })
           })
@@ -94,24 +102,33 @@ export const blobReplicateProvider = (context) => {
         const claim = toLocationCommitment(nb.site, invocation.export())
         const authRes = await Validator.claim(Assert.location, [claim], {
           authority: context.id,
-          ...invContext
+          ...invContext,
         })
         if (authRes.error) {
-          return Server.error(/** @type {API.InvalidReplicationSite} */ ({
-            name: 'InvalidReplicationSite',
-            message: `location commitment validation error: ${authRes.error.message}`
-          }))
+          return Server.error(
+            /** @type {API.InvalidReplicationSite} */ ({
+              name: 'InvalidReplicationSite',
+              message: `location commitment validation error: ${authRes.error.message}`,
+            })
+          )
         }
 
         // validate location commitment is for the digest we want to replicate
-        const claimDigest = 'multihash' in claim.capabilities[0].nb.content
-          ? claim.capabilities[0].nb.content.multihash
-          : Digest.decode(claim.capabilities[0].nb.content.digest)
+        const claimDigest =
+          'multihash' in claim.capabilities[0].nb.content
+            ? claim.capabilities[0].nb.content.multihash
+            : Digest.decode(claim.capabilities[0].nb.content.digest)
         if (!equals(claimDigest.bytes, digest.bytes)) {
-          return Server.error(/** @type {API.InvalidReplicationSite} */ ({
-            name: 'InvalidReplicationSite',
-            message: `location commitment blob (${base58btc.encode(claimDigest.bytes)}) does not reference replication blob: ${base58btc.encode(digest.bytes)}`
-          }))
+          return Server.error(
+            /** @type {API.InvalidReplicationSite} */ ({
+              name: 'InvalidReplicationSite',
+              message: `location commitment blob (${base58btc.encode(
+                claimDigest.bytes
+              )}) does not reference replication blob: ${base58btc.encode(
+                digest.bytes
+              )}`,
+            })
+          )
         }
 
         const selectRes = await router.selectReplicationProviders(
@@ -122,86 +139,92 @@ export const blobReplicateProvider = (context) => {
           {
             // do not include any nodes where we already have replications or
             // nodes we have previously failed to replicate to
-            exclude: [...activeReplicas, ...failedReplicas]
-              .map(r => DID.parse(r.provider))
+            exclude: [...activeReplicas, ...failedReplicas].map((r) =>
+              DID.parse(r.provider)
+            ),
           }
         )
         if (selectRes.error) {
           return selectRes
         }
 
-        const allocRes = await Promise.all(selectRes.ok.map(async (candidate) => {
-          const candidateDID = candidate.did()
-          const confRes = await router.configureInvocation(candidate, {
-            can: BlobReplica.allocate.can,
-            with: candidateDID,
-            nb: {
-              blob: nb.blob,
-              space: DID.parse(space),
-              site: nb.site,
-              cause: invocation.cid
+        const allocRes = await Promise.all(
+          selectRes.ok.map(async (candidate) => {
+            const candidateDID = candidate.did()
+            const confRes = await router.configureInvocation(candidate, {
+              can: BlobReplica.allocate.can,
+              with: candidateDID,
+              nb: {
+                blob: nb.blob,
+                space: DID.parse(space),
+                site: nb.site,
+                cause: invocation.cid,
+              },
+            })
+            if (confRes.error) {
+              return confRes
             }
-          })
-          if (confRes.error) {
-            return confRes
-          }
 
-          const { connection, invocation: allocInv } = confRes.ok
+            const { connection, invocation: allocInv } = confRes.ok
 
-          const receipt = await allocInv.execute(connection)
-          const task = receipt.ran
-          if (!Delegation.isDelegation(task)) {
-            throw new Error('expected receipt ran to be a delegation')
-          }
+            const receipt = await allocInv.execute(connection)
+            const task = receipt.ran
+            if (!Delegation.isDelegation(task)) {
+              throw new Error('expected receipt ran to be a delegation')
+            }
 
-          // record the invocation and the receipt, so we can retrieve it later
-          // when we get a blob/replica/transfer receipt in ucan/conclude
-          const message = await Message.build({
-            invocations: [task],
-            receipts: [receipt],
-          })
-          const messageWriteRes = await agentStore.messages.write({
-            source: await Transport.outbound.encode(message),
-            data: message,
-            index: [...AgentMessage.index(message)],
-          })
-          if (messageWriteRes.error) {
-            return messageWriteRes
-          }
+            // record the invocation and the receipt, so we can retrieve it later
+            // when we get a blob/replica/transfer receipt in ucan/conclude
+            const message = await Message.build({
+              invocations: [task],
+              receipts: [receipt],
+            })
+            const messageWriteRes = await agentStore.messages.write({
+              source: await Transport.outbound.encode(message),
+              data: message,
+              index: [...AgentMessage.index(message)],
+            })
+            if (messageWriteRes.error) {
+              return messageWriteRes
+            }
 
-          const addRes = await replicaStore.add({
-            space,
-            digest,
-            provider: candidateDID,
-            status: receipt.out.error ? 'failed' : 'allocated',
-            cause:
-              /** @type {API.UCANLink<[API.BlobReplicaAllocate]>} */
-              (task.cid)
+            const addRes = await replicaStore.add({
+              space,
+              digest,
+              provider: candidateDID,
+              status: receipt.out.error ? 'failed' : 'allocated',
+              cause:
+                /** @type {API.UCANLink<[API.BlobReplicaAllocate]>} */
+                (task.cid),
+            })
+            return addRes.error ? addRes : receipt
           })
-          return addRes.error ? addRes : receipt
-        }))
+        )
 
         for (const receipt of allocRes) {
           if ('error' in receipt) {
             return receipt
           }
-  
+
           const transfer = receipt.fx.fork.find(isBlobReplicaTransfer)
           if (!transfer) {
-            return Server.error(new Error('missing blob replica transfer effect'))
+            return Server.error(
+              new Error('missing blob replica transfer effect')
+            )
           }
-  
+
           allocTasks.push(receipt.ran)
           allocReceipts.push(receipt)
           transferTasks.push(transfer)
         }
       }
 
-      const site = transferTasks.map(t => ({
-        'ucan/await': ['.out.ok.site', t.cid]
+      const site = transferTasks.map((t) => ({
+        'ucan/await': ['.out.ok.site', t.cid],
       }))
-      let result = Server
-        .ok(/** @type {API.SpaceBlobReplicateSuccess} */ ({ site }))
+      let result = Server.ok(
+        /** @type {API.SpaceBlobReplicateSuccess} */ ({ site })
+      )
         // add allocation tasks
         .fork(allocTasks[0])
       for (const t of allocTasks.slice(1)) {
@@ -235,10 +258,10 @@ export const blobReplicateProvider = (context) => {
 
 /**
  * Retrieves details of effect chain for replica allocations.
- * 
+ *
  * If the allocation failed (receipt in error) then the return value will not
  * include any details about the transfer. i.e. `transfer` will be `undefined`.
- * 
+ *
  * If the receipt for `blob/replica/transfer` was not yet received, it will not
  * be included in the return value. i.e. `transfer.receipt` will be `undefined`.
  *
@@ -259,7 +282,7 @@ export const blobReplicateProvider = (context) => {
 const getReplicaFxDetail = async ({ agentStore }, allocTaskLink) => {
   const [allocTaskRes, allocRcptRes] = await Promise.all([
     agentStore.invocations.get(allocTaskLink),
-    agentStore.receipts.get(allocTaskLink)
+    agentStore.receipts.get(allocTaskLink),
   ])
   if (allocTaskRes.error) {
     return allocTaskRes
@@ -271,8 +294,8 @@ const getReplicaFxDetail = async ({ agentStore }, allocTaskLink) => {
   const allocTask =
     /** @type {API.Invocation<API.BlobReplicaAllocate>} */
     (allocTaskRes.ok)
-  
-  const allocRcpt = 
+
+  const allocRcpt =
     /** @type {API.Receipt<API.BlobReplicaAllocateSuccess, API.Failure>} */
     (/** @type {unknown} */ (allocRcptRes.ok))
 
@@ -284,7 +307,7 @@ const getReplicaFxDetail = async ({ agentStore }, allocTaskLink) => {
   const transferTaskLink = allocRcpt.out.ok.site['ucan/await'][1]
   const [transferTaskRes, transferRcptRes] = await Promise.all([
     agentStore.invocations.get(transferTaskLink),
-    agentStore.receipts.get(transferTaskLink)
+    agentStore.receipts.get(transferTaskLink),
   ])
   if (transferTaskRes.error) {
     return transferTaskRes
@@ -303,17 +326,17 @@ const getReplicaFxDetail = async ({ agentStore }, allocTaskLink) => {
   if (transferRcptRes.error?.name === 'RecordNotFound') {
     return Server.ok({
       allocate: { task: allocTask, receipt: allocRcpt },
-      transfer: { task: transferTask }
+      transfer: { task: transferTask },
     })
   }
 
   const transferRcpt =
     /** @type {API.Receipt<API.BlobReplicaTransferSuccess, API.Failure>} */
     (/** @type {unknown} */ (transferRcptRes.ok))
-  
+
   return Server.ok({
     allocate: { task: allocTask, receipt: allocRcpt },
-    transfer: { task: transferTask, receipt: transferRcpt }
+    transfer: { task: transferTask, receipt: transferRcpt },
   })
 }
 
@@ -321,5 +344,6 @@ const getReplicaFxDetail = async ({ agentStore }, allocTaskLink) => {
  * @param {API.Effect} fx
  * @returns {fx is API.Delegation<[API.BlobReplicaTransfer]>}
  */
-const isBlobReplicaTransfer = fx =>
-  Delegation.isDelegation(fx) && fx.capabilities[0].can === BlobReplica.transfer.can
+const isBlobReplicaTransfer = (fx) =>
+  Delegation.isDelegation(fx) &&
+  fx.capabilities[0].can === BlobReplica.transfer.can

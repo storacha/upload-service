@@ -16,10 +16,11 @@ export class ReplicaStorage {
    * @param {API.DID} key.provider
    */
   #get({ space, digest, provider }) {
-    return this.data.find(r =>
-      r.provider === provider &&
-      r.space === space &&
-      equals(r.digest.bytes, digest.bytes)
+    return this.data.find(
+      (r) =>
+        r.provider === provider &&
+        r.space === space &&
+        equals(r.digest.bytes, digest.bytes)
     )
   }
 
@@ -27,10 +28,12 @@ export class ReplicaStorage {
   async add(data) {
     const exists = this.#get(data)
     if (exists) {
-      return error(/** @type {API.BlobAPI.ReplicaExists} */({
-        name: 'ReplicaExists',
-        message: 'replica already exists'
-      }))
+      return error(
+        /** @type {API.BlobAPI.ReplicaExists} */ ({
+          name: 'ReplicaExists',
+          message: 'replica already exists',
+        })
+      )
     }
     this.data.push(data)
     return ok({})
@@ -40,10 +43,12 @@ export class ReplicaStorage {
   async setStatus(key, status) {
     const replica = this.#get(key)
     if (!replica) {
-      return error(/** @type {API.BlobAPI.ReplicaNotFound} */({
-        name: 'ReplicaNotFound',
-        message: 'replica not found'
-      }))
+      return error(
+        /** @type {API.BlobAPI.ReplicaNotFound} */ ({
+          name: 'ReplicaNotFound',
+          message: 'replica not found',
+        })
+      )
     }
     replica.status = status
     return ok({})
@@ -52,9 +57,8 @@ export class ReplicaStorage {
   /** @type {API.BlobAPI.ReplicaStorage['list']} */
   async list({ space, digest }) {
     return ok(
-      this.data.filter(r => 
-        r.space === space && 
-        equals(r.digest.bytes, digest.bytes)
+      this.data.filter(
+        (r) => r.space === space && equals(r.digest.bytes, digest.bytes)
       )
     )
   }

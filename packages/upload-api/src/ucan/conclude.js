@@ -18,8 +18,8 @@ export const ucanConcludeProvider = (context) =>
     // meantime we poll tasks that are awaiting a receipt.
     const receipt = getConcludeReceipt(invocation)
     const taskRes = Invocation.isInvocation(receipt.ran)
-        ? { ok: receipt.ran }
-        : await context.agentStore.invocations.get(receipt.ran)
+      ? { ok: receipt.ran }
+      : await context.agentStore.invocations.get(receipt.ran)
 
     // If can not find task for this receipt there is nothing to do here, if it
     // was receipt for something we care about we would have invocation record.
@@ -30,7 +30,7 @@ export const ucanConcludeProvider = (context) =>
     const pollContext = { ...context, invocation: invContext }
     const results = await Promise.all([
       BlobAccept.poll(pollContext, receipt, taskRes.ok),
-      BlobReplicaTransfer.poll(pollContext, receipt, taskRes.ok)
+      BlobReplicaTransfer.poll(pollContext, receipt, taskRes.ok),
     ])
 
     // If polling failed we propagate the error to the caller, while this is

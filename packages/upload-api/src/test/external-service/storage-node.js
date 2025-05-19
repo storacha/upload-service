@@ -102,18 +102,16 @@ const createService = ({
           return error(new AllocatedMemoryNotWrittenError())
         }
 
-        const receipt = await createLocationCommitment(
-          {
-            issuer: id,
-            with: id.did(),
-            audience: claimsService.invocationConfig.audience,
-            digest,
-            location:
-              /** @type {API.URI} */
-              (new URL(contentKey(digest), baseURL()).toString()),
-            space: capability.nb.space,
-          }
-        ).execute(claimsService.connection)
+        const receipt = await createLocationCommitment({
+          issuer: id,
+          with: id.did(),
+          audience: claimsService.invocationConfig.audience,
+          digest,
+          location:
+            /** @type {API.URI} */
+            (new URL(contentKey(digest), baseURL()).toString()),
+          space: capability.nb.space,
+        }).execute(claimsService.connection)
         if (receipt.out.error) {
           return receipt.out
         }
@@ -137,23 +135,21 @@ const createService = ({
               space: capability.nb.space,
               site: capability.nb.site,
               cause: invocation.cid,
-            }
+            },
           })
 
           // if we already have the digest, we can issue a transfer receipt
           if (hasDigest) {
-            const claimRcpt = await createLocationCommitment(
-              {
-                issuer: id,
-                with: id.did(),
-                audience: claimsService.invocationConfig.audience,
-                digest,
-                location:
-                  /** @type {API.URI} */
-                  (new URL(contentKey(digest), baseURL()).toString()),
-                space: capability.nb.space,
-              }
-            ).execute(claimsService.connection)
+            const claimRcpt = await createLocationCommitment({
+              issuer: id,
+              with: id.did(),
+              audience: claimsService.invocationConfig.audience,
+              digest,
+              location:
+                /** @type {API.URI} */
+                (new URL(contentKey(digest), baseURL()).toString()),
+              space: capability.nb.space,
+            }).execute(claimsService.connection)
             if (claimRcpt.out.error) {
               return claimRcpt.out
             }
@@ -168,29 +164,34 @@ const createService = ({
               result: Server.ok({ site: claim.cid }),
               fx: {
                 // communicate the locaiton commitment
-                fork: [await createConcludeInvocation(id, id, claimRcpt).delegate()]
-              }
+                fork: [
+                  await createConcludeInvocation(id, id, claimRcpt).delegate(),
+                ],
+              },
             })
-    
-            return Server
-              .ok(/** @type {API.BlobReplicaAllocateSuccess} */ ({
+
+            return Server.ok(
+              /** @type {API.BlobReplicaAllocateSuccess} */ ({
                 size: 0,
-                site: { 'ucan/await': ['.out.ok.site', transferTask.cid] }
-              }))
+                site: { 'ucan/await': ['.out.ok.site', transferTask.cid] },
+              })
+            )
               .fork(transferTask)
-              .fork(await createConcludeInvocation(id, id, transferRcpt).delegate())
+              .fork(
+                await createConcludeInvocation(id, id, transferRcpt).delegate()
+              )
           }
 
           await allocationStore.add(digest)
 
-          return Server
-            .ok(/** @type {API.BlobReplicaAllocateSuccess} */ ({
+          return Server.ok(
+            /** @type {API.BlobReplicaAllocateSuccess} */ ({
               size: capability.nb.blob.size,
-              site: { 'ucan/await': ['.out.ok.site', transferTask.cid] }
-            }))
-            .fork(transferTask)
+              site: { 'ucan/await': ['.out.ok.site', transferTask.cid] },
+            })
+          ).fork(transferTask)
         },
-      })
+      }),
     },
   },
 })

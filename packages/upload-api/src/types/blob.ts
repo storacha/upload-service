@@ -93,7 +93,11 @@ export interface BlobService {
     allocate: ServiceMethod<BlobAllocate, BlobAllocateSuccess, Failure>
     accept: ServiceMethod<BlobAccept, BlobAcceptSuccess, Failure>
     replica: {
-      allocate: ServiceMethod<BlobReplicaAllocate, BlobReplicaAllocateSuccess, BlobReplicaAllocateFailure>
+      allocate: ServiceMethod<
+        BlobReplicaAllocate,
+        BlobReplicaAllocateSuccess,
+        BlobReplicaAllocateFailure
+      >
     }
   }
 }
@@ -163,7 +167,9 @@ export interface RoutingService {
    * Returns information required to make an invocation to the requested storage
    * node.
    */
-  configureInvocation<C extends BlobAllocate | BlobAccept | BlobReplicaAllocate>(
+  configureInvocation<
+    C extends BlobAllocate | BlobAccept | BlobReplicaAllocate
+  >(
     provider: Principal,
     capability: C,
     options?: Omit<UCANOptions, 'audience'>
@@ -172,7 +178,7 @@ export interface RoutingService {
 
 /**
  * Replication status for a blob.
- * 
+ *
  * - `allocated` - Initial state, implies the service invoked and received a
  *   success receipt for `blob/replica/allocate` from the replica node.
  * - `transferred` - The service has received a success receipt from the replica
@@ -181,10 +187,7 @@ export interface RoutingService {
  *   received an error receipt for the `blob/replica/transfer` task or the
  *   receipt was never communicated and the task has expired.
  */
-export type ReplicationStatus =
-  | 'allocated'
-  | 'transferred'
-  | 'failed'
+export type ReplicationStatus = 'allocated' | 'transferred' | 'failed'
 
 export interface Replica {
   /** Space the blob is stored in. */
@@ -211,29 +214,25 @@ export interface ReplicaExists extends Failure {
 
 export interface ReplicaStorage {
   /** Add a replica to the store. */
-  add: (
-    data: {
-      space: SpaceDID,
-      digest: MultihashDigest,
-      provider: DID,
-      status: ReplicationStatus,
-      cause: UCANLink<[BlobReplicaAllocate]>
-    }
-  ) => Promise<Result<Unit, ReplicaExists|Failure>>
+  add: (data: {
+    space: SpaceDID
+    digest: MultihashDigest
+    provider: DID
+    status: ReplicationStatus
+    cause: UCANLink<[BlobReplicaAllocate]>
+  }) => Promise<Result<Unit, ReplicaExists | Failure>>
   /** Update the replication status. */
   setStatus: (
     key: {
-      space: SpaceDID,
-      digest: MultihashDigest,
-      provider: DID,
+      space: SpaceDID
+      digest: MultihashDigest
+      provider: DID
     },
     status: ReplicationStatus
-  ) => Promise<Result<Unit, ReplicaNotFound|Failure>>
+  ) => Promise<Result<Unit, ReplicaNotFound | Failure>>
   /** List replicas for the given space/blob. */
-  list: (
-    filter: {
-      space: SpaceDID,
-      digest: MultihashDigest
-    }
-  ) => Promise<Result<Replica[], Failure>>
+  list: (filter: {
+    space: SpaceDID
+    digest: MultihashDigest
+  }) => Promise<Result<Replica[], Failure>>
 }
