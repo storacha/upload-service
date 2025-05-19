@@ -11,7 +11,7 @@ import * as Result from '../helpers/result.js'
  * @param {API.MultihashDigest} [options.digest]
  * @param {API.DID} [options.provider]
  * @param {API.BlobAPI.ReplicationStatus} [options.status]
- * @param {API.UCANLink} [options.cause]
+ * @param {API.UCANLink<[API.BlobReplicaAllocate]>} [options.cause]
  */
 const createReplica = async ({ space, digest, provider, status, cause } = {}) => ({
   space: space ?? (await ed25519.generate()).did(),
