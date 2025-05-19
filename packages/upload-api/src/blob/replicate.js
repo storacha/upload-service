@@ -44,7 +44,7 @@ export const blobReplicateProvider = (context) => {
         return findRes
       }
 
-      // check if we have any existing replicas
+      // check if we have any active replications
       const replicaListRes = await replicaStore.list({ space, digest })
       if (replicaListRes.error) {
         return replicaListRes
@@ -53,8 +53,11 @@ export const blobReplicateProvider = (context) => {
       // TODO: handle the case where a receipt was not received and the replica
       // still exists in "allocated", but has actually timed out/failed.
 
-      // fetch fx detail for non-failed existing replicas to include in receipt
-      const existingReplicaRes = await Promise.all(
+      const activeReplicas = []
+      const failedReplicas = replicaListRes.ok.filter(r => r.status === 'failed')
+
+      // fetch fx detail for active replicas to include in receipt
+      const activeReplicaDetails = await Promise.all(
         replicaListRes.ok
           .filter(r => r.status !== 'failed')
           .map(async r => {
@@ -63,15 +66,16 @@ export const blobReplicateProvider = (context) => {
           })
       )
 
-      const existingReplicas = []
       const allocTasks = []
       const allocReceipts = []
       const transferTasks = []
       const transferReceipts = []
 
-      for (const res of existingReplicaRes) {
-        if (res.error) return res
-        existingReplicas.push(res.ok.replica)
+      for (const res of activeReplicaDetails) {
+        if (res.error) {
+          return res
+        }
+        activeReplicas.push(res.ok.replica)
         allocTasks.push(res.ok.fx.allocate.task)
         allocReceipts.push(res.ok.fx.allocate.receipt)
         if (res.ok.fx.transfer) {
@@ -83,7 +87,7 @@ export const blobReplicateProvider = (context) => {
       }
 
       // TODO: support reducing the number of replicas?
-      const newReplicasCount = nb.replicas - existingReplicas.length
+      const newReplicasCount = nb.replicas - activeReplicas.length
 
       // lets allocate some replicas!
       if (newReplicasCount > 0) {
@@ -115,7 +119,12 @@ export const blobReplicateProvider = (context) => {
           newReplicasCount,
           digest,
           nb.blob.size,
-          { exclude: existingReplicas.map(r => DID.parse(r.provider)) }
+          {
+            // do not include any nodes where we already have replications or
+            // nodes we have previously failed to replicate to
+            exclude: [...activeReplicas, ...failedReplicas]
+              .map(r => DID.parse(r.provider))
+          }
         )
         if (selectRes.error) {
           return selectRes

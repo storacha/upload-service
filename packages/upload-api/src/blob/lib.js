@@ -3,7 +3,6 @@ import { Failure } from '@ucanto/server'
 import { ed25519 } from '@ucanto/principal'
 import { base58btc } from 'multiformats/bases/base58'
 import * as HTTP from '@storacha/capabilities/http'
-import * as BlobReplica from '@storacha/capabilities/blob/replica'
 import * as API from '../types.js'
 
 /** @import { AssertLocation } from '@web3-storage/content-claims/capability/api' */
