@@ -46,12 +46,6 @@ export const AuthorizationRequest = Schema.struct({
    * Capabilities agent wishes to be granted.
    */
   att: CapabilityRequest.array(),
-  /**
-   * App agent wishes to authorize for. This is used, for example,
-   * in bsky.storage to ensure the user sees the Stripe pricing table that
-   * will send them back to bsky.storage after checkout.
-   */
-  app: Schema.string().optional()
 })
 
 /**
@@ -79,7 +73,6 @@ export const authorize = capability({
     return (
       and(equalWith(child, parent)) ||
       and(equal(child.nb.iss, parent.nb.iss, 'iss')) ||
-      and(equal(child.nb.app, parent.nb.app, 'app')) ||
       and(subsetCapabilities(child.nb.att, parent.nb.att)) ||
       ok({})
     )
@@ -104,14 +97,12 @@ export const confirm = capability({
     iss: Account,
     aud: Schema.did(),
     att: CapabilityRequest.array(),
-    app: Schema.string().optional()
   }),
   derives: (claim, proof) => {
     return (
       and(equalWith(claim, proof)) ||
       and(equal(claim.nb.iss, proof.nb.iss, 'iss')) ||
       and(equal(claim.nb.aud, proof.nb.aud, 'aud')) ||
-      and(equal(claim.nb.app, proof.nb.aud, 'app')) ||
       and(subsetCapabilities(claim.nb.att, proof.nb.att)) ||
       and(checkLink(claim.nb.cause, proof.nb.cause, 'nb.cause')) ||
       ok({})
