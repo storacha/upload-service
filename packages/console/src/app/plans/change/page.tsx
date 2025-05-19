@@ -289,6 +289,13 @@ function Plans () {
   )
 }
 
+<div className="mt-8 text-center">
+  <a href="https://945c6cfe.sibforms.com/serve/MUIFAEiE7zYhGaWksoWb_Wsa1_FewBBhKWeQlfVGQPcuemEWXhKLz2Kof61GIa7Fj6OzjThK5-XiW166g_5DyIz3aTrtzHE9RbDe2bcH85cyfqvRHehGRUPHIwKqBFUzWUhuAuGjL1YgHI-eIbQ7sBc1sxcbNZlav7kjdw_c4Q9rSf8Kbsp3o5rCDOpHPedxHabQmn8ZMMnE-Ma9" target="_blank" rel="noopener noreferrer" className="inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap">
+    DELETE YOUR ACCOUNT
+    <ArrowTopRightOnSquareIcon className='relative inline h-5 w-4 ml-1 -mt-1' />
+  </a>
+</div>
+
 export default function PlansPage () {
   return (
     <SidebarLayout>
