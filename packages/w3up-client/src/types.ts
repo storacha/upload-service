@@ -24,6 +24,7 @@ export type { Agent, CapabilityQuery } from '@storacha/access/agent'
 export type {
   Access,
   AccountDID,
+  AppName,
   ProviderDID,
   SpaceDID,
   OwnedSpace,

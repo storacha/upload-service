@@ -88,7 +88,7 @@ export const claim = async ({ agent }, input) =>
  * @param {API.AccountDID} input.account
  * @param {API.Access} [input.access]
  * @param {API.DID} [input.audience]
- * @param {API.Fact[]} [input.facts]
+ * @param {Agent.AppName} [input.appName]
  */
 export const request = async ({ agent }, input) =>
   Agent.Access.request(agent, input)

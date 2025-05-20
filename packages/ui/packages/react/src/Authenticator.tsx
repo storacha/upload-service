@@ -11,7 +11,7 @@ import React, {
 } from 'react'
 import { createComponent, createElement } from 'ariakit-react-utils'
 import { useW3, ContextState, ContextActions } from './providers/Provider.js'
-import { EmailAddress, Fact } from '@storacha/ui-core'
+import { EmailAddress, AppName } from '@storacha/ui-core'
 
 export type AuthenticatorContextState = ContextState & {
   /**
@@ -73,7 +73,7 @@ export type AuthenticatorRootOptions<T extends As = typeof Fragment> =
 export type AuthenticatorRootProps<T extends As = typeof Fragment> = Props<
   AuthenticatorRootOptions<T>
 > & {
-  facts?: Fact[]
+  appName: AppName
 }
 
 /**
@@ -103,7 +103,7 @@ export const AuthenticatorRoot: Component<AuthenticatorRootProps> =
           if (client === undefined) throw new Error('missing client')
           await client.login(email as EmailAddress, {
             signal: controller?.signal,
-            facts: props.facts
+            appName: props.appName
           })
         } catch (error: any) {
           if (!controller.signal.aborted) {

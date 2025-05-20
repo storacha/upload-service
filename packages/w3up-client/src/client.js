@@ -1,3 +1,4 @@
+import { AppName } from '@storacha/access'
 import {
   uploadFile,
   uploadDirectory,
@@ -90,7 +91,7 @@ export class Client extends Base {
    * @param {Account.EmailAddress} email
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
-   * @param {import('@ipld/dag-ucan').Fact[]} [options.facts]
+   * @param {AppName} [options.appName]
    */
   async login(email, options = {}) {
     const account = Result.unwrap(await Account.login(this, email, options))

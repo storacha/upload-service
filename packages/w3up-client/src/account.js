@@ -80,7 +80,7 @@ export const list = ({ agent }, { account } = {}) => {
  * @param {EmailAddress} email
  * @param {object} [options]
  * @param {AbortSignal} [options.signal]
- * @param {import('@ipld/dag-ucan').Fact[]} [options.facts]
+ * @param {API.AppName} [options.appName]
  * @returns {Promise<API.Result<Account, Error>>}
  */
 export const login = async ({ agent }, email, options = {}) => {
@@ -106,7 +106,7 @@ export const login = async ({ agent }, email, options = {}) => {
     {
       account,
       access: Access.accountAccess,
-      facts: options.facts,
+      appName: options.appName,
     }
   )
 
