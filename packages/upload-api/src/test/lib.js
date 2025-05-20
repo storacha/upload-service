@@ -33,8 +33,8 @@ const Blob = {
     ...BlobAdd.test,
     ...BlobList.test,
     ...BlobRemove.test,
-    ...BlobReplicate.test
-  }
+    ...BlobReplicate.test,
+  },
 }
 
 export const test = {

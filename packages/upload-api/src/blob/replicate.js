@@ -210,7 +210,7 @@ export const blobReplicateProvider = (context) => {
           if (!transfer) {
             return Server.error({
               name: 'MissingEffect',
-              message: 'missing blob replica transfer effect'
+              message: 'missing blob replica transfer effect',
             })
           }
 
