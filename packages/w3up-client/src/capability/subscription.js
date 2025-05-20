@@ -46,6 +46,7 @@ export const list = async ({ agent }, { account, nonce, proofs = [] }) => {
   const receipt = await agent.invokeAndExecute(SubscriptionCapabilities.list, {
     with: account,
     proofs,
+    nb: undefined,
     nonce,
   })
   return receipt.out
