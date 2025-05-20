@@ -208,9 +208,10 @@ export const blobReplicateProvider = (context) => {
 
           const transfer = receipt.fx.fork.find(isBlobReplicaTransfer)
           if (!transfer) {
-            return Server.error(
-              new Error('missing blob replica transfer effect')
-            )
+            return Server.error({
+              name: 'MissingEffect',
+              message: 'missing blob replica transfer effect'
+            })
           }
 
           allocTasks.push(receipt.ran)
