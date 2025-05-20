@@ -73,7 +73,7 @@ export type AuthenticatorRootOptions<T extends As = typeof Fragment> =
 export type AuthenticatorRootProps<T extends As = typeof Fragment> = Props<
   AuthenticatorRootOptions<T>
 > & {
-  appName: AppName
+  appName?: AppName
 }
 
 /**
