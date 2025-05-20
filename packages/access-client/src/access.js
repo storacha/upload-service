@@ -55,6 +55,7 @@ export const delegate = async (
  * @param {API.ProviderDID} [input.provider] - Provider that will receive the invocation.
  * @param {API.DID} [input.audience] - Principal requesting an access.
  * @param {API.Access} [input.access] - Access been requested.
+ * @param {API.AppName} [input.appName] - A list of Facts to pass to the access/authorize invocation
  * @returns {Promise<API.Result<PendingAccessRequest, API.AccessAuthorizeFailure|API.InvocationError>>}
  */
 export const request = async (
@@ -64,6 +65,7 @@ export const request = async (
     provider = /** @type {API.ProviderDID} */ (agent.connection.id.did()),
     audience: audience = agent.did(),
     access = spaceAccess,
+    appName,
   }
 ) => {
   // Request access from the account.
@@ -77,6 +79,7 @@ export const request = async (
       // in the meantime we translate new format to legacy format here.
       att: [...toCapabilities(access)],
     },
+    facts: appName ? [{ appName }] : undefined,
   })
 
   return result.error
