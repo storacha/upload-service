@@ -395,6 +395,10 @@ export interface BlobLike {
    * Returns a ReadableStream which yields the Blob data.
    */
   stream: Blob['stream']
+  /**
+   * Size in bytes of the blob.
+   */
+  size?: number
 }
 
 export interface FileLike extends BlobLike {

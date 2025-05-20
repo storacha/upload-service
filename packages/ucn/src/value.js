@@ -2,9 +2,9 @@
 
 class Value {
   /**
-   * @param {API.Name} name
-   * @param {API.RawValue} value
-   * @param {API.Revision[]} revision
+   * @param {API.NameView} name
+   * @param {API.Value} value
+   * @param {API.RevisionView[]} revision
    */
   constructor(name, value, revision) {
     this.name = name
@@ -14,18 +14,18 @@ class Value {
 }
 
 /**
- * @param {API.Name} name
- * @param {API.RawValue} value
- * @param  {API.Revision[]} revision
- * @returns {API.Value}
+ * @param {API.NameView} name
+ * @param {API.Value} value
+ * @param  {API.RevisionView[]} revision
+ * @returns {API.ValueView}
  */
 export const create = (name, value, revision) =>
   new Value(name, value, revision)
 
 /**
- * @param {API.Name} name
- * @param {...API.Revision} revision
- * @returns {API.Value}
+ * @param {API.NameView} name
+ * @param {...API.RevisionView} revision
+ * @returns {API.ValueView}
  */
 export const from = (name, ...revision) => {
   if (!revision.length) throw new Error('missing revisions')

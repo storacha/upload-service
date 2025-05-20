@@ -1,3 +1,13 @@
+## 1.2.0 (2025-05-13)
+
+### 🚀 Features
+
+- perf: faster small file uploads ([#257](https://github.com/storacha/upload-service/pull/257))
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.0.9 (2025-03-27)
 
 ### 🧱 Updated Dependencies

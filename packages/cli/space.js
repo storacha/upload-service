@@ -3,7 +3,7 @@ import * as W3Account from '@storacha/client/account'
 import * as UcantoClient from '@ucanto/client'
 import { HTTP } from '@ucanto/transport'
 import * as CAR from '@ucanto/transport/car'
-import { getClient } from './lib.js'
+import { getClient, parseEmail } from './lib.js'
 import process from 'node:process'
 import * as DIDMailto from '@storacha/did-mailto'
 import * as Account from './account.js'
@@ -288,18 +288,6 @@ const chooseSpace = (client, { name }) => {
  * @param {CreateOptions} options
  */
 export const setupEmailRecovery = async (space, options = {}) => {}
-
-/**
- * @param {string} email
- * @returns {{ok: DIDMailto.EmailAddress, error?:void}|{ok?:void, error: Error}}
- */
-const parseEmail = (email) => {
-  try {
-    return { ok: DIDMailto.email(email) }
-  } catch (cause) {
-    return { error: /** @type {Error} */ (cause) }
-  }
-}
 
 /**
  * @param {W3Space.OwnedSpace} space

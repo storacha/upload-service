@@ -1,3 +1,33 @@
+## 1.2.18 (2025-05-13)
+
+### 🩹 Fixes
+
+- fix: prompt for email if not provided ([45330bce](https://github.com/storacha/upload-service/commit/45330bce))
+
+### ❤️ Thank You
+
+- Alan Shaw
+
+## 1.2.17 (2025-05-13)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.2.9
+
+## 1.2.15 (2025-05-07)
+
+### 🩹 Fixes
+
+- fix: remove unused option for concurrent requests ([#244](https://github.com/storacha/upload-service/pull/244))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.2.8
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.2.13 (2025-04-28)
 
 ### 🧱 Updated Dependencies

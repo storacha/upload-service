@@ -60,6 +60,21 @@ export async function encode(blocks, root) {
   return Object.assign(new Blob(chunks), { version: 1, roots })
 }
 
+/** @param {import('./types.js').BlobLike} car */
+export async function decode(car) {
+  const stream = new BlockStream(car)
+  const blocks = /** @type {Block[]} */ ([])
+  await stream.pipeTo(
+    new WritableStream({
+      write: (block) => {
+        blocks.push(block)
+      },
+    })
+  )
+  const roots = await stream.getRoots()
+  return { blocks, roots }
+}
+
 /** @extends {ReadableStream<Block>} */
 export class BlockStream extends ReadableStream {
   /** @param {import('./types.js').BlobLike} car */

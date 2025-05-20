@@ -1,11 +1,11 @@
 import open from 'open'
-import { confirm, select } from '@inquirer/prompts'
+import { confirm, select, input } from '@inquirer/prompts'
 import * as Account from '@storacha/client/account'
 import * as Result from '@storacha/client/result'
 import * as DidMailto from '@storacha/did-mailto'
 import { authorize } from '@storacha/capabilities/access'
 import { base64url } from 'multiformats/bases/base64'
-import { getClient } from './lib.js'
+import { getClient, parseEmail } from './lib.js'
 import ora from 'ora'
 
 /**
@@ -50,6 +50,17 @@ export const login = async (email, options) => {
         { name: 'Via GitHub', value: 'github' },
       ],
     })
+  }
+
+  if (method === 'email' && !email) {
+    const emailStr = await input({
+      message: `📧 Please enter your email address to login`,
+      validate: (input) => parseEmail(input).ok != null,
+    }).catch(() => null)
+
+    if (emailStr) {
+      email = /** @type {DidMailto.EmailAddress} */ (emailStr)
+    }
   }
 
   if (method === 'email' && email) {
@@ -151,7 +162,7 @@ export const oauthLoginWithClient = async (provider, client) => {
     Result.unwrap(await account.save())
 
     if (spinner) spinner.stop()
-    console.log(`⁂ Agent was authorized by ${account.did()}`)
+    console.log(`🐔 Agent was authorized by ${account.did()}`)
     return account
   } catch (err) {
     if (spinner) spinner.stop()

@@ -15,7 +15,7 @@ import {
 
 /**
  * @param {API.Signer} signer
- * @param {API.Service<API.RawValue>} service
+ * @param {API.Service<API.Value>} service
  */
 export const createServer = (signer, service) =>
   create({
@@ -29,7 +29,7 @@ export const createServer = (signer, service) =>
 
 /**
  * @param {API.Context} context
- * @returns {API.Service<API.RawValue>}
+ * @returns {API.Service<API.Value>}
  */
 // TODO: move to w3clock?
 export const createService = ({ headStore, blockFetcher, blockCache }) => {
@@ -100,6 +100,9 @@ export const createService = ({ headStore, blockFetcher, blockCache }) => {
         const resource = DID.parse(capability.with).did()
         const headGet = await headStore.get(resource)
         if (headGet.error) {
+          if (headGet.error.name === 'NotFound') {
+            return ok({ head: [] })
+          }
           return headGet
         }
 
