@@ -24,7 +24,7 @@ export const test = {
         issuer: alice,
         audience: context.id,
         with: spaces[0].account.did(),
-        nb: undefined,
+        nb: {},
         proofs: await createAuthorization({
           agent: alice,
           account: spaces[0].account,
