@@ -5,7 +5,10 @@ import * as AdminUploadInspect from './handlers/admin/upload/inspect.js'
 import * as RateLimitAdd from './handlers/rate-limit/add.js'
 import * as RateLimitList from './handlers/rate-limit/list.js'
 import * as RateLimitRemove from './handlers/rate-limit/remove.js'
-import * as Blob from './handlers/space/blob/add.js'
+import * as BlobAdd from './handlers/space/blob/add.js'
+import * as BlobList from './handlers/space/blob/list.js'
+import * as BlobRemove from './handlers/space/blob/remove.js'
+import * as BlobReplicate from './handlers/space/blob/replicate.js'
 import * as Ucan from './handlers/ucan.js'
 import * as Subscription from './handlers/subscription.js'
 import * as Upload from './handlers/upload.js'
@@ -24,6 +27,15 @@ import { DebugEmail } from '../utils/email.js'
 export * as Context from './helpers/context.js'
 
 export * from './util.js'
+
+const Blob = {
+  test: {
+    ...BlobAdd.test,
+    ...BlobList.test,
+    ...BlobRemove.test,
+    ...BlobReplicate.test
+  }
+}
 
 export const test = {
   ...Blob.test,
