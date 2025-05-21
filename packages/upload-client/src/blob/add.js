@@ -333,7 +333,7 @@ export async function add(
     ])
   )
   const site = Delegation.view({
-    root: /** @type {import('@ucanto/interface').UCANLink} */ (
+    root: /** @type {import('@ucanto/interface').UCANLink<[import('@web3-storage/content-claims/capability/api').AssertLocation]>} */ (
       acceptReceipt.out.ok?.site
     ),
     blocks,
