@@ -1,3 +1,13 @@
+## 1.5.0 (2025-05-21)
+
+### 🚀 Features
+
+- feat: implement replication protocol ([#253](https://github.com/storacha/upload-service/pull/253))
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.4.0 (2025-03-27)
 
 ### 🚀 Features
