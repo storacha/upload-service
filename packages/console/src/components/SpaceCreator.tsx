@@ -16,7 +16,6 @@ import { gatewayHost } from './services'
 import { logAndCaptureError } from '@/sentry'
 import { usePlausible } from 'next-plausible'
 
-
 export function SpaceCreatorCreating(): JSX.Element {
   return (
     <div className='flex flex-col items-center space-y-4'>
