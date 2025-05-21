@@ -5,7 +5,6 @@ import Toaster from '@/components/Toaster'
 import { Provider as MigrationsProvider } from '@/components/MigrationsProvider'
 import PlausibleProvider from 'next-plausible'
 
-
 export const metadata: Metadata = {
   title: 'Storacha console',
   description: 'Storacha management console',
