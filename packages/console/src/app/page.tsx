@@ -6,8 +6,7 @@ import Link from 'next/link'
 import { SpacesNav } from './space/layout'
 import { H1, H2 } from '@/components/Text'
 import SidebarLayout from '@/components/SidebarLayout'
-import { ReactNode} from 'react'
-
+import { ReactNode } from 'react'
 
 export default function HomePage () {
   return (
