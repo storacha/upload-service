@@ -358,7 +358,7 @@ export const test = {
       })
       .execute(context.connection)
 
-    assert.ok(String(revoke.out.error?.message).match(/Constrain violation/))
+    assert.ok(String(revoke.out.error?.message).match(/Constraint violation/))
   },
   'ucan/conclude writes a receipt for unknown tasks': async (
     assert,
