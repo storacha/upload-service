@@ -14,9 +14,7 @@
     "lint": "echo 'Linting in @storacha/ui-react is temporarily disabled while we resolve version issues.'",
     "lint:fix": "echo 'Linting in @storacha/ui-react is temporarily disabled while we resolve version issues.'",
     "test": "vitest run",
-    "test:watch": "vitest watch",
-    "build": "tsc --build"
-
+    "test:watch": "vitest watch"
   },
   "files": [
     "dist",
