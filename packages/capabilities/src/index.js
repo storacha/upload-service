@@ -1,3 +1,4 @@
+import * as Assert from './assert.js'
 import * as Provider from './provider.js'
 import * as Space from './space.js'
 import * as Top from './top.js'
@@ -27,6 +28,7 @@ import * as HTTP from './http.js'
 
 export {
   Access,
+  Assert,
   Provider,
   Space,
   Top,
@@ -57,6 +59,13 @@ export {
 /** @type {import('./types.js').ServiceAbility[]} */
 export const abilitiesAsStrings = [
   Top.top.can,
+  Assert.assert.can,
+  Assert.equals.can,
+  Assert.inclusion.can,
+  Assert.index.can,
+  Assert.location.can,
+  Assert.partition.can,
+  Assert.relation.can,
   Provider.add.can,
   Space.space.can,
   Space.info.can,

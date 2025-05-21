@@ -18,6 +18,7 @@ import {
   ProofData,
   uint64,
 } from '@web3-storage/data-segment'
+import * as AssertCaps from './assert.js'
 import * as SpaceCaps from './space.js'
 import * as provider from './provider.js'
 import { top } from './top.js'
@@ -125,6 +126,16 @@ export interface DelegationNotFound extends Ucanto.Failure {
 }
 
 export type AccessConfirm = InferInvokedCapability<typeof AccessCaps.confirm>
+
+// Assert
+
+export type Assert = InferInvokedCapability<typeof AssertCaps.assert>
+export type AssertEquals = InferInvokedCapability<typeof AssertCaps.equals>
+export type AssertInclusion = InferInvokedCapability<typeof AssertCaps.inclusion>
+export type AssertIndex = InferInvokedCapability<typeof AssertCaps.index>
+export type AssertLocation = InferInvokedCapability<typeof AssertCaps.location>
+export type AssertPartition = InferInvokedCapability<typeof AssertCaps.partition>
+export type AssertRelation = InferInvokedCapability<typeof AssertCaps.relation>
 
 // Usage
 
@@ -985,6 +996,13 @@ export type ServiceAbility = TupleToUnion<ServiceAbilityArray>
 
 export type ServiceAbilityArray = [
   Top['can'],
+  Assert['can'],
+  AssertEquals['can'],
+  AssertInclusion['can'],
+  AssertIndex['can'],
+  AssertLocation['can'],
+  AssertPartition['can'],
+  AssertRelation['can'],
   ProviderAdd['can'],
   Space['can'],
   SpaceInfo['can'],

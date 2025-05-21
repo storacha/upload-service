@@ -39,6 +39,10 @@
       "types": "./dist/test/helpers/*.d.ts",
       "import": "./test/helpers/*.js"
     },
+    "./assert": {
+      "types": "./dist/assert.d.ts",
+      "import": "./dist/assert.js"
+    },
     "./blob": {
       "types": "./dist/blob/index.d.ts",
       "import": "./dist/blob/index.js"
@@ -95,7 +99,7 @@
     "@ucanto/transport": "catalog:",
     "@ucanto/validator": "catalog:",
     "@web3-storage/data-segment": "^5.2.0",
-    "uint8arrays": "^5.0.3"
+    "multiformats": "catalog:"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "catalog:",
