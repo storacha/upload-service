@@ -5,6 +5,7 @@ import * as BlobCapabilities from '@storacha/capabilities/blob'
 import * as SpaceBlobCapabilities from '@storacha/capabilities/space/blob'
 import * as HTTPCapabilities from '@storacha/capabilities/http'
 import * as UCAN from '@storacha/capabilities/ucan'
+import { Assert } from '@web3-storage/content-claims/capability'
 import {
   createConcludeInvocation,
   getConcludeReceipt,
@@ -171,4 +172,39 @@ export const uploadBlob = async (
   )
   const ucanConclude = await httpPutConcludeInvocation.execute(connection)
   Result.try(ucanConclude.out)
+
+  return nextTasks
 }
+
+/**
+ * @param {{
+ *   issuer: API.Signer
+ *   audience: API.Principal
+ *   with: API.URI<'did:'>
+ *   proofs?: API.Proof[]
+ *   digest: API.MultihashDigest
+ *   location: API.URI
+ *   space: API.PrincipalView<API.SpaceDID>
+ * }} params
+ */
+export const createLocationCommitment = ({
+  issuer,
+  audience,
+  with: resource,
+  proofs,
+  digest,
+  location,
+  space,
+}) =>
+  Assert.location.invoke({
+    issuer,
+    audience,
+    with: resource,
+    nb: {
+      content: { digest: digest.bytes },
+      location: [location],
+      space,
+    },
+    expiration: Infinity,
+    proofs,
+  })
