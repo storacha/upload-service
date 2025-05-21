@@ -106,11 +106,21 @@ export const equalLinkOrDigestContent = (claimed, delegated) => {
   if (delegated.nb.content) {
     const delegatedBytes = toDigestBytes(delegated.nb.content)
     if (!claimed.nb.content) {
-      return fail(`Constraint violation: undefined violates imposed content constraint ${base58btc.encode(delegatedBytes)}`)
+      return fail(
+        `Constraint violation: undefined violates imposed content constraint ${base58btc.encode(
+          delegatedBytes
+        )}`
+      )
     }
     const claimedBytes = toDigestBytes(claimed.nb.content)
     if (!equals(claimedBytes, delegatedBytes)) {
-      return fail(`Constraint violation: ${base58btc.encode(claimedBytes)} violates imposed content constraint ${base58btc.encode(delegatedBytes)}`)
+      return fail(
+        `Constraint violation: ${base58btc.encode(
+          claimedBytes
+        )} violates imposed content constraint ${base58btc.encode(
+          delegatedBytes
+        )}`
+      )
     }
   }
   return ok({})

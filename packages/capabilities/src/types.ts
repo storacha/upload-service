@@ -131,10 +131,14 @@ export type AccessConfirm = InferInvokedCapability<typeof AccessCaps.confirm>
 
 export type Assert = InferInvokedCapability<typeof AssertCaps.assert>
 export type AssertEquals = InferInvokedCapability<typeof AssertCaps.equals>
-export type AssertInclusion = InferInvokedCapability<typeof AssertCaps.inclusion>
+export type AssertInclusion = InferInvokedCapability<
+  typeof AssertCaps.inclusion
+>
 export type AssertIndex = InferInvokedCapability<typeof AssertCaps.index>
 export type AssertLocation = InferInvokedCapability<typeof AssertCaps.location>
-export type AssertPartition = InferInvokedCapability<typeof AssertCaps.partition>
+export type AssertPartition = InferInvokedCapability<
+  typeof AssertCaps.partition
+>
 export type AssertRelation = InferInvokedCapability<typeof AssertCaps.relation>
 
 // Usage
