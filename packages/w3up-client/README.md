@@ -436,6 +436,7 @@ We created a `esbuild-plugin` [esbuild-plugin-w3up-client-wasm-import](https://g
   - [`capability.upload.remove`](#capabilityuploadremove)
   - [`capability.filecoin.offer`](#capabilityfilecoinoffer)
   - [`capability.filecoin.info`](#capabilityfilecoininfo)
+  - [`capability.usage.report`](#capabilityusagereport)
 - [Types](#types)
   - [`BlobListResult`](#bloblistresult)
   - [`Capability`](#capability)
@@ -799,6 +800,20 @@ function info(piece: PieceLink): Promise<FilecoinInfoResponse>
 
 Get know deals and aggregate info of a Filecoin "piece" previously offered.
 
+### `capability.usage.report`
+
+```ts
+function report(
+  space: DID,
+  period: { from: Date, to: Date },
+  options?: { nonce?: string }
+): Promise<UsageReportSuccess>
+```
+
+Get a usage report for the passed space in the given time period.
+
+More information: [`UsageReportSuccess`](#usagereportsuccess)
+
 ## Types
 
 ### `BlobListResult`
@@ -976,6 +991,42 @@ interface Space {
 interface UploadListResult {
   root: CID
   shards?: CID[]
+}
+```
+
+### `UsageReportSuccess`
+
+```ts
+type UsageReportSuccess = Record<DID, UsageData>
+
+interface UsageData {
+  /** Provider the report concerns, e.g. `did:web:storacha.network` */
+  provider: DID
+  /** Space the report concerns. */
+  space: DID
+  /** Period the report applies to. */
+  period: {
+    /** ISO datetime the report begins from (inclusive). */
+    from: ISO8601Date
+    /** ISO datetime the report ends at (inclusive). */
+    to: ISO8601Date
+  }
+  /** Observed space size for the period. */
+  size: {
+    /** Size at the beginning of the report period. */
+    initial: number
+    /** Size at the end of the report period. */
+    final: number
+  }
+  /** Events that caused the size to change during the period. */
+  events: Array<{
+    /** CID of the invoked task that caused the size to change. */
+    cause: Link
+    /** Number of bytes that were added or removed. */
+    delta: number
+    /** ISO datetime that the receipt was issued for the change. */
+    receiptAt: ISO8601Date
+  }>
 }
 ```
 
