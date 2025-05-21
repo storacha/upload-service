@@ -9,7 +9,11 @@ import {
   mallory as account,
   bob,
 } from '../helpers/fixtures.js'
-import { createCarCid, validateAuthorization } from '../helpers/utils.js'
+import {
+  createCborCid,
+  createCarCid,
+  validateAuthorization,
+} from '../helpers/utils.js'
 
 const top = async () =>
   Top.top.delegate({
@@ -434,4 +438,172 @@ describe('assert capabilities', function () {
     assert.ok(result.error)
     assert(result.error.message.includes('violates imposed length constraint'))
   })
+
+  it('assert/index can be derived from *', async () => {
+      const index = Assert.index.invoke({
+        issuer: alice,
+        audience: w3,
+        with: account.did(),
+        nb: {
+          content: await createCborCid('test'),
+          index: await createCarCid('index'),
+        },
+        proofs: [await top()],
+      })
+  
+      const result = await access(await index.delegate(), {
+        capability: Assert.index,
+        principal: Verifier,
+        authority: w3,
+        validateAuthorization,
+      })
+  
+      if (result.error) {
+        assert.fail(result.error.message)
+      }
+  
+      assert.deepEqual(result.ok.audience.did(), w3.did())
+      assert.equal(result.ok.capability.can, 'assert/index')
+      assert.deepEqual(result.ok.capability.nb, {
+        content: await createCborCid('test'),
+        index: await createCarCid('index'),
+      })
+    })
+  
+    it('assert/index can be derived from assert/*', async () => {
+      const index = Assert.index.invoke({
+        issuer: alice,
+        audience: w3,
+        with: account.did(),
+        nb: {
+          content: await createCborCid('test'),
+          index: await createCarCid('index'),
+        },
+        proofs: [await assertTop()],
+      })
+  
+      const result = await access(await index.delegate(), {
+        capability: Assert.index,
+        principal: Verifier,
+        authority: w3,
+        validateAuthorization,
+      })
+  
+      if (result.error) {
+        assert.fail(result.error.message)
+      }
+  
+      assert.deepEqual(result.ok.audience.did(), w3.did())
+      assert.equal(result.ok.capability.can, 'assert/index')
+      assert.deepEqual(result.ok.capability.nb, {
+        content: await createCborCid('test'),
+        index: await createCarCid('index'),
+      })
+    })
+  
+    it('assert/index can be derived from assert/* derived from *', async () => {
+      const assertTop = await Assert.assert.delegate({
+        issuer: alice,
+        audience: bob,
+        with: account.did(),
+        proofs: [await top()],
+      })
+  
+      const index = Assert.index.invoke({
+        issuer: bob,
+        audience: w3,
+        with: account.did(),
+        nb: {
+          content: await createCborCid('test'),
+          index: await createCarCid('index'),
+        },
+        proofs: [assertTop],
+      })
+  
+      const result = await access(await index.delegate(), {
+        capability: Assert.index,
+        principal: Verifier,
+        authority: w3,
+        validateAuthorization,
+      })
+  
+      if (result.error) {
+        assert.fail(result.error.message)
+      }
+  
+      assert.deepEqual(result.ok.audience.did(), w3.did())
+      assert.equal(result.ok.capability.can, 'assert/index')
+      assert.deepEqual(result.ok.capability.nb, {
+        content: await createCborCid('test'),
+        index: await createCarCid('index'),
+      })
+    })
+  
+    it('assert/index should fail when escalating content constraint', async () => {
+      const delegation = await Assert.index.delegate({
+        issuer: alice,
+        audience: bob,
+        with: account.did(),
+        nb: {
+          content: await createCborCid('test'),
+          index: await createCarCid('index'),
+        },
+        proofs: [await top()],
+      })
+  
+      const index = Assert.index.invoke({
+        issuer: bob,
+        audience: w3,
+        with: account.did(),
+        nb: {
+          content: await createCborCid('test2'),
+          index: await createCarCid('index'),
+        },
+        proofs: [delegation],
+      })
+  
+      const result = await access(await index.delegate(), {
+        capability: Assert.index,
+        principal: Verifier,
+        authority: w3,
+        validateAuthorization,
+      })
+  
+      assert.ok(result.error)
+      assert(result.error.message.includes('violates imposed content constraint'))
+    })
+  
+    it('assert/index should fail when escalating index constraint', async () => {
+      const delegation = await Assert.index.delegate({
+        issuer: alice,
+        audience: bob,
+        with: account.did(),
+        nb: {
+          content: await createCborCid('test'),
+          index: await createCarCid('index'),
+        },
+        proofs: [await top()],
+      })
+  
+      const index = Assert.index.invoke({
+        issuer: bob,
+        audience: w3,
+        with: account.did(),
+        nb: {
+          content: await createCborCid('test'),
+          index: await createCarCid('index2'),
+        },
+        proofs: [delegation],
+      })
+  
+      const result = await access(await index.delegate(), {
+        capability: Assert.index,
+        principal: Verifier,
+        authority: w3,
+        validateAuthorization,
+      })
+  
+      assert.ok(result.error)
+      assert(result.error.message.includes('violates imposed index constraint'))
+    })
 })
