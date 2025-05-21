@@ -14,25 +14,25 @@ export function AuthenticationForm (): JSX.Element {
   const [{ submitted }] = useAuthenticator()
   return (
     <div className='authenticator'>
-        <AuthCore.Form className='text-hot-red bg-white border border-hot-red rounded-2xl shadow-md px-10 pt-8 pb-8'>
-          <div className='flex flex-row gap-4 mb-8 justify-center'>
-            <Logo className='w-36' />
-          </div>
-          <div>
-            <label className='block mb-2 uppercase text-xs font-epilogue m-1' htmlFor='authenticator-email'>Email</label>
-            <AuthCore.EmailInput className='text-black py-2 px-2 rounded-xl block mb-4 border border-hot-red w-80' id='authenticator-email' required />
-          </div>
-          <div className='text-center mt-4'>
-            <button
-              className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap'
-              type='submit'
-              disabled={submitted}
-              onClick={() => plausible('Login Authorization Requested')}
-            >
-              Authorize
-            </button>
-          </div>
-        </AuthCore.Form>
+      <AuthCore.Form className='text-hot-red bg-white border border-hot-red rounded-2xl shadow-md px-10 pt-8 pb-8'>
+        <div className='flex flex-row gap-4 mb-8 justify-center'>
+          <Logo className='w-36' />
+        </div>
+        <div>
+          <label className='block mb-2 uppercase text-xs font-epilogue m-1' htmlFor='authenticator-email'>Email</label>
+          <AuthCore.EmailInput className='text-black py-2 px-2 rounded-xl block mb-4 border border-hot-red w-80' id='authenticator-email' required />
+        </div>
+        <div className='text-center mt-4'>
+          <button
+            className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap'
+            type='submit'
+            disabled={submitted}
+            onClick={() => plausible('Login Authorization Requested')}
+          >
+            Authorize
+          </button>
+        </div>
+      </AuthCore.Form>
       <p className='text-xs text-black/80 italic max-w-xs text-center mt-6'>
         By registering with storacha.network, you agree to the storacha.network <a className='underline' href='https://docs.storacha.network/terms/'>Terms of Service</a>.
       </p>
