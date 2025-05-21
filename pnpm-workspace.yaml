@@ -1,7 +1,5 @@
 packages:
   - packages/**
-  - packages/ui/*
-  - packages/ui/packages/*
 
 catalog:
   '@arethetypeswrong/cli': ^0.17.3
