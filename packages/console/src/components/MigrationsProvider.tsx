@@ -55,8 +55,25 @@ export function Provider ({ children }: ProviderProps): ReactNode {
   const [{ client }] = useW3()
   const [migrations, setMigrations] = useState(migrationsStore.load())
   const [logs, setLogs] = useState<Record<MigrationID, string[]>>({})
+  
+  useEffect(() => {
+    // Cleanup function to stop all running migrations when component unmounts
+    return () => {
+      Object.keys(runningMigrations).forEach(id => {
+        if (runningMigrations[id]) {
+          runningMigrations[id].abort()
+          delete runningMigrations[id]
+        }
+      })
+    }
+  }, [])
+
   const log = (id: MigrationID, msg: string) => {
-    setLogs(logs => ({ ...logs, [id]: [...(logs[id] ?? []), msg].slice(-MAX_LOG_LINES) }))
+    setLogs(prevLogs => {
+      const newLogs = { ...prevLogs }
+      newLogs[id] = [...(newLogs[id] ?? []), msg].slice(-MAX_LOG_LINES)
+      return newLogs
+    })
   }
 
   const createMigration = (config: MigrationConfiguration) => {
