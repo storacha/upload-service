@@ -326,7 +326,7 @@ describe('provider/add', function () {
       validateAuthorization,
     })
 
-    assert.equal(result.error?.message.includes('Constrain violation'), true)
+    assert.equal(result.error?.message.includes('Constraint violation'), true)
   })
 
   it('can not change delegated provider', async () => {

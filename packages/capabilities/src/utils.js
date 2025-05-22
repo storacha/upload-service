@@ -1,6 +1,7 @@
 import * as API from '@ucanto/interface'
 import { DID, Schema, fail, ok } from '@ucanto/validator'
-import { equals } from 'uint8arrays/equals'
+import { equals } from 'multiformats/bytes'
+import { base58btc } from 'multiformats/bases/base58'
 
 // e.g. did:web:storacha.network or did:web:staging.storacha.network
 export const ProviderDID = DID.match({ method: 'web' })
@@ -59,7 +60,7 @@ export function equal(child, parent, constraint) {
     return ok({})
   } else {
     return fail(
-      `Constrain violation: ${child} violates imposed ${constraint} constraint ${parent}`
+      `Constraint violation: ${child} violates imposed ${constraint} constraint ${parent}`
     )
   }
 }
@@ -87,6 +88,42 @@ export const equalLink = (claimed, delegated) => {
   } else {
     return ok({})
   }
+}
+
+/** @param {API.UnknownLink | { digest: Uint8Array }} linkOrDigest */
+const toDigestBytes = (linkOrDigest) =>
+  'multihash' in linkOrDigest
+    ? linkOrDigest.multihash.bytes
+    : linkOrDigest.digest
+
+/**
+ * @template {API.ParsedCapability<API.Ability, API.URI, { content?: API.UnknownLink | { digest: Uint8Array } }>} T
+ * @param {T} claimed
+ * @param {T} delegated
+ * @returns {API.Result<{}, API.Failure>}
+ */
+export const equalLinkOrDigestContent = (claimed, delegated) => {
+  if (delegated.nb.content) {
+    const delegatedBytes = toDigestBytes(delegated.nb.content)
+    if (!claimed.nb.content) {
+      return fail(
+        `Constraint violation: undefined violates imposed content constraint ${base58btc.encode(
+          delegatedBytes
+        )}`
+      )
+    }
+    const claimedBytes = toDigestBytes(claimed.nb.content)
+    if (!equals(claimedBytes, delegatedBytes)) {
+      return fail(
+        `Constraint violation: ${base58btc.encode(
+          claimedBytes
+        )} violates imposed content constraint ${base58btc.encode(
+          delegatedBytes
+        )}`
+      )
+    }
+  }
+  return ok({})
 }
 
 /**
