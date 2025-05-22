@@ -1,3 +1,9 @@
+## 1.2.1 (2025-05-22)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/capabilities to 1.6.0
+
 ## 1.2.0 (2025-05-21)
 
 ### 🚀 Features
