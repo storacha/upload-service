@@ -1,3 +1,13 @@
+## 1.6.0 (2025-05-22)
+
+### 🚀 Features
+
+- feat: add `assert/*` capabilities ([59aca7da](https://github.com/storacha/upload-service/commit/59aca7da))
+
+### ❤️ Thank You
+
+- Alan Shaw
+
 ## 1.5.0 (2025-05-21)
 
 ### 🚀 Features
