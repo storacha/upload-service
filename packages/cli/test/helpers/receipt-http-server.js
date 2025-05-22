@@ -5,7 +5,7 @@ import { parseLink } from '@ucanto/server'
 import * as Signer from '@ucanto/principal/ed25519'
 import { Receipt, Message } from '@ucanto/core'
 import * as CAR from '@ucanto/transport/car'
-import { Assert } from '@web3-storage/content-claims/capability'
+import { Assert } from '@storacha/capabilities'
 import { randomCAR } from './random.js'
 
 /**
