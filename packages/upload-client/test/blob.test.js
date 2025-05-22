@@ -24,6 +24,11 @@ import { fetchWithUploadProgress } from '../src/fetch-with-upload-progress.js'
 import { ReceiptNotFound } from '../src/receipts.js'
 import { Assert } from '@web3-storage/content-claims/capability'
 
+/**
+ * @import { Delegation } from '@ucanto/interface'
+ * @import { AssertLocation } from '@web3-storage/content-claims/capability/api'
+ */
+
 describe('Blob.add', () => {
   it('stores bytes with the service', async () => {
     const space = await Signer.generate()
@@ -1126,6 +1131,166 @@ describe('Blob.get', () => {
         { connection }
       ),
       { message: 'failed space/blob/get/0/1 invocation' }
+    )
+  })
+})
+
+describe('Blob.replicate', () => {
+  it('replicates a stored blob', async () => {
+    const space = await Signer.generate()
+    const agent = await Signer.generate()
+    const bytes = await randomBytes(128)
+    const digest = await sha256.digest(bytes)
+    const replicas = 2
+    const site =
+      /** @type {Delegation<[AssertLocation]>} */
+      (
+        await Assert.location.delegate({
+          issuer: agent,
+          audience: agent,
+          with: space.did(),
+          nb: {
+            content: { digest: digest.bytes },
+            location: ['http://localhost'],
+          },
+        })
+      )
+
+    const proofs = [
+      await BlobCapabilities.replicate.delegate({
+        issuer: space,
+        audience: agent,
+        with: space.did(),
+        expiration: Infinity,
+      }),
+    ]
+
+    const service = mockService({
+      space: {
+        blob: {
+          replicate: provide(
+            BlobCapabilities.replicate,
+            async ({ invocation }) => {
+              assert.equal(invocation.issuer.did(), agent.did())
+              assert.equal(invocation.capabilities.length, 1)
+              const invCap = invocation.capabilities[0]
+              assert.equal(invCap.can, BlobCapabilities.replicate.can)
+              assert.equal(invCap.with, space.did())
+              assert.equal(String(invCap.nb?.blob.digest), digest.bytes)
+              assert.equal(invCap.nb?.blob.size, bytes.length)
+              assert.equal(invCap.nb?.replicas, replicas)
+              assert.equal(invCap.nb?.site.toString(), site.cid.toString())
+              const replicaSite = await Assert.location.delegate({
+                issuer: serviceSigner,
+                audience: serviceSigner,
+                with: space.did(),
+                nb: {
+                  content: { digest: digest.bytes },
+                  location: ['http://localhost'],
+                },
+              })
+              return {
+                ok: {
+                  size: bytes.length,
+                  site: [
+                    { 'ucan/await': ['.out.ok.site', replicaSite.cid] },
+                    { 'ucan/await': ['.out.ok.site', replicaSite.cid] },
+                  ],
+                },
+              }
+            }
+          ),
+        },
+      },
+    })
+
+    const server = Server.create({
+      id: serviceSigner,
+      service,
+      codec: CAR.inbound,
+      validateAuthorization,
+    })
+    const connection = Client.connect({
+      id: serviceSigner,
+      codec: CAR.outbound,
+      channel: server,
+    })
+
+    const result = await Blob.replicate(
+      { issuer: agent, with: space.did(), proofs, audience: serviceSigner },
+      { digest, size: bytes.length },
+      site,
+      replicas,
+      { connection }
+    )
+
+    assert(service.space.blob.replicate.called)
+    assert.equal(service.space.blob.replicate.callCount, 1)
+
+    assert(Array.isArray(result.site))
+    assert.equal(result.site.length, 2)
+  })
+
+  it('throws on service error', async () => {
+    const space = await Signer.generate()
+    const agent = await Signer.generate()
+    const bytes = await randomBytes(128)
+    const digest = await sha256.digest(bytes)
+    const replicas = 2
+    const site =
+      /** @type {Delegation<[AssertLocation]>} */
+      (
+        await Assert.location.delegate({
+          issuer: agent,
+          audience: agent,
+          with: space.did(),
+          nb: {
+            content: { digest: digest.bytes },
+            location: ['http://localhost'],
+          },
+        })
+      )
+
+    const proofs = [
+      await BlobCapabilities.get.delegate({
+        issuer: space,
+        audience: agent,
+        with: space.did(),
+        expiration: Infinity,
+      }),
+    ]
+
+    const service = mockService({
+      space: {
+        blob: {
+          replicate: provide(BlobCapabilities.replicate, () => {
+            throw new Server.Failure('boom')
+          }),
+        },
+      },
+    })
+
+    const server = Server.create({
+      id: serviceSigner,
+      service,
+      codec: CAR.inbound,
+      validateAuthorization,
+    })
+    const connection = Client.connect({
+      id: serviceSigner,
+      codec: CAR.outbound,
+      channel: server,
+    })
+
+    await assert.rejects(
+      Blob.replicate(
+        { issuer: agent, with: space.did(), proofs, audience: serviceSigner },
+        { digest, size: bytes.length },
+        site,
+        replicas,
+        { connection }
+      ),
+      { message: 'failed space/blob/replicate invocation' }
     )
   })
 })

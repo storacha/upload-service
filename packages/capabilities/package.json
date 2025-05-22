@@ -1,6 +1,6 @@
 {
   "name": "@storacha/capabilities",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "UCAN Capabilities provided by storacha.network",
   "publishConfig": {
     "access": "public"
@@ -21,7 +21,7 @@
     "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "test:node": "mocha 'test/**/*.test.js' -n experimental-vm-modules -n no-warnings",
-    "test:browser": "playwright-test",
+    "test:browser": "playwright-test 'test/**/!(*.node).test.js'",
     "attw": "attw --pack .",
     "testw": "watch 'pnpm test:node' src test --interval 1",
     "rc": "npm version prerelease --preid rc"
@@ -40,8 +40,12 @@
       "import": "./test/helpers/*.js"
     },
     "./blob": {
-      "types": "./dist/blob.d.ts",
-      "import": "./dist/blob.js"
+      "types": "./dist/blob/index.d.ts",
+      "import": "./dist/blob/index.js"
+    },
+    "./blob/replica": {
+      "types": "./dist/blob/replica/index.d.ts",
+      "import": "./dist/blob/replica/index.js"
     },
     "./filecoin": {
       "types": "./dist/filecoin/index.d.ts",

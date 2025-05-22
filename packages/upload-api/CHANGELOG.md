@@ -1,3 +1,22 @@
+## 1.5.0 (2025-05-21)
+
+### 🚀 Features
+
+- feat: implement replication protocol ([#253](https://github.com/storacha/upload-service/pull/253))
+- Add support for directing users to bsky.storage after plan selection. ([#267](https://github.com/storacha/upload-service/pull/267))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.2.0
+- Updated @storacha/capabilities to 1.5.0
+- Updated @storacha/filecoin-api to 1.1.8
+- Updated @storacha/blob-index to 1.0.6
+
+### ❤️ Thank You
+
+- ash
+- Travis Vachon
+
 ## 1.4.3 (2025-03-27)
 
 ### 🧱 Updated Dependencies

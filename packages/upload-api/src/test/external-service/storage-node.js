@@ -1,11 +1,11 @@
 import * as API from '../../types.js'
 import * as BlobCapabilities from '@storacha/capabilities/blob'
+import * as BlobReplicaCapabilities from '@storacha/capabilities/blob/replica'
 import { base64pad } from 'multiformats/bases/base64'
-import { Assert } from '@web3-storage/content-claims/capability'
 import { base58btc } from 'multiformats/bases/base58'
 import { sha256 } from 'multiformats/hashes/sha2'
 import * as Digest from 'multiformats/hashes/digest'
-import { ok, error } from '@ucanto/core'
+import { ok, error, Delegation, Receipt } from '@ucanto/core'
 import { ed25519 } from '@ucanto/principal'
 import { CAR, HTTP } from '@ucanto/transport'
 import * as Server from '@ucanto/server'
@@ -14,6 +14,8 @@ import {
   AllocatedMemoryNotWrittenError,
   BlobSizeLimitExceededError,
 } from '../../blob.js'
+import { createConcludeInvocation } from '../../ucan/conclude.js'
+import { createLocationCommitment } from '../helpers/blob.js'
 
 /**
  * @typedef {{
@@ -44,6 +46,7 @@ const contentDigest = (key) =>
 
 /**
  * @param {{
+ *   id: API.Signer
  *   baseURL: () => URL
  *   claimsService: API.ClaimsClientConfig
  *   contentStore: Omit<ContentStore, 'set'>
@@ -52,6 +55,7 @@ const contentDigest = (key) =>
  * @returns {BlobService}
  */
 const createService = ({
+  id,
   baseURL,
   claimsService,
   contentStore,
@@ -98,16 +102,16 @@ const createService = ({
           return error(new AllocatedMemoryNotWrittenError())
         }
 
-        const receipt = await publishLocationCommitment(
-          { claimsService },
-          {
-            space: capability.nb.space,
-            digest,
-            location:
-              /** @type {API.URI} */
-              (new URL(contentKey(digest), baseURL()).toString()),
-          }
-        )
+        const receipt = await createLocationCommitment({
+          issuer: id,
+          with: id.did(),
+          audience: claimsService.invocationConfig.audience,
+          digest,
+          location:
+            /** @type {API.URI} */
+            (new URL(contentKey(digest), baseURL()).toString()),
+          space: capability.nb.space,
+        }).execute(claimsService.connection)
         if (receipt.out.error) {
           return receipt.out
         }
@@ -115,6 +119,80 @@ const createService = ({
         return Server.ok({ site: receipt.ran.link() }).fork(receipt.ran)
       },
     }),
+    replica: {
+      /** @type {API.ServiceMethod<API.BlobReplicaAllocate, API.BlobReplicaAllocateSuccess, API.BlobReplicaAllocateFailure>} */
+      allocate: Server.provideAdvanced({
+        capability: BlobReplicaCapabilities.allocate,
+        handler: async ({ capability, invocation }) => {
+          const digest = Digest.decode(capability.nb.blob.digest)
+          const hasDigest = await allocationStore.has(digest)
+          const transferTask = await BlobReplicaCapabilities.transfer.delegate({
+            issuer: id,
+            audience: id,
+            with: id.did(),
+            nb: {
+              blob: capability.nb.blob,
+              space: capability.nb.space,
+              site: capability.nb.site,
+              cause: invocation.cid,
+            },
+          })
+
+          // if we already have the digest, we can issue a transfer receipt
+          if (hasDigest) {
+            const claimRcpt = await createLocationCommitment({
+              issuer: id,
+              with: id.did(),
+              audience: claimsService.invocationConfig.audience,
+              digest,
+              location:
+                /** @type {API.URI} */
+                (new URL(contentKey(digest), baseURL()).toString()),
+              space: capability.nb.space,
+            }).execute(claimsService.connection)
+            if (claimRcpt.out.error) {
+              return claimRcpt.out
+            }
+            const claim = claimRcpt.ran
+            if (!Delegation.isDelegation(claim)) {
+              throw new Error('expected claim receipt ran to be a delegation')
+            }
+
+            const transferRcpt = await Receipt.issue({
+              issuer: id,
+              ran: transferTask,
+              result: Server.ok({ site: claim.cid }),
+              fx: {
+                // communicate the locaiton commitment
+                fork: [
+                  await createConcludeInvocation(id, id, claimRcpt).delegate(),
+                ],
+              },
+            })
+
+            return Server.ok(
+              /** @type {API.BlobReplicaAllocateSuccess} */ ({
+                size: 0,
+                site: { 'ucan/await': ['.out.ok.site', transferTask.cid] },
+              })
+            )
+              .fork(transferTask)
+              .fork(
+                await createConcludeInvocation(id, id, transferRcpt).delegate()
+              )
+          }
+
+          await allocationStore.add(digest)
+
+          return Server.ok(
+            /** @type {API.BlobReplicaAllocateSuccess} */ ({
+              size: capability.nb.blob.size,
+              site: { 'ucan/await': ['.out.ok.site', transferTask.cid] },
+            })
+          ).fork(transferTask)
+        },
+      }),
+    },
   },
 })
 
@@ -155,6 +233,7 @@ export class BrowserStorageNode {
       id,
       codec: CAR.inbound,
       service: createService({
+        id,
         baseURL: () => baseURL,
         claimsService,
         contentStore,
@@ -227,6 +306,7 @@ export class StorageNode {
       id,
       codec: CAR.inbound,
       service: createService({
+        id,
         baseURL: () => baseURL,
         claimsService,
         contentStore,
@@ -327,23 +407,4 @@ export class StorageNode {
       })
     })
   }
-}
-
-/**
- * @param {API.ClaimsClientContext} ctx
- * @param {{ space: Uint8Array, digest: API.MultihashDigest, location: API.URI }} params
- */
-const publishLocationCommitment = async (ctx, { digest, location }) => {
-  const { invocationConfig, connection } = ctx.claimsService
-  const { issuer, audience, with: resource, proofs } = invocationConfig
-  return await Assert.location
-    .invoke({
-      issuer,
-      audience,
-      with: resource,
-      nb: { content: { digest: digest.bytes }, location: [location] },
-      expiration: Infinity,
-      proofs,
-    })
-    .execute(connection)
 }

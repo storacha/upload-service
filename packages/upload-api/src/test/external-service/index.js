@@ -44,6 +44,11 @@ export const getExternalServiceImplementations = async (config) => {
             claimsService,
             ...principalResolver,
           }),
+          StorageNode.activate({
+            http: config.http,
+            claimsService,
+            ...principalResolver,
+          }),
         ]
       : [
           BrowserStorageNode.activate({
@@ -56,6 +61,11 @@ export const getExternalServiceImplementations = async (config) => {
             claimsService,
             ...principalResolver,
           }),
+          BrowserStorageNode.activate({
+            port: 8991,
+            claimsService,
+            ...principalResolver,
+          }),
         ]
   )
   const router = RoutingService.create(config.serviceID, storageProviders)
@@ -65,5 +75,6 @@ export const getExternalServiceImplementations = async (config) => {
     storageProviders,
     blobRetriever,
     router,
+    maxReplicas: 2, // since we have 3 storage nodes, the max replicas is 2
   }
 }

@@ -90,6 +90,7 @@ export class Client extends Base {
    * @param {Account.EmailAddress} email
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
+   * @param {import('@storacha/client/types').AppName} [options.appName]
    */
   async login(email, options = {}) {
     const account = Result.unwrap(await Account.login(this, email, options))

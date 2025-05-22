@@ -158,6 +158,9 @@ import {
   SpaceIndexAdd,
   SpaceIndexAddSuccess,
   SpaceIndexAddFailure,
+  SpaceBlobReplicate,
+  SpaceBlobReplicateSuccess,
+  SpaceBlobReplicateFailure,
 } from '@storacha/capabilities/types'
 import * as Capabilities from '@storacha/capabilities'
 import { RevocationsStorage } from './types/revocations.js'
@@ -188,7 +191,11 @@ export type { SubscriptionsStorage }
 import { UsageStorage } from './types/usage.js'
 export type { UsageStorage }
 import { StorageGetError } from './types/storage.js'
-import { Registry as BlobRegistry, RoutingService } from './types/blob.js'
+import {
+  Registry as BlobRegistry,
+  ReplicaStorage,
+  RoutingService,
+} from './types/blob.js'
 export type * as BlobAPI from './types/blob.js'
 import { IPNIService, IndexServiceContext } from './types/index.js'
 import { Claim } from '@web3-storage/content-claims/client/api'
@@ -325,6 +332,11 @@ export interface Service extends StorefrontService {
         SpaceBlobRemoveSuccess,
         SpaceBlobRemoveFailure
       >
+      replicate: ServiceMethod<
+        SpaceBlobReplicate,
+        SpaceBlobReplicateSuccess,
+        SpaceBlobReplicateFailure
+      >
       list: ServiceMethod<
         SpaceBlobList,
         SpaceBlobListSuccess,
@@ -406,6 +418,9 @@ export type BlobServiceContext = SpaceServiceContext & {
   agentStore: AgentStore
   router: RoutingService
   registry: BlobRegistry
+  replicaStore: ReplicaStorage
+  /** The maximum number of replicas a client is allowed to request. */
+  maxReplicas: number
 }
 
 export type UploadServiceContext = ConsumerServiceContext &
@@ -506,6 +521,7 @@ export interface ConcludeServiceContext {
   agentStore: AgentStore
   registry: BlobRegistry
   router: RoutingService
+  replicaStore: ReplicaStorage
 }
 
 export interface UcanServiceContext
@@ -653,7 +669,7 @@ export interface UcantoServerTestContext
   carStoreBucket: LegacyCarStoreBucket & Deactivator
   blobsStorage: LegacyBlobsStorage & Deactivator
   claimsService: LegacyUploadAPI.ClaimsClientConfig & ClaimReader & Deactivator
-  storageProviders: Deactivator[]
+  storageProviders: Array<{ id: Signer } & Deactivator>
 }
 
 export interface ClaimReader {
@@ -778,5 +794,8 @@ export interface Assert {
   ok: <Actual>(actual: Actual, message?: string) => unknown
 }
 
-export type Test = (assert: Assert, context: UcantoServerTestContext) => unknown
+export type Test<C = UcantoServerTestContext> = (
+  assert: Assert,
+  context: C
+) => unknown
 export type Tests = Record<string, Test>
