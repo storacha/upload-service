@@ -47,13 +47,13 @@ If you've already got a space you can upload like this:
 
 ```js
 import { filesFromPaths } from 'files-from-path'
-import * as Client from '@storacha/client'
+import { create } from '@storacha/client'
 
 const [, , yourEmail, pathToAdd] = process.argv
 
 // authorize your local agent to act on your behalf
-const client = await Client.create()
-await client.login(yourEmail)
+const account = await create()
+await account.login(yourEmail)
 
 // lets go!
 const files = await filesFromPaths(pathToAdd)
