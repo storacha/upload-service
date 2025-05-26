@@ -1,0 +1,53 @@
+{
+  "name": "@storacha/did-plc",
+  "version": "0.1.0",
+  "description": "Universal resolver for did:plc DIDs (Node & browser)",
+  "type": "module",
+  "main": "src/index.js",
+  "types": "dist/src/types.d.ts",
+  "files": [
+    "dist",
+    "!dist/**/*.js.map"
+  ],
+  "exports": {
+    ".": "./dist/index.js",
+    "./types": "./dist/types.js"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "dev": "tsc --build --watch --preserveWatchOutput",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "test": "mocha --timeout 10s --require ts-node/register test/**/*.spec.js"
+  },
+  "dependencies": {
+    "@noble/ed25519": "^2.2.3",
+    "@ucanto/principal": "catalog:",
+    "base64url": "^3.0.1",
+    "cross-fetch": "^4.0.0",
+    "multiformats": "catalog:"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.1",
+    "@typescript-eslint/eslint-plugin": "catalog:",
+    "mocha": "^10.2.0",
+    "ts-node": "^10.9.1",
+    "typescript": "catalog:"
+  },
+  "eslintConfig": {
+    "extends": [
+      "@storacha/eslint-config"
+    ],
+    "env": {
+      "mocha": true
+    },
+    "ignorePatterns": [
+      "dist",
+      "coverage",
+      "src/types.js"
+    ]
+  },
+  "engines": {
+    "node": ">=16.15"
+  },
+  "license": "Apache-2.0 OR MIT"
+}
