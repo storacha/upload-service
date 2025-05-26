@@ -29,7 +29,6 @@
     },
     "./principal/ed25519": {
       "types": "./dist/principal/ed25519.d.ts",
-      "node": "./dist/principal/ed25519.js", 
       "import": "./dist/principal/ed25519.js"
     },
     "./principal/rsa": {
