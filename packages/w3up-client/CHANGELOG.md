@@ -1,3 +1,39 @@
+## 1.3.2 (2025-05-22)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-client to 1.0.8
+- Updated @storacha/access to 1.2.1
+- Updated @storacha/upload-client to 1.2.2
+- Updated @storacha/capabilities to 1.6.0
+- Updated @storacha/blob-index to 1.0.7
+- Updated @storacha/upload-api to 1.5.2
+
+## 1.3.0 (2025-05-21)
+
+### 🚀 Features
+
+- Add support for directing users to bsky.storage after plan selection. ([#267](https://github.com/storacha/upload-service/pull/267))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-client to 1.0.7
+- Updated @storacha/access to 1.2.0
+- Updated @storacha/upload-client to 1.2.1
+- Updated @storacha/capabilities to 1.5.0
+- Updated @storacha/blob-index to 1.0.6
+- Updated @storacha/upload-api to 1.5.0
+
+### ❤️ Thank You
+
+- Travis Vachon
+
+## 1.2.9 (2025-05-13)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/upload-client to 1.2.0
+
 ## 1.2.8 (2025-05-07)
 
 ### 🩹 Fixes

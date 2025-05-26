@@ -13,7 +13,6 @@ import {
   Principal,
   Failure,
   Delegation,
-  Capabilities,
   Await,
 } from '@ucanto/interface'
 import {
@@ -37,6 +36,9 @@ import {
   SpaceBlobGet,
   SpaceBlobGetSuccess,
   SpaceBlobGetFailure,
+  SpaceBlobReplicate,
+  SpaceBlobReplicateSuccess,
+  SpaceBlobReplicateFailure,
   SpaceIndexAdd,
   SpaceIndexAddSuccess,
   SpaceIndexAddFailure,
@@ -70,6 +72,7 @@ import {
   SliceDigest,
   Position,
 } from '@storacha/blob-index/types'
+import { AssertLocation } from '@web3-storage/content-claims/capability/api'
 
 type Override<T, R> = Omit<T, keyof R> & R
 
@@ -163,6 +166,11 @@ export interface Service extends StorefrontService {
           >
         }
       }
+      replicate: ServiceMethod<
+        SpaceBlobReplicate,
+        SpaceBlobReplicateSuccess,
+        SpaceBlobReplicateFailure
+      >
     }
     index: {
       add: ServiceMethod<
@@ -395,6 +403,10 @@ export interface BlobLike {
    * Returns a ReadableStream which yields the Blob data.
    */
   stream: Blob['stream']
+  /**
+   * Size in bytes of the blob.
+   */
+  size?: number
 }
 
 export interface FileLike extends BlobLike {
@@ -405,5 +417,5 @@ export interface FileLike extends BlobLike {
 }
 
 export interface BlobAddOk {
-  site: Delegation<Capabilities>
+  site: Delegation<[AssertLocation]>
 }

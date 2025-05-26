@@ -2,6 +2,8 @@ import { createServer } from 'http'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import * as Digest from 'multiformats/hashes/digest'
+import { base58btc } from 'multiformats/bases/base58'
 import { parseLink } from '@ucanto/server'
 import * as Signer from '@ucanto/principal/ed25519'
 import { Receipt, Message } from '@ucanto/core'
@@ -21,9 +23,22 @@ const server = createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Methods', '*')
   res.setHeader('Access-Control-Allow-Headers', '*')
 
-  const taskCid = req.url?.split('/')[1] ?? ''
+  const parts = new URL(req.url ?? '', 'http://localhost').pathname.split('/')
+  let task, content
+
+  // If request URL is structure like: `/content/:digest/task/:cid`
+  // ...then we can issue a location claim for the passed digest.
+  if (parts[1] === 'content') {
+    task = parseLink(parts[4])
+    content = { digest: Digest.decode(base58btc.decode(parts[2])).bytes }
+  } else {
+    task = parseLink(parts[1])
+    content = (await randomCAR(128)).cid
+  }
+
   if (
-    taskCid === 'bafyreibo6nqtvp67daj7dkmeb5c2n6bg5bunxdmxq3lghtp3pmjtzpzfma'
+    task.toString() ===
+    'bafyreibo6nqtvp67daj7dkmeb5c2n6bg5bunxdmxq3lghtp3pmjtzpzfma'
   ) {
     res.writeHead(200, {
       'Content-disposition': 'attachment; filename=' + fixtureName,
@@ -32,7 +47,6 @@ const server = createServer(async (req, res) => {
   }
 
   const issuer = await Signer.generate()
-  const content = (await randomCAR(128)).cid
   const locationClaim = await Assert.location.delegate({
     issuer,
     audience: issuer,
@@ -49,7 +63,7 @@ const server = createServer(async (req, res) => {
     fx: {
       fork: [locationClaim],
     },
-    ran: parseLink(taskCid),
+    ran: task,
     result: {
       ok: {
         site: locationClaim.link(),

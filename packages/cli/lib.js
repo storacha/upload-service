@@ -15,6 +15,7 @@ import { parse } from '@ipld/dag-ucan/did'
 import * as dagJSON from '@ipld/dag-json'
 import { create } from '@storacha/client'
 import { StoreConf } from '@storacha/client/stores/conf'
+import * as DIDMailto from '@storacha/did-mailto'
 import { CarReader } from '@ipld/car'
 
 /**
@@ -274,6 +275,18 @@ export function parseCarLink(cidStr) {
     return asCarLink(Link.parse(cidStr.trim()))
   } catch {
     return undefined
+  }
+}
+
+/**
+ * @param {string} email
+ * @returns {{ok: DIDMailto.EmailAddress, error?:void}|{ok?:void, error: Error}}
+ */
+export const parseEmail = (email) => {
+  try {
+    return { ok: DIDMailto.email(email) }
+  } catch (cause) {
+    return { error: /** @type {Error} */ (cause) }
   }
 }
 

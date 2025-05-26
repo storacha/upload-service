@@ -1,3 +1,37 @@
+## 1.2.30 (2025-05-22)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.2.1
+- Updated @storacha/capabilities to 1.6.0
+- Updated @storacha/client to 1.3.2
+- Updated @storacha/upload-api to 1.5.2
+
+## 1.2.24 (2025-05-21)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.2.0
+- Updated @storacha/capabilities to 1.5.0
+- Updated @storacha/client to 1.3.0
+- Updated @storacha/upload-api to 1.5.0
+
+## 1.2.18 (2025-05-13)
+
+### 🩹 Fixes
+
+- fix: prompt for email if not provided ([45330bce](https://github.com/storacha/upload-service/commit/45330bce))
+
+### ❤️ Thank You
+
+- Alan Shaw
+
+## 1.2.17 (2025-05-13)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.2.9
+
 ## 1.2.15 (2025-05-07)
 
 ### 🩹 Fixes

@@ -1,35 +1,49 @@
 import * as API from '../types.js'
 import { provide } from '@ucanto/server'
-import { Receipt } from '@ucanto/core'
+import { Receipt, Invocation } from '@ucanto/core'
 import { conclude } from '@storacha/capabilities/ucan'
 import * as BlobAccept from '../blob/accept.js'
+import * as BlobReplicaTransfer from '../blob/replica/transfer.js'
 
 /**
  * @param {API.ConcludeServiceContext & API.LegacyConcludeServiceContext} context
  * @returns {API.ServiceMethod<API.UCANConclude, API.UCANConcludeSuccess, API.UCANConcludeFailure>}
  */
 export const ucanConcludeProvider = (context) =>
-  provide(conclude, async ({ invocation }) => {
+  provide(conclude, async ({ invocation, context: invContext }) => {
     // 🚧 THIS IS A TEMPORARY HACK 🚧
     // When we receive a receipt for the invocation we want to resume the tasks
     // that were awaiting in the background. In the future task scheduler is
     // expected to handle coordination of tasks and their dependencies. In the
-    // meantime we poll `blob/allocate` tasks that were awaiting for the
-    // `http/put` receipt.
-    const result = await BlobAccept.poll(
-      context,
-      getConcludeReceipt(invocation)
-    )
+    // meantime we poll tasks that are awaiting a receipt.
+    const receipt = getConcludeReceipt(invocation)
+    const taskRes = Invocation.isInvocation(receipt.ran)
+      ? { ok: receipt.ran }
+      : await context.agentStore.invocations.get(receipt.ran)
+
+    // If can not find task for this receipt there is nothing to do here, if it
+    // was receipt for something we care about we would have invocation record.
+    if (!taskRes.ok) {
+      return { ok: { time: Date.now() } }
+    }
+
+    const pollContext = { ...context, invocation: invContext }
+    const results = await Promise.all([
+      BlobAccept.poll(pollContext, receipt, taskRes.ok),
+      BlobReplicaTransfer.poll(pollContext, receipt, taskRes.ok),
+    ])
 
     // If polling failed we propagate the error to the caller, while this is
     // not ideal it's a better option than silently failing. We do not expect
     // this to happen, however, if it does this will propagate to the user and
     // they will be able to complain about it.
-    if (result.error) {
-      return result
-    } else {
-      return { ok: { time: Date.now() } }
+    for (const result of results) {
+      if (result.error) {
+        return result
+      }
     }
+
+    return { ok: { time: Date.now() } }
   })
 
 /**

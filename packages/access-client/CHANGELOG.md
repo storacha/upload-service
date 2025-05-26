@@ -1,3 +1,23 @@
+## 1.2.1 (2025-05-22)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/capabilities to 1.6.0
+
+## 1.2.0 (2025-05-21)
+
+### 🚀 Features
+
+- Add support for directing users to bsky.storage after plan selection. ([#267](https://github.com/storacha/upload-service/pull/267))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/capabilities to 1.5.0
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 1.1.1 (2025-03-27)
 
 ### 🧱 Updated Dependencies

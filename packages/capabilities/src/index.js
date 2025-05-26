@@ -1,3 +1,4 @@
+import * as Assert from './assert.js'
 import * as Provider from './provider.js'
 import * as Space from './space.js'
 import * as Top from './top.js'
@@ -20,13 +21,14 @@ import * as SpaceIndex from './space/index.js'
 import * as UCAN from './ucan.js'
 import * as Plan from './plan.js'
 import * as Usage from './usage.js'
-import * as Blob from './blob.js'
+import * as Blob from './blob/index.js'
 import * as SpaceBlob from './space/blob.js'
 import * as W3sBlob from './web3.storage/blob.js'
 import * as HTTP from './http.js'
 
 export {
   Access,
+  Assert,
   Provider,
   Space,
   Top,
@@ -57,6 +59,13 @@ export {
 /** @type {import('./types.js').ServiceAbility[]} */
 export const abilitiesAsStrings = [
   Top.top.can,
+  Assert.assert.can,
+  Assert.equals.can,
+  Assert.inclusion.can,
+  Assert.index.can,
+  Assert.location.can,
+  Assert.partition.can,
+  Assert.relation.can,
   Provider.add.can,
   Space.space.can,
   Space.info.can,

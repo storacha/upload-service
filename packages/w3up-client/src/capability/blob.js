@@ -3,6 +3,8 @@ import { SpaceBlob as BlobCapabilities } from '@storacha/capabilities'
 import { sha256 } from 'multiformats/hashes/sha2'
 import { Base } from '../base.js'
 
+/** @import { AssertLocation } from '@web3-storage/content-claims/capability/api' */
+
 /**
  * Client for interacting with the `blob/*` capabilities.
  */
@@ -67,5 +69,21 @@ export class BlobClient extends Base {
     const conf = await this._invocationConfig([BlobCapabilities.get.can])
     options.connection = this._serviceConf.upload
     return Blob.get(conf, digest, options)
+  }
+
+  /**
+   * Replicate a blob to the specified number of nodes.
+   *
+   * @param {object} blob - details of the blob to replicate
+   * @param {import('multiformats').MultihashDigest} blob.digest - hash of the blob
+   * @param {number} blob.size - size of the blob in bytes
+   * @param {import('../types.js').Delegation<[AssertLocation]>} site - location commitment specifying where the blob can be obtained.
+   * @param {number} replicas - total number of replicas to provision.
+   * @param {import('../types.js').RequestOptions} [options]
+   */
+  async replicate(blob, site, replicas, options = {}) {
+    const conf = await this._invocationConfig([BlobCapabilities.replicate.can])
+    options.connection = this._serviceConf.upload
+    return Blob.replicate(conf, blob, site, replicas, options)
   }
 }

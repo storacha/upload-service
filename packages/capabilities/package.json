@@ -1,6 +1,6 @@
 {
   "name": "@storacha/capabilities",
-  "version": "1.4.0",
+  "version": "1.6.0",
   "description": "UCAN Capabilities provided by storacha.network",
   "publishConfig": {
     "access": "public"
@@ -21,7 +21,7 @@
     "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "test:node": "mocha 'test/**/*.test.js' -n experimental-vm-modules -n no-warnings",
-    "test:browser": "playwright-test",
+    "test:browser": "playwright-test 'test/**/!(*.node).test.js'",
     "attw": "attw --pack .",
     "testw": "watch 'pnpm test:node' src test --interval 1",
     "rc": "npm version prerelease --preid rc"
@@ -39,9 +39,17 @@
       "types": "./dist/test/helpers/*.d.ts",
       "import": "./test/helpers/*.js"
     },
+    "./assert": {
+      "types": "./dist/assert.d.ts",
+      "import": "./dist/assert.js"
+    },
     "./blob": {
-      "types": "./dist/blob.d.ts",
-      "import": "./dist/blob.js"
+      "types": "./dist/blob/index.d.ts",
+      "import": "./dist/blob/index.js"
+    },
+    "./blob/replica": {
+      "types": "./dist/blob/replica/index.d.ts",
+      "import": "./dist/blob/replica/index.js"
     },
     "./filecoin": {
       "types": "./dist/filecoin/index.d.ts",
@@ -91,7 +99,7 @@
     "@ucanto/transport": "catalog:",
     "@ucanto/validator": "catalog:",
     "@web3-storage/data-segment": "^5.2.0",
-    "uint8arrays": "^5.0.3"
+    "multiformats": "catalog:"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "catalog:",

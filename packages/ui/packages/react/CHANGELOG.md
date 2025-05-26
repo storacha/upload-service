@@ -1,3 +1,29 @@
+## 2.7.3 (2025-05-22)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/ui-core to 2.4.59
+
+## 2.7.0 (2025-05-21)
+
+### 🚀 Features
+
+- Add support for directing users to bsky.storage after plan selection. ([#267](https://github.com/storacha/upload-service/pull/267))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/ui-core to 2.4.52
+
+### ❤️ Thank You
+
+- Travis Vachon
+
+## 2.6.11 (2025-05-13)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/ui-core to 2.4.45
+
 ## 2.6.9 (2025-05-07)
 
 ### 🩹 Fixes
