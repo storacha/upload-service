@@ -350,7 +350,7 @@ export async function spaceInfo(opts) {
   const client = await getClient()
   const spaceDID = opts.space ?? client.currentSpace()?.did()
   if (!spaceDID) {
-    console.error('Error: no current space and no space given: please use --space to specify a space or select one using "space use"')
+    console.error('Error: no current space and no space given: please use "--space" to specify a space or select one using "space use"')
     process.exit(1)
   }
 
@@ -399,7 +399,7 @@ export async function createDelegation(audienceDID, opts) {
   const client = await getClient()
 
   if (client.currentSpace() == null) {
-    console.error('no current space, use `storacha space create` to create one.')
+    console.error('Error: no current space, use "space create" to create one or select one using "space use"')
     process.exit(1)
   }
   const audience = DID.parse(audienceDID)
