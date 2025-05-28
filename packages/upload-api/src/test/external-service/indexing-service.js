@@ -9,7 +9,7 @@ import * as Digest from 'multiformats/hashes/digest'
 import * as QueryResult from '@storacha/indexing-service-client/query-result'
 import * as Claim from '@storacha/indexing-service-client/claim'
 
-/** 
+/**
  * @import * as API from '../../types.js'
  * @import { IndexingServiceAPI } from '../../types.js'
  * @import { NetworkError } from '@storacha/indexing-service-client/api'
@@ -62,10 +62,12 @@ export const activate = async ({ http } = {}) => {
     const res = await QueryResult.from({ claims })
     if (res.error) {
       // an error encoding the query result would be a 500 server error
-      return Server.error(/** @type {NetworkError} */ ({
-        ...res.error,
-        name: 'NetworkError',
-      }))
+      return Server.error(
+        /** @type {NetworkError} */ ({
+          ...res.error,
+          name: 'NetworkError',
+        })
+      )
     }
     return res
   }
@@ -87,13 +89,16 @@ export const activate = async ({ http } = {}) => {
         }),
       },
       claim: {
-        cache: Server.provide(ClaimCaps.cache, ({ capability, invocation: inv }) => {
-          const root = /** @type {API.UCANLink} */ (capability.nb.claim)
-          const claim = Claim.view({ root, blocks: inv.blocks })
-          claimStore.put(claim)
-          return Server.ok({})
-        }),
-      }
+        cache: Server.provide(
+          ClaimCaps.cache,
+          ({ capability, invocation: inv }) => {
+            const root = /** @type {API.UCANLink} */ (capability.nb.claim)
+            const claim = Claim.view({ root, blocks: inv.blocks })
+            claimStore.put(claim)
+            return Server.ok({})
+          }
+        ),
+      },
     },
     validateAuthorization: () => ({ ok: {} }),
   })
@@ -150,9 +155,10 @@ class ClaimStorage {
 
   /** @param {IndexingServiceAPI.Claim} claim */
   put(claim) {
-    const digest = 'multihash' in claim.content
-      ? claim.content.multihash
-      : Digest.decode(claim.content.digest)
+    const digest =
+      'multihash' in claim.content
+        ? claim.content.multihash
+        : Digest.decode(claim.content.digest)
     const claims = this.data.get(digest) ?? []
     claims.push(claim)
     this.data.set(digest, claims)

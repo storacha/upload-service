@@ -8,7 +8,7 @@ import {
 import {
   IndexingService as Service,
   IndexingServiceClient as Client,
-  Claim
+  Claim,
 } from '@storacha/indexing-service-client/api'
 
 export type { ConnectionView, DID, Principal, Proof, Signer }

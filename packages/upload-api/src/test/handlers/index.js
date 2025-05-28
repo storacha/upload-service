@@ -225,7 +225,9 @@ export const test = {
 
     // ensure an index claim exists for the content root
     const result = Result.unwrap(
-      await context.indexingService.queryClaims({ hashes: [contentCAR.roots[0].multihash] })
+      await context.indexingService.queryClaims({
+        hashes: [contentCAR.roots[0].multihash],
+      })
     )
 
     let found = false

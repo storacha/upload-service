@@ -26,7 +26,7 @@ const add = async ({ capability }, context) => {
   const [providersRes, idxAllocRes] = await Promise.all([
     context.provisionsStorage.getStorageProviders(space),
     // ensure the index was stored in the agent's space
-    assertRegistered(context, space, idxLink.multihash, 'IndexNotFound')
+    assertRegistered(context, space, idxLink.multihash, 'IndexNotFound'),
   ])
   if (providersRes.error) return providersRes
   if (idxAllocRes.error) return idxAllocRes
@@ -76,8 +76,8 @@ const add = async ({ capability }, context) => {
     publishIndexClaim(context, {
       content: idxRes.ok.content,
       index: idxLink,
-      providers: providersRes.ok
-     }),
+      providers: providersRes.ok,
+    }),
   ])
   for (const res of publishRes) {
     if (res.error) return res

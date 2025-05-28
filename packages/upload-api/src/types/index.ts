@@ -32,7 +32,9 @@ export interface BlobRetriever {
 /** @deprecated */
 export type LegacyClaimsClientContext = ClaimsClientContext
 
-export interface IndexServiceContext extends IndexingServiceContext, LegacyClaimsClientContext {
+export interface IndexServiceContext
+  extends IndexingServiceContext,
+    LegacyClaimsClientContext {
   blobRetriever: BlobRetriever
   registry: Registry
   ipniService: IPNIService

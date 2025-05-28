@@ -11,7 +11,9 @@ export const create = (indexingService, claims) => {
   return {
     /** @type {API.BlobRetriever['stream']} */
     async stream(digest) {
-      const queryResult = await indexingService.queryClaims({ hashes: [digest] })
+      const queryResult = await indexingService.queryClaims({
+        hashes: [digest],
+      })
       if (queryResult.error) throw queryResult.error
       for (const [_, claim] of queryResult.ok.claims) {
         if (claim.type === 'assert/location') {

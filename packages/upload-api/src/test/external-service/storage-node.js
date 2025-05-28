@@ -114,19 +114,21 @@ const createService = ({
           space: capability.nb.space,
         }).delegate()
 
-        const receipt = await ClaimCapabilities.cache.invoke({
-          issuer: id,
-          audience: indexingService.invocationConfig.audience,
-          with: id.did(),
-          nb: {
-            claim: claim.cid,
-            provider: {
-              addresses: [] // TODO: add addresses?
-            }
-          },
-          expiration: Infinity,
-          proofs: [claim],
-        }).execute(indexingService.connection)
+        const receipt = await ClaimCapabilities.cache
+          .invoke({
+            issuer: id,
+            audience: indexingService.invocationConfig.audience,
+            with: id.did(),
+            nb: {
+              claim: claim.cid,
+              provider: {
+                addresses: [], // TODO: add addresses?
+              },
+            },
+            expiration: Infinity,
+            proofs: [claim],
+          })
+          .execute(indexingService.connection)
         if (receipt.out.error) {
           return receipt.out
         }
@@ -166,19 +168,21 @@ const createService = ({
               space: capability.nb.space,
             }).delegate()
 
-            const claimRcpt = await ClaimCapabilities.cache.invoke({
-              issuer: id,
-              audience: indexingService.invocationConfig.audience,
-              with: id.did(),
-              nb: {
-                claim: claim.cid,
-                provider: {
-                  addresses: [] // TODO: add addresses?
-                }
-              },
-              expiration: Infinity,
-              proofs: [claim],
-            }).execute(indexingService.connection)
+            const claimRcpt = await ClaimCapabilities.cache
+              .invoke({
+                issuer: id,
+                audience: indexingService.invocationConfig.audience,
+                with: id.did(),
+                nb: {
+                  claim: claim.cid,
+                  provider: {
+                    addresses: [], // TODO: add addresses?
+                  },
+                },
+                expiration: Infinity,
+                proofs: [claim],
+              })
+              .execute(indexingService.connection)
             if (claimRcpt.out.error) {
               return claimRcpt.out
             }
