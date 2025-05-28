@@ -25,7 +25,11 @@ export interface ShardedDAGIndexView extends ShardedDAGIndex {
   /** Set the offset/length information for the slice a shard. */
   setSlice(shard: ShardDigest, slice: SliceDigest, pos: Position): void
   /** Encode the index to a CAR file. */
-  archive(): Promise<Result<Uint8Array>>
+  archive(): Promise<Result<Uint8Array, EncodeFailure>>
+}
+
+export interface EncodeFailure extends Failure {
+  name: 'EncodeFailure'
 }
 
 export interface DecodeFailure extends Failure {

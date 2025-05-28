@@ -23,4 +23,12 @@ export const test = {
       assert.strictEqual(shard.size, oldShard.size)
     }
   },
+
+  'encode failure': async (/** @type {import('entail').assert} */ assert) => {
+    // @ts-expect-error for test
+    const index = ShardedDAGIndex.create(undefined)
+    const res = await index.archive()
+    assert.ok(res.error)
+    assert.equal(res.error.name, 'EncodeFailure')
+  },
 }

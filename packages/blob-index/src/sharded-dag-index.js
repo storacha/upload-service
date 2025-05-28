@@ -162,29 +162,52 @@ export const create = (content) => new ShardedDAGIndex(content)
 
 /**
  * @param {API.ShardedDAGIndex} model
- * @returns {Promise<API.Result<Uint8Array>>}
+ * @returns {Promise<API.Result<Uint8Array, API.EncodeFailure>>}
  */
 export const archive = async (model) => {
+  const roots = []
   const blocks = new Map()
-  const shards = [...model.shards.entries()].sort((a, b) =>
-    compare(a[0].digest, b[0].digest)
-  )
-  const index = {
-    content: model.content,
-    shards: /** @type {API.Link[]} */ ([]),
-  }
-  for (const s of shards) {
-    const slices = [...s[1].entries()]
-      .sort((a, b) => compare(a[0].digest, b[0].digest))
-      .map((e) => [e[0].bytes, e[1]])
-    const bytes = dagCBOR.encode([s[0].bytes, slices])
+  try {
+    const shards = [...model.shards.entries()].sort((a, b) =>
+      compare(a[0].digest, b[0].digest)
+    )
+    const index = {
+      content: model.content,
+      shards: /** @type {API.Link[]} */ ([]),
+    }
+    for (const s of shards) {
+      const slices = [...s[1].entries()]
+        .sort((a, b) => compare(a[0].digest, b[0].digest))
+        .map((e) => [e[0].bytes, e[1]])
+      const bytes = dagCBOR.encode([s[0].bytes, slices])
+      const digest = await sha256.digest(bytes)
+      const cid = Link.create(dagCBOR.code, digest)
+      blocks.set(cid.toString(), { cid, bytes })
+      index.shards.push(cid)
+    }
+    const bytes = dagCBOR.encode({ [version]: index })
     const digest = await sha256.digest(bytes)
     const cid = Link.create(dagCBOR.code, digest)
-    blocks.set(cid.toString(), { cid, bytes })
-    index.shards.push(cid)
+    roots.push({ cid, bytes })
+  } catch (/** @type {any} */ err) {
+    return error(
+      /** @type {API.EncodeFailure} */ ({
+        name: 'EncodeFailure',
+        message: `encoding DAG: ${err.message}`,
+        stack: err.stack,
+      })
+    )
   }
-  const bytes = dagCBOR.encode({ [version]: index })
-  const digest = await sha256.digest(bytes)
-  const cid = Link.create(dagCBOR.code, digest)
-  return ok(CAR.encode({ roots: [{ cid, bytes }], blocks }))
+
+  try {
+    return ok(CAR.encode({ roots, blocks }))
+  } catch (/** @type {any} */ err) {
+    return error(
+      /** @type {API.EncodeFailure} */ ({
+        name: 'EncodeFailure',
+        message: `encoding CAR: ${err.message}`,
+        stack: err.stack,
+      })
+    )
+  }
 }
