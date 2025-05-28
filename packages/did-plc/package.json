@@ -1,10 +1,10 @@
 {
   "name": "@storacha/did-plc",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "description": "Universal resolver for did:plc DIDs (Node & browser)",
   "type": "module",
   "main": "src/index.js",
-  "types": "dist/src/types.d.ts",
+  "types": "dist/index.d.ts",
   "files": [
     "dist",
     "!dist/**/*.js.map"

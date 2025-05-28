@@ -3,8 +3,6 @@ import * as ed25519 from '@noble/ed25519'
 import base64url from 'base64url'
 import { base58btc } from 'multiformats/bases/base58'
 
-
-
 /**
  * PLC Directory Client for did:plc operations.
  */
@@ -21,7 +19,7 @@ export class PlcClient {
    * Resolve a did:plc to its DID Document.
    * 
    * @param {import('./types.js').DidPlc} did
-   * @returns {Promise<import('./types.js').DidPlcDocument>}
+   * @returns {Promise<import('./types.js').PlcDocument>}
    * @throws {Error} If the DID cannot be resolved
    */
   async getDocument(did) {

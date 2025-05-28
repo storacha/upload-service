@@ -59,7 +59,7 @@ export type CARLink = Link<unknown, typeof CAR.codec.code>
 
 export type Multihash = Uint8Array
 
-export type AccountDID = DID<'mailto'>
+export type AccountDID = DID<'mailto'> | DID<'plc'>
 export type SpaceDID = DID<'key'>
 
 /**

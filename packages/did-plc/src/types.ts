@@ -1,5 +1,3 @@
-import { DIDKey } from "@ucanto/principal/ed25519";
-
 export type DidPlc = `did:plc:${string}`
 
 export interface PlcOperation {
@@ -12,7 +10,7 @@ export interface PlcOperation {
   sig: string;
 }
 
-export interface DidPlcDocument {
+export interface PlcDocument {
   '@context': string[];
   id: DidPlc;
   alsoKnownAs?: string[];

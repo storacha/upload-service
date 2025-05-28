@@ -15,15 +15,15 @@ export { fromEmail }
 
 /**
  * List all accounts that agent has stored access to. Returns a dictionary
- * of accounts keyed by their `did:mailto` identifier.
+ * of accounts keyed by their `did:mailto` or `did:plc` identifier.
  *
  * @param {{agent: API.Agent}} client
  * @param {object} query
- * @param {API.DID<'mailto'>} [query.account]
+ * @param {API.DID<'mailto'> | API.DID<'plc'>} [query.account]
  */
 export const list = ({ agent }, { account } = {}) => {
   const query = /** @type {API.CapabilityQuery} */ ({
-    with: account ?? /did:mailto:.*/,
+    with: account ?? /did:mailto:|did:plc:.*$/,
     can: '*',
   })
 
@@ -84,6 +84,7 @@ export const list = ({ agent }, { account } = {}) => {
  * @returns {Promise<API.Result<Account, Error>>}
  */
 export const login = async ({ agent }, email, options = {}) => {
+  // TODO(fforbeck): we should use the PlcClient to resolve the did:plc: account
   const account = fromEmail(email)
 
   // If we already have a session for this account we

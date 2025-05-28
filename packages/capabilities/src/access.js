@@ -11,7 +11,7 @@
 import { capability, URI, DID, Schema, fail, ok } from '@ucanto/validator'
 import * as Types from '@ucanto/interface'
 import { attest } from './ucan.js'
-import { equalWith, equal, and, SpaceDID, checkLink } from './utils.js'
+import { equalWith, equal, and, SpaceDID, checkLink, PlcDID } from './utils.js'
 export { top } from './top.js'
 
 /**
@@ -22,7 +22,7 @@ export const session = attest
 /**
  * Account identifier.
  */
-export const Account = DID.match({ method: 'mailto' })
+export const Account = DID.match({ method: 'mailto' }).or(PlcDID)
 
 /**
  * Describes the capability requested.
@@ -112,7 +112,7 @@ export const confirm = capability({
 
 export const claim = capability({
   can: 'access/claim',
-  with: DID.match({ method: 'key' }).or(DID.match({ method: 'mailto' })),
+  with: DID.match({ method: 'key' }).or(DID.match({ method: 'mailto' })).or(PlcDID),
 })
 
 // https://github.com/storacha/specs/blob/main/w3-access.md#accessdelegate

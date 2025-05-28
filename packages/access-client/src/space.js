@@ -62,7 +62,7 @@ export const toMnemonic = ({ signer }) => {
 
 /**
  * Creates a (UCAN) delegation that gives full access to the space to the
- * specified `account`. At the moment we only allow `did:mailto` principal
+ * specified `account`. At the moment we allow `did:mailto` and `did:plc` principal
  * to be used as an `account`.
  *
  * @template {Record<string, any>} [S=API.Service]
@@ -203,7 +203,7 @@ export class OwnedSpace {
 
   /**
    * Creates a (UCAN) delegation that gives full access to the space to the
-   * specified `account`. At the moment we only allow `did:mailto` principal
+   * specified `account`. At the moment we allow `did:mailto` and `did:plc` principal
    * to be used as an `account`.
    *
    * @param {API.AccountDID} account
