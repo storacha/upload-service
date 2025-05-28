@@ -20,7 +20,7 @@ export const cache = capability({
   nb: Schema.struct({
     claim: Schema.link({ version: 1 }),
     provider: Schema.struct({
-      addresses: Schema.array(multiaddr)
+      addresses: Schema.array(multiaddr),
     }),
   }),
   derives: (claimed, delegated) =>
@@ -47,7 +47,7 @@ const equalProviderAddresses = (claimed, delegated) => {
     }
     for (let i = 0; i < delegatedAddrs.length; i++) {
       const addr = delegatedAddrs[i]
-      const found = claimedAddrs.some(a => Bytes.equals(addr, a))
+      const found = claimedAddrs.some((a) => Bytes.equals(addr, a))
       if (!found) {
         return fail(
           `Constraint violation: provider address ${i} is not an allowed provider address`
