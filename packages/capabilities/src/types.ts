@@ -19,6 +19,7 @@ import {
   uint64,
 } from '@web3-storage/data-segment'
 import * as AssertCaps from './assert.js'
+import * as ClaimCaps from './claim.js'
 import * as SpaceCaps from './space.js'
 import * as provider from './provider.js'
 import { top } from './top.js'
@@ -140,6 +141,11 @@ export type AssertPartition = InferInvokedCapability<
   typeof AssertCaps.partition
 >
 export type AssertRelation = InferInvokedCapability<typeof AssertCaps.relation>
+
+// Claim
+
+export type Claim = InferInvokedCapability<typeof ClaimCaps.claim>
+export type ClaimCache = InferInvokedCapability<typeof ClaimCaps.cache>
 
 // Usage
 
@@ -1007,6 +1013,8 @@ export type ServiceAbilityArray = [
   AssertLocation['can'],
   AssertPartition['can'],
   AssertRelation['can'],
+  Claim['can'],
+  ClaimCache['can'],
   ProviderAdd['can'],
   Space['can'],
   SpaceInfo['can'],
