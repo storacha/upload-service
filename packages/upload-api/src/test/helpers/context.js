@@ -121,6 +121,7 @@ export const cleanupContext = (context) =>
   Promise.all([
     context.carStoreBucket.deactivate(),
     context.blobsStorage.deactivate(),
+    context.indexingService.deactivate(),
     context.claimsService.deactivate(),
     ...context.storageProviders.map((p) => p.deactivate()),
   ])
