@@ -1,3 +1,13 @@
+## 1.7.0 (2025-05-28)
+
+### 🚀 Features
+
+- feat: add `claim/cache` capabilities ([7a599c35](https://github.com/storacha/upload-service/commit/7a599c35))
+
+### ❤️ Thank You
+
+- Alan Shaw
+
 ## 1.6.0 (2025-05-22)
 
 ### 🚀 Features

@@ -1,3 +1,17 @@
+## 1.1.0 (2025-05-28)
+
+### 🚀 Features
+
+- feat: typed blob index encode failure ([7a599c35](https://github.com/storacha/upload-service/commit/7a599c35))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/capabilities to 1.7.0
+
+### ❤️ Thank You
+
+- Alan Shaw
+
 ## 1.0.7 (2025-05-22)
 
 ### 🧱 Updated Dependencies
