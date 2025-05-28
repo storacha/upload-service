@@ -1,4 +1,5 @@
 import * as Assert from './assert.js'
+import * as Claim from './claim.js'
 import * as Provider from './provider.js'
 import * as Space from './space.js'
 import * as Top from './top.js'
@@ -29,6 +30,7 @@ import * as HTTP from './http.js'
 export {
   Access,
   Assert,
+  Claim,
   Provider,
   Space,
   Top,
@@ -66,6 +68,8 @@ export const abilitiesAsStrings = [
   Assert.location.can,
   Assert.partition.can,
   Assert.relation.can,
+  Claim.claim.can,
+  Claim.cache.can,
   Provider.add.can,
   Space.space.can,
   Space.info.can,

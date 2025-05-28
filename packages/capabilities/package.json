@@ -51,6 +51,10 @@
       "types": "./dist/blob/replica/index.d.ts",
       "import": "./dist/blob/replica/index.js"
     },
+    "./claim": {
+      "types": "./dist/claim.d.ts",
+      "import": "./dist/claim.js"
+    },
     "./filecoin": {
       "types": "./dist/filecoin/index.d.ts",
       "import": "./dist/filecoin/index.js"
