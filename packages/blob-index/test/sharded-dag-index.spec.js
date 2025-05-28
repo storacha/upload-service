@@ -30,5 +30,5 @@ export const test = {
     const res = await index.archive()
     assert.ok(res.error)
     assert.equal(res.error.name, 'EncodeFailure')
-  }
+  },
 }

@@ -190,20 +190,24 @@ export const archive = async (model) => {
     const cid = Link.create(dagCBOR.code, digest)
     roots.push({ cid, bytes })
   } catch (/** @type {any} */ err) {
-    return error(/** @type {API.EncodeFailure} */ ({
-      name: 'EncodeFailure',
-      message: `encoding DAG: ${err.message}`,
-      stack: err.stack
-    }))
+    return error(
+      /** @type {API.EncodeFailure} */ ({
+        name: 'EncodeFailure',
+        message: `encoding DAG: ${err.message}`,
+        stack: err.stack,
+      })
+    )
   }
 
   try {
     return ok(CAR.encode({ roots, blocks }))
   } catch (/** @type {any} */ err) {
-    return error(/** @type {API.EncodeFailure} */ ({
-      name: 'EncodeFailure',
-      message: `encoding CAR: ${err.message}`,
-      stack: err.stack
-    }))
+    return error(
+      /** @type {API.EncodeFailure} */ ({
+        name: 'EncodeFailure',
+        message: `encoding CAR: ${err.message}`,
+        stack: err.stack,
+      })
+    )
   }
 }
