@@ -5,6 +5,7 @@ import { ShardedDAGIndex } from '@storacha/blob-index'
 import { Assert } from '@web3-storage/content-claims/capability'
 import { concat } from 'uint8arrays'
 import * as API from '../types.js'
+import { isW3sProvider } from '../web3.storage/blob/lib.js'
 
 /**
  * @param {API.IndexServiceContext} context
@@ -22,14 +23,13 @@ const add = async ({ capability }, context) => {
   const space = capability.with
   const idxLink = capability.nb.index
 
-  // ensure the index was stored in the agent's space
-  const idxAllocRes = await assertRegistered(
-    context,
-    space,
-    idxLink.multihash,
-    'IndexNotFound'
-  )
-  if (!idxAllocRes.ok) return idxAllocRes
+  const [providersRes, idxAllocRes] = await Promise.all([
+    context.provisionsStorage.getStorageProviders(space),
+    // ensure the index was stored in the agent's space
+    assertRegistered(context, space, idxLink.multihash, 'IndexNotFound')
+  ])
+  if (providersRes.error) return providersRes
+  if (idxAllocRes.error) return idxAllocRes
 
   // fetch the index from the network
   const idxBlobRes = await context.blobRetriever.stream(idxLink.multihash)
@@ -73,7 +73,11 @@ const add = async ({ capability }, context) => {
     // publish the index data to IPNI
     context.ipniService.publish(idxRes.ok),
     // publish a content claim for the index
-    publishIndexClaim(context, { content: idxRes.ok.content, index: idxLink }),
+    publishIndexClaim(context, {
+      content: idxRes.ok.content,
+      index: idxLink,
+      providers: providersRes.ok
+     }),
   ])
   for (const res of publishRes) {
     if (res.error) return res
@@ -103,21 +107,30 @@ const assertRegistered = async (context, space, digest, errorName) => {
 }
 
 /**
- * @param {API.ClaimsClientContext} ctx
- * @param {{ content: API.UnknownLink, index: API.CARLink }} params
+ * Publishes an index claim to the indexing service. If the space is provisioned
+ * with a legacy provider (i.e. did:web:web3.storage) then the index claim is
+ * published to the legacy content claims service instead.
+ *
+ * @param {API.ClaimsClientContext & API.IndexingServiceAPI.Context} ctx
+ * @param {{
+ *   content: API.UnknownLink
+ *   index: API.CARLink
+ *   providers: API.ProviderDID[]
+ * }} params
  */
-const publishIndexClaim = async (ctx, { content, index }) => {
-  const { invocationConfig, connection } = ctx.claimsService
-  const { issuer, audience, with: resource, proofs } = invocationConfig
-  const res = await Assert.index
-    .invoke({
-      issuer,
-      audience,
-      with: resource,
-      nb: { content, index },
-      expiration: Infinity,
-      proofs,
-    })
-    .execute(connection)
+const publishIndexClaim = async (ctx, { content, index, providers }) => {
+  const params = { nb: { content, index }, expiration: Infinity }
+  // if legacy provider, publish claim to legacy content claims service
+  const isLegacy = providers.some(isW3sProvider)
+  let res
+  if (isLegacy) {
+    res = await Assert.index
+      .invoke({ ...ctx.claimsService.invocationConfig, ...params })
+      .execute(ctx.claimsService.connection)
+  } else {
+    res = await Assert.index
+      .invoke({ ...ctx.indexingService.invocationConfig, ...params })
+      .execute(ctx.indexingService.connection)
+  }
   return res.out
 }

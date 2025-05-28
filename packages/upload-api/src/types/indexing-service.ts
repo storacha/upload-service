@@ -5,12 +5,16 @@ import {
   Proof,
   Signer,
 } from '@ucanto/interface'
-import { Service } from '@web3-storage/content-claims/server/service/api'
+import {
+  IndexingService as Service,
+  IndexingServiceClient as Client,
+  Claim
+} from '@storacha/indexing-service-client/api'
 
 export type { ConnectionView, DID, Principal, Proof, Signer }
-export type { Service }
+export type { Service, Client, Claim }
 
-export interface ClaimsInvocationConfig {
+export interface InvocationConfig {
   /** Signing authority issuing the UCAN invocation(s). */
   issuer: Signer
   /** The principal delegated to in the current UCAN. */
@@ -21,11 +25,11 @@ export interface ClaimsInvocationConfig {
   proofs?: Proof[]
 }
 
-export interface ClaimsClientConfig {
-  invocationConfig: ClaimsInvocationConfig
+export interface ClientConfig {
+  invocationConfig: InvocationConfig
   connection: ConnectionView<Service>
 }
 
-export interface ClaimsClientContext {
-  claimsService: ClaimsClientConfig
+export interface Context {
+  indexingService: ClientConfig
 }

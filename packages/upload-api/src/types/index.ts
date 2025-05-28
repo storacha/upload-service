@@ -2,9 +2,11 @@ import { MultihashDigest } from 'multiformats'
 import { Failure, Result, Unit } from '@ucanto/interface'
 import { ShardedDAGIndex } from '@storacha/blob-index/types'
 import { Registry } from './blob.js'
-import { ClaimsClientContext } from './content-claims.js'
+import { ClaimsClientContext } from '@web3-storage/upload-api/types'
+import { Context as IndexingServiceContext } from './indexing-service.js'
+import { ProvisionsStorage } from './provisions.js'
 
-export type { ShardedDAGIndex, ClaimsClientContext }
+export type { ShardedDAGIndex, IndexingServiceContext }
 
 /**
  * Service that allows publishing a set of multihashes to IPNI for a
@@ -27,8 +29,12 @@ export interface BlobRetriever {
   ): Promise<Result<ReadableStream<Uint8Array>, BlobNotFound>>
 }
 
-export interface IndexServiceContext extends ClaimsClientContext {
+/** @deprecated */
+export type LegacyClaimsClientContext = ClaimsClientContext
+
+export interface IndexServiceContext extends IndexingServiceContext, LegacyClaimsClientContext {
   blobRetriever: BlobRetriever
   registry: Registry
   ipniService: IPNIService
+  provisionsStorage: ProvisionsStorage
 }

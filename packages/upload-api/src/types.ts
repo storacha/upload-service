@@ -206,6 +206,8 @@ export type {
   BlobNotFound,
   ShardedDAGIndex,
 } from './types/index.js'
+import * as IndexingServiceAPI from './types/indexing-service.js'
+export type { IndexingServiceAPI }
 export type {
   ClaimsInvocationConfig,
   ClaimsClientConfig,
@@ -669,6 +671,7 @@ export interface UcantoServerTestContext
   carStoreBucket: LegacyCarStoreBucket & Deactivator
   blobsStorage: LegacyBlobsStorage & Deactivator
   claimsService: LegacyUploadAPI.ClaimsClientConfig & ClaimReader & Deactivator
+  indexingService: IndexingServiceAPI.ClientConfig & IndexingServiceAPI.Client & Deactivator
   storageProviders: Array<{ id: Signer } & Deactivator>
 }
 
