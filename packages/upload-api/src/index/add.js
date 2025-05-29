@@ -71,7 +71,7 @@ const add = async ({ capability }, context) => {
 
   const publishRes = await Promise.all([
     // publish the index data to IPNI
-    context.ipniService.publish(idxRes.ok),
+    context.ipniService.publish(space, providersRes.ok, idxRes.ok),
     // publish a content claim for the index
     publishIndexClaim(context, {
       content: idxRes.ok.content,

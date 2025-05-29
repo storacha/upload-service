@@ -1,6 +1,7 @@
 import { MultihashDigest } from 'multiformats'
 import { Failure, Result, Unit } from '@ucanto/interface'
 import { ShardedDAGIndex } from '@storacha/blob-index/types'
+import { ProviderDID, SpaceDID } from '@storacha/capabilities/types'
 import { Registry } from './blob.js'
 import { ClaimsClientContext } from '@web3-storage/upload-api/types'
 import { Context as IndexingServiceContext } from './indexing-service.js'
@@ -14,7 +15,17 @@ export type { ShardedDAGIndex, IndexingServiceContext }
  */
 export interface IPNIService {
   /** Publish the multihashes in the provided index to IPNI. */
-  publish(index: ShardedDAGIndex): Promise<Result<Unit, Failure>>
+  publish(
+    /** Space that is storing the index. */
+    space: SpaceDID,
+    /**
+     * Storage providers serbices registered for the space. Allows routing of
+     * publish request to particular IPNI chain(s).
+     */
+    providers: ProviderDID[],
+    /** Index to publish multihashes for. */
+    index: ShardedDAGIndex
+  ): Promise<Result<Unit, Failure>>
 }
 
 export interface BlobNotFound extends Failure {
