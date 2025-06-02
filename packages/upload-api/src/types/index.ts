@@ -48,6 +48,6 @@ export interface IndexServiceContext
     LegacyClaimsClientContext {
   blobRetriever: BlobRetriever
   registry: Registry
-  ipniService: IPNIService
+  ipniService?: IPNIService
   provisionsStorage: ProvisionsStorage
 }
