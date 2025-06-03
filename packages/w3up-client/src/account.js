@@ -334,7 +334,12 @@ export class AccountPlan {
       if (res.ok) return res.ok
 
       if (res.error) {
-        throw new Error(`Error retrieving payment plan: ${res.error}`)
+        if (res.error.name === 'PlanNotFound') {
+          continue
+        }
+        throw new Error(
+          `Error retrieving payment plan: ${JSON.stringify(res.error)}`
+        )
       }
 
       if (Date.now() - startTime > timeout) {
