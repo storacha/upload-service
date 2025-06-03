@@ -361,7 +361,7 @@ export const testAccount = Test.withContext({
         await assert.rejects(
           account.plan.wait({ interval: 100, timeout: 1000 }),
           {
-            message: 'Error retrieving payment plan: Some error',
+            message: 'Error retrieving payment plan: "Some error"',
           }
         )
       },
