@@ -48,6 +48,10 @@ export interface IndexServiceContext
     LegacyClaimsClientContext {
   blobRetriever: BlobRetriever
   registry: Registry
-  ipniService: IPNIService
+  /**
+   * IPNI service to publish index hashes to. May be `undefined` if the service
+   * does not allow public discovery of uploaded content.
+   */
+  ipniService?: IPNIService
   provisionsStorage: ProvisionsStorage
 }
