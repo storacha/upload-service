@@ -28,37 +28,58 @@ export const add = async (
     nb: { consumer, provider },
     with: accountDID,
   } = capability
-  if (!validator.DID.match({ method: 'mailto' }).is(accountDID)) {
+  
+  // Validate that the account DID is either did:mailto or did:plc
+  if (!validator.DID.match({ method: 'mailto' }).is(accountDID) && !validator.DID.match({ method: 'plc' }).is(accountDID)) {
     return {
       error: {
         name: 'Unauthorized',
-        message: 'Resource must be a mailto DID',
-      },
-    }
-  }
-  const accountMailtoDID =
-    /** @type {import('@storacha/did-mailto/types').DidMailto} */ (accountDID)
-  const rateLimitResult = await ensureRateLimitAbove(
-    rateLimits,
-    [mailtoDidToDomain(accountMailtoDID), mailtoDidToEmail(accountMailtoDID)],
-    0
-  )
-  if (rateLimitResult.error) {
-    return {
-      error: {
-        name: 'AccountBlocked',
-        message: `Account identified by ${accountMailtoDID} is blocked`,
+        message: 'Resource must be a valid account DID (did:mailto or did:plc)',
       },
     }
   }
 
+  // Handle rate limiting based on account type
+  if (accountDID.startsWith('did:mailto:')) {
+    const accountMailtoDID =
+      /** @type {import('@storacha/did-mailto/types').DidMailto} */ (accountDID)
+    const rateLimitResult = await ensureRateLimitAbove(
+      rateLimits,
+      [mailtoDidToDomain(accountMailtoDID), mailtoDidToEmail(accountMailtoDID)],
+      0
+    )
+    if (rateLimitResult.error) {
+      return {
+        error: {
+          name: 'AccountBlocked',
+          message: `Account identified by ${accountDID} is blocked`,
+        },
+      }
+    }
+  } else if (accountDID.startsWith('did:plc:')) {
+    // For did:plc accounts, use the full DID for rate limiting
+    const rateLimitResult = await ensureRateLimitAbove(
+      rateLimits,
+      [accountDID],
+      0
+    )
+    if (rateLimitResult.error) {
+      return {
+        error: {
+          name: 'AccountBlocked',
+          message: `Account identified by ${accountDID} is blocked`,
+        },
+      }
+    }
+  }
+
   if (requirePaymentPlan) {
-    const planGetResult = await plansStorage.get(accountMailtoDID)
+    const planGetResult = await plansStorage.get(accountDID)
     if (!planGetResult.ok?.product) {
       return {
         error: {
           name: 'AccountPlanMissing',
-          message: `Account identified by ${accountMailtoDID} has not selected a payment plan`,
+          message: `Account identified by ${accountDID} has not selected a payment plan`,
         },
       }
     }

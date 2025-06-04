@@ -112,7 +112,18 @@ export const confirm = capability({
 
 export const claim = capability({
   can: 'access/claim',
-  with: DID.match({ method: 'key' }).or(DID.match({ method: 'mailto' })).or(PlcDID),
+  with: DID.match({ method: 'key' }).or(DID.match({ method: 'mailto' })),
+})
+
+/**
+ * Capability can be invoked to fetch delegations for a did:plc account
+ * via public retrieval. This is a public operation that doesn't require
+ * authentication since delegations are not secrets and only the account owner
+ * can use them.
+ */
+export const fetch = capability({
+  can: 'access/fetch',
+  with: DID.match({ method: 'plc' }),
 })
 
 // https://github.com/storacha/specs/blob/main/w3-access.md#accessdelegate

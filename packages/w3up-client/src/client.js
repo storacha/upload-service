@@ -88,6 +88,8 @@ export class Client extends Base {
   /* c8 ignore stop */
 
   /**
+   * Login with a did:mailto account.
+   * 
    * @param {Account.EmailAddress} email
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
@@ -95,6 +97,19 @@ export class Client extends Base {
    */
   async login(email, options = {}) {
     const account = Result.unwrap(await Account.login(this, email, options))
+    Result.unwrap(await account.save())
+    return account
+  }
+
+  /**
+   * Login with a did:plc account.
+   * 
+   * @param {DIDPlc.DidPlc} didPlc
+   * @param {object} [options]
+   * @param {AbortSignal} [options.signal]
+   */
+  async plcLogin(didPlc, options = {}) {
+    const account = Result.unwrap(await Account.plcLogin(this, didPlc, options))
     Result.unwrap(await account.save())
     return account
   }
@@ -338,7 +353,7 @@ export class Client extends Base {
    * @property {import('./types.js').ServiceAbility[]} abilities - Abilities to delegate to the delegate account.
    * @property {number} expiration - Expiration time in seconds.
    
-   * @param {import("./types.js").EmailAddress} delegateEmail - Email of the account to share the space with.
+   * @param {import("./types.js").AccountDID} accountId - The did:mailto or did:plc of the account to share the space with.
    * @param {import('./types.js').SpaceDID} spaceDID - The DID of the space to share.
    * @param {ShareOptions} [options] - Options for the delegation.
    *
@@ -346,7 +361,7 @@ export class Client extends Base {
    * @throws {Error} - Throws an error if there is an issue delegating access to the space.
    */
   async shareSpace(
-    delegateEmail,
+    accountId,
     spaceDID,
     options = {
       abilities: [
@@ -372,14 +387,14 @@ export class Client extends Base {
         ...restOptions,
         abilities,
         audience: {
-          did: () => DIDMailto.fromEmail(DIDMailto.email(delegateEmail)),
+          did: () => accountId,
         },
         // @ts-expect-error audienceMeta is not defined in ShareOptions
         audienceMeta: options.audienceMeta ?? {},
       })
 
       const delegation = new AgentDelegation(root, blocks, {
-        audience: delegateEmail,
+        audience: accountId,
       })
 
       const sharingResult = await this.capability.access.delegate({
@@ -389,7 +404,7 @@ export class Client extends Base {
 
       if (sharingResult.error) {
         throw new Error(
-          `failed to share space with ${delegateEmail}: ${sharingResult.error.message}`,
+          `failed to share space with ${accountId}: ${sharingResult.error.message}`,
           {
             cause: sharingResult.error,
           }

@@ -33,7 +33,7 @@ export { createContext, cleanupContext }
  * @param {UcantoServerTestContext} context
  * @param {object} input
  * @param {API.DIDKey} input.space
- * @param {API.DID<'mailto'>} input.account
+ * @param {API.DID<'mailto'> | API.DID<'plc'>} input.account
  * @param {API.DID<'web'>} input.provider
  */
 export const provisionSpace = async (context, { space, account, provider }) => {

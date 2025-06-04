@@ -97,6 +97,9 @@ import {
   AccessClaim,
   AccessClaimSuccess,
   AccessClaimFailure,
+  AccessFetch,
+  AccessFetchSuccess,
+  AccessFetchFailure,
   AccessConfirm,
   AccessConfirmSuccess,
   AccessConfirmFailure,
@@ -252,6 +255,7 @@ export interface Service extends StorefrontService {
       AccessAuthorizeFailure
     >
     claim: ServiceMethod<AccessClaim, AccessClaimSuccess, AccessClaimFailure>
+    fetch: ServiceMethod<AccessFetch, AccessFetchSuccess, AccessFetchFailure>
     confirm: ServiceMethod<
       AccessConfirm,
       AccessConfirmSuccess,
@@ -433,6 +437,10 @@ export type UploadServiceContext = ConsumerServiceContext &
 
 export interface AccessClaimContext {
   signer: Signer
+  delegationsStorage: Delegations
+}
+
+export interface AccessFetchContext {
   delegationsStorage: Delegations
 }
 
