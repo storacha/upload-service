@@ -2,6 +2,7 @@ import { Base } from '../base.js'
 import * as Agent from '@storacha/access/agent'
 import * as DIDMailto from '@storacha/did-mailto'
 import * as Result from '../result.js'
+import * as Access from '@storacha/capabilities/access'
 
 import * as API from '../types.js'
 
@@ -46,6 +47,16 @@ export class AccessClient extends Base {
   }
 
   /**
+   * Fetch delegations for a did:plc account via public retrieval.
+   * This is a public operation that doesn't require authentication.
+   *
+   * @param {API.DID<'plc'>} didPlc - The did:plc identifier to fetch delegations for
+   */
+  async fetch(didPlc) {
+    return await fetch(this, { didPlc })
+  }
+
+  /**
    * Requests specified `access` level from the account from the given account.
    *
    * @param {object} input
@@ -77,6 +88,26 @@ export class AccessClient extends Base {
  */
 export const claim = async ({ agent }, input) =>
   Agent.Access.claim(agent, input)
+
+/**
+ * Fetch delegations for a did:plc account via public access/fetch capability.
+ * This is a public operation that doesn't require authentication.
+ *
+ * @param {{agent: API.Agent}} client
+ * @param {object} input
+ * @param {API.DID<'plc'>} input.didPlc
+ */
+export const fetch = async ({ agent }, { didPlc }) => {
+  const result = await agent.invokeAndExecute(Access.fetch, {
+    with: didPlc,
+  })
+
+  if (result.out.error) {
+    return { error: new Error(`Failed to fetch delegations: ${result.out.error.message}`) }
+  }
+
+  return { ok: result.out.ok }
+}
 
 /**
  * Requests specified `access` level from specified `account`. It will invoke

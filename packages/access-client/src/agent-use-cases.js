@@ -223,7 +223,7 @@ export async function authorizeWaitAndClaim(accessAgent, email, opts) {
  *
  * @param {AccessAgent} access
  * @param {AgentData} agentData
- * @param {string} email
+ * @param {API.AccountDID} accountId - Account DID (did:mailto or did:plc)
  * @param {object} [opts]
  * @param {AbortSignal} [opts.signal]
  * @param {API.DID<'key'>} [opts.space]
@@ -232,7 +232,7 @@ export async function authorizeWaitAndClaim(accessAgent, email, opts) {
 export async function addProviderAndDelegateToAccount(
   access,
   agentData,
-  email,
+  accountId,
   opts
 ) {
   const space = opts?.space || access.currentSpace()
@@ -257,7 +257,8 @@ export async function addProviderAndDelegateToAccount(
   if (spaceMeta) {
     throw new Error('Space already registered with storacha.network.')
   }
-  const account = { did: () => DidMailto.fromEmail(DidMailto.email(email)) }
+
+  const account = { did: () => accountId }
   await addProvider({ access, space, account, provider })
   const delegateSpaceAccessResult = await delegateSpaceAccessToAccount(
     access,

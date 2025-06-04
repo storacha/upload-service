@@ -435,11 +435,11 @@ export const testClient = {
       assert.ok(space)
 
       // Step 3: Alice shares the space with Bob
-      const bobEmail = 'bob@web.mail'
-      await aliceClient.shareSpace(bobEmail, space.did())
+      const bobDid = DIDMailto.fromEmail('bob@web.mail')
+      await aliceClient.shareSpace(bobDid, space.did())
 
       // Step 4: Bob access his device and his device gets authorized
-      const bobAccount = Absentee.from({ id: DIDMailto.fromEmail(bobEmail) })
+      const bobAccount = Absentee.from({ id: bobDid })
       const bobAgentData = await AgentData.create()
       const bobClient = await Agent.create(bobAgentData, {
         connection,
@@ -496,9 +496,9 @@ export const testClient = {
         }
 
         // Step 4: Attempt to share the space with Bob and expect failure
-        const bobEmail = 'bob@web.mail'
-        await assert.rejects(client.shareSpace(bobEmail, space.did()), {
-          message: `failed to share space with ${bobEmail}: Delegate failed`,
+        const bobDid = DIDMailto.fromEmail('bob@web.mail')
+        await assert.rejects(client.shareSpace(bobDid, space.did()), {
+          message: `failed to share space with ${bobDid}: Delegate failed`,
         })
 
         // Restore the original delegate method
@@ -533,7 +533,7 @@ export const testClient = {
 
       // Step 4: Alice set the current space to space A and shares the space B with Bob
       await client.setCurrentSpace(spaceA.did())
-      await client.shareSpace('bob@web.mail', spaceB.did())
+      await client.shareSpace(DIDMailto.fromEmail('bob@web.mail'), spaceB.did())
 
       // Step 5: Check that current space from Alice is still space A
       const currentSpace = client.currentSpace()
