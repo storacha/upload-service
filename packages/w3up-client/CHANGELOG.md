@@ -1,3 +1,13 @@
+## 1.4.0 (2025-06-04)
+
+### 🚀 Features
+
+- fix account plan wait function ([acedb357](https://github.com/storacha/upload-service/commit/acedb357))
+
+### ❤️ Thank You
+
+- bravonatalie
+
 ## 1.3.4 (2025-05-28)
 
 ### 🧱 Updated Dependencies
