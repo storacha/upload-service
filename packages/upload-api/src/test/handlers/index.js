@@ -224,12 +224,14 @@ export const test = {
     Result.try(receipt.out)
 
     // ensure an index claim exists for the content root
-    const claims = Result.unwrap(
-      await context.claimsService.read(contentCAR.roots[0].multihash)
+    const result = Result.unwrap(
+      await context.indexingService.queryClaims({
+        hashes: [contentCAR.roots[0].multihash],
+      })
     )
 
     let found = false
-    for (const c of claims) {
+    for (const [, c] of result.claims) {
       if (
         c.type === 'assert/index' &&
         c.index.toString() === indexLink.toString()

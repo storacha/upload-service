@@ -1,11 +1,12 @@
 import * as API from '../../types.js'
 import * as BlobCapabilities from '@storacha/capabilities/blob'
 import * as BlobReplicaCapabilities from '@storacha/capabilities/blob/replica'
+import * as ClaimCapabilities from '@storacha/capabilities/claim'
 import { base64pad } from 'multiformats/bases/base64'
 import { base58btc } from 'multiformats/bases/base58'
 import { sha256 } from 'multiformats/hashes/sha2'
 import * as Digest from 'multiformats/hashes/digest'
-import { ok, error, Delegation, Receipt } from '@ucanto/core'
+import { ok, error, Receipt } from '@ucanto/core'
 import { ed25519 } from '@ucanto/principal'
 import { CAR, HTTP } from '@ucanto/transport'
 import * as Server from '@ucanto/server'
@@ -48,7 +49,7 @@ const contentDigest = (key) =>
  * @param {{
  *   id: API.Signer
  *   baseURL: () => URL
- *   claimsService: API.ClaimsClientConfig
+ *   indexingService: API.IndexingServiceAPI.ClientConfig
  *   contentStore: Omit<ContentStore, 'set'>
  *   allocationStore: AllocationStore
  * }} config
@@ -57,7 +58,7 @@ const contentDigest = (key) =>
 const createService = ({
   id,
   baseURL,
-  claimsService,
+  indexingService,
   contentStore,
   allocationStore,
 }) => ({
@@ -102,21 +103,37 @@ const createService = ({
           return error(new AllocatedMemoryNotWrittenError())
         }
 
-        const receipt = await createLocationCommitment({
+        const claim = await createLocationCommitment({
           issuer: id,
           with: id.did(),
-          audience: claimsService.invocationConfig.audience,
+          audience: capability.nb.space,
           digest,
           location:
             /** @type {API.URI} */
             (new URL(contentKey(digest), baseURL()).toString()),
           space: capability.nb.space,
-        }).execute(claimsService.connection)
+        }).delegate()
+
+        const receipt = await ClaimCapabilities.cache
+          .invoke({
+            issuer: id,
+            audience: indexingService.invocationConfig.audience,
+            with: id.did(),
+            nb: {
+              claim: claim.cid,
+              provider: {
+                addresses: [], // TODO: add addresses?
+              },
+            },
+            expiration: Infinity,
+            proofs: [claim],
+          })
+          .execute(indexingService.connection)
         if (receipt.out.error) {
           return receipt.out
         }
 
-        return Server.ok({ site: receipt.ran.link() }).fork(receipt.ran)
+        return Server.ok({ site: claim.cid }).fork(claim)
       },
     }),
     replica: {
@@ -140,22 +157,34 @@ const createService = ({
 
           // if we already have the digest, we can issue a transfer receipt
           if (hasDigest) {
-            const claimRcpt = await createLocationCommitment({
+            const claim = await createLocationCommitment({
               issuer: id,
               with: id.did(),
-              audience: claimsService.invocationConfig.audience,
+              audience: capability.nb.space,
               digest,
               location:
                 /** @type {API.URI} */
                 (new URL(contentKey(digest), baseURL()).toString()),
               space: capability.nb.space,
-            }).execute(claimsService.connection)
+            }).delegate()
+
+            const claimRcpt = await ClaimCapabilities.cache
+              .invoke({
+                issuer: id,
+                audience: indexingService.invocationConfig.audience,
+                with: id.did(),
+                nb: {
+                  claim: claim.cid,
+                  provider: {
+                    addresses: [], // TODO: add addresses?
+                  },
+                },
+                expiration: Infinity,
+                proofs: [claim],
+              })
+              .execute(indexingService.connection)
             if (claimRcpt.out.error) {
               return claimRcpt.out
-            }
-            const claim = claimRcpt.ran
-            if (!Delegation.isDelegation(claim)) {
-              throw new Error('expected claim receipt ran to be a delegation')
             }
 
             const transferRcpt = await Receipt.issue({
@@ -163,10 +192,8 @@ const createService = ({
               ran: transferTask,
               result: Server.ok({ site: claim.cid }),
               fx: {
-                // communicate the locaiton commitment
-                fork: [
-                  await createConcludeInvocation(id, id, claimRcpt).delegate(),
-                ],
+                // communicate the location commitment
+                fork: [claim],
               },
             })
 
@@ -199,8 +226,8 @@ const createService = ({
 // The browser storage node has an external bucket where data is sent, started
 // before the browser tests begin.
 export class BrowserStorageNode {
-  /** @param {{ port?: number, claimsService: API.ClaimsClientConfig } & import('@ucanto/interface').PrincipalResolver} config */
-  static async activate({ claimsService, resolveDIDKey, port }) {
+  /** @param {{ port?: number, indexingService: API.IndexingServiceAPI.ClientConfig } & import('@ucanto/interface').PrincipalResolver} config */
+  static async activate({ indexingService, resolveDIDKey, port }) {
     const id = await ed25519.generate()
     const baseURL = new URL(`http://127.0.0.1:${port ?? 8989}`)
 
@@ -235,7 +262,7 @@ export class BrowserStorageNode {
       service: createService({
         id,
         baseURL: () => baseURL,
-        claimsService,
+        indexingService,
         contentStore,
         allocationStore,
       }),
@@ -271,8 +298,8 @@ export class BrowserStorageNode {
 }
 
 export class StorageNode {
-  /** @param {{ http: import('http'), claimsService: API.ClaimsClientConfig } & import('@ucanto/interface').PrincipalResolver} config */
-  static async activate({ http, claimsService, resolveDIDKey }) {
+  /** @param {{ http: import('http'), indexingService: API.IndexingServiceAPI.ClientConfig } & import('@ucanto/interface').PrincipalResolver} config */
+  static async activate({ http, indexingService, resolveDIDKey }) {
     const id = await ed25519.generate()
     /** @type {URL} */
     let baseURL
@@ -308,7 +335,7 @@ export class StorageNode {
       service: createService({
         id,
         baseURL: () => baseURL,
-        claimsService,
+        indexingService,
         contentStore,
         allocationStore,
       }),
