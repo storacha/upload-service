@@ -12,8 +12,8 @@ export class IPNIService {
     this.#data = new DigestMap()
   }
 
-  /** @param {import('@storacha/blob-index/types').ShardedDAGIndex} index */
-  async publish(index) {
+  /** @type {API.IPNIService['publish']} */
+  async publish(space, providers, index) {
     for (const [, slices] of index.shards) {
       for (const [digest] of slices) {
         this.#data.set(digest, true)
