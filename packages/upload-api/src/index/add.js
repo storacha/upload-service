@@ -45,13 +45,20 @@ const add = async ({ capability }, context) => {
 
   /** @type {Uint8Array[]} */
   const chunks = []
-  await idxBlobRes.ok.pipeTo(
-    new WritableStream({
-      write: (chunk) => {
-        chunks.push(chunk)
-      },
-    })
-  )
+
+  try {
+    await idxBlobRes.ok.pipeTo(
+      new WritableStream({
+        write: (chunk) => {
+          chunks.push(chunk)
+        },
+      })
+    )
+  } catch (err) {
+    // server may aggressively close the connection - and cause an error, but
+    // oftentimes we have all the data, so continue...
+    console.warn('failed to stream index blob', err)
+  }
 
   const idxRes = ShardedDAGIndex.extract(concat(chunks))
   if (!idxRes.ok) return idxRes
