@@ -110,7 +110,7 @@ export const test = {
       }
 
       // should be blocked on 2x sites (location commitments)
-      assert.equal(replicationSite.length, replicas)
+      assert.equal(replicationSite.length, replicas - 1)
       for (const s of replicationSite) {
         assert.equal(s['ucan/await']?.[0], '.out.ok.site')
         assert.ok(Schema.link().is(s['ucan/await']?.[1]))
@@ -204,29 +204,6 @@ export const test = {
       assert.equal(replicateRcpt.out.error?.name, 'ReplicationCountRangeError')
     }
   ),
-  'should not replicate less than 1 replica': withTestContext(
-    async (assert, context) => {
-      const replicateRcpt = await SpaceBlobCapabilities.replicate
-        .invoke({
-          issuer: alice,
-          audience: context.id,
-          with: context.space,
-          nb: {
-            blob: {
-              digest: context.digest.bytes,
-              size: context.data.length,
-            },
-            replicas: 0,
-            site: context.site.cid,
-          },
-          proofs: [context.proof, context.site],
-        })
-        .execute(context.connection)
-
-      assert.equal(replicateRcpt.out.ok, undefined)
-      assert.equal(replicateRcpt.out.error?.name, 'ReplicationCountRangeError')
-    }
-  ),
   'should not replicate if blob not registered in space': withTestContext(
     async (assert, context) => {
       const data = await randomBytes(32)
@@ -273,7 +250,7 @@ export const test = {
               digest: context.digest.bytes,
               size: context.data.length,
             },
-            replicas: 1,
+            replicas: 2,
             site: context.site.cid,
           },
           proofs: [context.proof, context.site],
@@ -313,7 +290,7 @@ export const test = {
               digest: context.digest.bytes,
               size: context.data.length,
             },
-            replicas: 2,
+            replicas: 3,
             site: context.site.cid,
           },
           proofs: [context.proof, context.site],
@@ -347,6 +324,50 @@ export const test = {
           (fx) => fx.cid.toString() === allocateFx0[0].cid.toString()
         )
       )
+    }
+  ),
+  'should not allow replicas to be reduced': withTestContext(
+    async (assert, context) => {
+      const replicateRcpt0 = await SpaceBlobCapabilities.replicate
+        .invoke({
+          issuer: alice,
+          audience: context.id,
+          with: context.space,
+          nb: {
+            blob: {
+              digest: context.digest.bytes,
+              size: context.data.length,
+            },
+            replicas: context.maxReplicas,
+            site: context.site.cid,
+          },
+          proofs: [context.proof, context.site],
+        })
+        .execute(context.connection)
+
+      assert.equal(replicateRcpt0.out.error, undefined)
+      assert.ok(replicateRcpt0.out.ok)
+
+      // replicate again, reducing by 1
+      const replicateRcpt1 = await SpaceBlobCapabilities.replicate
+        .invoke({
+          issuer: alice,
+          audience: context.id,
+          with: context.space,
+          nb: {
+            blob: {
+              digest: context.digest.bytes,
+              size: context.data.length,
+            },
+            replicas: context.maxReplicas - 1,
+            site: context.site.cid,
+          },
+          proofs: [context.proof, context.site],
+        })
+        .execute(context.connection)
+
+      assert.equal(replicateRcpt1.out.ok, undefined)
+      assert.equal(replicateRcpt1.out.error?.name, 'ReplicationCountRangeError')
     }
   ),
   'should not replicate if location commitment is invalid': withTestContext(
@@ -428,7 +449,7 @@ export const test = {
               digest: context.digest.bytes,
               size: context.data.length,
             },
-            replicas: 1,
+            replicas: 2,
             site: context.site.cid,
           },
           proofs: [context.proof, context.site],
