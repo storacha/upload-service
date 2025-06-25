@@ -204,7 +204,7 @@ export const replicate = capability({
     /** Blob to replicate. */
     blob: content,
     /**
-     * The number of replicas to ensure. e.g. `replicas: 2` will ensure 3 copies
+     * The number of replicas to ensure. e.g. `replicas: 2` will ensure 2 copies
      * of the data exist in the network.
      */
     replicas: Schema.integer().greaterThan(0),
