@@ -80,11 +80,11 @@ export const test = {
   'should schedule allocation and return effects for allocate (and its receipt) and transfer':
     withTestContext(async (assert, context) => {
       assert.ok(
-        context.maxReplicas >= 2,
-        'test requires at least 2 max replicas'
+        context.maxReplicas >= 3,
+        'test requires at least 3 max replicas'
       )
 
-      const replicas = 2
+      const replicas = 3
       const replicateRcpt = await SpaceBlobCapabilities.replicate
         .invoke({
           issuer: alice,
@@ -194,6 +194,29 @@ export const test = {
               size: context.data.length,
             },
             replicas: context.maxReplicas + 1,
+            site: context.site.cid,
+          },
+          proofs: [context.proof, context.site],
+        })
+        .execute(context.connection)
+
+      assert.equal(replicateRcpt.out.ok, undefined)
+      assert.equal(replicateRcpt.out.error?.name, 'ReplicationCountRangeError')
+    }
+  ),
+  'should not replicate less than 1 replica': withTestContext(
+    async (assert, context) => {
+      const replicateRcpt = await SpaceBlobCapabilities.replicate
+        .invoke({
+          issuer: alice,
+          audience: context.id,
+          with: context.space,
+          nb: {
+            blob: {
+              digest: context.digest.bytes,
+              size: context.data.length,
+            },
+            replicas: 0,
             site: context.site.cid,
           },
           proofs: [context.proof, context.site],

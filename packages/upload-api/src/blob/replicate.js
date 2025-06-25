@@ -34,6 +34,15 @@ export const blobReplicateProvider = (context) => {
         )
       }
 
+      if (nb.replicas < 1) {
+        return Server.error(
+          /** @type {API.ReplicationCountRangeError} */ ({
+            name: 'ReplicationCountRangeError',
+            message: 'requested number of replicas is less than minimum: 1',
+          })
+        )
+      }
+
       const digest = Digest.decode(nb.blob.digest)
       const findRes = await registry.find(space, digest)
       if (findRes.error) {
@@ -95,7 +104,9 @@ export const blobReplicateProvider = (context) => {
       }
 
       // TODO: support reducing the number of replicas?
-      const newReplicasCount = nb.replicas - activeReplicas.length
+      // Note: We +1 below to include the source blob, which is not recorded in
+      // the replicas table.
+      const newReplicasCount = nb.replicas - (activeReplicas.length + 1)
 
       // lets allocate some replicas!
       if (newReplicasCount > 0) {

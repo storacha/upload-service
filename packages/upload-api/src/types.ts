@@ -421,7 +421,11 @@ export type BlobServiceContext = SpaceServiceContext & {
   router: RoutingService
   registry: BlobRegistry
   replicaStore: ReplicaStorage
-  /** The maximum number of replicas a client is allowed to request. */
+  /**
+   * The maximum number of replicas that can be allocated for a given blob. It
+   * includes the original blob that was uploaded, so only values above 1 will
+   * allow users to have multiple copies of their data.
+   */
   maxReplicas: number
 }
 
