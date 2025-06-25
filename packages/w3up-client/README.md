@@ -53,7 +53,7 @@ npm install @storacha/client
 
 Most users' usage of `@storacha/client` will be for interacting with storacha.network, a hosted storage product that developed Storacha for their upload APIs. However, any user that has an implementation of Storacha ([specs](https://github.com/storacha/specs), [protocol](https://github.com/storacha/upload-service)) can configure `@storacha/client` for their usage.
 
-For authorization, Storacha services use [ucanto][ucanto], a Remote Procedure Call (RPC) framework built around [UCAN](https://ucan.xzy), or User Controlled Authorization Networks. UCANs are a powerful capability-based authorization system that allows fine-grained sharing of permissions through a process called _delegation_ on top of [public key cryptography](https://en.wikipedia.org/wiki/Public-key_cryptography). See our [intro to UCAN blog post](https://blog.storacha.network/posts/intro-to-ucan) for an overview of UCAN.
+For authorization, Storacha services use [ucanto][ucanto], a Remote Procedure Call (RPC) framework built around [UCAN](https://ucan.xyz), or User Controlled Authorization Networks. UCANs are a powerful capability-based authorization system that allows fine-grained sharing of permissions through a process called _delegation_ on top of [public key cryptography](https://en.wikipedia.org/wiki/Public-key_cryptography). See our [intro to UCAN blog post](https://blog.storacha.network/posts/intro-to-ucan) for an overview of UCAN.
 
 You can think about UCAN replacing bearer tokens in traditional APIs for authorization with Storacha. Since any actor can be represented by a cryptographic keypair and permissions can be delegated to them, users can interact with Storacha directly in cases where a developer might have needed to previously run additional back-end infrastructure to keep API keys secure. This can be extended even to have end users using applications integrated with Storacha using their own keypair-based identity.
 
@@ -83,15 +83,15 @@ The delegation from a Space to your Agent that `@storacha/client` needs can be p
 
 ```mermaid
 flowchart TD
-    A[@storacha/client instance] -->|Automatic if specific Agent is not passed when client object created|B(Create local Agent DID and key)
+    A(storacha/client instance) -->|Automatic if specific Agent is not passed when client object created|B(Create local Agent DID and key)
     B --> |If Space has not yet been created|S(Create local Space, login client with your email address, and register Space + email address with storacha.network)
     S --> C(Get UCAN delegation from Space to Agent)
     C --> D(Upload to Space using Agent)
 ```
 
-All uses of `@storacha/client` to upload with storacha.network follow the flow above. This section shows the most basic way to use the client to start storing data. For more complex integration options, check out the [integration options][https://github.com/storacha/upload-service/blob/main/packages/@storacha/client/README.md#integration-options] docs. For reference, check out the [API reference docs][docs] or the source code of the [`w3cli` package][w3cli-github], which uses `@storacha/client` throughout.
+All uses of `@storacha/client` to upload with storacha.network follow the flow above. This section shows the most basic way to use the client to start storing data. For more complex integration options, check out the [integration options](https://github.com/storacha/upload-service/blob/main/packages/@storacha/client/README.md#integration-options) docs. For reference, check out the [API reference docs][docs] or the source code of the [`w3cli` package][w3cli-github], which uses `@storacha/client` throughout.
 
-> By you or your users registering a Storacha Space via email confirmation with [storacha.network](http://storacha.network), you agree to the [Terms of Service](https://docs.storacha.network/terms/).
+> By you or your users registering a Storacha Space via email confirmation with [storacha.network](https://storacha.network), you agree to the [Terms of Service](https://docs.storacha.network/terms/).
 
 #### Creating a client object
 
