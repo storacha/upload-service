@@ -8,6 +8,7 @@ import * as Server from '@web3-storage/content-claims/server'
 import { DigestMap } from '@storacha/blob-index'
 
 /**
+ * @deprecated
  * @param {object} params
  * @param {API.Signer} params.serviceSigner
  * @param {API.Transport.Channel<API.ClaimsService>} params.channel
@@ -38,6 +39,7 @@ export const create = async ({ serviceSigner, channel }) => {
 }
 
 /**
+ * @deprecated
  * @param {{ http?: import('node:http') }} [options]
  * @returns {Promise<API.ClaimsClientConfig & API.ClaimReader & API.Deactivator>}
  */
