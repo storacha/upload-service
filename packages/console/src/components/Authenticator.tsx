@@ -1,15 +1,16 @@
 'use client'
-
+import { usePlausible } from 'next-plausible';
+import { useEffect, useRef } from 'react'
 import {
   Authenticator as AuthCore,
   useAuthenticator
 } from '@storacha/ui-react'
 import { Logo } from '../brand'
 import { TopLevelLoader } from './Loader'
-
 import { useRecordRefcode } from '@/lib/referrals/hooks'
 
 export function AuthenticationForm (): JSX.Element {
+  const plausible = usePlausible();
   const [{ submitted }] = useAuthenticator()
   return (
     <div className='authenticator'>
@@ -26,6 +27,7 @@ export function AuthenticationForm (): JSX.Element {
             className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap'
             type='submit'
             disabled={submitted}
+            onClick={() => plausible('Login Authorization Requested')}
           >
             Authorize
           </button>
@@ -39,6 +41,7 @@ export function AuthenticationForm (): JSX.Element {
 }
 
 export function AuthenticationSubmitted (): JSX.Element {
+  const plausible = usePlausible();
   const [{ email }] = useAuthenticator()
 
   // ensure the referral of this user is tracked if necessary.
@@ -57,9 +60,13 @@ export function AuthenticationSubmitted (): JSX.Element {
         <p className='pt-2 pb-4'>
           Click the link in the email we sent to <span className='font-semibold tracking-wide'>{email}</span> to authorize this agent.
         </p>
-        <AuthCore.CancelButton className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap' >
-          Cancel
-        </AuthCore.CancelButton>
+        <span onClick={() => plausible('Login Authorization Cancelled')}>
+          <AuthCore.CancelButton 
+            className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap' 
+          >
+            Cancel
+          </AuthCore.CancelButton>
+        </span>
       </div>
     </div>
   )
@@ -71,7 +78,22 @@ export function AuthenticationEnsurer ({
   children: JSX.Element | JSX.Element[]
 }): JSX.Element {
   const [{ submitted, accounts, client }] = useAuthenticator()
+  const plausible = usePlausible()
   const authenticated = !!accounts.length
+  const previousAuth = useRef<boolean>(authenticated)
+
+  useEffect(() => {
+    console.debug('auth changed:', {
+      was: previousAuth.current,
+      now: authenticated
+    })
+    // Only track if the transition is from unauthenticated ➝ authenticated
+    if (!previousAuth.current && authenticated) {
+      plausible('Login Successful')
+    }
+    previousAuth.current = authenticated
+  }, [authenticated, plausible])
+
   if (authenticated) {
     return <>{children}</>
   }
