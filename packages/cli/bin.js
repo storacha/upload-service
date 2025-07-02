@@ -154,9 +154,7 @@ cli
     const parsedOptions = {
       ...options,
       // if defined it means we want to skip gateway authorization, so the client will not validate the gateway services
-      skipGatewayAuthorization:
-        options['gateway-authorization'] === false ||
-        options['gateway-authorization'] === undefined,
+      skipGatewayAuthorization: options['gateway-authorization'] === false,
       // default to empty array if not set, so the client will validate the gateway services
       authorizeGatewayServices: authorizeGatewayServices || [],
     }
