@@ -1,3 +1,13 @@
+## 1.2.38 (2025-07-02)
+
+### 🩹 Fixes
+
+- fix(cli): authorize gateway service ([#291](https://github.com/storacha/upload-service/pull/291))
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.2.37 (2025-06-04)
 
 ### 🧱 Updated Dependencies
