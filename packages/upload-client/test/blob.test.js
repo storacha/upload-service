@@ -253,7 +253,7 @@ describe('Blob.add', () => {
         }
       ),
       {
-        message: 'failed to fetch blob/accept receipt',
+        message: /failed to fetch receipt/,
       }
     )
   })

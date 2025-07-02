@@ -206,6 +206,8 @@ export type {
   BlobNotFound,
   ShardedDAGIndex,
 } from './types/index.js'
+import * as IndexingServiceAPI from './types/indexing-service.js'
+export type { IndexingServiceAPI }
 export type {
   ClaimsInvocationConfig,
   ClaimsClientConfig,
@@ -419,7 +421,11 @@ export type BlobServiceContext = SpaceServiceContext & {
   router: RoutingService
   registry: BlobRegistry
   replicaStore: ReplicaStorage
-  /** The maximum number of replicas a client is allowed to request. */
+  /**
+   * The maximum number of replicas that can be allocated for a given blob. It
+   * includes the original blob that was uploaded, so only values above 1 will
+   * allow users to have multiple copies of their data.
+   */
   maxReplicas: number
 }
 
@@ -669,6 +675,9 @@ export interface UcantoServerTestContext
   carStoreBucket: LegacyCarStoreBucket & Deactivator
   blobsStorage: LegacyBlobsStorage & Deactivator
   claimsService: LegacyUploadAPI.ClaimsClientConfig & ClaimReader & Deactivator
+  indexingService: IndexingServiceAPI.ClientConfig &
+    IndexingServiceAPI.Client &
+    Deactivator
   storageProviders: Array<{ id: Signer } & Deactivator>
 }
 
