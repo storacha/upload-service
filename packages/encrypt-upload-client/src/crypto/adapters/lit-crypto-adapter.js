@@ -1,6 +1,7 @@
 import { base64 } from 'multiformats/bases/base64'
 import * as Lit from '../../protocols/lit.js'
 import * as EncryptedMetadata from '../../core/encrypted-metadata.js'
+import { createDecryptWrappedInvocation } from '../../utils.js'
 import * as Type from '../../types.js'
 
 /**
@@ -66,25 +67,95 @@ export class LitCryptoAdapter {
   /**
    * Create a decryption context for the Lit crypto adapter
    * 
-   * @param {Type.DecryptionOptions} decryptionOptions - The decryption options
+   * @param {object} params - The decryption parameters
+   * @param {Type.DecryptionOptions} params.decryptionOptions - The decryption options
+   * @param {Type.ExtractedMetadata} params.metadata - The extracted metadata
+   * @param {Uint8Array} params.delegationCAR - The delegation CAR
+   * @param {Type.AnyLink} params.resourceCID - The resource CID
+   * @param {import('@storacha/client/types').Signer<import('@storacha/client/types').DID, import('@storacha/client/types').SigAlg>} params.issuer - The issuer
+   * @param {import('@storacha/client/types').DID} params.audience - The audience
    * @returns {Promise<Type.DecryptionContext>} - The decryption context
    */
-  async createDecryptionContext(decryptionOptions) {
+  async createDecryptionContext(params) {
+    const {
+      decryptionOptions,
+      metadata,
+      delegationCAR,
+      resourceCID,
+      issuer,
+      audience
+    } = params
+
+    // Validate Lit metadata
+    if (metadata.strategy !== 'lit') {
+      throw new Error('LitCryptoAdapter can only handle Lit metadata')
+    }
+
+    const { plaintextKeyHash, accessControlConditions } = metadata
+    
+    // Extract spaceDID from access control conditions (following original implementation)
+    const spaceDID = /** @type {Type.SpaceDID} */ (
+      accessControlConditions[0].parameters[1]
+    )
+
+    // Create session signatures if not provided
+    let sessionSigs = decryptionOptions.sessionSigs
+    if (!sessionSigs) {
+      const acc = /** @type import('@lit-protocol/types').AccessControlConditions */ (
+        /** @type {unknown} */ (accessControlConditions)
+      )
+      const expiration = new Date(Date.now() + 1000 * 60 * 5).toISOString() // 5 min
+      
+      if (decryptionOptions.wallet) {
+        sessionSigs = await Lit.getSessionSigs(this.litClient, {
+          wallet: decryptionOptions.wallet,
+          dataToEncryptHash: plaintextKeyHash,
+          expiration,
+          accessControlConditions: acc,
+        })
+      } else if (decryptionOptions.pkpPublicKey && decryptionOptions.authMethod) {
+        sessionSigs = await Lit.getPkpSessionSigs(this.litClient, {
+          pkpPublicKey: decryptionOptions.pkpPublicKey,
+          authMethod: decryptionOptions.authMethod,
+          dataToEncryptHash: plaintextKeyHash,
+          expiration,
+          accessControlConditions: acc,
+        })
+      } else {
+        throw new Error('Session signatures or signer (wallet/PKP) required for Lit decryption')
+      }
+    }
+
+    // Create wrapped UCAN invocation (Lit-specific)
+    const wrappedInvocationJSON = await createDecryptWrappedInvocation({
+      delegationCAR,
+      spaceDID,
+      resourceCID,
+      issuer,
+      audience,
+      expiration: new Date(Date.now() + 1000 * 60 * 10).getTime(), // 10 min
+    })
+
     return {
       litClient: this.litClient,
-      sessionSigs: decryptionOptions.sessionSigs,
-      // Include any other adapter-created context as needed
+      sessionSigs,
+      spaceDID,
+      plaintextKeyHash,
+      accessControlConditions,
+      wrappedInvocationJSON,
     }
   }
 
   /**
    * Encrypt a symmetric key using the Lit crypto adapter
    * 
-   * @param {Uint8Array} combinedKeyAndIV - The key and initialization vector to encrypt
+   * @param {Uint8Array} key - The symmetric key to encrypt
+   * @param {Uint8Array} iv - The initialization vector to encrypt
    * @param {Type.EncryptionContext} encryptionContext - The encryption context
    * @returns {Promise<Type.EncryptedKeyResult>} - The encrypted key result
    */
-  async encryptSymmetricKey(combinedKeyAndIV, encryptionContext) {
+  async encryptSymmetricKey(key, iv, encryptionContext) {
+    const combinedKeyAndIV = this.symmetricCrypto.combineKeyAndIV(key, iv)
     const dataToEncrypt = base64.encode(combinedKeyAndIV)
 
     const { ciphertext, dataToEncryptHash } = await Lit.encryptString({
@@ -97,7 +168,7 @@ export class LitCryptoAdapter {
       encryptedKey: ciphertext,
       metadata: {
         plaintextKeyHash: dataToEncryptHash,
-        accessControlConditions: /** @type {Type.GenericAccessControlCondition} */ (encryptionContext.accessControlConditions),
+        accessControlConditions: /** @type {import('@lit-protocol/types').AccessControlConditions} */ (encryptionContext.accessControlConditions),
       },
     }
   }
@@ -107,21 +178,44 @@ export class LitCryptoAdapter {
    * 
    * @param {string} encryptedKey - The encrypted key to decrypt
    * @param {Type.DecryptionContext} decryptionContext - The decryption context
-   * @returns {Promise<Uint8Array>} - The decrypted key
+   * @returns {Promise<{ key: Uint8Array, iv: Uint8Array }>} - The decrypted key and IV
    */
   async decryptSymmetricKey(
     encryptedKey,
-    { wallet, sessionSigs, delegationCAR }
+    decryptionContext
   ) {
-    // CLIENT-SIDE: Decrypt locally with Lit
-    const decryptedString = await Lit.decryptString({
-      ciphertext: encryptedKey,
-      sessionSigs,
-      litClient: this.litClient,
+    // Validate that all required context was created
+    if (!decryptionContext.sessionSigs) {
+      throw new Error('Session signatures not available in decryption context')
+    }
+    if (!decryptionContext.spaceDID) {
+      throw new Error('Space DID not available in decryption context')
+    }
+    if (!decryptionContext.plaintextKeyHash) {
+      throw new Error('Plaintext key hash not available in decryption context')
+    }
+    if (!decryptionContext.accessControlConditions) {
+      throw new Error('Access control conditions not available in decryption context')
+    }
+    if (!decryptionContext.wrappedInvocationJSON) {
+      throw new Error('Wrapped invocation JSON not available in decryption context')
+    }
+
+    // All preparation is done in createDecryptionContext, just execute the Lit Action
+    const decryptedString = await Lit.executeUcanValidationAction(this.litClient, {
+      sessionSigs: decryptionContext.sessionSigs,
+      spaceDID: decryptionContext.spaceDID,
+      identityBoundCiphertext: encryptedKey,
+      plaintextKeyHash: decryptionContext.plaintextKeyHash,
+      accessControlConditions: decryptionContext.accessControlConditions,
+      wrappedInvocationJSON: decryptionContext.wrappedInvocationJSON,
     })
 
-    // Lit returns a base64-encoded string, so decode it to Uint8Array
-    return base64.decode(decryptedString)
+    // Lit Action returns a base64-encoded string, so decode it to Uint8Array
+    const combinedKeyAndIV = base64.decode(decryptedString)
+    
+    // Use symmetric crypto to split the combined key and IV
+    return this.symmetricCrypto.splitKeyAndIV(combinedKeyAndIV)
   }
 
   /**
@@ -160,6 +254,9 @@ export class LitCryptoAdapter {
    * @returns {string} - The encrypted key
    */
   getEncryptedKey(metadata) {
+    if (metadata.strategy !== 'lit') {
+      throw new Error('LitCryptoAdapter can only handle Lit metadata')
+    }
     return metadata.identityBoundCiphertext
   }
 
@@ -179,10 +276,7 @@ export class LitCryptoAdapter {
       encryptedDataCID,
       identityBoundCiphertext: encryptedKey,
       plaintextKeyHash: litMetadata.plaintextKeyHash,
-      accessControlConditions: 
-        /** @type import('@lit-protocol/types').AccessControlConditions */ (
-          /** @type {unknown} */ (litMetadata.accessControlConditions)
-        ),
+      accessControlConditions: litMetadata.accessControlConditions,
     }
 
     const encryptedMetadata = EncryptedMetadata.create(uploadData)

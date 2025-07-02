@@ -54,6 +54,10 @@ export interface SymmetricCrypto {
     key: Uint8Array,
     iv: Uint8Array
   ): Promise<ReadableStream>
+  
+  // Algorithm-specific key/IV management
+  combineKeyAndIV(key: Uint8Array, iv: Uint8Array): Uint8Array
+  splitKeyAndIV(combined: Uint8Array): { key: Uint8Array, iv: Uint8Array }
 }
 
 export interface CryptoAdapter {
@@ -69,17 +73,23 @@ export interface CryptoAdapter {
   createEncryptionContext(
     encryptionOptions: EncryptionOptions
   ): Promise<EncryptionContext>
-  createDecryptionContext(
+  createDecryptionContext(params: {
     decryptionOptions: DecryptionOptions
-  ): Promise<DecryptionContext>
+    metadata: ExtractedMetadata
+    delegationCAR: Uint8Array
+    resourceCID: AnyLink
+    issuer: Signer<DID, SigAlg>
+    audience: DID
+  }): Promise<DecryptionContext>
   encryptSymmetricKey(
-    combinedKeyAndIV: Uint8Array,
+    key: Uint8Array,
+    iv: Uint8Array,
     encryptionContext: EncryptionContext
   ): Promise<EncryptedKeyResult>
   decryptSymmetricKey(
     encryptedKey: string,
     decryptionContext: DecryptionContext
-  ): Promise<Uint8Array>
+  ): Promise<{ key: Uint8Array, iv: Uint8Array }>
   extractEncryptedMetadata(car: Uint8Array): ExtractedMetadata
   getEncryptedKey(metadata: ExtractedMetadata): string
   encodeMetadata(
@@ -130,10 +140,13 @@ export interface DecryptionContext {
   // Lit-specific (adapter-created)
   litClient?: LitNodeClient
   sessionSigs?: SessionSigsMap
+  spaceDID?: SpaceDID
+  plaintextKeyHash?: string
+  accessControlConditions?: AccessControlConditions
+  wrappedInvocationJSON?: string
   // KMS-specific (adapter-created)
   privateGatewayURL?: URL
   privateGatewayDID?: string
-  spaceDID?: SpaceDID
   spaceAccessProof?: unknown
 }
 
@@ -172,14 +185,14 @@ export interface EncryptedMetadataInput {
   encryptedDataCID: string
   identityBoundCiphertext: string
   plaintextKeyHash: string
-  accessControlConditions: GenericAccessControlCondition
+  accessControlConditions: AccessControlConditions
 }
 
 export interface EncryptedMetadata {
   encryptedDataCID: UnknownLink
   identityBoundCiphertext: Uint8Array
   plaintextKeyHash: Uint8Array
-  accessControlConditions: GenericAccessControlCondition
+  accessControlConditions: AccessControlConditions
 }
 
 export interface EncryptedMetadataView extends EncryptedMetadata {
