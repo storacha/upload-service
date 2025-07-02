@@ -13,7 +13,7 @@ if (typeof globalThis.crypto === 'undefined') {
   }
 }
 
-import { BrowserCryptoAdapter } from '../src/crypto-adapters/browser-crypto-adapter.js'
+import { BrowserAesCtrCrypto } from '../src/crypto/symmetric/browser-aes-ctr-crypto.js'
 
 /**
  * @param {Uint8Array} arr
@@ -55,9 +55,9 @@ async function streamToUint8Array(stream) {
   return result
 }
 
-await describe('BrowserCryptoAdapter', async () => {
+await describe('BrowserAesCtrCrypto', async () => {
   await test('should encrypt and decrypt a Blob and return the original data', async () => {
-    const adapter = new BrowserCryptoAdapter()
+    const adapter = new BrowserAesCtrCrypto()
     const originalText = 'Op, this is a test for streaming encryption!'
     const blob = new Blob([stringToUint8Array(originalText)])
 
@@ -77,7 +77,7 @@ await describe('BrowserCryptoAdapter', async () => {
   })
 
   await test('should handle empty data', async () => {
-    const adapter = new BrowserCryptoAdapter()
+    const adapter = new BrowserAesCtrCrypto()
     const blob = new Blob([])
 
     const { key, iv, encryptedStream } = await adapter.encryptStream(blob)
