@@ -310,7 +310,7 @@ importers:
         version: 20.3.2(@babel/traverse@7.26.5)(@swc/core@1.11.11(@swc/helpers@0.5.15))(@types/node@22.13.10)(nx@20.3.2(@swc/core@1.11.11(@swc/helpers@0.5.15)))(typescript@5.8.3)
       '@nx/next':
         specifier: 20.3.2
-        version: 20.3.2(@babel/core@7.26.0)(@babel/traverse@7.26.5)(@rspack/core@1.3.6(@swc/helpers@0.5.15))(@swc/core@1.11.11(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)(@types/node@22.13.10)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(next@13.5.11(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.87.0))(nx@20.3.2(@swc/core@1.11.11(@swc/helpers@0.5.15)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.8.3)(webpack@5.88.0(@swc/core@1.11.11(@swc/helpers@0.5.15)))
+        version: 20.3.2(@babel/core@7.26.0)(@babel/traverse@7.26.5)(@rspack/core@1.3.6(@swc/helpers@0.5.15))(@swc/core@1.11.11(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)(@types/node@22.13.10)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(next@13.5.11(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.87.0))(nx@20.3.2(@swc/core@1.11.11(@swc/helpers@0.5.15)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.8.3)(webpack@5.99.6(@swc/core@1.11.11(@swc/helpers@0.5.15)))
       '@types/npm-registry-fetch':
         specifier: ^8.0.7
         version: 8.0.7
@@ -10417,9 +10417,6 @@ packages:
   multiformats@13.3.3:
     resolution: {integrity: sha512-TlaFCzs3NHNzMpwiGwRYehnnhHlZcWfptygFekshlb9xCyO09GfN+9881+VBENCdRnKOeqmMxDCbupNecV8xRQ==}
 
-  multiformats@13.3.6:
-    resolution: {integrity: sha512-yakbt9cPYj8d3vi/8o/XWm61MrOILo7fsTL0qxNx6zS0Nso6K5JqqS2WV7vK/KSuDBvrW3KfCwAdAgarAgOmww==}
-
   multiformats@9.9.0:
     resolution: {integrity: sha512-HoMUjhH9T8DDBNT+6xzkrd9ga/XiBI4xLr58LJACwK6G3HTOPeMz4nB4KJs33L2BelrIJa7P0VuNaVF3hMYfjg==}
 
@@ -10959,7 +10956,6 @@ packages:
 
   path-match@1.2.4:
     resolution: {integrity: sha512-UWlehEdqu36jmh4h5CWJ7tARp1OEVKGHKm6+dg9qMq5RKUTV5WJrGgaZ3dN2m7WFAXDbjlHzvJvL/IUpy84Ktw==}
-    deprecated: This package is archived and no longer maintained. For support, visit https://github.com/expressjs/express/discussions
 
   path-parse@1.0.7:
     resolution: {integrity: sha512-LDJzPVEEEPR+y48z93A0Ed0yXb8pAByGWo/k5YYdYgpY2/2EsOsksJrq7lOHxryrVOn1ejG6oAp8ahvOIQD8sw==}
@@ -15579,7 +15575,7 @@ snapshots:
 
   '@ipld/dag-pb@4.1.3':
     dependencies:
-      multiformats: 13.3.6
+      multiformats: 13.3.3
 
   '@ipld/dag-ucan@3.4.5':
     dependencies:
@@ -15608,7 +15604,7 @@ snapshots:
       '@multiformats/murmur3': 2.1.8
       '@perma/map': 1.0.3
       actor: 2.3.1
-      multiformats: 13.3.6
+      multiformats: 13.3.3
       protobufjs: 7.4.0
       rabin-rs: 2.1.0
 
@@ -16569,7 +16565,7 @@ snapshots:
   '@multiformats/blake2@2.0.2':
     dependencies:
       blakejs: 1.2.1
-      multiformats: 13.3.6
+      multiformats: 13.3.3
 
   '@multiformats/murmur3@1.1.3':
     dependencies:
@@ -16578,13 +16574,13 @@ snapshots:
 
   '@multiformats/murmur3@2.1.8':
     dependencies:
-      multiformats: 13.3.6
+      multiformats: 13.3.3
       murmurhash3js-revisited: 3.0.0
 
   '@multiformats/sha3@3.0.2':
     dependencies:
       js-sha3: 0.9.3
-      multiformats: 13.3.6
+      multiformats: 13.3.3
 
   '@napi-rs/wasm-runtime@0.2.4':
     dependencies:
@@ -16833,19 +16829,19 @@ snapshots:
       - vue-tsc
       - webpack-cli
 
-  '@nx/next@20.3.2(@babel/core@7.26.0)(@babel/traverse@7.26.5)(@rspack/core@1.3.6(@swc/helpers@0.5.15))(@swc/core@1.11.11(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)(@types/node@22.13.10)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(next@13.5.11(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.87.0))(nx@20.3.2(@swc/core@1.11.11(@swc/helpers@0.5.15)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.8.3)(webpack@5.88.0(@swc/core@1.11.11(@swc/helpers@0.5.15)))':
+  '@nx/next@20.3.2(@babel/core@7.26.0)(@babel/traverse@7.26.5)(@rspack/core@1.3.6(@swc/helpers@0.5.15))(@swc/core@1.11.11(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)(@types/node@22.13.10)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(next@13.5.11(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.87.0))(nx@20.3.2(@swc/core@1.11.11(@swc/helpers@0.5.15)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.8.3)(webpack@5.99.6(@swc/core@1.11.11(@swc/helpers@0.5.15)))':
     dependencies:
       '@babel/plugin-proposal-decorators': 7.25.9(@babel/core@7.26.0)
       '@nx/devkit': 20.3.2(nx@20.3.2(@swc/core@1.11.11(@swc/helpers@0.5.15)))
       '@nx/eslint': 20.3.2(@babel/traverse@7.26.5)(@swc/core@1.11.11(@swc/helpers@0.5.15))(@types/node@22.13.10)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(nx@20.3.2(@swc/core@1.11.11(@swc/helpers@0.5.15)))
       '@nx/js': 20.3.2(@babel/traverse@7.26.5)(@swc/core@1.11.11(@swc/helpers@0.5.15))(@types/node@22.13.10)(nx@20.3.2(@swc/core@1.11.11(@swc/helpers@0.5.15)))(typescript@5.8.3)
-      '@nx/react': 20.3.2(@babel/traverse@7.26.5)(@swc/core@1.11.11(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)(@types/node@22.13.10)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(next@13.5.11(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.87.0))(nx@20.3.2(@swc/core@1.11.11(@swc/helpers@0.5.15)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.8.3)(webpack@5.88.0(@swc/core@1.11.11(@swc/helpers@0.5.15)))
+      '@nx/react': 20.3.2(@babel/traverse@7.26.5)(@swc/core@1.11.11(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)(@types/node@22.13.10)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(next@13.5.11(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.87.0))(nx@20.3.2(@swc/core@1.11.11(@swc/helpers@0.5.15)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.8.3)(webpack@5.99.6(@swc/core@1.11.11(@swc/helpers@0.5.15)))
       '@nx/web': 20.3.2(@babel/traverse@7.26.5)(@swc/core@1.11.11(@swc/helpers@0.5.15))(@types/node@22.13.10)(nx@20.3.2(@swc/core@1.11.11(@swc/helpers@0.5.15)))(typescript@5.8.3)
       '@nx/webpack': 20.3.2(@babel/traverse@7.26.5)(@rspack/core@1.3.6(@swc/helpers@0.5.15))(@swc/core@1.11.11(@swc/helpers@0.5.15))(@types/node@22.13.10)(nx@20.3.2(@swc/core@1.11.11(@swc/helpers@0.5.15)))(typescript@5.8.3)
       '@phenomnomnominal/tsquery': 5.0.1(typescript@5.8.3)
       '@svgr/webpack': 8.1.0(typescript@5.8.3)
-      copy-webpack-plugin: 10.2.4(webpack@5.88.0(@swc/core@1.11.11(@swc/helpers@0.5.15)))
-      file-loader: 6.2.0(webpack@5.88.0(@swc/core@1.11.11(@swc/helpers@0.5.15)))
+      copy-webpack-plugin: 10.2.4(webpack@5.99.6(@swc/core@1.11.11(@swc/helpers@0.5.15)))
+      file-loader: 6.2.0(webpack@5.99.6(@swc/core@1.11.11(@swc/helpers@0.5.15)))
       ignore: 5.3.2
       next: 13.5.11(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.87.0)
       semver: 7.6.3
@@ -16917,7 +16913,7 @@ snapshots:
   '@nx/nx-win32-x64-msvc@20.3.2':
     optional: true
 
-  '@nx/react@20.3.2(@babel/traverse@7.26.5)(@swc/core@1.11.11(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)(@types/node@22.13.10)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(next@13.5.11(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.87.0))(nx@20.3.2(@swc/core@1.11.11(@swc/helpers@0.5.15)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.8.3)(webpack@5.88.0(@swc/core@1.11.11(@swc/helpers@0.5.15)))':
+  '@nx/react@20.3.2(@babel/traverse@7.26.5)(@swc/core@1.11.11(@swc/helpers@0.5.15))(@swc/helpers@0.5.15)(@types/node@22.13.10)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(next@13.5.11(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.87.0))(nx@20.3.2(@swc/core@1.11.11(@swc/helpers@0.5.15)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.8.3)(webpack@5.99.6(@swc/core@1.11.11(@swc/helpers@0.5.15)))':
     dependencies:
       '@nx/devkit': 20.3.2(nx@20.3.2(@swc/core@1.11.11(@swc/helpers@0.5.15)))
       '@nx/eslint': 20.3.2(@babel/traverse@7.26.5)(@swc/core@1.11.11(@swc/helpers@0.5.15))(@types/node@22.13.10)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(nx@20.3.2(@swc/core@1.11.11(@swc/helpers@0.5.15)))
@@ -16927,7 +16923,7 @@ snapshots:
       '@phenomnomnominal/tsquery': 5.0.1(typescript@5.8.3)
       '@svgr/webpack': 8.1.0(typescript@5.8.3)
       express: 4.21.2
-      file-loader: 6.2.0(webpack@5.88.0(@swc/core@1.11.11(@swc/helpers@0.5.15)))
+      file-loader: 6.2.0(webpack@5.99.6(@swc/core@1.11.11(@swc/helpers@0.5.15)))
       http-proxy-middleware: 3.0.5
       minimatch: 9.0.3
       picocolors: 1.1.1
@@ -18871,7 +18867,7 @@ snapshots:
       '@noble/ed25519': 1.7.3
       '@noble/hashes': 1.7.1
       '@ucanto/interface': 10.3.0
-      multiformats: 13.3.6
+      multiformats: 13.3.3
       one-webcrypto: 1.0.3
 
   '@ucanto/server@10.2.0':
@@ -19608,7 +19604,7 @@ snapshots:
       '@ucanto/interface': 10.3.0
       '@web3-storage/capabilities': 18.0.1
       carstream: 2.3.0
-      multiformats: 13.3.6
+      multiformats: 13.3.3
       uint8arrays: 5.1.0
 
   '@web3-storage/capabilities@17.4.1':
@@ -19636,7 +19632,7 @@ snapshots:
       '@multiformats/blake2': 2.0.2
       '@multiformats/murmur3': 2.1.8
       '@multiformats/sha3': 3.0.2
-      multiformats: 13.3.6
+      multiformats: 13.3.3
       uint8arrays: 5.1.0
 
   '@web3-storage/clock@0.4.1':
@@ -19651,7 +19647,7 @@ snapshots:
       '@ucanto/validator': 9.1.0
       '@web3-storage/pail': 0.5.0
       hashlru: 2.3.0
-      multiformats: 13.3.6
+      multiformats: 13.3.3
       p-retry: 6.2.1
 
   '@web3-storage/content-claims@5.2.1':
@@ -19714,7 +19710,7 @@ snapshots:
       archy: 1.0.0
       carstream: 2.3.0
       cli-color: 2.0.4
-      multiformats: 13.3.6
+      multiformats: 13.3.3
       sade: 1.8.1
 
   '@web3-storage/parse-link-header@3.1.0': {}
@@ -20957,16 +20953,6 @@ snapshots:
       graceful-fs: 4.2.11
       p-event: 6.0.1
 
-  copy-webpack-plugin@10.2.4(webpack@5.88.0(@swc/core@1.11.11(@swc/helpers@0.5.15))):
-    dependencies:
-      fast-glob: 3.3.3
-      glob-parent: 6.0.2
-      globby: 12.2.0
-      normalize-path: 3.0.0
-      schema-utils: 4.3.2
-      serialize-javascript: 6.0.2
-      webpack: 5.88.0(@swc/core@1.11.11(@swc/helpers@0.5.15))
-
   copy-webpack-plugin@10.2.4(webpack@5.99.6(@swc/core@1.11.11(@swc/helpers@0.5.15))):
     dependencies:
       fast-glob: 3.3.3
@@ -22003,7 +21989,7 @@ snapshots:
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1)
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
       eslint-plugin-jsx-a11y: 6.10.2(eslint@8.57.1)
       eslint-plugin-react: 7.37.4(eslint@8.57.1)
       eslint-plugin-react-hooks: 4.6.2(eslint@8.57.1)
@@ -22074,7 +22060,7 @@ snapshots:
       tinyglobby: 0.2.13
       unrs-resolver: 1.7.0
     optionalDependencies:
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -22118,7 +22104,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1):
+  eslint-plugin-import@2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.8
@@ -22626,11 +22612,11 @@ snapshots:
     dependencies:
       flat-cache: 3.2.0
 
-  file-loader@6.2.0(webpack@5.88.0(@swc/core@1.11.11(@swc/helpers@0.5.15))):
+  file-loader@6.2.0(webpack@5.99.6(@swc/core@1.11.11(@swc/helpers@0.5.15))):
     dependencies:
       loader-utils: 2.0.4
       schema-utils: 3.3.0
-      webpack: 5.88.0(@swc/core@1.11.11(@swc/helpers@0.5.15))
+      webpack: 5.99.6(@swc/core@1.11.11(@swc/helpers@0.5.15))
 
   file-uri-to-path@1.0.0: {}
 
@@ -24885,8 +24871,6 @@ snapshots:
   multiformats@12.1.3: {}
 
   multiformats@13.3.3: {}
-
-  multiformats@13.3.6: {}
 
   multiformats@9.9.0: {}
 
