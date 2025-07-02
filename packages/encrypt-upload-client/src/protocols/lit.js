@@ -109,12 +109,57 @@ export async function getSessionSigs(
 }
 
 /**
+ * Get session signatures for a PKP key and auth method.
+ * There is not need to execute the auth callback for this function, because the auth method provided.
+ *
+ * @param {LitNodeClient} litClient
+ * @param {Type.PkpSessionSignatureOptions} options
+ * @returns {Promise<import('@lit-protocol/types').SessionSigsMap>}
+ */
+export async function getPkpSessionSigs(
+  litClient,
+  {
+    pkpPublicKey,
+    authMethod,
+    accessControlConditions,
+    dataToEncryptHash,
+    expiration,
+    capabilityAuthSigs,
+  }
+) {
+  const accsResourceString =
+    await LitAccessControlConditionResource.generateResourceString(
+      accessControlConditions,
+      dataToEncryptHash
+    )
+
+  const sessionSigs = await litClient.getPkpSessionSigs({
+    pkpPublicKey,
+    authMethods: [authMethod],
+    resourceAbilityRequests: [
+      {
+        resource: new LitAccessControlConditionResource(accsResourceString),
+        ability: LIT_ABILITY.AccessControlConditionDecryption,
+      },
+      {
+        resource: new LitActionResource('*'),
+        ability: LIT_ABILITY.LitActionExecution,
+      },
+    ],
+    expiration,
+    capabilityAuthSigs,
+  })
+
+  return sessionSigs
+}
+
+/**
  *
  * @param {LitNodeClient} litClient
  * @param {Type.ExecuteUcanValidationOptions} options
  * @returns
  */
-export const executeUcanValidatoinAction = async (litClient, options) => {
+export const executeUcanValidationAction = async (litClient, options) => {
   const { sessionSigs, ...jsParams } = options
 
   const litActionResponse = await litClient.executeJs({

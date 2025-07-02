@@ -1,4 +1,3 @@
-import { Wallet } from 'ethers'
 import { CID } from 'multiformats'
 import { CarIndexer } from '@ipld/car'
 import { exporter } from 'ipfs-unixfs-exporter'
@@ -11,13 +10,14 @@ import * as EncryptedMetadata from '../core/encrypted-metadata.js'
 import { createDecryptWrappedInvocation } from '../utils.js'
 
 /**
+ * Retrieve and decrypt a file from the IPFS gateway.
  *
  * @param {import('@storacha/client').Client} storachaClient - The Storacha client
  * @param {import('@lit-protocol/lit-node-client').LitNodeClient} litClient - The Lit client
  * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter responsible for performing
  * encryption and decryption operations.
  * @param {URL} gatewayURL - The IPFS gateway URL
- * @param {Wallet} wallet - The wallet to use to decrypt the file
+ * @param {Type.LitWalletSigner | Type.LitPkpSigner} signer - The wallet or PKP key signer to decrypt the file
  * @param {Type.AnyLink} cid - The link to the file to retrieve
  * @param {Uint8Array} delegationCAR - The delegation that gives permission to decrypt the file
  */
@@ -26,7 +26,7 @@ export const retrieveAndDecrypt = async (
   litClient,
   cryptoAdapter,
   gatewayURL,
-  wallet,
+  signer,
   cid,
   delegationCAR
 ) => {
@@ -48,20 +48,37 @@ export const retrieveAndDecrypt = async (
     encryptedDataCID
   )
 
+  if (!signer) {
+    throw new Error('Signer is required')
+  }
+
   /**
    * TODO: check if the wallet has capacity credits, if not get it
    */
 
+  const acc =
+    /** @type import('@lit-protocol/types').AccessControlConditions */ (
+      /** @type {unknown} */ (accessControlConditions)
+    )
+  const expiration = new Date(Date.now() + 1000 * 60 * 5).toISOString() // 5 min
   // TODO: store the session signature (https://developer.litprotocol.com/intro/first-request/generating-session-sigs#nodejs)
-  const sessionSigs = await Lit.getSessionSigs(litClient, {
-    wallet,
-    dataToEncryptHash: plaintextKeyHash,
-    expiration: new Date(Date.now() + 1000 * 60 * 5).toISOString(), // 5 min
-    accessControlConditions:
-      /** @type import('@lit-protocol/types').AccessControlConditions */ (
-        /** @type {unknown} */ (accessControlConditions)
-      ),
-  })
+  let sessionSigs
+  if ('wallet' in signer) {
+    sessionSigs = await Lit.getSessionSigs(litClient, {
+      wallet: signer.wallet,
+      dataToEncryptHash: plaintextKeyHash,
+      expiration,
+      accessControlConditions: acc,
+    })
+  } else {
+    sessionSigs = await Lit.getPkpSessionSigs(litClient, {
+      pkpPublicKey: signer.pkpPublicKey,
+      authMethod: signer.authMethod,
+      dataToEncryptHash: plaintextKeyHash,
+      expiration,
+      accessControlConditions: acc,
+    })
+  }
 
   const wrappedInvocationJSON = await createDecryptWrappedInvocation({
     delegationCAR,
@@ -72,7 +89,7 @@ export const retrieveAndDecrypt = async (
     expiration: new Date(Date.now() + 1000 * 60 * 10).getTime(), // 10 min
   })
 
-  const decryptKey = await Lit.executeUcanValidatoinAction(litClient, {
+  const decryptKey = await Lit.executeUcanValidationAction(litClient, {
     sessionSigs,
     spaceDID,
     identityBoundCiphertext,

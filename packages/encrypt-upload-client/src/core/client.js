@@ -1,5 +1,3 @@
-import { Wallet } from 'ethers'
-
 import * as Type from '../types.js'
 import { getLitClient } from '../protocols/lit.js'
 import { GATEWAY_URL } from '../config/constants.js'
@@ -63,18 +61,18 @@ export class EncryptedClient {
   /**
    * Retrieve and decrypt a file from the Storacha network
    *
-   * @param {Wallet} wallet - The wallet to use to decrypt the file
+   * @param {Type.LitWalletSigner | Type.LitPkpSigner} signer - The wallet or PKP key signer to decrypt the file
    * @param {Type.AnyLink} cid - The link to the file to retrieve
    * @param {Uint8Array} delegationCAR - The delegation that gives permission to decrypt the file
    * @returns {Promise<ReadableStream>} - The decrypted file
    */
-  async retrieveAndDecryptFile(wallet, cid, delegationCAR) {
+  async retrieveAndDecryptFile(signer, cid, delegationCAR) {
     return retrieveAndDecrypt(
       this._storachaClient,
       this._litClient,
       this._cryptoAdapter,
       this._gatewayURL,
-      wallet,
+      signer,
       cid,
       delegationCAR
     )

@@ -5,8 +5,9 @@ import * as Client from '@storacha/client'
 import * as Signer from '@ucanto/principal/ed25519'
 import { StoreMemory } from '@storacha/client/stores/memory'
 
-import { create, Wallet, NodeCryptoAdapter } from '../src/index.js'
+import { create, Wallet } from '../src/index.js'
 import { serviceConf, receiptsEndpoint } from '../src/config/service.js'
+import { NodeCryptoAdapter } from '../src/crypto-adapters/node-crypto-adapter.js'
 
 dotenv.config()
 
@@ -35,8 +36,9 @@ async function main() {
     cryptoAdapter: new NodeCryptoAdapter(),
   })
 
+  const signer = { wallet }
   const decryptedContent = await encryptedClient.retrieveAndDecryptFile(
-    wallet,
+    signer,
     cid,
     delegationCarBuffer
   )

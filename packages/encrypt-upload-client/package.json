@@ -34,12 +34,24 @@
   ],
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
     },
-    "./crypto/adapters": {
-      "types": "./dist/crypto-adapters/node-crypto-adapter.d.ts",
-      "import": "./dist/crypto-adapters/node-crypto-adapter.js"
+    "./node": {
+      "import": "./dist/crypto-adapters/node-crypto-adapter.js",
+      "require": "./dist/crypto-adapters/node-crypto-adapter.js"
+    },
+    "./browser": {
+      "import": "./dist/crypto-adapters/browser-crypto-adapter.js",
+      "require": "./dist/crypto-adapters/browser-crypto-adapter.js"
+    },
+    "./crypto-adapters/browser-crypto-adapter": {
+      "import": "./dist/crypto-adapters/browser-crypto-adapter.js",
+      "types": "./dist/crypto-adapters/browser-crypto-adapter.d.ts"
+    },
+    "./crypto-adapters/node-crypto-adapter": {
+      "import": "./dist/crypto-adapters/node-crypto-adapter.js",
+      "types": "./dist/crypto-adapters/node-crypto-adapter.d.ts"
     },
     "./types": "./dist/types.js"
   },
@@ -50,7 +62,8 @@
     "lint:fix": "tsc --build && eslint '**/*.{js,ts}' --fix && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "build-actions": "node lit-actions/esbuild.js",
     "attw": "attw --pack .",
-    "rc": "npm version prerelease --preid rc"
+    "rc": "npm version prerelease --preid rc",
+    "test": "node --test test/*.spec.js"
   },
   "dependencies": {
     "@ipld/car": "catalog:",

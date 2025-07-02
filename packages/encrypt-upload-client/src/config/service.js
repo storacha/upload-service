@@ -6,6 +6,10 @@ import { gatewayServiceConnection } from '@storacha/client/service'
 const storachaServiceURL = 'https://up.web3.storage'
 const storachaPrincipalDID = 'did:web:web3.storage'
 
+//TODO: Instead of declaring the service URL and principal here,
+// import them from the w3up-client/service package.
+// It needs to be done after the repo unification tasks is completed
+// Because the DID Web is did:web:up.storacha.network
 export const accessServiceURL = new URL(storachaServiceURL)
 export const accessServicePrincipal = DID.parse(storachaPrincipalDID)
 

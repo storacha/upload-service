@@ -5,6 +5,7 @@ import { Result, Failure, Block } from '@ucanto/interface'
 import { LitNodeClient } from '@lit-protocol/lit-node-client'
 import {
   AccessControlConditions,
+  AuthMethod,
   AuthSig,
   SessionSigsMap,
 } from '@lit-protocol/types'
@@ -25,7 +26,7 @@ export type { BlobLike, AnyLink }
 export interface EncryptedClient {
   uploadEncryptedFile(file: BlobLike): Promise<AnyLink>
   retrieveAndDecryptFile(
-    wallet: Wallet,
+    signer: LitWalletSigner | LitPkpSigner,
     cid: AnyLink,
     delegationCAR: Uint8Array
   ): Promise<ReadableStream>
@@ -39,12 +40,12 @@ export type EncryptedClientOptions = {
 }
 
 export interface CryptoAdapter {
-  encryptStream(data: BlobLike): EncryptOutput
+  encryptStream(data: BlobLike): Promise<EncryptOutput>
   decryptStream(
     encryptedData: ReadableStream,
     key: Uint8Array,
     iv: Uint8Array
-  ): ReadableStream
+  ): Promise<ReadableStream>
 }
 
 export interface EncryptOutput {
@@ -92,6 +93,24 @@ export interface SessionSignatureOptions {
   dataToEncryptHash: string
   expiration?: string
   capabilityAuthSigs?: AuthSig[] // Required if the capacity credit is delegated to the decrypting user
+}
+
+export interface PkpSessionSignatureOptions {
+  pkpPublicKey: string
+  authMethod: AuthMethod
+  accessControlConditions: AccessControlConditions
+  dataToEncryptHash: string
+  expiration?: string
+  capabilityAuthSigs?: AuthSig[] // Required if the capacity credit is delegated to the decrypting user
+}
+
+export interface LitPkpSigner {
+  pkpPublicKey: string
+  authMethod: AuthMethod
+}
+
+export interface LitWalletSigner {
+  wallet: Wallet
 }
 
 export interface CreateDecryptWrappedInvocationOptions {

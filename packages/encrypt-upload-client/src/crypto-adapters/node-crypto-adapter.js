@@ -7,7 +7,7 @@ const ENCRYPTION_ALGORITHM = 'aes-256-cbc'
 /** @implements {Type.CryptoAdapter} */
 export class NodeCryptoAdapter {
   /** @param {Type.BlobLike} data  */
-  encryptStream(data) {
+  async encryptStream(data) {
     const symmetricKey = randomBytes(32) // 256 bits for AES-256
     const initializationVector = randomBytes(16) // 16 bytes for AES
 
@@ -32,11 +32,11 @@ export class NodeCryptoAdapter {
       },
     })
 
-    return {
+    return Promise.resolve({
       key: symmetricKey,
       iv: initializationVector,
       encryptedStream: data.stream().pipeThrough(encryptStream),
-    }
+    })
   }
 
   /**
@@ -44,7 +44,7 @@ export class NodeCryptoAdapter {
    * @param {Uint8Array} key
    * @param {Uint8Array} iv
    */
-  decryptStream(encryptedData, key, iv) {
+  async decryptStream(encryptedData, key, iv) {
     const decipher = createDecipheriv(ENCRYPTION_ALGORITHM, key, iv)
 
     const decryptor = new TransformStream({
@@ -71,6 +71,6 @@ export class NodeCryptoAdapter {
       },
     })
 
-    return encryptedData.pipeThrough(decryptor)
+    return Promise.resolve(encryptedData.pipeThrough(decryptor))
   }
 }
