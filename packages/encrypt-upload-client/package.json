@@ -63,7 +63,7 @@
     "build-actions": "node lit-actions/esbuild.js",
     "attw": "attw --pack .",
     "rc": "npm version prerelease --preid rc",
-    "test": "node --test test/**/*.spec.js"
+    "test": "node --test test/*.spec.js"
   },
   "dependencies": {
     "@ipld/car": "catalog:",
