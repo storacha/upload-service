@@ -120,13 +120,10 @@ const encryptFile = async (
   // Step 1: Encrypt the file using the crypto adapter
   const { key, iv, encryptedStream } = await cryptoAdapter.encryptStream(file)
 
-  // Step 2: Combine key and initializationVector
-  const combinedKeyAndIV = new Uint8Array([...key, ...iv])
+  // Step 2: Use crypto adapter to encrypt the symmetric key
+  const keyResult = await cryptoAdapter.encryptSymmetricKey(key, iv, encryptionContext)
 
-  // Step 3: Use crypto adapter to encrypt the symmetric key
-  const keyResult = await cryptoAdapter.encryptSymmetricKey(combinedKeyAndIV, encryptionContext)
-
-  // Step 4: Return the encrypted payload
+  // Step 3: Return the encrypted payload
   return {
     strategy: keyResult.strategy,
     encryptedKey: keyResult.encryptedKey,

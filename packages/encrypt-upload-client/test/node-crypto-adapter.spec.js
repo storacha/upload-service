@@ -1,19 +1,6 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert'
-
-// Polyfill globalThis.crypto for Node.js <19
-if (typeof globalThis.crypto === 'undefined') {
-  try {
-    // @ts-expect-error
-    globalThis.crypto = (await import('crypto')).webcrypto
-  } catch (e) {
-    throw new Error(
-      'globalThis.crypto is not available. Use Node.js 19+ or polyfill with a package like @peculiar/webcrypto.'
-    )
-  }
-}
-
-import { BrowserAesCtrCrypto } from '../src/crypto/symmetric/browser-aes-ctr-crypto.js'
+import { NodeAesCbcCrypto } from '../src/crypto/symmetric/node-aes-cbc-crypto.js'
 
 /**
  * @param {Uint8Array} arr
@@ -55,14 +42,33 @@ async function streamToUint8Array(stream) {
   return result
 }
 
-await describe('BrowserAesCtrCrypto', async () => {
-  await test('should encrypt and decrypt a Blob and return the original data', async () => {
-    const adapter = new BrowserAesCtrCrypto()
-    const originalText = 'Op, this is a test for streaming encryption!'
-    const blob = new Blob([stringToUint8Array(originalText)])
+/**
+ * Create a mock BlobLike object for testing
+ * 
+ * @param {Uint8Array} data
+ * @returns {import('../src/types.js').BlobLike}
+ */
+function createMockBlob(data) {
+  return {
+    stream() {
+      return new ReadableStream({
+        start(controller) {
+          controller.enqueue(data)
+          controller.close()
+        }
+      })
+    }
+  }
+}
+
+await describe('NodeAesCbcCrypto', async () => {
+  await test('should encrypt and decrypt data and return the original data', async () => {
+    const adapter = new NodeAesCbcCrypto()
+    const originalText = 'Hello, this is a test for Node.js AES-CBC encryption!'
+    const mockBlob = createMockBlob(stringToUint8Array(originalText))
 
     // Encrypt
-    const { key, iv, encryptedStream } = await adapter.encryptStream(blob)
+    const { key, iv, encryptedStream } = await adapter.encryptStream(mockBlob)
 
     // Decrypt
     const decryptedStream = await adapter.decryptStream(
@@ -77,10 +83,10 @@ await describe('BrowserAesCtrCrypto', async () => {
   })
 
   await test('should handle empty data', async () => {
-    const adapter = new BrowserAesCtrCrypto()
-    const blob = new Blob([])
+    const adapter = new NodeAesCbcCrypto()
+    const mockBlob = createMockBlob(new Uint8Array(0))
 
-    const { key, iv, encryptedStream } = await adapter.encryptStream(blob)
+    const { key, iv, encryptedStream } = await adapter.encryptStream(mockBlob)
     const decryptedStream = await adapter.decryptStream(
       encryptedStream,
       key,
@@ -92,9 +98,9 @@ await describe('BrowserAesCtrCrypto', async () => {
   })
 
   await test('should combine key and IV correctly', async () => {
-    const adapter = new BrowserAesCtrCrypto()
-    const key = new Uint8Array(32).fill(1) // 32-byte AES-256 key
-    const iv = new Uint8Array(16).fill(2)   // 16-byte AES-CTR IV
+    const adapter = new NodeAesCbcCrypto()
+    const key = new Uint8Array(32).fill(3) // 32-byte AES-256 key
+    const iv = new Uint8Array(16).fill(6)   // 16-byte AES-CBC IV
 
     const combined = adapter.combineKeyAndIV(key, iv)
 
@@ -102,19 +108,19 @@ await describe('BrowserAesCtrCrypto', async () => {
     
     // Verify first 32 bytes are the key
     for (let i = 0; i < 32; i++) {
-      assert.strictEqual(combined[i], 1, `Key byte ${i} should match`)
+      assert.strictEqual(combined[i], 3, `Key byte ${i} should match`)
     }
     
     // Verify last 16 bytes are the IV
     for (let i = 32; i < 48; i++) {
-      assert.strictEqual(combined[i], 2, `IV byte ${i - 32} should match`)
+      assert.strictEqual(combined[i], 6, `IV byte ${i - 32} should match`)
     }
   })
 
   await test('should split combined key and IV correctly', async () => {
-    const adapter = new BrowserAesCtrCrypto()
-    const originalKey = new Uint8Array(32).fill(42)
-    const originalIV = new Uint8Array(16).fill(84)
+    const adapter = new NodeAesCbcCrypto()
+    const originalKey = new Uint8Array(32).fill(123)
+    const originalIV = new Uint8Array(16).fill(234)
     
     const combined = adapter.combineKeyAndIV(originalKey, originalIV)
     const { key, iv } = adapter.splitKeyAndIV(combined)
@@ -134,9 +140,11 @@ await describe('BrowserAesCtrCrypto', async () => {
   })
 
   await test('should roundtrip combine/split correctly', async () => {
-    const adapter = new BrowserAesCtrCrypto()
-    const originalKey = globalThis.crypto.getRandomValues(new Uint8Array(32))
-    const originalIV = globalThis.crypto.getRandomValues(new Uint8Array(16))
+    const adapter = new NodeAesCbcCrypto()
+    const { randomBytes } = await import('crypto')
+    // Convert Buffer to Uint8Array to match the expected types
+    const originalKey = new Uint8Array(randomBytes(32))
+    const originalIV = new Uint8Array(randomBytes(16))
     
     const combined = adapter.combineKeyAndIV(originalKey, originalIV)
     const { key, iv } = adapter.splitKeyAndIV(combined)
@@ -146,7 +154,7 @@ await describe('BrowserAesCtrCrypto', async () => {
   })
 
   await test('should validate key length in combineKeyAndIV', async () => {
-    const adapter = new BrowserAesCtrCrypto()
+    const adapter = new NodeAesCbcCrypto()
     const wrongKey = new Uint8Array(31) // Wrong size
     const correctIV = new Uint8Array(16)
 
@@ -161,7 +169,7 @@ await describe('BrowserAesCtrCrypto', async () => {
   })
 
   await test('should validate IV length in combineKeyAndIV', async () => {
-    const adapter = new BrowserAesCtrCrypto()
+    const adapter = new NodeAesCbcCrypto()
     const correctKey = new Uint8Array(32)
     const wrongIV = new Uint8Array(15) // Wrong size
 
@@ -169,23 +177,46 @@ await describe('BrowserAesCtrCrypto', async () => {
       () => adapter.combineKeyAndIV(correctKey, wrongIV),
       {
         name: 'Error',
-        message: 'AES-CTR IV must be 16 bytes, got 15'
+        message: 'AES-CBC IV must be 16 bytes, got 15'
       },
       'Should throw error for wrong IV size'
     )
   })
 
   await test('should validate combined length in splitKeyAndIV', async () => {
-    const adapter = new BrowserAesCtrCrypto()
+    const adapter = new NodeAesCbcCrypto()
     const wrongCombined = new Uint8Array(47) // Wrong size
 
     assert.throws(
       () => adapter.splitKeyAndIV(wrongCombined),
       {
         name: 'Error',
-        message: 'AES-256-CTR combined key+IV must be 48 bytes, got 47'
+        message: 'AES-256-CBC combined key+IV must be 48 bytes, got 47'
       },
       'Should throw error for wrong combined size'
     )
   })
-})
+
+  await test('should use constants for validation', async () => {
+    const adapter = new NodeAesCbcCrypto()
+    
+    // Test with different wrong sizes to ensure constants are used
+    assert.throws(
+      () => adapter.combineKeyAndIV(new Uint8Array(16), new Uint8Array(16)),
+      /AES-256 key must be 32 bytes, got 16/,
+      'Should use KEY_LENGTH constant in error message'
+    )
+
+    assert.throws(
+      () => adapter.combineKeyAndIV(new Uint8Array(32), new Uint8Array(8)),
+      /AES-CBC IV must be 16 bytes, got 8/,
+      'Should use IV_LENGTH constant in error message'
+    )
+
+    assert.throws(
+      () => adapter.splitKeyAndIV(new Uint8Array(32)),
+      /AES-256-CBC combined key\+IV must be 48 bytes, got 32/,
+      'Should use calculated expected length in error message'
+    )
+  })
+}) 

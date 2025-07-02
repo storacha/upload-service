@@ -8,6 +8,7 @@ import * as Type from '../types.js'
 /**
  * Retrieve and decrypt a file from the IPFS gateway using any supported encryption strategy.
  *
+ * @param {import('@storacha/client').Client} storachaClient - The Storacha client
  * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter responsible for performing
  * encryption and decryption operations.
  * @param {URL} gatewayURL - The IPFS gateway URL
@@ -17,6 +18,7 @@ import * as Type from '../types.js'
  * @returns {Promise<ReadableStream>} The decrypted file stream
  */
 export const retrieveAndDecrypt = async (
+  storachaClient,
   cryptoAdapter,
   gatewayURL,
   cid,
@@ -25,7 +27,7 @@ export const retrieveAndDecrypt = async (
 ) => {
   // Step 1: Get the encrypted metadata from the public gateway
   const encryptedMetadataCar = await getCarFileFromPublicGateway(
-    gatewayURL,
+    gatewayURL, 
     cid.toString()
   )
   
@@ -38,22 +40,24 @@ export const retrieveAndDecrypt = async (
     metadata.encryptedDataCID
   )
 
-  // Step 4: Create decryption context from user options and decrypt the symmetric key
-  const decryptionContext = await cryptoAdapter.createDecryptionContext(decryptionOptions)
+  // Step 4: Create complete decryption context (adapter creates everything it needs)
+  const decryptionContext = await cryptoAdapter.createDecryptionContext({
+    decryptionOptions,
+    metadata,
+    delegationCAR,
+    resourceCID: cid,
+    issuer: storachaClient.agent.issuer,
+    audience: storachaClient.defaultProvider()
+  })
   
-  // Include delegationCAR in the context for the adapter
-  const contextWithDelegation = {
-    ...decryptionContext,
-    delegationCAR
-  }
-  
-  const decryptedKeyAndIV = await cryptoAdapter.decryptSymmetricKey(
+  // Step 5: Decrypt the symmetric key using the decryption context
+  const { key, iv } = await cryptoAdapter.decryptSymmetricKey(
     cryptoAdapter.getEncryptedKey(metadata),
-    contextWithDelegation
+    decryptionContext
   )
   
-  // Step 5: Decrypt the encrypted file content using the decrypted symmetric key and IV
-  return decryptFileWithKey(cryptoAdapter, decryptedKeyAndIV, encryptedData)
+  // Step 6: Decrypt the encrypted file content using the decrypted symmetric key and IV
+  return decryptFileWithKey(cryptoAdapter, key, iv, encryptedData)
 }
 
 /**
@@ -61,14 +65,12 @@ export const retrieveAndDecrypt = async (
  * 
  * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter responsible for performing
  * encryption and decryption operations.
- * @param {Uint8Array} decryptedKeyAndIV - The combined symmetric key and IV
+ * @param {Uint8Array} key - The symmetric key
+ * @param {Uint8Array} iv - The initialization vector
  * @param {Uint8Array} content - The encrypted file content
  * @returns {Promise<ReadableStream>} The decrypted file stream
  */
-export function decryptFileWithKey(cryptoAdapter, decryptedKeyAndIV, content) {
-  // Split the decrypted data back into key and initializationVector
-  const symmetricKey = decryptedKeyAndIV.subarray(0, 32)
-  const initializationVector = decryptedKeyAndIV.subarray(32)
+export function decryptFileWithKey(cryptoAdapter, key, iv, content) {
 
   // Create a ReadableStream from the Uint8Array
   const contentStream = new ReadableStream({
@@ -80,8 +82,8 @@ export function decryptFileWithKey(cryptoAdapter, decryptedKeyAndIV, content) {
 
   const decryptedStream = cryptoAdapter.decryptStream(
     contentStream,
-    symmetricKey,
-    initializationVector
+    key,
+    iv
   )
 
   return decryptedStream

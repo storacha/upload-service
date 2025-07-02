@@ -30,14 +30,25 @@ export class KMSCryptoAdapter {
       'did:web:freeway.dag.haus'
   }
 
+  /**
+   * @param {Type.BlobLike} data
+   */
   async encryptStream(data) {
     return this.symmetricCrypto.encryptStream(data)
   }
 
+  /**
+   * @param {ReadableStream} encryptedData
+   * @param {Uint8Array} key
+   * @param {Uint8Array} iv
+   */
   async decryptStream(encryptedData, key, iv) {
     return this.symmetricCrypto.decryptStream(encryptedData, key, iv)
   }
 
+  /**
+   * @param {Type.EncryptionOptions} encryptionOptions
+   */
   async createEncryptionContext(encryptionOptions) {
     const { spaceDID, spaceAccessProof } = encryptionOptions
     return {
@@ -48,7 +59,19 @@ export class KMSCryptoAdapter {
     }
   }
 
-  async createDecryptionContext(decryptionOptions) {
+  /**
+   * @param {object} params
+   * @param {Type.DecryptionOptions} params.decryptionOptions
+   * @param {Type.ExtractedMetadata} params.metadata
+   */
+  async createDecryptionContext(params) {
+    const { decryptionOptions, metadata } = params
+    
+    // Validate KMS metadata
+    if (metadata.strategy !== 'kms') {
+      throw new Error('KMSCryptoAdapter can only handle KMS metadata')
+    }
+
     return {
       privateGatewayURL: this.privateGatewayURL,
       privateGatewayDID: this.privateGatewayDID,
@@ -57,14 +80,22 @@ export class KMSCryptoAdapter {
     }
   }
 
-  async encryptSymmetricKey(keyAndIV, encryptionContext) {
+  /**
+   * @param {Uint8Array} key
+   * @param {Uint8Array} iv
+   * @param {Type.EncryptionContext} encryptionContext
+   */
+  async encryptSymmetricKey(key, iv, encryptionContext) {
     const { spaceDID, spaceAccessProof } = encryptionContext
+    
+    // Use symmetric crypto to combine key and IV
+    const combinedKeyAndIV = this.symmetricCrypto.combineKeyAndIV(key, iv)
     
     // 1. Get RSA public key from space/encryption/setup
     const publicKey = await this.getSpacePublicKey(spaceDID, spaceAccessProof)
 
     // 2. Encrypt with RSA-OAEP
-    const encryptedKey = await this.encryptWithRSA(keyAndIV, publicKey)
+    const encryptedKey = await this.encryptWithRSA(combinedKeyAndIV, publicKey)
 
     const keyId = spaceDID.replace(/^did:key:/, '')
 
@@ -82,8 +113,14 @@ export class KMSCryptoAdapter {
     }
   }
 
+  /**
+   * @param {string} encryptedKey
+   * @param {Type.DecryptionContext} decryptionContext
+   */
   async decryptSymmetricKey(encryptedKey, decryptionContext) {
     const { spaceDID, spaceAccessProof } = decryptionContext
+    // TODO: Use these parameters once KMS implementation is complete
+    console.log('Using spaceDID:', spaceDID, 'spaceAccessProof:', spaceAccessProof)
     // GATEWAY-SIDE: Call private gateway to decrypt via KMS
     const connection = connect({
       id: { did: () => this.privateGatewayDID },
@@ -116,10 +153,16 @@ export class KMSCryptoAdapter {
     }
 
     // KMS returns a base64-encoded string, so decode it to Uint8Array
-    return base64.decode(result.out.ok.decryptedSymmetricKey)
+    const combinedKeyAndIV = base64.decode(result.out.ok.decryptedSymmetricKey)
+    
+    // Use symmetric crypto to split the combined key and IV
+    return this.symmetricCrypto.splitKeyAndIV(combinedKeyAndIV)
   }
 
-  // ✅ KMS metadata handling
+  /**
+   * @param {Uint8Array} car
+   * @returns {Type.ExtractedMetadata}
+   */
   extractEncryptedMetadata(car) {
     // TODO: Implement KMS metadata extraction once versioned schema is ready
     // For now, this is a placeholder that will be updated when we implement
@@ -127,10 +170,20 @@ export class KMSCryptoAdapter {
     throw new Error('KMS metadata extraction not yet implemented - requires versioned schema support')
   }
 
+  /**
+   * @param {Type.ExtractedMetadata} metadata
+   * @returns {string}
+   */
   getEncryptedKey(metadata) {
     return metadata.encryptedSymmetricKey
   }
 
+  /**
+   * @param {string} encryptedDataCID
+   * @param {string} encryptedKey
+   * @param {Type.KMSKeyMetadata} metadata
+   * @returns {Promise<{ cid: Type.AnyLink, bytes: Uint8Array }>}
+   */
   async encodeMetadata(encryptedDataCID, encryptedKey, metadata) {
     // TODO: Implement KMS versioned metadata format
     // For now, throw an error since we haven't implemented the versioned schema yet

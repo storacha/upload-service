@@ -60,6 +60,7 @@ export class EncryptedClient {
    */
   async retrieveAndDecryptFile(cid, delegationCAR, decryptionOptions) {
     return retrieveAndDecrypt(
+      this._storachaClient,
       this._cryptoAdapter,
       this._gatewayURL,
       cid,
