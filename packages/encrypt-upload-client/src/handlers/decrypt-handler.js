@@ -11,7 +11,7 @@ import { createDecryptWrappedInvocation } from '../utils.js'
 
 /**
  * Retrieve and decrypt a file from the IPFS gateway.
- * 
+ *
  * @param {import('@storacha/client').Client} storachaClient - The Storacha client
  * @param {import('@lit-protocol/lit-node-client').LitNodeClient} litClient - The Lit client
  * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter responsible for performing
@@ -56,17 +56,18 @@ export const retrieveAndDecrypt = async (
    * TODO: check if the wallet has capacity credits, if not get it
    */
 
-  const acc = /** @type import('@lit-protocol/types').AccessControlConditions */ (
-    /** @type {unknown} */ (accessControlConditions)
-  )
+  const acc =
+    /** @type import('@lit-protocol/types').AccessControlConditions */ (
+      /** @type {unknown} */ (accessControlConditions)
+    )
   const expiration = new Date(Date.now() + 1000 * 60 * 5).toISOString() // 5 min
   // TODO: store the session signature (https://developer.litprotocol.com/intro/first-request/generating-session-sigs#nodejs)
-  let sessionSigs;
+  let sessionSigs
   if ('wallet' in signer) {
-      sessionSigs = await Lit.getSessionSigs(litClient, {
-        wallet: signer.wallet,
+    sessionSigs = await Lit.getSessionSigs(litClient, {
+      wallet: signer.wallet,
       dataToEncryptHash: plaintextKeyHash,
-      expiration, 
+      expiration,
       accessControlConditions: acc,
     })
   } else {
@@ -78,7 +79,6 @@ export const retrieveAndDecrypt = async (
       accessControlConditions: acc,
     })
   }
-  
 
   const wrappedInvocationJSON = await createDecryptWrappedInvocation({
     delegationCAR,

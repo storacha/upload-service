@@ -7,10 +7,10 @@ const COUNTER_LENGTH = 64 // bits (Web Crypto API default for AES-CTR)
 
 /**
  * BrowserCryptoAdapter implements the CryptoAdapter interface for browser environments.
- * It uses AES-CTR mode for encryption via the Web Crypto API. 
+ * It uses AES-CTR mode for encryption via the Web Crypto API.
  *
  * Why AES-CTR?
- * - We use AES-CTR with pseudo-streaming (buffering chunks before emitting) for simplicity and streaming support. 
+ * - We use AES-CTR with pseudo-streaming (buffering chunks before emitting) for simplicity and streaming support.
  * - AES-CTR allows chunked processing without padding, making it suitable for large files and browser environments.
  * - The Web Crypto API supports AES-CTR natively in all modern browsers and in Node.js 19+ as globalThis.crypto.
  * - For Node.js <19, you must polyfill globalThis.crypto (e.g., with `node --experimental-global-webcrypto` or a package like @peculiar/webcrypto).
@@ -37,7 +37,11 @@ export class BrowserCryptoAdapter {
     const key = await this.generateKey()
     const iv = globalThis.crypto.getRandomValues(new Uint8Array(IV_LENGTH))
     const cryptoKey = await globalThis.crypto.subtle.importKey(
-      'raw', key, { name: ENCRYPTION_ALGORITHM }, false, ['encrypt', 'decrypt']
+      'raw',
+      key,
+      { name: ENCRYPTION_ALGORITHM },
+      false,
+      ['encrypt', 'decrypt']
     )
 
     const reader = data.stream().getReader()
@@ -57,7 +61,11 @@ export class BrowserCryptoAdapter {
       chunkIndex++
       const encrypted = new Uint8Array(
         await globalThis.crypto.subtle.encrypt(
-          { name: ENCRYPTION_ALGORITHM, counter: chunkCounter, length: COUNTER_LENGTH },
+          {
+            name: ENCRYPTION_ALGORITHM,
+            counter: chunkCounter,
+            length: COUNTER_LENGTH,
+          },
           cryptoKey,
           value
         )
@@ -71,7 +79,7 @@ export class BrowserCryptoAdapter {
           controller.enqueue(chunk)
         }
         controller.close()
-      }
+      },
     })
 
     return { key, iv, encryptedStream }
@@ -87,7 +95,11 @@ export class BrowserCryptoAdapter {
    */
   async decryptStream(encryptedData, key, iv) {
     const cryptoKey = await globalThis.crypto.subtle.importKey(
-      'raw', key, { name: ENCRYPTION_ALGORITHM }, false, ['encrypt', 'decrypt']
+      'raw',
+      key,
+      { name: ENCRYPTION_ALGORITHM },
+      false,
+      ['encrypt', 'decrypt']
     )
 
     const reader = encryptedData.getReader()
@@ -105,7 +117,11 @@ export class BrowserCryptoAdapter {
       chunkIndex++
       const decrypted = new Uint8Array(
         await globalThis.crypto.subtle.decrypt(
-          { name: ENCRYPTION_ALGORITHM, counter: chunkCounter, length: COUNTER_LENGTH },
+          {
+            name: ENCRYPTION_ALGORITHM,
+            counter: chunkCounter,
+            length: COUNTER_LENGTH,
+          },
           cryptoKey,
           value
         )
@@ -119,7 +135,7 @@ export class BrowserCryptoAdapter {
           controller.enqueue(chunk)
         }
         controller.close()
-      }
+      },
     })
   }
-} 
+}

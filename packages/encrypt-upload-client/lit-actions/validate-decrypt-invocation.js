@@ -4,9 +4,9 @@ import { Verifier } from '@ucanto/principal'
 import { capability } from '@ucanto/server'
 import * as dagJSON from '@ipld/dag-json'
 
-const Authority = Verifier
-  .parse(DID.from('did:key:z6MkqdncRZ1wj8zxCTDUQ8CRT8NQWd63T7mZRvZUX8B7XDFi'))
-  .withDID(DID.from('did:web:web3.storage'))
+const Authority = Verifier.parse(
+  DID.from('did:key:z6MkqdncRZ1wj8zxCTDUQ8CRT8NQWd63T7mZRvZUX8B7XDFi')
+).withDID(DID.from('did:web:web3.storage'))
 
 const Decrypt = capability({
   can: 'space/content/decrypt',
@@ -72,10 +72,13 @@ const validateDecryptDelegation = (wrappedInvocation, spaceDID) => {
   // Check if the decryption capability contains the `with` field that is the same as the spaceDID
   if (
     !delegation.capabilities.some(
-      /** @param {{can: string}} c */ (c) => c.with === spaceDID && c.can === Decrypt.can
+      /** @param {{can: string}} c */ (c) =>
+        c.with === spaceDID && c.can === Decrypt.can
     )
   ) {
-    throw new Error(`Invalid "with" in the delegation. Decryption is allowed only for files associated with spaceDID: ${spaceDID}!`)
+    throw new Error(
+      `Invalid "with" in the delegation. Decryption is allowed only for files associated with spaceDID: ${spaceDID}!`
+    )
   }
 
   // Check if the invoker is the same as the delegated audience

@@ -7,7 +7,9 @@ if (typeof globalThis.crypto === 'undefined') {
     // @ts-expect-error
     globalThis.crypto = (await import('crypto')).webcrypto
   } catch (e) {
-    throw new Error('globalThis.crypto is not available. Use Node.js 19+ or polyfill with a package like @peculiar/webcrypto.')
+    throw new Error(
+      'globalThis.crypto is not available. Use Node.js 19+ or polyfill with a package like @peculiar/webcrypto.'
+    )
   }
 }
 
@@ -63,7 +65,11 @@ await describe('BrowserCryptoAdapter', async () => {
     const { key, iv, encryptedStream } = await adapter.encryptStream(blob)
 
     // Decrypt
-    const decryptedStream = await adapter.decryptStream(encryptedStream, key, iv)
+    const decryptedStream = await adapter.decryptStream(
+      encryptedStream,
+      key,
+      iv
+    )
     const decryptedBytes = await streamToUint8Array(decryptedStream)
     const decryptedText = uint8ArrayToString(decryptedBytes)
 
@@ -75,9 +81,13 @@ await describe('BrowserCryptoAdapter', async () => {
     const blob = new Blob([])
 
     const { key, iv, encryptedStream } = await adapter.encryptStream(blob)
-    const decryptedStream = await adapter.decryptStream(encryptedStream, key, iv)
+    const decryptedStream = await adapter.decryptStream(
+      encryptedStream,
+      key,
+      iv
+    )
     const decryptedBytes = await streamToUint8Array(decryptedStream)
 
     assert.strictEqual(decryptedBytes.length, 0)
   })
-}) 
+})

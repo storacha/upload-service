@@ -50,7 +50,7 @@ export const encryptAndUpload = async (
  * @param {import('@storacha/client').Client} storachaClient - The Storacha client
  * @param {Type.EncryptedPayload} encryptedPayload - The encrypted payload
  * @param {import('@lit-protocol/types').AccessControlConditions} accessControlConditions - The access control conditions
- * @param {Object} [options] - The upload options
+ * @param {object} [options] - The upload options
  * @param {boolean} [options.publishToFilecoin] - Whether to publish the data to Filecoin
  * @returns {Promise<Type.AnyLink>} - The link to the uploaded metadata
  */
@@ -65,38 +65,41 @@ const uploadEncryptedMetadata = async (
   const { identityBoundCiphertext, plaintextKeyHash, encryptedBlobLike } =
     encryptedPayload
 
-  return storachaClient.uploadCAR({
-    stream() {
-      /** @type {any} */
-      let root
-      return createFileEncoderStream(encryptedBlobLike)
-        .pipeThrough(
-          new TransformStream({
-            transform(block, controller) {
-              root = block
-              controller.enqueue(block)
-            },
-            async flush(controller) {
-              if (!root) throw new Error('missing root block')
+  return storachaClient.uploadCAR(
+    {
+      stream() {
+        /** @type {any} */
+        let root
+        return createFileEncoderStream(encryptedBlobLike)
+          .pipeThrough(
+            new TransformStream({
+              transform(block, controller) {
+                root = block
+                controller.enqueue(block)
+              },
+              async flush(controller) {
+                if (!root) throw new Error('missing root block')
 
-              /** @type {Type.EncryptedMetadataInput} */
-              const uploadData = {
-                encryptedDataCID: root.cid.toString(),
-                identityBoundCiphertext,
-                plaintextKeyHash,
-                accessControlConditions: /** @type {[Record<string, any>]} */ (
-                  /** @type {unknown} */ (accessControlConditions)
-                ),
-              }
+                /** @type {Type.EncryptedMetadataInput} */
+                const uploadData = {
+                  encryptedDataCID: root.cid.toString(),
+                  identityBoundCiphertext,
+                  plaintextKeyHash,
+                  accessControlConditions:
+                    /** @type {[Record<string, any>]} */ (
+                      /** @type {unknown} */ (accessControlConditions)
+                    ),
+                }
 
-              const encryptedMetadata = EncryptedMetadata.create(uploadData)
-              const { cid, bytes } = await encryptedMetadata.archiveBlock()
-              controller.enqueue({ cid, bytes })
-            },
-          })
-        )
-        .pipeThrough(new CARWriterStream())
-    }},
+                const encryptedMetadata = EncryptedMetadata.create(uploadData)
+                const { cid, bytes } = await encryptedMetadata.archiveBlock()
+                controller.enqueue({ cid, bytes })
+              },
+            })
+          )
+          .pipeThrough(new CARWriterStream())
+      },
+    },
     {
       // if publishToFilecoin is false, the data won't be published to Filecoin, so we need to set pieceHasher to undefined
       ...(options.publishToFilecoin === true ? {} : { pieceHasher: undefined }),

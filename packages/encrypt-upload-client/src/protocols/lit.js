@@ -111,7 +111,7 @@ export async function getSessionSigs(
 /**
  * Get session signatures for a PKP key and auth method.
  * There is not need to execute the auth callback for this function, because the auth method provided.
- * 
+ *
  * @param {LitNodeClient} litClient
  * @param {Type.PkpSessionSignatureOptions} options
  * @returns {Promise<import('@lit-protocol/types').SessionSigsMap>}
@@ -131,7 +131,7 @@ export async function getPkpSessionSigs(
     await LitAccessControlConditionResource.generateResourceString(
       accessControlConditions,
       dataToEncryptHash
-    );
+    )
 
   const sessionSigs = await litClient.getPkpSessionSigs({
     pkpPublicKey,
@@ -148,9 +148,9 @@ export async function getPkpSessionSigs(
     ],
     expiration,
     capabilityAuthSigs,
-  });
+  })
 
-  return sessionSigs;
+  return sessionSigs
 }
 
 /**
