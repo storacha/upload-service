@@ -46,7 +46,7 @@ const encryptedClient = await EncryptClient.create({
 For browser apps, use the `BrowserCryptoAdapter`:
 
 ```js
-import { BrowserCryptoAdapter } from '@storacha/encrypt-upload-client/dist/crypto-adapters/browser-crypto-adapter.js'
+import { BrowserCryptoAdapter } from '@storacha/encrypt-upload-client/crypto-adapters/browser-crypto-adapter.js'
 
 const encryptedClient = await EncryptClient.create({
   storachaClient: client,
