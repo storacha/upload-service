@@ -1,5 +1,6 @@
 import retry, { AbortError } from 'p-retry'
 import { CAR } from '@ucanto/transport'
+import { isDelegation, Receipt } from '@ucanto/core'
 import { receiptsEndpoint as defaultReceiptsEndpoint } from './service.js'
 import { REQUEST_RETRIES } from './constants.js'
 
@@ -126,6 +127,29 @@ async function get(taskCid, options = {}) {
   // Get receipt from the potential multiple receipts in the message
   const receipt = agentMessage.receipts.get(`${taskCid}`)
   if (!receipt) {
+    // This could be an agent message containing an invocation for ucan/conclude
+    // that includes the receipt as an attached block, or it may contain a
+    // receipt for ucan/conclude that includes the receipt as an attached block.
+    const blocks = new Map()
+    for (const b of agentMessage.iterateIPLDBlocks()) {
+      blocks.set(b.cid.toString(), b)
+    }
+    const invocations = [...agentMessage.invocations]
+    for (const receipt of agentMessage.receipts.values()) {
+      if (isDelegation(receipt.ran)) {
+        invocations.push(receipt.ran)
+      }
+    }
+    for (const inv of invocations) {
+      if (inv.capabilities[0]?.can !== 'ucan/conclude') continue
+      const root = Object(inv.capabilities[0].nb).receipt
+      const receipt = root ? Receipt.view({ root, blocks }, null) : null
+      if (!receipt) continue
+      const ran = isDelegation(receipt.ran) ? receipt.ran.cid : receipt.ran
+      if (ran.toString() === taskCid.toString()) {
+        return { ok: receipt }
+      }
+    }
     return {
       error: new ReceiptMissing(taskCid),
     }
