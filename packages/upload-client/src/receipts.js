@@ -61,7 +61,7 @@ export async function poll(taskCid, options = {}) {
           throw res.error
         } else {
           throw new AbortError(
-            new Error('failed to fetch blob/accept receipt', {
+            new Error(`failed to fetch receipt for task: ${taskCid}`, {
               cause: res.error,
             })
           )
