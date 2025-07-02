@@ -1,4 +1,4 @@
-import * as Type from '../types.js'
+import * as Type from '../../types.js'
 
 const ENCRYPTION_ALGORITHM = 'AES-CTR'
 const KEY_LENGTH = 256 // bits
@@ -6,7 +6,7 @@ const IV_LENGTH = 16 // bytes (128 bits, used as counter)
 const COUNTER_LENGTH = 64 // bits (Web Crypto API default for AES-CTR)
 
 /**
- * BrowserCryptoAdapter implements the CryptoAdapter interface for browser environments.
+ * BrowserAesCtrCrypto implements AES-CTR symmetric encryption for browser environments.
  * It uses AES-CTR mode for encryption via the Web Crypto API.
  *
  * Why AES-CTR?
@@ -20,9 +20,9 @@ const COUNTER_LENGTH = 64 // bits (Web Crypto API default for AES-CTR)
  * For true streaming (lower memory usage), we need to refactor it to emit each chunk as soon as it is processed.
  *
  * @class
- * @implements {Type.CryptoAdapter}
+ * @implements {Type.SymmetricCrypto}
  */
-export class BrowserCryptoAdapter {
+export class BrowserAesCtrCrypto {
   async generateKey() {
     return globalThis.crypto.getRandomValues(new Uint8Array(KEY_LENGTH / 8))
   }
@@ -138,4 +138,4 @@ export class BrowserCryptoAdapter {
       },
     })
   }
-}
+} 

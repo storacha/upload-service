@@ -1,11 +1,16 @@
 import { randomBytes, createCipheriv, createDecipheriv } from 'crypto'
-
-import * as Type from '../types.js'
+import * as Type from '../../types.js'
 
 const ENCRYPTION_ALGORITHM = 'aes-256-cbc'
 
-/** @implements {Type.CryptoAdapter} */
-export class NodeCryptoAdapter {
+/**
+ * NodeAesCbcCrypto implements AES-CBC symmetric encryption for Node.js environments.
+ * It uses AES-CBC mode for encryption via the Node.js crypto module.
+ *
+ * @class
+ * @implements {Type.SymmetricCrypto}
+ */
+export class NodeAesCbcCrypto {
   /** @param {Type.BlobLike} data  */
   async encryptStream(data) {
     const symmetricKey = randomBytes(32) // 256 bits for AES-256
@@ -73,4 +78,4 @@ export class NodeCryptoAdapter {
 
     return Promise.resolve(encryptedData.pipeThrough(decryptor))
   }
-}
+} 

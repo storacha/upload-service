@@ -1,46 +1,48 @@
 import { CARWriterStream } from 'carstream'
-import { base64 } from 'multiformats/bases/base64'
 import { createFileEncoderStream } from '@storacha/upload-client/unixfs'
 
 import * as Type from '../types.js'
-import * as Lit from '../protocols/lit.js'
-import * as EncryptedMetadata from '../core/encrypted-metadata.js'
 
 /**
  * Encrypt and upload a file to the Storacha network
  *
  * @param {import('@storacha/client').Client} storachaClient - The Storacha client
- * @param {import('@lit-protocol/lit-node-client').LitNodeClient} litClient - The Lit client
  * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter responsible for performing
  * encryption and decryption operations.
  * @param {Type.BlobLike} file - The file to upload
+ * @param {Type.EncryptionOptions} [encryptionOptions] - User-provided encryption options
  * @returns {Promise<Type.AnyLink>} - The link to the uploaded file
  */
 export const encryptAndUpload = async (
   storachaClient,
-  litClient,
   cryptoAdapter,
-  file
+  file,
+  encryptionOptions
 ) => {
-  const spaceDID = /** @type {Type.SpaceDID | undefined} */ (
-    storachaClient.agent.currentSpace()
-  )
-  if (!spaceDID) throw new Error('No space selected!')
+  // If no options provided, get spaceDID from storacha client
+  const options = encryptionOptions || {
+    spaceDID: /** @type {Type.SpaceDID} */ (storachaClient.agent.currentSpace())
+  }
+  
+  if (!options.spaceDID) throw new Error('No space selected!')
 
-  const accessControlConditions = Lit.getAccessControlConditions(spaceDID)
+  const encryptionContext = await cryptoAdapter.createEncryptionContext(options)
 
+  // Step 1: Encrypt the file using the crypto adapter
   const encryptedPayload = await encryptFile(
-    litClient,
     cryptoAdapter,
     file,
-    accessControlConditions
+    encryptionContext
   )
 
-  const rootCid = await uploadEncryptedMetadata(
+  // Step 2: Build and upload the encrypted metadata to the Storacha network
+  const rootCid = await buildAndUploadEncryptedMetadata(
     storachaClient,
     encryptedPayload,
-    accessControlConditions
+    cryptoAdapter
   )
+
+  // Step 3: Return the root CID of the encrypted metadata
   return rootCid
 }
 
@@ -49,20 +51,20 @@ export const encryptAndUpload = async (
  *
  * @param {import('@storacha/client').Client} storachaClient - The Storacha client
  * @param {Type.EncryptedPayload} encryptedPayload - The encrypted payload
- * @param {import('@lit-protocol/types').AccessControlConditions} accessControlConditions - The access control conditions
+ * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter for formatting metadata
  * @param {object} [options] - The upload options
  * @param {boolean} [options.publishToFilecoin] - Whether to publish the data to Filecoin
  * @returns {Promise<Type.AnyLink>} - The link to the uploaded metadata
  */
-const uploadEncryptedMetadata = async (
+const buildAndUploadEncryptedMetadata = async (
   storachaClient,
   encryptedPayload,
-  accessControlConditions,
+  cryptoAdapter,
   options = {
     publishToFilecoin: false,
   }
 ) => {
-  const { identityBoundCiphertext, plaintextKeyHash, encryptedBlobLike } =
+  const { encryptedKey, metadata, encryptedBlobLike } =
     encryptedPayload
 
   return storachaClient.uploadCAR(
@@ -80,19 +82,12 @@ const uploadEncryptedMetadata = async (
               async flush(controller) {
                 if (!root) throw new Error('missing root block')
 
-                /** @type {Type.EncryptedMetadataInput} */
-                const uploadData = {
-                  encryptedDataCID: root.cid.toString(),
-                  identityBoundCiphertext,
-                  plaintextKeyHash,
-                  accessControlConditions:
-                    /** @type {[Record<string, any>]} */ (
-                      /** @type {unknown} */ (accessControlConditions)
-                    ),
-                }
-
-                const encryptedMetadata = EncryptedMetadata.create(uploadData)
-                const { cid, bytes } = await encryptedMetadata.archiveBlock()
+                const { cid, bytes } = await cryptoAdapter.encodeMetadata(
+                  root.cid.toString(),
+                  encryptedKey,
+                  metadata
+                )
+                
                 controller.enqueue({ cid, bytes })
               },
             })
@@ -108,34 +103,34 @@ const uploadEncryptedMetadata = async (
 }
 
 /**
- * Encrypt a file
- *
- * @param {import('@lit-protocol/lit-node-client').LitNodeClient} litClient - The Lit client
+ * Encrypt a file using the crypto adapter and return the encrypted payload.
+ * The encrypted payload contains the encrypted file, the encrypted symmetric key, and the metadata.
+ * 
  * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter responsible for performing
  * encryption and decryption operations.
  * @param {Type.BlobLike} file - The file to encrypt
- * @param {import('@lit-protocol/types').AccessControlConditions} accessControlConditions - The access control conditions
+ * @param {Type.EncryptionContext} encryptionContext - The encryption context
  * @returns {Promise<Type.EncryptedPayload>} - The encrypted file
  */
 const encryptFile = async (
-  litClient,
   cryptoAdapter,
   file,
-  accessControlConditions
+  encryptionContext
 ) => {
+  // Step 1: Encrypt the file using the crypto adapter
   const { key, iv, encryptedStream } = await cryptoAdapter.encryptStream(file)
 
-  // Combine key and initializationVector for Lit encryption
-  const dataToEncrypt = base64.encode(new Uint8Array([...key, ...iv]))
+  // Step 2: Combine key and initializationVector
+  const combinedKeyAndIV = new Uint8Array([...key, ...iv])
 
-  const { ciphertext, dataToEncryptHash } = await Lit.encryptString(
-    { dataToEncrypt, accessControlConditions },
-    litClient
-  )
+  // Step 3: Use crypto adapter to encrypt the symmetric key
+  const keyResult = await cryptoAdapter.encryptSymmetricKey(combinedKeyAndIV, encryptionContext)
 
+  // Step 4: Return the encrypted payload
   return {
-    identityBoundCiphertext: ciphertext,
-    plaintextKeyHash: dataToEncryptHash,
+    strategy: keyResult.strategy,
+    encryptedKey: keyResult.encryptedKey,
+    metadata: keyResult.metadata,
     encryptedBlobLike: { stream: () => encryptedStream },
   }
 }
