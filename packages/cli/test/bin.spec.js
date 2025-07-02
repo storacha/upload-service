@@ -356,8 +356,21 @@ export const testSpace = {
       await login(context, { email })
       await selectPlan(context, { email })
 
-      const serverId = context.connection.id
+      const serverId = context.connection.id.did()
       const serverURL = context.serverURL
+
+      // In this test, the upload service is used as the gateway delegation
+      // service since it implements `access/delegate`. However, it requires
+      // the resource (with) to be a provisioned space, which doesn't actually
+      // happen until later in the flow for the CLI.
+      //
+      // FIXME: the tests should setup a gateway service that does not have this
+      // requirement.
+      context.provisionsStorage.getStorageProviders = async () => {
+        return {
+          ok: ['did:web:test.up.storacha.network'],
+        }
+      }
 
       const { output } = await storacha
         .args([
