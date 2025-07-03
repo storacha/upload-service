@@ -4,13 +4,13 @@ import * as Link from 'multiformats/link'
 import { sha256 } from 'multiformats/hashes/sha2'
 import { CAR, ok, error, Schema } from '@ucanto/core'
 
-import * as Types from '../types.js'
-import { UnknownFormat } from './errors.js'
-import { stringToBytes, bytesToString } from '../utils.js'
+import * as Types from '../../types.js'
+import { UnknownFormat } from '../errors.js'
+import { stringToBytes, bytesToString } from '../../utils.js'
 
 export const version = 'encrypted-metadata@0.1'
 
-export const EncryptedMetadataSchema = Schema.variant({
+export const LitMetadataSchema = Schema.variant({
   [version]: Schema.struct({
     encryptedDataCID: Schema.link(),
     identityBoundCiphertext: Schema.bytes(),
@@ -22,7 +22,7 @@ export const EncryptedMetadataSchema = Schema.variant({
   }),
 })
 
-export const EncryptedMetadataInputSchema = Schema.struct({
+export const LitMetadataInputSchema = Schema.struct({
   encryptedDataCID: Schema.string(),
   identityBoundCiphertext: Schema.string(),
   plaintextKeyHash: Schema.string(),
@@ -32,23 +32,23 @@ export const EncryptedMetadataInputSchema = Schema.struct({
   }).array(),
 })
 
-/** @implements {Types.EncryptedMetadataView} */
-class EncryptedMetadata {
+/** @implements {Types.LitMetadataView} */
+class LitEncryptedMetadata {
   #encryptedDataCID
   #identityBoundCiphertext
   #plaintextKeyHash
   #accessControlConditions
 
-  /** @param {Types.EncryptedMetadata|Types.EncryptedMetadataInput} encryptedMetadataInput */
+  /** @param {Types.LitMetadata|Types.LitMetadataInput} encryptedMetadataInput */
   constructor(encryptedMetadataInput) {
-    /** @type {Types.EncryptedMetadata} */
+    /** @type {Types.LitMetadata} */
     let encryptedMetadata
-    if (EncryptedMetadataInputSchema.is(encryptedMetadataInput)) {
+    if (LitMetadataInputSchema.is(encryptedMetadataInput)) {
       encryptedMetadata = parse(
-        /** @type {Types.EncryptedMetadataInput} */ (encryptedMetadataInput)
+        /** @type {Types.LitMetadataInput} */ (encryptedMetadataInput)
       )
     } else {
-      encryptedMetadata = /** @type {Types.EncryptedMetadata} */ (
+      encryptedMetadata = /** @type {Types.LitMetadata} */ (
         encryptedMetadataInput
       )
     }
@@ -77,7 +77,7 @@ class EncryptedMetadata {
   }
 
   archive() {
-    /** @type {Types.EncryptedMetadata} */
+    /** @type {Types.LitMetadata} */
     const input = {
       encryptedDataCID: this.encryptedDataCID,
       identityBoundCiphertext: this.identityBoundCiphertext,
@@ -88,7 +88,7 @@ class EncryptedMetadata {
   }
 
   archiveBlock() {
-    /** @type {Types.EncryptedMetadata} */
+    /** @type {Types.LitMetadata} */
     const input = {
       encryptedDataCID: this.encryptedDataCID,
       identityBoundCiphertext: this.identityBoundCiphertext,
@@ -98,22 +98,22 @@ class EncryptedMetadata {
     return archiveBlock(input)
   }
 
-  /** @returns {Types.EncryptedMetadataInput} */
+  /** @returns {Types.LitMetadataInput} */
   toJSON() {
     return toJSON(this)
   }
 }
 
 /**
- * @param {Types.EncryptedMetadata|Types.EncryptedMetadataInput} encryptedMetadataInput
- * @returns {Types.EncryptedMetadataView}
+ * @param {Types.LitMetadata|Types.LitMetadataInput} encryptedMetadataInput
+ * @returns {Types.LitMetadataView}
  */
 export const create = (encryptedMetadataInput) =>
-  new EncryptedMetadata(encryptedMetadataInput)
+  new LitEncryptedMetadata(encryptedMetadataInput)
 
 /**
- * @param {Types.EncryptedMetadataView} encryptedMetadata
- * @returns {Types.EncryptedMetadataInput}
+ * @param {Types.LitMetadataView} encryptedMetadata
+ * @returns {Types.LitMetadataInput}
  */
 export const toJSON = (encryptedMetadata) => ({
   encryptedDataCID: encryptedMetadata.encryptedDataCID.toString(),
@@ -125,8 +125,8 @@ export const toJSON = (encryptedMetadata) => ({
 })
 
 /**
- * @param {Types.EncryptedMetadataInput} encryptedMetadataInput
- * @returns {Types.EncryptedMetadata}
+ * @param {Types.LitMetadataInput} encryptedMetadataInput
+ * @returns {Types.LitMetadata}
  */
 export const parse = (encryptedMetadataInput) => ({
   encryptedDataCID: CID.parse(encryptedMetadataInput.encryptedDataCID),
@@ -138,7 +138,7 @@ export const parse = (encryptedMetadataInput) => ({
 })
 
 /**
- * @param {Types.EncryptedMetadata} encryptedMetadataInput
+ * @param {Types.LitMetadata} encryptedMetadataInput
  * @returns {Promise<import('@ucanto/interface').Block>}
  */
 export const archiveBlock = async (encryptedMetadataInput) => {
@@ -149,17 +149,17 @@ export const archiveBlock = async (encryptedMetadataInput) => {
 }
 
 /**
- * @param {Types.EncryptedMetadata} encryptedMetadataInput
+ * @param {Types.LitMetadata} encryptedMetadata
  * @returns {Promise<Types.Result<Uint8Array>>}
  */
-export const archive = async (encryptedMetadataInput) => {
-  const block = await archiveBlock(encryptedMetadataInput)
+export const archive = async (encryptedMetadata) => {
+  const block = await archiveBlock(encryptedMetadata)
   return ok(CAR.encode({ roots: [block] }))
 }
 
 /**
  * @param {Uint8Array} archive
- * @returns {Types.Result<Types.EncryptedMetadataView, Types.UnknownFormat>}
+ * @returns {Types.Result<Types.LitMetadataView, Types.UnknownFormat>}
  */
 export const extract = (archive) => {
   const { roots } = CAR.decode(archive)
@@ -181,19 +181,19 @@ export const extract = (archive) => {
 /**
  * @param {object} source
  * @param {Types.IPLDBlock} source.root
- * @returns {Types.Result<Types.EncryptedMetadataView, Types.UnknownFormat>}
+ * @returns {Types.Result<Types.LitMetadataView, Types.UnknownFormat>}
  */
 export const view = ({ root }) => {
   const value = dagCBOR.decode(root.bytes)
-  const [version, encryptedMetadataData] = EncryptedMetadataSchema.match(value)
-  switch (version) {
+  const [matchedVersion, encryptedMetadataData] = LitMetadataSchema.match(value)
+  switch (matchedVersion) {
     case version: {
       const encryptedMetadata = create(
-        /** @type {Types.EncryptedMetadata}*/ (encryptedMetadataData)
+        /** @type {Types.LitMetadata}*/ (encryptedMetadataData)
       )
       return ok(encryptedMetadata)
     }
     default:
-      return error(new UnknownFormat(`unknown index version: ${version}`))
+      return error(new UnknownFormat(`unknown Lit metadata version: ${matchedVersion}`))
   }
-}
+} 

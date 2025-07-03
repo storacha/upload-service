@@ -4,10 +4,10 @@ import * as Link from 'multiformats/link'
 import { sha256 } from 'multiformats/hashes/sha2'
 import { CAR, ok, error, Schema } from '@ucanto/core'
 
-import * as Types from '../types.js'
-import { UnknownFormat } from './errors.js'
+import * as Types from '../../types.js'
+import { UnknownFormat } from '../errors.js'
 
-export const version = 'kms-metadata@2.0'
+export const version = 'encrypted-metadata@0.2'
 
 export const KMSMetadataSchema = Schema.variant({
   [version]: Schema.struct({
@@ -144,11 +144,11 @@ export const archiveBlock = async (kmsMetadataInput) => {
 }
 
 /**
- * @param {Types.KMSMetadata} kmsMetadataInput
+ * @param {Types.KMSMetadata} kmsMetadata
  * @returns {Promise<Types.Result<Uint8Array>>}
  */
-export const archive = async (kmsMetadataInput) => {
-  const block = await archiveBlock(kmsMetadataInput)
+export const archive = async (kmsMetadata) => {
+  const block = await archiveBlock(kmsMetadata)
   return ok(CAR.encode({ roots: [block] }))
 }
 
@@ -180,8 +180,8 @@ export const extract = (archive) => {
  */
 export const view = ({ root }) => {
   const value = dagCBOR.decode(root.bytes)
-  const [version, kmsMetadataData] = KMSMetadataSchema.match(value)
-  switch (version) {
+  const [matchedVersion, kmsMetadataData] = KMSMetadataSchema.match(value)
+  switch (matchedVersion) {
     case version: {
       const kmsMetadata = create(
         /** @type {Types.KMSMetadata}*/ (kmsMetadataData)
@@ -189,6 +189,6 @@ export const view = ({ root }) => {
       return ok(kmsMetadata)
     }
     default:
-      return error(new UnknownFormat(`unknown KMS metadata version: ${version}`))
+      return error(new UnknownFormat(`unknown KMS metadata version: ${matchedVersion}`))
   }
 } 
