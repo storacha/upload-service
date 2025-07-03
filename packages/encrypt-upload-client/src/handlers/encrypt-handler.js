@@ -19,30 +19,27 @@ export const encryptAndUpload = async (
   file,
   encryptionOptions
 ) => {
-  // If no options provided, get spaceDID from storacha client
+  // Step 1: Get spaceDID from storacha client if not provided in encryptionOptions
   const options = encryptionOptions || {
     spaceDID: /** @type {Type.SpaceDID} */ (storachaClient.agent.currentSpace())
   }
-  
   if (!options.spaceDID) throw new Error('No space selected!')
 
-  const encryptionContext = await cryptoAdapter.createEncryptionContext(options)
-
-  // Step 1: Encrypt the file using the crypto adapter
+  // Step 2: Encrypt the file using the crypto adapter
   const encryptedPayload = await encryptFile(
     cryptoAdapter,
     file,
-    encryptionContext
+    options
   )
 
-  // Step 2: Build and upload the encrypted metadata to the Storacha network
+  // Step 3: Build and upload the encrypted metadata to the Storacha network
   const rootCid = await buildAndUploadEncryptedMetadata(
     storachaClient,
     encryptedPayload,
     cryptoAdapter
   )
 
-  // Step 3: Return the root CID of the encrypted metadata
+  // Step 4: Return the root CID of the encrypted metadata
   return rootCid
 }
 
@@ -97,7 +94,7 @@ const buildAndUploadEncryptedMetadata = async (
     },
     {
       // if publishToFilecoin is false, the data won't be published to Filecoin, so we need to set pieceHasher to undefined
-      ...(options.publishToFilecoin === true ? {} : { pieceHasher: undefined }),
+      ...(options.publishToFilecoin === false ? { pieceHasher: undefined } : {}),
     }
   )
 }
@@ -109,19 +106,19 @@ const buildAndUploadEncryptedMetadata = async (
  * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter responsible for performing
  * encryption and decryption operations.
  * @param {Type.BlobLike} file - The file to encrypt
- * @param {Type.EncryptionContext} encryptionContext - The encryption context
+ * @param {Type.EncryptionOptions} encryptionOptions - The encryption options
  * @returns {Promise<Type.EncryptedPayload>} - The encrypted file
  */
 const encryptFile = async (
   cryptoAdapter,
   file,
-  encryptionContext
+  encryptionOptions
 ) => {
   // Step 1: Encrypt the file using the crypto adapter
   const { key, iv, encryptedStream } = await cryptoAdapter.encryptStream(file)
 
   // Step 2: Use crypto adapter to encrypt the symmetric key
-  const keyResult = await cryptoAdapter.encryptSymmetricKey(key, iv, encryptionContext)
+  const keyResult = await cryptoAdapter.encryptSymmetricKey(key, iv, encryptionOptions)
 
   // Step 3: Return the encrypted payload
   return {

@@ -40,23 +40,21 @@ export const retrieveAndDecrypt = async (
     metadata.encryptedDataCID
   )
 
-  // Step 4: Create complete decryption context (adapter creates everything it needs)
-  const decryptionContext = await cryptoAdapter.createDecryptionContext({
-    decryptionOptions,
-    metadata,
-    delegationCAR,
-    resourceCID: cid,
-    issuer: storachaClient.agent.issuer,
-    audience: storachaClient.defaultProvider()
-  })
-  
-  // Step 5: Decrypt the symmetric key using the decryption context
+  // Step 4: Decrypt the encrypted symmetric key 
+  const encryptedSymmetricKey = cryptoAdapter.getEncryptedKey(metadata)
   const { key, iv } = await cryptoAdapter.decryptSymmetricKey(
-    cryptoAdapter.getEncryptedKey(metadata),
-    decryptionContext
+    encryptedSymmetricKey,
+    {
+      decryptionOptions,
+      metadata,
+      delegationCAR,
+      resourceCID: cid,
+      issuer: storachaClient.agent.issuer,
+      audience: storachaClient.defaultProvider()
+    }
   )
   
-  // Step 6: Decrypt the encrypted file content using the decrypted symmetric key and IV
+  // Step 5: Decrypt the encrypted file content using the decrypted symmetric key and IV
   return decryptFileWithKey(cryptoAdapter, key, iv, encryptedData)
 }
 
@@ -71,8 +69,6 @@ export const retrieveAndDecrypt = async (
  * @returns {Promise<ReadableStream>} The decrypted file stream
  */
 export function decryptFileWithKey(cryptoAdapter, key, iv, content) {
-
-  // Create a ReadableStream from the Uint8Array
   const contentStream = new ReadableStream({
     start(controller) {
       controller.enqueue(content)
@@ -90,7 +86,7 @@ export function decryptFileWithKey(cryptoAdapter, key, iv, content) {
 }
 
 /**
- * Fetch a CAR file from the IPFS gateway.
+ * Fetch a CAR file from the public IPFS gateway.
  * 
  * @param {URL} gatewayURL - The IPFS gateway URL
  * @param {string} cid - The CID to fetch
@@ -117,7 +113,7 @@ const getCarFileFromPublicGateway = async (gatewayURL, cid) => {
  * @returns {Promise<Uint8Array>} The encrypted data bytes
  */
 const getEncryptedDataFromCar = async (car, encryptedDataCID) => {
-  // NOTE: convert CAR to a block store
+  // Step 1: Convert CAR to a block store
   const iterable = await CarIndexer.fromBytes(car)
   const blockstore = new MemoryBlockstore()
 
@@ -126,7 +122,7 @@ const getEncryptedDataFromCar = async (car, encryptedDataCID) => {
     await blockstore.put(cid, blockBytes)
   }
 
-  // NOTE: get the encrypted Data from the CAR file
+  // Step 2: Get the encrypted data from the CAR file
   const encryptedDataEntry = await exporter(
     CID.parse(encryptedDataCID),
     blockstore
@@ -138,5 +134,6 @@ const getEncryptedDataFromCar = async (car, encryptedDataCID) => {
     offset += chunk.length
   }
 
+  // Step 3: Return the encrypted data bytes
   return encryptedDataBytes
 }
