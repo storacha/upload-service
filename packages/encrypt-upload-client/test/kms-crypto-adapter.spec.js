@@ -95,11 +95,12 @@ await describe('KMSCryptoAdapter', async () => {
     assert(typeof adapter.encryptSymmetricKey === 'function', 'encryptSymmetricKey should be a function')
     
     // Verify adapter constructor sets properties correctly
-    assert.strictEqual(adapter.privateGatewayDID, 'did:web:freeway.dag.haus', 'Adapter should have gateway DID')
+    assert(typeof adapter.privateGatewayDID === 'object', 'Adapter should have gateway DID object')
+    assert.strictEqual(adapter.privateGatewayDID.did(), 'did:web:freeway.dag.haus', 'Adapter should have correct gateway DID')
     assert(adapter.privateGatewayURL instanceof URL, 'Adapter should have gateway URL')
   })
 
-  await test('should handle metadata extraction placeholder', async () => {
+  await test('should handle metadata extraction with invalid CAR data', async () => {
     const symmetricCrypto = new BrowserAesCtrCrypto()
     const adapter = new KMSCryptoAdapter(
       symmetricCrypto,
@@ -107,14 +108,14 @@ await describe('KMSCryptoAdapter', async () => {
       'did:web:freeway.dag.haus'
     )
     
-    // Test that the method exists and throws expected error for unimplemented feature
+    // Test that the method exists 
     assert(typeof adapter.extractEncryptedMetadata === 'function', 'extractEncryptedMetadata should be a function')
     assert(typeof adapter.getEncryptedKey === 'function', 'getEncryptedKey should be a function')
     
-    // Should throw error for unimplemented feature
+    // Should throw error for invalid CAR data
     const mockCar = new Uint8Array([1, 2, 3])
     assert.throws(() => {
       adapter.extractEncryptedMetadata(mockCar)
-    }, /KMS metadata extraction not yet implemented/, 'Should throw error for unimplemented KMS metadata extraction')
+    }, /Invalid CAR header format/, 'Should throw error for invalid CAR data')
   })
 }) 
