@@ -96,8 +96,8 @@ cli
 
 cli
   .command('open <cid>')
-  .describe('Open CID on https://w3s.link')
-  .action((cid) => open(`https://w3s.link/ipfs/${cid}`))
+  .describe('Open CID on https://storacha.link')
+  .action((cid) => open(`https://storacha.link/ipfs/${cid}`))
 
 cli
   .command('ls')

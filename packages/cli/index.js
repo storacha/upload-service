@@ -211,7 +211,7 @@ export async function upload(firstPath, opts) {
   console.log(
     opts?.json
       ? dagJSON.stringify({ root })
-      : `🐔 https://w3s.link/ipfs/${root}`
+      : `🐔 https://storacha.link/ipfs/${root}`
   )
 }
 

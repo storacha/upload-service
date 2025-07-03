@@ -100,13 +100,13 @@ Remove an upload from the uploads listing. Note that this command does not remov
 
 ### `storacha open <cid>`
 
-Open a CID on https://w3s.link in your browser. You can also pass a CID and a path.
+Open a CID on https://storacha.link in your browser. You can also pass a CID and a path.
 
 ```bash
-# opens a browser to https://w3s.link/ipfs/bafybeidluj5ub7okodgg5v6l4x3nytpivvcouuxgzuioa6vodg3xt2uqle
+# opens a browser to https://storacha.link/ipfs/bafybeidluj5ub7okodgg5v6l4x3nytpivvcouuxgzuioa6vodg3xt2uqle
 storacha open bafybeidluj5ub7okodgg5v6l4x3nytpivvcouuxgzuioa6vodg3xt2uqle
 
-# opens a browser to https://w3s.link/ipfs/bafybeidluj5ub7okodgg5v6l4x3nytpivvcouuxgzuioa6vodg3xt2uqle/olizilla.png
+# opens a browser to https://storacha.link/ipfs/bafybeidluj5ub7okodgg5v6l4x3nytpivvcouuxgzuioa6vodg3xt2uqle/olizilla.png
 storacha open bafybeidluj5ub7okodgg5v6l4x3nytpivvcouuxgzuioa6vodg3xt2uqle/olizilla.png
 ```
 
