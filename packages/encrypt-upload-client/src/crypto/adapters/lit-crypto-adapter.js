@@ -51,15 +51,15 @@ export class LitCryptoAdapter {
    * 
    * @param {Uint8Array} key - The symmetric key to encrypt
    * @param {Uint8Array} iv - The initialization vector to encrypt
-   * @param {Type.EncryptionOptions} encryptionOptions - The encryption options
+   * @param {Type.EncryptionConfig} encryptionConfig - The encryption configuration
    * @returns {Promise<Type.EncryptedKeyResult>} - The encrypted key result
    */
-  async encryptSymmetricKey(key, iv, encryptionOptions) {
+  async encryptSymmetricKey(key, iv, encryptionConfig) {
     // Step 1. Combine key and IV to encrypt a single string
     const combinedKeyAndIV = this.symmetricCrypto.combineKeyAndIV(key, iv)
     
     // Step 2. Create access control conditions and encrypt with Lit
-    const { spaceDID } = encryptionOptions
+    const { spaceDID } = encryptionConfig
     const accessControlConditions = Lit.getAccessControlConditions(spaceDID)
     
     // Step 3. Encrypt the base64 encoded combined key and IV with Lit

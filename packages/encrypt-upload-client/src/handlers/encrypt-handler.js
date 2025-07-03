@@ -10,26 +10,23 @@ import * as Type from '../types.js'
  * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter responsible for performing
  * encryption and decryption operations.
  * @param {Type.BlobLike} file - The file to upload
- * @param {Type.EncryptionOptions} [encryptionOptions] - User-provided encryption options
+ * @param {Type.EncryptionConfig} encryptionConfig - User-provided encryption configuration
  * @returns {Promise<Type.AnyLink>} - The link to the uploaded file
  */
 export const encryptAndUpload = async (
   storachaClient,
   cryptoAdapter,
   file,
-  encryptionOptions
+  encryptionConfig
 ) => {
-  // Step 1: Get spaceDID from storacha client if not provided in encryptionOptions
-  const options = encryptionOptions || {
-    spaceDID: /** @type {Type.SpaceDID} */ (storachaClient.agent.currentSpace())
-  }
-  if (!options.spaceDID) throw new Error('No space selected!')
+  // Step 1: Validate required configuration
+  if (!encryptionConfig.spaceDID) throw new Error('No space selected!')
 
   // Step 2: Encrypt the file using the crypto adapter
   const encryptedPayload = await encryptFile(
     cryptoAdapter,
     file,
-    options
+    encryptionConfig
   )
 
   // Step 3: Build and upload the encrypted metadata to the Storacha network
@@ -106,19 +103,19 @@ const buildAndUploadEncryptedMetadata = async (
  * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter responsible for performing
  * encryption and decryption operations.
  * @param {Type.BlobLike} file - The file to encrypt
- * @param {Type.EncryptionOptions} encryptionOptions - The encryption options
+ * @param {Type.EncryptionConfig} encryptionConfig - The encryption configuration
  * @returns {Promise<Type.EncryptedPayload>} - The encrypted file
  */
 const encryptFile = async (
   cryptoAdapter,
   file,
-  encryptionOptions
+  encryptionConfig
 ) => {
   // Step 1: Encrypt the file using the crypto adapter
   const { key, iv, encryptedStream } = await cryptoAdapter.encryptStream(file)
 
   // Step 2: Use crypto adapter to encrypt the symmetric key
-  const keyResult = await cryptoAdapter.encryptSymmetricKey(key, iv, encryptionOptions)
+  const keyResult = await cryptoAdapter.encryptSymmetricKey(key, iv, encryptionConfig)
 
   // Step 3: Return the encrypted payload
   return {

@@ -1,8 +1,7 @@
 import { Wallet } from 'ethers'
 import { UnknownLink } from 'multiformats'
 import { Client as StorachaClient } from '@storacha/client'
-import { Result, Failure, Block } from '@ucanto/interface'
-import { LitNodeClient } from '@lit-protocol/lit-node-client'
+import { Result, Failure, Block, Proof } from '@ucanto/interface'
 import {
   AccessControlConditions,
   AuthMethod,
@@ -27,7 +26,7 @@ export type { BlobLike, AnyLink }
 import type { SpaceDID } from '@storacha/capabilities/types'
 
 export interface EncryptedClient {
-  encryptAndUploadFile(file: BlobLike, options?: EncryptionOptions): Promise<AnyLink>
+  encryptAndUploadFile(file: BlobLike, config: EncryptionConfig): Promise<AnyLink>
   retrieveAndDecryptFile(
     cid: AnyLink,
     delegationCAR: Uint8Array,
@@ -73,7 +72,7 @@ export interface CryptoAdapter {
   encryptSymmetricKey(
     key: Uint8Array,
     iv: Uint8Array,
-    encryptionOptions: EncryptionOptions
+    encryptionConfig: EncryptionConfig
   ): Promise<EncryptedKeyResult>
   decryptSymmetricKey(
     encryptedKey: string,
@@ -95,19 +94,28 @@ export interface CryptoAdapter {
   ): Promise<{ cid: AnyLink, bytes: Uint8Array }>
 }
 
-// User-provided options
-export interface EncryptionOptions {
+// User-provided configuration (required settings)
+export interface EncryptionConfig {
+  /**
+   * The issuer of the encryption request
+   */
+  issuer: Signer<DID, SigAlg>
+
   /**
    * The DID of the space to encrypt the file for
    */
   spaceDID: SpaceDID
+
   /**
-   * The delegation proof to decrypt content from the space
+   * The location of the KMS key to use for encryption
    */
-  delegationProof?: unknown
+  location?: string
+
+  /**
+   * The keyring of the KMS key to use for encryption
+   */
+  keyring?: string
 }
-
-
 
 export interface DecryptionOptions {
   // User-provided options
@@ -119,10 +127,8 @@ export interface DecryptionOptions {
   authMethod?: AuthMethod
   // KMS-specific
   spaceDID?: SpaceDID
-  delegationProof?: unknown
+  delegationProof?: Proof
 }
-
-
 
 export interface EncryptedKeyResult {
   strategy: EncryptionStrategy
@@ -140,10 +146,10 @@ export interface LitKeyMetadata {
 export interface KMSKeyMetadata {
   space: SpaceDID
   kms: {
-    provider: 'google-kms'
+    provider: string
     keyId: string
-    algorithm: 'RSA-OAEP-2048-SHA256'
-    keyReference?: string
+    algorithm: string
+    keyReference: string
   }
 }
 
@@ -175,6 +181,38 @@ export interface EncryptedMetadataView extends EncryptedMetadata {
   archive(): Promise<Result<Uint8Array>>
   archiveBlock(): Promise<Block>
   toJSON(): EncryptedMetadataInput
+}
+
+// KMS-specific metadata types
+export interface KMSMetadata {
+  encryptedDataCID: UnknownLink
+  encryptedSymmetricKey: string
+  space: SpaceDID
+  kms: {
+    provider: string
+    keyId: string
+    algorithm: string
+    keyReference?: string
+  }
+}
+
+export interface KMSMetadataInput {
+  encryptedDataCID: string
+  encryptedSymmetricKey: string
+  space: string
+  kms: {
+    provider: string
+    keyId: string
+    algorithm: string
+    keyReference?: string
+  }
+}
+
+export interface KMSMetadataView extends KMSMetadata {
+  /** Encode it to a CAR file. */
+  archive(): Promise<Result<Uint8Array>>
+  archiveBlock(): Promise<Block>
+  toJSON(): KMSMetadataInput
 }
 
 export interface DecodeFailure extends Failure {
@@ -242,9 +280,9 @@ export interface KMSExtractedMetadata {
   encryptedSymmetricKey: string
   space: SpaceDID
   kms: {
-    provider: 'google-kms'
+    provider: string
     keyId: string
-    algorithm: 'RSA-OAEP-2048-SHA256'
+    algorithm: string
     keyReference?: string
   }
 }
