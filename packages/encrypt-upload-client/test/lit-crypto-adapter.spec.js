@@ -16,10 +16,10 @@ if (typeof globalThis.crypto === 'undefined') {
 import { BrowserAesCtrCrypto } from '../src/crypto/symmetric/browser-aes-ctr-crypto.js'
 import { LitCryptoAdapter } from '../src/crypto/adapters/lit-crypto-adapter.js'
 
-// Mock Lit client
-const mockLitClient = {
+// Mock Lit client - cast to any for testing
+const mockLitClient = /** @type {any} */ ({
   // Add mock methods as needed
-}
+})
 
 /**
  * @param {Uint8Array} arr
@@ -84,15 +84,16 @@ await describe('LitCryptoAdapter', async () => {
     assert.strictEqual(decryptedText, originalText, 'Decrypted text should match original')
   })
 
-  await test('should create encryption context with Lit Protocol configuration', async () => {
+  await test('should initialize Lit adapter with correct configuration', async () => {
     const symmetricCrypto = new BrowserAesCtrCrypto()
     const adapter = new LitCryptoAdapter(symmetricCrypto, mockLitClient)
     
-    const spaceDID = 'did:key:test123'
+    // Test that the adapter has the required methods
+    assert(typeof adapter.encryptSymmetricKey === 'function', 'encryptSymmetricKey should be a function')
+    assert(typeof adapter.decryptSymmetricKey === 'function', 'decryptSymmetricKey should be a function')
     
-    // This will require mocking the Lit.getAccessControlConditions function
-    // For now, we'll test that the method exists and has the expected signature
-    assert(typeof adapter.createEncryptionContext === 'function', 'createEncryptionContext should be a function')
+    // Verify adapter has the lit client
+    assert.strictEqual(adapter.litClient, mockLitClient, 'Adapter should store the Lit client')
   })
 
   await test('should handle metadata extraction for Lit Protocol format', async () => {

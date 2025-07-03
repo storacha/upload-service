@@ -70,25 +70,21 @@ export interface CryptoAdapter {
   ): Promise<ReadableStream>
   
   // Strategy-specific key management
-  createEncryptionContext(
-    encryptionOptions: EncryptionOptions
-  ): Promise<EncryptionContext>
-  createDecryptionContext(params: {
-    decryptionOptions: DecryptionOptions
-    metadata: ExtractedMetadata
-    delegationCAR: Uint8Array
-    resourceCID: AnyLink
-    issuer: Signer<DID, SigAlg>
-    audience: DID
-  }): Promise<DecryptionContext>
   encryptSymmetricKey(
     key: Uint8Array,
     iv: Uint8Array,
-    encryptionContext: EncryptionContext
+    encryptionOptions: EncryptionOptions
   ): Promise<EncryptedKeyResult>
   decryptSymmetricKey(
     encryptedKey: string,
-    decryptionContext: DecryptionContext
+    configs: {
+      decryptionOptions: DecryptionOptions
+      metadata: ExtractedMetadata
+      delegationCAR: Uint8Array
+      resourceCID: AnyLink
+      issuer: Signer<DID, SigAlg>
+      audience: DID
+    }
   ): Promise<{ key: Uint8Array, iv: Uint8Array }>
   extractEncryptedMetadata(car: Uint8Array): ExtractedMetadata
   getEncryptedKey(metadata: ExtractedMetadata): string
@@ -106,21 +102,12 @@ export interface EncryptionOptions {
    */
   spaceDID: SpaceDID
   /**
-   * The access or decrypt proof for the space
+   * The delegation proof to decrypt content from the space
    */
-  spaceAccessProof?: unknown
+  delegationProof?: unknown
 }
 
-export interface EncryptionContext {
-  spaceDID: SpaceDID
-  // Lit-specific (adapter-created)
-  accessControlConditions?: AccessControlConditions
-  litClient?: LitNodeClient
-  // KMS-specific (adapter-created)
-  privateGatewayURL?: URL
-  privateGatewayDID?: string
-  spaceAccessProof?: unknown
-}
+
 
 export interface DecryptionOptions {
   // User-provided options
@@ -132,23 +119,10 @@ export interface DecryptionOptions {
   authMethod?: AuthMethod
   // KMS-specific
   spaceDID?: SpaceDID
-  spaceAccessProof?: unknown
+  delegationProof?: unknown
 }
 
-export interface DecryptionContext {
-  // Adapter-created internal context
-  // Lit-specific (adapter-created)
-  litClient?: LitNodeClient
-  sessionSigs?: SessionSigsMap
-  spaceDID?: SpaceDID
-  plaintextKeyHash?: string
-  accessControlConditions?: AccessControlConditions
-  wrappedInvocationJSON?: string
-  // KMS-specific (adapter-created)
-  privateGatewayURL?: URL
-  privateGatewayDID?: string
-  spaceAccessProof?: unknown
-}
+
 
 export interface EncryptedKeyResult {
   strategy: EncryptionStrategy
@@ -169,6 +143,7 @@ export interface KMSKeyMetadata {
     provider: 'google-kms'
     keyId: string
     algorithm: 'RSA-OAEP-2048-SHA256'
+    keyReference?: string
   }
 }
 
@@ -270,5 +245,6 @@ export interface KMSExtractedMetadata {
     provider: 'google-kms'
     keyId: string
     algorithm: 'RSA-OAEP-2048-SHA256'
+    keyReference?: string
   }
 }

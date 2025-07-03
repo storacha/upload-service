@@ -83,7 +83,7 @@ await describe('KMSCryptoAdapter', async () => {
     assert.strictEqual(decryptedText, originalText, 'Decrypted text should match original')
   })
 
-  await test('should create encryption context with KMS configuration', async () => {
+  await test('should initialize KMS adapter with correct configuration', async () => {
     const symmetricCrypto = new BrowserAesCtrCrypto()
     const adapter = new KMSCryptoAdapter(
       symmetricCrypto,
@@ -91,15 +91,12 @@ await describe('KMSCryptoAdapter', async () => {
       'did:web:freeway.dag.haus'
     )
     
-    const spaceDID = 'did:key:test123'
-    const spaceAccessProof = { issuer: 'test' } // Mock proof
+    // Test that the adapter can handle encryption options directly
+    assert(typeof adapter.encryptSymmetricKey === 'function', 'encryptSymmetricKey should be a function')
     
-    const context = await adapter.createEncryptionContext({ spaceDID, spaceAccessProof })
-    
-    assert.strictEqual(context.spaceDID, spaceDID, 'Context should include spaceDID')
-    assert.strictEqual(context.privateGatewayDID, 'did:web:freeway.dag.haus', 'Context should include gateway DID')
-    assert(context.privateGatewayURL instanceof URL, 'Context should include gateway URL')
-    assert.strictEqual(context.spaceAccessProof, spaceAccessProof, 'Context should include space access proof')
+    // Verify adapter constructor sets properties correctly
+    assert.strictEqual(adapter.privateGatewayDID, 'did:web:freeway.dag.haus', 'Adapter should have gateway DID')
+    assert(adapter.privateGatewayURL instanceof URL, 'Adapter should have gateway URL')
   })
 
   await test('should handle metadata extraction placeholder', async () => {
