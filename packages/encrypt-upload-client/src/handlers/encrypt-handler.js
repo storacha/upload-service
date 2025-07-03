@@ -44,7 +44,7 @@ export const encryptAndUpload = async (
  * Upload encrypted metadata to the Storacha network
  *
  * @param {import('@storacha/client').Client} storachaClient - The Storacha client
- * @param {Type.EncryptedPayload} encryptedPayload - The encrypted payload
+ * @param {Type.EncryptionPayload} encryptedPayload - The encrypted payload
  * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter for formatting metadata
  * @param {object} [options] - The upload options
  * @param {boolean} [options.publishToFilecoin] - Whether to publish the data to Filecoin
@@ -104,7 +104,7 @@ const buildAndUploadEncryptedMetadata = async (
  * encryption and decryption operations.
  * @param {Type.BlobLike} file - The file to encrypt
  * @param {Type.EncryptionConfig} encryptionConfig - The encryption configuration
- * @returns {Promise<Type.EncryptedPayload>} - The encrypted file
+ * @returns {Promise<Type.EncryptionPayload>} - The encrypted file
  */
 const encryptFile = async (
   cryptoAdapter,

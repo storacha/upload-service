@@ -3,9 +3,9 @@ import { describe, it } from 'node:test'
 import * as Result from '@storacha/client/result'
 
 import * as Types from '../src/types.js'
-import { create, extract } from '../src/core/encrypted-metadata.js'
+import { create, extract } from '../src/core/metadata/encrypted-metadata.js'
 
-/** @type {Types.EncryptedMetadataInput} */
+/** @type {Types.LitMetadataInput} */
 const encryptedMetadataInput = {
   encryptedDataCID:
     'bafkreids275u5ex6xfw7d4k67afej43c6rhm2kzdox2z6or4jxrndgevae',
@@ -33,7 +33,7 @@ const encryptedMetadataInput = {
 
 await describe('Encrypted Metadata', async () => {
   await it('should create a valid CAR', async () => {
-    const encryptedMetadata = create(encryptedMetadataInput)
+    const encryptedMetadata = create('lit', encryptedMetadataInput)
     const result = await encryptedMetadata.archive()
     const car = Result.unwrap(result)
 

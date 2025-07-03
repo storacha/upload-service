@@ -1,6 +1,6 @@
 import { base64 } from 'multiformats/bases/base64'
 import * as Lit from '../../protocols/lit.js'
-import * as EncryptedMetadata from '../../core/encrypted-metadata.js'
+import * as EncryptedMetadata from '../../core/metadata/encrypted-metadata.js'
 import { createDecryptWrappedInvocation } from '../../utils.js'
 import * as Type from '../../types.js'
 
@@ -226,7 +226,7 @@ export class LitCryptoAdapter {
   async encodeMetadata(encryptedDataCID, encryptedKey, metadata) {
     const litMetadata = /** @type {Type.LitKeyMetadata} */ (metadata)
     
-    /** @type {Type.EncryptedMetadataInput} */
+    /** @type {Type.LitMetadataInput} */
     const uploadData = {
       encryptedDataCID,
       identityBoundCiphertext: encryptedKey,

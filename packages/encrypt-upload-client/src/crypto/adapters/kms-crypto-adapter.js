@@ -3,7 +3,7 @@ import { CAR, HTTP } from '@ucanto/transport'
 import { base64 } from 'multiformats/bases/base64'
 import * as Type from '../../types.js'
 import * as Space from '@storacha/capabilities/space'
-import * as KMSMetadata from '../../core/kms-metadata.js'
+import { KMSMetadata } from '../../core/metadata/encrypted-metadata.js'
 
 /**
  * KMSCryptoAdapter implements the complete CryptoAdapter interface using KMS.
@@ -157,6 +157,7 @@ export class KMSCryptoAdapter {
 
   /**
    * Extract the encrypted metadata from the CAR file
+   * KMS adapter only handles KMS format (encrypted-metadata@0.2)
    * 
    * @param {Uint8Array} car
    * @returns {Type.ExtractedMetadata}
@@ -196,7 +197,7 @@ export class KMSCryptoAdapter {
   getEncryptedKey(metadata) {
     // For KMS metadata, we need to handle the different structure
     if (metadata.strategy === 'kms') {
-      return /** @type {any} */ (metadata).encryptedSymmetricKey
+      return /** @type {Type.KMSExtractedMetadata} */ (metadata).encryptedSymmetricKey
     }
     throw new Error('KMSCryptoAdapter can only handle KMS metadata')
   }
@@ -210,23 +211,23 @@ export class KMSCryptoAdapter {
    * @returns {Promise<{ cid: import('@storacha/upload-client/types').AnyLink, bytes: Uint8Array }>} - The encoded metadata
    */
   async encodeMetadata(encryptedDataCID, encryptedKey, metadata) {
-    const kmsMetadata = /** @type {Type.KMSKeyMetadata} */ (metadata)
+    const kmsKeyMetadata = /** @type {Type.KMSKeyMetadata} */ (metadata)
     
     /** @type {Type.KMSMetadataInput} */
     const uploadData = {
       encryptedDataCID,
       encryptedSymmetricKey: encryptedKey,
-      space: kmsMetadata.space,
+      space: kmsKeyMetadata.space,
       kms: {
-        provider: kmsMetadata.kms.provider,
-        keyId: kmsMetadata.kms.keyId,
-        algorithm: kmsMetadata.kms.algorithm,
-        keyReference: kmsMetadata.kms.keyReference,
+        provider: kmsKeyMetadata.kms.provider,
+        keyId: kmsKeyMetadata.kms.keyId,
+        algorithm: kmsKeyMetadata.kms.algorithm,
+        keyReference: kmsKeyMetadata.kms.keyReference,
       },
     }
 
-    const kmsMetadataObj = KMSMetadata.create(uploadData)
-    return await kmsMetadataObj.archiveBlock()
+    const kmsMetadata = KMSMetadata.create(uploadData)
+    return await kmsMetadata.archiveBlock()
   }
 
   /**

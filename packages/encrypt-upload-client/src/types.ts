@@ -153,7 +153,7 @@ export interface KMSKeyMetadata {
   }
 }
 
-export type EncryptedPayload = {
+export type EncryptionPayload = {
   strategy: EncryptionStrategy
   encryptedKey: string
   metadata: LitKeyMetadata | KMSKeyMetadata
@@ -162,25 +162,25 @@ export type EncryptedPayload = {
 
 export type GenericAccessControlCondition = [Record<string, any>] // eslint-disable-line @typescript-eslint/no-explicit-any
 
-export interface EncryptedMetadataInput {
+export interface LitMetadataInput {
   encryptedDataCID: string
   identityBoundCiphertext: string
   plaintextKeyHash: string
   accessControlConditions: AccessControlConditions
 }
 
-export interface EncryptedMetadata {
+export interface LitMetadata {
   encryptedDataCID: UnknownLink
   identityBoundCiphertext: Uint8Array
   plaintextKeyHash: Uint8Array
   accessControlConditions: AccessControlConditions
 }
 
-export interface EncryptedMetadataView extends EncryptedMetadata {
+export interface LitMetadataView extends LitMetadata {
   /** Encode it to a CAR file. */
   archive(): Promise<Result<Uint8Array>>
   archiveBlock(): Promise<Block>
-  toJSON(): EncryptedMetadataInput
+  toJSON(): LitMetadataInput
 }
 
 // KMS-specific metadata types
