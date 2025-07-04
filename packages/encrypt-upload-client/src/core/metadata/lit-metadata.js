@@ -194,6 +194,8 @@ export const view = ({ root }) => {
       return ok(encryptedMetadata)
     }
     default:
-      return error(new UnknownFormat(`unknown Lit metadata version: ${matchedVersion}`))
+      return error(
+        new UnknownFormat(`unknown Lit metadata version: ${matchedVersion}`)
+      )
   }
-} 
+}

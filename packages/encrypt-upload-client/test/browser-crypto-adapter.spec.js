@@ -94,17 +94,21 @@ await describe('BrowserAesCtrCrypto', async () => {
   await test('should combine key and IV correctly', async () => {
     const adapter = new BrowserAesCtrCrypto()
     const key = new Uint8Array(32).fill(1) // 32-byte AES-256 key
-    const iv = new Uint8Array(16).fill(2)   // 16-byte AES-CTR IV
+    const iv = new Uint8Array(16).fill(2) // 16-byte AES-CTR IV
 
     const combined = adapter.combineKeyAndIV(key, iv)
 
-    assert.strictEqual(combined.length, 48, 'Combined length should be 48 bytes (32 + 16)')
-    
+    assert.strictEqual(
+      combined.length,
+      48,
+      'Combined length should be 48 bytes (32 + 16)'
+    )
+
     // Verify first 32 bytes are the key
     for (let i = 0; i < 32; i++) {
       assert.strictEqual(combined[i], 1, `Key byte ${i} should match`)
     }
-    
+
     // Verify last 16 bytes are the IV
     for (let i = 32; i < 48; i++) {
       assert.strictEqual(combined[i], 2, `IV byte ${i - 32} should match`)
@@ -115,21 +119,29 @@ await describe('BrowserAesCtrCrypto', async () => {
     const adapter = new BrowserAesCtrCrypto()
     const originalKey = new Uint8Array(32).fill(42)
     const originalIV = new Uint8Array(16).fill(84)
-    
+
     const combined = adapter.combineKeyAndIV(originalKey, originalIV)
     const { key, iv } = adapter.splitKeyAndIV(combined)
 
     assert.strictEqual(key.length, 32, 'Split key should be 32 bytes')
     assert.strictEqual(iv.length, 16, 'Split IV should be 16 bytes')
-    
+
     // Verify key matches
     for (let i = 0; i < 32; i++) {
-      assert.strictEqual(key[i], originalKey[i], `Key byte ${i} should match original`)
+      assert.strictEqual(
+        key[i],
+        originalKey[i],
+        `Key byte ${i} should match original`
+      )
     }
-    
+
     // Verify IV matches
     for (let i = 0; i < 16; i++) {
-      assert.strictEqual(iv[i], originalIV[i], `IV byte ${i} should match original`)
+      assert.strictEqual(
+        iv[i],
+        originalIV[i],
+        `IV byte ${i} should match original`
+      )
     }
   })
 
@@ -137,11 +149,15 @@ await describe('BrowserAesCtrCrypto', async () => {
     const adapter = new BrowserAesCtrCrypto()
     const originalKey = globalThis.crypto.getRandomValues(new Uint8Array(32))
     const originalIV = globalThis.crypto.getRandomValues(new Uint8Array(16))
-    
+
     const combined = adapter.combineKeyAndIV(originalKey, originalIV)
     const { key, iv } = adapter.splitKeyAndIV(combined)
 
-    assert.deepStrictEqual(key, originalKey, 'Roundtrip key should match original')
+    assert.deepStrictEqual(
+      key,
+      originalKey,
+      'Roundtrip key should match original'
+    )
     assert.deepStrictEqual(iv, originalIV, 'Roundtrip IV should match original')
   })
 
@@ -154,7 +170,7 @@ await describe('BrowserAesCtrCrypto', async () => {
       () => adapter.combineKeyAndIV(wrongKey, correctIV),
       {
         name: 'Error',
-        message: 'AES-256 key must be 32 bytes, got 31'
+        message: 'AES-256 key must be 32 bytes, got 31',
       },
       'Should throw error for wrong key size'
     )
@@ -169,7 +185,7 @@ await describe('BrowserAesCtrCrypto', async () => {
       () => adapter.combineKeyAndIV(correctKey, wrongIV),
       {
         name: 'Error',
-        message: 'AES-CTR IV must be 16 bytes, got 15'
+        message: 'AES-CTR IV must be 16 bytes, got 15',
       },
       'Should throw error for wrong IV size'
     )
@@ -183,7 +199,7 @@ await describe('BrowserAesCtrCrypto', async () => {
       () => adapter.splitKeyAndIV(wrongCombined),
       {
         name: 'Error',
-        message: 'AES-256-CTR combined key+IV must be 48 bytes, got 47'
+        message: 'AES-256-CTR combined key+IV must be 48 bytes, got 47',
       },
       'Should throw error for wrong combined size'
     )

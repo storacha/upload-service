@@ -58,8 +58,7 @@ const buildAndUploadEncryptedMetadata = async (
     publishToFilecoin: false,
   }
 ) => {
-  const { encryptedKey, metadata, encryptedBlobLike } =
-    encryptedPayload
+  const { encryptedKey, metadata, encryptedBlobLike } = encryptedPayload
 
   return storachaClient.uploadCAR(
     {
@@ -81,7 +80,7 @@ const buildAndUploadEncryptedMetadata = async (
                   encryptedKey,
                   metadata
                 )
-                
+
                 controller.enqueue({ cid, bytes })
               },
             })
@@ -91,7 +90,9 @@ const buildAndUploadEncryptedMetadata = async (
     },
     {
       // if publishToFilecoin is false, the data won't be published to Filecoin, so we need to set pieceHasher to undefined
-      ...(options.publishToFilecoin === false ? { pieceHasher: undefined } : {}),
+      ...(options.publishToFilecoin === false
+        ? { pieceHasher: undefined }
+        : {}),
     }
   )
 }
@@ -99,23 +100,23 @@ const buildAndUploadEncryptedMetadata = async (
 /**
  * Encrypt a file using the crypto adapter and return the encrypted payload.
  * The encrypted payload contains the encrypted file, the encrypted symmetric key, and the metadata.
- * 
+ *
  * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter responsible for performing
  * encryption and decryption operations.
  * @param {Type.BlobLike} file - The file to encrypt
  * @param {Type.EncryptionConfig} encryptionConfig - The encryption configuration
  * @returns {Promise<Type.EncryptionPayload>} - The encrypted file
  */
-const encryptFile = async (
-  cryptoAdapter,
-  file,
-  encryptionConfig
-) => {
+const encryptFile = async (cryptoAdapter, file, encryptionConfig) => {
   // Step 1: Encrypt the file using the crypto adapter
   const { key, iv, encryptedStream } = await cryptoAdapter.encryptStream(file)
 
   // Step 2: Use crypto adapter to encrypt the symmetric key
-  const keyResult = await cryptoAdapter.encryptSymmetricKey(key, iv, encryptionConfig)
+  const keyResult = await cryptoAdapter.encryptSymmetricKey(
+    key,
+    iv,
+    encryptionConfig
+  )
 
   // Step 3: Return the encrypted payload
   return {

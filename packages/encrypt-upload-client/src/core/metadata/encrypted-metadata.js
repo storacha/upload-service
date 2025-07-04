@@ -11,8 +11,8 @@ import * as dagCBOR from '@ipld/dag-cbor'
 import { UnknownFormat } from '../errors.js'
 
 const FORMATS = {
-  [LitMetadata.version]: LitMetadata,   // 'encrypted-metadata@0.1' 
-  [KMSMetadata.version]: KMSMetadata,   // 'encrypted-metadata@0.2'
+  [LitMetadata.version]: LitMetadata, // 'encrypted-metadata@0.1'
+  [KMSMetadata.version]: KMSMetadata, // 'encrypted-metadata@0.2'
 }
 
 /**
@@ -24,7 +24,7 @@ const FORMATS = {
 export const extract = (archive) => {
   // Decode CAR to check version
   const { roots } = CAR.decode(archive)
-  
+
   if (!roots.length) {
     return error(new UnknownFormat('missing root block'))
   }
@@ -38,28 +38,30 @@ export const extract = (archive) => {
 
   // Check which version this metadata uses
   const value = dagCBOR.decode(roots[0].bytes)
-  
+
   for (const [version, formatModule] of Object.entries(FORMATS)) {
     if (value && typeof value === 'object' && version in value) {
       // Found matching version, delegate to specific format module
       return formatModule.extract(archive)
     }
   }
-  
-  return error(new UnknownFormat('Unknown metadata format - no matching version found'))
+
+  return error(
+    new UnknownFormat('Unknown metadata format - no matching version found')
+  )
 }
 
 /**
  * Create metadata for specific strategy
  *
- * @param {'lit' | 'kms'} strategy 
+ * @param {'lit' | 'kms'} strategy
  * @param {any} data
  */
 export const create = (strategy, data) => {
   switch (strategy) {
     case 'lit':
       return LitMetadata.create(data)
-    case 'kms': 
+    case 'kms':
       return KMSMetadata.create(data)
     default:
       throw new Error(`Unknown encryption strategy: ${strategy}`)
@@ -74,7 +76,7 @@ export const getSupportedVersions = () => Object.keys(FORMATS)
 /**
  * Check if a version is supported
  *
- * @param {string} version 
+ * @param {string} version
  */
 export const isVersionSupported = (version) => version in FORMATS
 

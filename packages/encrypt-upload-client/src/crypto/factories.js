@@ -29,12 +29,16 @@ export function createNodeLitAdapter(litClient) {
  * Create a KMS crypto adapter for browser environments
  *
  * @param {URL|string} privateGatewayURL
- * @param {string} [privateGatewayDID]
+ * @param {`did:${string}:${string}`} privateGatewayDID
  * @returns {KMSCryptoAdapter}
  */
 export function createBrowserKMSAdapter(privateGatewayURL, privateGatewayDID) {
   const symmetricCrypto = new BrowserAesCtrCrypto()
-  return new KMSCryptoAdapter(symmetricCrypto, privateGatewayURL, privateGatewayDID)
+  return new KMSCryptoAdapter(
+    symmetricCrypto,
+    privateGatewayURL,
+    privateGatewayDID
+  )
 }
 
 /**
@@ -46,5 +50,10 @@ export function createBrowserKMSAdapter(privateGatewayURL, privateGatewayDID) {
  */
 export function createNodeKMSAdapter(privateGatewayURL, privateGatewayDID) {
   const symmetricCrypto = new NodeAesCbcCrypto()
-  return new KMSCryptoAdapter(symmetricCrypto, privateGatewayURL, privateGatewayDID)
-} 
+  const gatewayDID = privateGatewayDID || 'did:web:freeway.dag.haus'
+  return new KMSCryptoAdapter(
+    symmetricCrypto,
+    privateGatewayURL,
+    /** @type {`did:${string}:${string}`} */ (gatewayDID)
+  )
+}

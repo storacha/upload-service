@@ -155,12 +155,11 @@ export const EncryptionSetup = capability({
   },
 })
 
-
 /**
  * "Decrypt symmetric keys for encrypted content owned by the subject Space."
  *
- * A Principal who may `space/encryption/key/decrypt` is permitted to decrypt 
- * the symmetric keys for any encrypted content owned by the Space. This capability 
+ * A Principal who may `space/encryption/key/decrypt` is permitted to decrypt
+ * the symmetric keys for any encrypted content owned by the Space. This capability
  * is used by the gateway to validate that a client has permission to access encrypted
  * content and receive the decrypted Data Encryption Keys (DEKs).
  *

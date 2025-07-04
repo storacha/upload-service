@@ -17,9 +17,11 @@ import { BrowserAesCtrCrypto } from '../src/crypto/symmetric/browser-aes-ctr-cry
 import { LitCryptoAdapter } from '../src/crypto/adapters/lit-crypto-adapter.js'
 
 // Mock Lit client - cast to any for testing
-const mockLitClient = /** @type {any} */ ({
-  // Add mock methods as needed
-})
+const mockLitClient = /** @type {any} */ (
+  {
+    // Add mock methods as needed
+  }
+)
 
 /**
  * @param {Uint8Array} arr
@@ -65,43 +67,70 @@ await describe('LitCryptoAdapter', async () => {
   await test('should delegate symmetric crypto operations to the injected implementation', async () => {
     const symmetricCrypto = new BrowserAesCtrCrypto()
     const adapter = new LitCryptoAdapter(symmetricCrypto, mockLitClient)
-    
+
     const originalText = 'Op, this is a test for strategy-based encryption!'
     const blob = new Blob([stringToUint8Array(originalText)])
 
     // Test that it delegates to the symmetric crypto implementation
     const { key, iv, encryptedStream } = await adapter.encryptStream(blob)
-    
+
     assert(key instanceof Uint8Array, 'Key should be a Uint8Array')
     assert(iv instanceof Uint8Array, 'IV should be a Uint8Array')
-    assert(encryptedStream instanceof ReadableStream, 'Encrypted stream should be a ReadableStream')
+    assert(
+      encryptedStream instanceof ReadableStream,
+      'Encrypted stream should be a ReadableStream'
+    )
 
     // Test decryption delegation
-    const decryptedStream = await adapter.decryptStream(encryptedStream, key, iv)
+    const decryptedStream = await adapter.decryptStream(
+      encryptedStream,
+      key,
+      iv
+    )
     const decryptedBytes = await streamToUint8Array(decryptedStream)
     const decryptedText = uint8ArrayToString(decryptedBytes)
 
-    assert.strictEqual(decryptedText, originalText, 'Decrypted text should match original')
+    assert.strictEqual(
+      decryptedText,
+      originalText,
+      'Decrypted text should match original'
+    )
   })
 
   await test('should initialize Lit adapter with correct configuration', async () => {
     const symmetricCrypto = new BrowserAesCtrCrypto()
     const adapter = new LitCryptoAdapter(symmetricCrypto, mockLitClient)
-    
+
     // Test that the adapter has the required methods
-    assert(typeof adapter.encryptSymmetricKey === 'function', 'encryptSymmetricKey should be a function')
-    assert(typeof adapter.decryptSymmetricKey === 'function', 'decryptSymmetricKey should be a function')
-    
+    assert(
+      typeof adapter.encryptSymmetricKey === 'function',
+      'encryptSymmetricKey should be a function'
+    )
+    assert(
+      typeof adapter.decryptSymmetricKey === 'function',
+      'decryptSymmetricKey should be a function'
+    )
+
     // Verify adapter has the lit client
-    assert.strictEqual(adapter.litClient, mockLitClient, 'Adapter should store the Lit client')
+    assert.strictEqual(
+      adapter.litClient,
+      mockLitClient,
+      'Adapter should store the Lit client'
+    )
   })
 
   await test('should handle metadata extraction for Lit Protocol format', async () => {
     const symmetricCrypto = new BrowserAesCtrCrypto()
     const adapter = new LitCryptoAdapter(symmetricCrypto, mockLitClient)
-    
+
     // Test that the method exists and has the expected signature
-    assert(typeof adapter.extractEncryptedMetadata === 'function', 'extractEncryptedMetadata should be a function')
-    assert(typeof adapter.getEncryptedKey === 'function', 'getEncryptedKey should be a function')
+    assert(
+      typeof adapter.extractEncryptedMetadata === 'function',
+      'extractEncryptedMetadata should be a function'
+    )
+    assert(
+      typeof adapter.getEncryptedKey === 'function',
+      'getEncryptedKey should be a function'
+    )
   })
-}) 
+})

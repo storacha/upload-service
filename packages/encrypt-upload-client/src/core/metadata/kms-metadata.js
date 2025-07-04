@@ -189,6 +189,8 @@ export const view = ({ root }) => {
       return ok(kmsMetadata)
     }
     default:
-      return error(new UnknownFormat(`unknown KMS metadata version: ${matchedVersion}`))
+      return error(
+        new UnknownFormat(`unknown KMS metadata version: ${matchedVersion}`)
+      )
   }
-} 
+}

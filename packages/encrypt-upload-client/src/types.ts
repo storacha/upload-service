@@ -26,7 +26,10 @@ export type { BlobLike, AnyLink }
 import type { SpaceDID } from '@storacha/capabilities/types'
 
 export interface EncryptedClient {
-  encryptAndUploadFile(file: BlobLike, config: EncryptionConfig): Promise<AnyLink>
+  encryptAndUploadFile(
+    file: BlobLike,
+    config: EncryptionConfig
+  ): Promise<AnyLink>
   retrieveAndDecryptFile(
     cid: AnyLink,
     delegationCAR: Uint8Array,
@@ -53,10 +56,10 @@ export interface SymmetricCrypto {
     key: Uint8Array,
     iv: Uint8Array
   ): Promise<ReadableStream>
-  
+
   // Algorithm-specific key/IV management
   combineKeyAndIV(key: Uint8Array, iv: Uint8Array): Uint8Array
-  splitKeyAndIV(combined: Uint8Array): { key: Uint8Array, iv: Uint8Array }
+  splitKeyAndIV(combined: Uint8Array): { key: Uint8Array; iv: Uint8Array }
 }
 
 export interface CryptoAdapter {
@@ -67,7 +70,7 @@ export interface CryptoAdapter {
     key: Uint8Array,
     iv: Uint8Array
   ): Promise<ReadableStream>
-  
+
   // Strategy-specific key management
   encryptSymmetricKey(
     key: Uint8Array,
@@ -84,14 +87,14 @@ export interface CryptoAdapter {
       issuer: Signer<DID, SigAlg>
       audience: DID
     }
-  ): Promise<{ key: Uint8Array, iv: Uint8Array }>
+  ): Promise<{ key: Uint8Array; iv: Uint8Array }>
   extractEncryptedMetadata(car: Uint8Array): ExtractedMetadata
   getEncryptedKey(metadata: ExtractedMetadata): string
   encodeMetadata(
     encryptedDataCID: string,
     encryptedKey: string,
     metadata: LitKeyMetadata | KMSKeyMetadata
-  ): Promise<{ cid: AnyLink, bytes: Uint8Array }>
+  ): Promise<{ cid: AnyLink; bytes: Uint8Array }>
 }
 
 // User-provided configuration (required settings)
