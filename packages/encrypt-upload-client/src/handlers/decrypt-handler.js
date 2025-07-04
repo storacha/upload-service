@@ -2,118 +2,73 @@ import { CID } from 'multiformats'
 import { CarIndexer } from '@ipld/car'
 import { exporter } from 'ipfs-unixfs-exporter'
 import { MemoryBlockstore } from 'blockstore-core'
-import { base64 } from 'multiformats/bases/base64'
 
-import * as Lit from '../protocols/lit.js'
 import * as Type from '../types.js'
-import * as EncryptedMetadata from '../core/encrypted-metadata.js'
-import { createDecryptWrappedInvocation } from '../utils.js'
 
 /**
- * Retrieve and decrypt a file from the IPFS gateway.
+ * Retrieve and decrypt a file from the IPFS gateway using any supported encryption strategy.
  *
  * @param {import('@storacha/client').Client} storachaClient - The Storacha client
- * @param {import('@lit-protocol/lit-node-client').LitNodeClient} litClient - The Lit client
  * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter responsible for performing
  * encryption and decryption operations.
  * @param {URL} gatewayURL - The IPFS gateway URL
- * @param {Type.LitWalletSigner | Type.LitPkpSigner} signer - The wallet or PKP key signer to decrypt the file
  * @param {Type.AnyLink} cid - The link to the file to retrieve
- * @param {Uint8Array} delegationCAR - The delegation that gives permission to decrypt the file
+ * @param {Uint8Array} delegationCAR - The delegation that gives permission to decrypt (required for both strategies)
+ * @param {Type.DecryptionOptions} decryptionOptions - User-provided decryption options
+ * @returns {Promise<ReadableStream>} The decrypted file stream
  */
 export const retrieveAndDecrypt = async (
   storachaClient,
-  litClient,
   cryptoAdapter,
   gatewayURL,
-  signer,
   cid,
-  delegationCAR
+  delegationCAR,
+  decryptionOptions
 ) => {
-  const encryptedMetadataCar = await getCarFileFromGateway(
+  // Step 1: Get the encrypted metadata from the public gateway
+  const encryptedMetadataCar = await getCarFileFromPublicGateway(
     gatewayURL,
     cid.toString()
   )
-  const {
-    encryptedDataCID,
-    identityBoundCiphertext,
-    plaintextKeyHash,
-    accessControlConditions,
-  } = extractEncryptedMetadata(encryptedMetadataCar)
-  const spaceDID = /** @type {`did:key:${string}`} */ (
-    accessControlConditions[0].parameters[1]
-  )
+
+  // Step 2: Extract encrypted metadata from the CAR file
+  const metadata = cryptoAdapter.extractEncryptedMetadata(encryptedMetadataCar)
+
+  // Step 3: Get the encrypted data from the CAR file
   const encryptedData = await getEncryptedDataFromCar(
     encryptedMetadataCar,
-    encryptedDataCID
+    metadata.encryptedDataCID
   )
 
-  if (!signer) {
-    throw new Error('Signer is required')
-  }
+  // Step 4: Decrypt the encrypted symmetric key
+  const encryptedSymmetricKey = cryptoAdapter.getEncryptedKey(metadata)
+  const { key, iv } = await cryptoAdapter.decryptSymmetricKey(
+    encryptedSymmetricKey,
+    {
+      decryptionOptions,
+      metadata,
+      delegationCAR,
+      resourceCID: cid,
+      issuer: storachaClient.agent.issuer,
+      audience: storachaClient.defaultProvider(),
+    }
+  )
 
-  /**
-   * TODO: check if the wallet has capacity credits, if not get it
-   */
-
-  const acc =
-    /** @type import('@lit-protocol/types').AccessControlConditions */ (
-      /** @type {unknown} */ (accessControlConditions)
-    )
-  const expiration = new Date(Date.now() + 1000 * 60 * 5).toISOString() // 5 min
-  // TODO: store the session signature (https://developer.litprotocol.com/intro/first-request/generating-session-sigs#nodejs)
-  let sessionSigs
-  if ('wallet' in signer) {
-    sessionSigs = await Lit.getSessionSigs(litClient, {
-      wallet: signer.wallet,
-      dataToEncryptHash: plaintextKeyHash,
-      expiration,
-      accessControlConditions: acc,
-    })
-  } else {
-    sessionSigs = await Lit.getPkpSessionSigs(litClient, {
-      pkpPublicKey: signer.pkpPublicKey,
-      authMethod: signer.authMethod,
-      dataToEncryptHash: plaintextKeyHash,
-      expiration,
-      accessControlConditions: acc,
-    })
-  }
-
-  const wrappedInvocationJSON = await createDecryptWrappedInvocation({
-    delegationCAR,
-    spaceDID,
-    resourceCID: cid,
-    issuer: storachaClient.agent.issuer,
-    audience: storachaClient.defaultProvider(),
-    expiration: new Date(Date.now() + 1000 * 60 * 10).getTime(), // 10 min
-  })
-
-  const decryptKey = await Lit.executeUcanValidationAction(litClient, {
-    sessionSigs,
-    spaceDID,
-    identityBoundCiphertext,
-    plaintextKeyHash,
-    accessControlConditions,
-    wrappedInvocationJSON,
-  })
-
-  return decryptFileWithKey(cryptoAdapter, decryptKey, encryptedData)
+  // Step 5: Decrypt the encrypted file content using the decrypted symmetric key and IV
+  return decryptFileWithKey(cryptoAdapter, key, iv, encryptedData)
 }
 
 /**
+ * Decrypt file content using the decrypted symmetric key and IV.
+ *
  * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter responsible for performing
  * encryption and decryption operations.
- * @param {string} combinedKey
- * @param {Uint8Array} content
+ * @param {Uint8Array} key - The symmetric key
+ * @param {Uint8Array} iv - The initialization vector
+ * @param {Uint8Array} content - The encrypted file content
+ * @returns {Promise<ReadableStream>} The decrypted file stream
  */
-export function decryptFileWithKey(cryptoAdapter, combinedKey, content) {
-  // Split the decrypted data back into key and initializationVector
-  const decryptedKeyData = base64.decode(combinedKey)
-  const symmetricKey = decryptedKeyData.subarray(0, 32)
-  const initializationVector = decryptedKeyData.subarray(32)
-
-  // Create a ReadableStream from the Uint8Array
+export function decryptFileWithKey(cryptoAdapter, key, iv, content) {
   const contentStream = new ReadableStream({
     start(controller) {
       controller.enqueue(content)
@@ -121,21 +76,19 @@ export function decryptFileWithKey(cryptoAdapter, combinedKey, content) {
     },
   })
 
-  const decryptedStream = cryptoAdapter.decryptStream(
-    contentStream,
-    symmetricKey,
-    initializationVector
-  )
+  const decryptedStream = cryptoAdapter.decryptStream(contentStream, key, iv)
 
   return decryptedStream
 }
 
 /**
+ * Fetch a CAR file from the public IPFS gateway.
  *
- * @param {URL} gatewayURL
- * @param {string} cid
+ * @param {URL} gatewayURL - The IPFS gateway URL
+ * @param {string} cid - The CID to fetch
+ * @returns {Promise<Uint8Array>} The CAR file bytes
  */
-const getCarFileFromGateway = async (gatewayURL, cid) => {
+const getCarFileFromPublicGateway = async (gatewayURL, cid) => {
   const url = new URL(`/ipfs/${cid}?format=car`, gatewayURL)
   const response = await fetch(url)
   if (!response.ok) {
@@ -149,26 +102,14 @@ const getCarFileFromGateway = async (gatewayURL, cid) => {
 }
 
 /**
+ * Extract encrypted data from a CAR file.
  *
- * @param {Uint8Array} car
- */
-const extractEncryptedMetadata = (car) => {
-  const encryptedContentResult = EncryptedMetadata.extract(car)
-  if (encryptedContentResult.error) {
-    throw encryptedContentResult.error
-  }
-
-  let encryptedContent = encryptedContentResult.ok.toJSON()
-  return encryptedContent
-}
-
-/**
- *
- * @param {Uint8Array} car
- * @param {string} encryptedDataCID
+ * @param {Uint8Array} car - The CAR file bytes
+ * @param {string} encryptedDataCID - The CID of the encrypted data
+ * @returns {Promise<Uint8Array>} The encrypted data bytes
  */
 const getEncryptedDataFromCar = async (car, encryptedDataCID) => {
-  // NOTE: convert CAR to a block store
+  // Step 1: Convert CAR to a block store
   const iterable = await CarIndexer.fromBytes(car)
   const blockstore = new MemoryBlockstore()
 
@@ -177,7 +118,7 @@ const getEncryptedDataFromCar = async (car, encryptedDataCID) => {
     await blockstore.put(cid, blockBytes)
   }
 
-  // NOTE: get the encrypted Data from the CAR file
+  // Step 2: Get the encrypted data from the CAR file
   const encryptedDataEntry = await exporter(
     CID.parse(encryptedDataCID),
     blockstore
@@ -189,5 +130,6 @@ const getEncryptedDataFromCar = async (car, encryptedDataCID) => {
     offset += chunk.length
   }
 
+  // Step 3: Return the encrypted data bytes
   return encryptedDataBytes
 }

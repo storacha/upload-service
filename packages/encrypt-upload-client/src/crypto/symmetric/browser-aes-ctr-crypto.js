@@ -1,4 +1,4 @@
-import * as Type from '../types.js'
+import * as Type from '../../types.js'
 
 const ENCRYPTION_ALGORITHM = 'AES-CTR'
 const KEY_LENGTH = 256 // bits
@@ -6,7 +6,7 @@ const IV_LENGTH = 16 // bytes (128 bits, used as counter)
 const COUNTER_LENGTH = 64 // bits (Web Crypto API default for AES-CTR)
 
 /**
- * BrowserCryptoAdapter implements the CryptoAdapter interface for browser environments.
+ * BrowserAesCtrCrypto implements AES-CTR symmetric encryption for browser environments.
  * It uses AES-CTR mode for encryption via the Web Crypto API.
  *
  * Why AES-CTR?
@@ -20,9 +20,9 @@ const COUNTER_LENGTH = 64 // bits (Web Crypto API default for AES-CTR)
  * For true streaming (lower memory usage), we need to refactor it to emit each chunk as soon as it is processed.
  *
  * @class
- * @implements {Type.CryptoAdapter}
+ * @implements {Type.SymmetricCrypto}
  */
-export class BrowserCryptoAdapter {
+export class BrowserAesCtrCrypto {
   async generateKey() {
     return globalThis.crypto.getRandomValues(new Uint8Array(KEY_LENGTH / 8))
   }
@@ -137,5 +137,45 @@ export class BrowserCryptoAdapter {
         controller.close()
       },
     })
+  }
+
+  /**
+   * Combine key and IV into a single array for AES-CTR
+   *
+   * @param {Uint8Array} key - The AES key (KEY_LENGTH/8 bytes)
+   * @param {Uint8Array} iv - The AES-CTR IV (IV_LENGTH bytes)
+   * @returns {Uint8Array} Combined key and IV (KEY_LENGTH/8 + IV_LENGTH bytes)
+   */
+  combineKeyAndIV(key, iv) {
+    const keyBytes = KEY_LENGTH / 8
+    if (key.length !== keyBytes) {
+      throw new Error(
+        `AES-${KEY_LENGTH} key must be ${keyBytes} bytes, got ${key.length}`
+      )
+    }
+    if (iv.length !== IV_LENGTH) {
+      throw new Error(`AES-CTR IV must be ${IV_LENGTH} bytes, got ${iv.length}`)
+    }
+    return new Uint8Array([...key, ...iv])
+  }
+
+  /**
+   * Split combined key and IV for AES-CTR
+   *
+   * @param {Uint8Array} combined - Combined key and IV (KEY_LENGTH/8 + IV_LENGTH bytes)
+   * @returns {{ key: Uint8Array, iv: Uint8Array }} Separated key and IV
+   */
+  splitKeyAndIV(combined) {
+    const keyBytes = KEY_LENGTH / 8
+    const expectedLength = keyBytes + IV_LENGTH
+    if (combined.length !== expectedLength) {
+      throw new Error(
+        `AES-${KEY_LENGTH}-CTR combined key+IV must be ${expectedLength} bytes, got ${combined.length}`
+      )
+    }
+    return {
+      key: combined.subarray(0, keyBytes),
+      iv: combined.subarray(keyBytes, keyBytes + IV_LENGTH),
+    }
   }
 }
