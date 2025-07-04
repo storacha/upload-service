@@ -78,7 +78,7 @@ Authenticate this agent with your email address to get access to all capabilitie
 
 ### `storacha up <path> [path...]`
 
-Upload file(s) to web3.storage. The IPFS Content ID (CID) for your files is calculated on your machine, and sent up along with your files. web3.storage makes your content available on the IPFS network
+Upload file(s) to Storacha. The IPFS Content ID (CID) for your files is calculated on your machine, and sent up along with your files. web3.storage makes your content available on the IPFS network
 
 - `--no-wrap` Don't wrap input files with a directory.
 - `-H, --hidden` Include paths that start with ".".
