@@ -12,4 +12,4 @@ export {
   createNodeLitAdapter,
   createBrowserKMSAdapter,
   createNodeKMSAdapter,
-} from './factories.js' 
+} from './factories.js'

@@ -5,14 +5,14 @@ import * as Space from '@storacha/capabilities/space'
 
 /**
  * Create mock KMS service with proper capability handlers
- * 
+ *
  * @param {object} options
  * @param {string} options.mockPublicKey - Mock RSA public key in PEM format
  * @param {string} options.mockKeyReference - Mock KMS key reference
  * @param {string} [options.mockProvider] - Mock KMS provider
  * @param {string} [options.mockAlgorithm] - Mock algorithm
- * @param {function} [options.onEncryptionSetup] - Optional callback for setup calls
- * @param {function} [options.onKeyDecrypt] - Optional callback for decrypt calls
+ * @param {Function} [options.onEncryptionSetup] - Optional callback for setup calls
+ * @param {Function} [options.onKeyDecrypt] - Optional callback for decrypt calls
  */
 export function createMockGatewayService(options) {
   const {
@@ -21,7 +21,7 @@ export function createMockGatewayService(options) {
     mockProvider = 'google-kms',
     mockAlgorithm = 'RSA-OAEP-2048-SHA256',
     onEncryptionSetup,
-    onKeyDecrypt
+    onKeyDecrypt,
   } = options
 
   return {
@@ -37,7 +37,7 @@ export function createMockGatewayService(options) {
           if (!input.capability.with.startsWith('did:key:')) {
             return Server.error({
               name: 'InvalidSpace',
-              message: 'Space DID must be a did:key'
+              message: 'Space DID must be a did:key',
             })
           }
 
@@ -46,7 +46,7 @@ export function createMockGatewayService(options) {
             publicKey: mockPublicKey,
             keyReference: mockKeyReference,
             provider: mockProvider,
-            algorithm: mockAlgorithm
+            algorithm: mockAlgorithm,
           })
         }),
 
@@ -61,7 +61,7 @@ export function createMockGatewayService(options) {
             if (!input.capability.with.startsWith('did:key:')) {
               return Server.error({
                 name: 'InvalidSpace',
-                message: 'Space DID must be a did:key'
+                message: 'Space DID must be a did:key',
               })
             }
 
@@ -69,27 +69,27 @@ export function createMockGatewayService(options) {
             if (!input.capability.nb.encryptedSymmetricKey) {
               return Server.error({
                 name: 'MissingKey',
-                message: 'encryptedSymmetricKey is required'
+                message: 'encryptedSymmetricKey is required',
               })
             }
 
             // For testing purposes, "decrypt" by base64 decoding the input
             // In real implementation, this would call Google KMS
             const mockDecryptedKey = input.capability.nb.encryptedSymmetricKey
-            
+
             return Server.ok({
-              decryptedSymmetricKey: mockDecryptedKey
+              decryptedSymmetricKey: mockDecryptedKey,
             })
-          })
-        }
-      }
-    }
+          }),
+        },
+      },
+    },
   }
 }
 
 /**
  * Create a mock private gateway HTTP server
- * 
+ *
  * @param {object} service - The service object with capability handlers
  * @param {*} gatewayDID - The gateway DID keypair
  * @param {number} port - The port to listen on
@@ -142,7 +142,7 @@ export function createMockGatewayServer(service, gatewayDID, port) {
         resolve({
           server: httpServer,
           url: `http://localhost:${port}`,
-          close: () => new Promise((resolve) => httpServer.close(resolve))
+          close: () => new Promise((resolve) => httpServer.close(resolve)),
         })
       }
     })
@@ -159,4 +159,4 @@ const collect = (stream) => {
       stream.on('end', () => resolve(chunks))
     })
   )
-} 
+}

@@ -11,25 +11,29 @@ export async function generateMockRSAKeyPair() {
       name: 'RSA-OAEP',
       modulusLength: 2048,
       publicExponent: new Uint8Array([1, 0, 1]),
-      hash: 'SHA-256'
+      hash: 'SHA-256',
     },
     true,
     ['encrypt', 'decrypt']
   )
 
   // Export public key to SPKI format (this will work with our adapter)
-  const publicKeyBuffer = await globalThis.crypto.subtle.exportKey('spki', keyPair.publicKey)
-  
+  const publicKeyBuffer = await globalThis.crypto.subtle.exportKey(
+    'spki',
+    keyPair.publicKey
+  )
+
   // Convert to proper PEM format using standard base64 (not multibase)
   const base64String = Buffer.from(publicKeyBuffer).toString('base64')
-  
+
   // Format as proper PEM with line breaks every 64 characters like real KMS
-  const formattedBase64 = base64String.match(/.{1,64}/g)?.join('\n') || base64String
+  const formattedBase64 =
+    base64String.match(/.{1,64}/g)?.join('\n') || base64String
   const publicKeyPem = `-----BEGIN PUBLIC KEY-----\n${formattedBase64}\n-----END PUBLIC KEY-----`
 
   return {
     keyPair,
-    publicKeyPem
+    publicKeyPem,
   }
 }
 
@@ -39,14 +43,14 @@ export async function generateMockRSAKeyPair() {
 export async function createTestFixtures() {
   // Create mock gateway DID
   const gatewayDID = await ed25519.generate()
-  
+
   // Create mock space DID - this will be the issuer
   const spaceSigner = await ed25519.generate()
   const spaceDID = spaceSigner.did()
 
   // Generate mock RSA key pair
   const { keyPair, publicKeyPem } = await generateMockRSAKeyPair()
-  
+
   // Create mock delegation proof - space delegates to itself (self-issued)
   const delegationProof = await Server.delegate({
     issuer: spaceSigner,
@@ -54,14 +58,14 @@ export async function createTestFixtures() {
     capabilities: [
       {
         with: spaceDID,
-        can: 'space/encryption/setup'
+        can: 'space/encryption/setup',
       },
       {
         with: spaceDID,
-        can: 'space/encryption/key/decrypt'
-      }
+        can: 'space/encryption/key/decrypt',
+      },
     ],
-    expiration: Infinity
+    expiration: Infinity,
   })
 
   return {
@@ -71,6 +75,6 @@ export async function createTestFixtures() {
     issuer: spaceSigner, // Use space signer as issuer
     keyPair,
     publicKeyPem,
-    delegationProof
+    delegationProof,
   }
-} 
+}

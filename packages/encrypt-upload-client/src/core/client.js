@@ -38,15 +38,15 @@ export class EncryptedClient {
    * Encrypt and upload a file to the Storacha network
    *
    * @param {Type.BlobLike} file - The file to upload
-   * @param {Type.EncryptionOptions} [encryptionOptions] - User-provided encryption options
+   * @param {Type.EncryptionConfig} encryptionConfig - User-provided encryption configuration
    * @returns {Promise<Type.AnyLink>} - The link to the uploaded file
    */
-  async encryptAndUploadFile(file, encryptionOptions) {
+  async encryptAndUploadFile(file, encryptionConfig) {
     return encryptAndUpload(
       this._storachaClient,
       this._cryptoAdapter,
       file,
-      encryptionOptions
+      encryptionConfig
     )
   }
 
@@ -82,9 +82,5 @@ export const create = async (options) => {
   const gatewayURL = options.gatewayURL ?? GATEWAY_URL
   const storachaClient = options.storachaClient
 
-  return new EncryptedClient(
-    storachaClient,
-    cryptoAdapter,
-    gatewayURL
-  )
+  return new EncryptedClient(storachaClient, cryptoAdapter, gatewayURL)
 }

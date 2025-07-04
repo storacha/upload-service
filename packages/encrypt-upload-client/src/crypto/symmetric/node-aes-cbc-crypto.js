@@ -83,7 +83,7 @@ export class NodeAesCbcCrypto {
 
   /**
    * Combine key and IV into a single array for AES-CBC
-   * 
+   *
    * @param {Uint8Array} key - The AES key (KEY_LENGTH/8 bytes)
    * @param {Uint8Array} iv - The AES-CBC IV (IV_LENGTH bytes)
    * @returns {Uint8Array} Combined key and IV (KEY_LENGTH/8 + IV_LENGTH bytes)
@@ -91,7 +91,9 @@ export class NodeAesCbcCrypto {
   combineKeyAndIV(key, iv) {
     const keyBytes = KEY_LENGTH / 8
     if (key.length !== keyBytes) {
-      throw new Error(`AES-${KEY_LENGTH} key must be ${keyBytes} bytes, got ${key.length}`)
+      throw new Error(
+        `AES-${KEY_LENGTH} key must be ${keyBytes} bytes, got ${key.length}`
+      )
     }
     if (iv.length !== IV_LENGTH) {
       throw new Error(`AES-CBC IV must be ${IV_LENGTH} bytes, got ${iv.length}`)
@@ -101,7 +103,7 @@ export class NodeAesCbcCrypto {
 
   /**
    * Split combined key and IV for AES-CBC
-   * 
+   *
    * @param {Uint8Array} combined - Combined key and IV (KEY_LENGTH/8 + IV_LENGTH bytes)
    * @returns {{ key: Uint8Array, iv: Uint8Array }} Separated key and IV
    */
@@ -109,11 +111,13 @@ export class NodeAesCbcCrypto {
     const keyBytes = KEY_LENGTH / 8
     const expectedLength = keyBytes + IV_LENGTH
     if (combined.length !== expectedLength) {
-      throw new Error(`AES-${KEY_LENGTH}-CBC combined key+IV must be ${expectedLength} bytes, got ${combined.length}`)
+      throw new Error(
+        `AES-${KEY_LENGTH}-CBC combined key+IV must be ${expectedLength} bytes, got ${combined.length}`
+      )
     }
     return {
       key: combined.subarray(0, keyBytes),
-      iv: combined.subarray(keyBytes, keyBytes + IV_LENGTH)
+      iv: combined.subarray(keyBytes, keyBytes + IV_LENGTH),
     }
   }
-} 
+}

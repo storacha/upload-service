@@ -27,20 +27,20 @@ export const retrieveAndDecrypt = async (
 ) => {
   // Step 1: Get the encrypted metadata from the public gateway
   const encryptedMetadataCar = await getCarFileFromPublicGateway(
-    gatewayURL, 
+    gatewayURL,
     cid.toString()
   )
-  
+
   // Step 2: Extract encrypted metadata from the CAR file
   const metadata = cryptoAdapter.extractEncryptedMetadata(encryptedMetadataCar)
-  
+
   // Step 3: Get the encrypted data from the CAR file
   const encryptedData = await getEncryptedDataFromCar(
     encryptedMetadataCar,
     metadata.encryptedDataCID
   )
 
-  // Step 4: Decrypt the encrypted symmetric key 
+  // Step 4: Decrypt the encrypted symmetric key
   const encryptedSymmetricKey = cryptoAdapter.getEncryptedKey(metadata)
   const { key, iv } = await cryptoAdapter.decryptSymmetricKey(
     encryptedSymmetricKey,
@@ -50,17 +50,17 @@ export const retrieveAndDecrypt = async (
       delegationCAR,
       resourceCID: cid,
       issuer: storachaClient.agent.issuer,
-      audience: storachaClient.defaultProvider()
+      audience: storachaClient.defaultProvider(),
     }
   )
-  
+
   // Step 5: Decrypt the encrypted file content using the decrypted symmetric key and IV
   return decryptFileWithKey(cryptoAdapter, key, iv, encryptedData)
 }
 
 /**
  * Decrypt file content using the decrypted symmetric key and IV.
- * 
+ *
  * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter responsible for performing
  * encryption and decryption operations.
  * @param {Uint8Array} key - The symmetric key
@@ -76,18 +76,14 @@ export function decryptFileWithKey(cryptoAdapter, key, iv, content) {
     },
   })
 
-  const decryptedStream = cryptoAdapter.decryptStream(
-    contentStream,
-    key,
-    iv
-  )
+  const decryptedStream = cryptoAdapter.decryptStream(contentStream, key, iv)
 
   return decryptedStream
 }
 
 /**
  * Fetch a CAR file from the public IPFS gateway.
- * 
+ *
  * @param {URL} gatewayURL - The IPFS gateway URL
  * @param {string} cid - The CID to fetch
  * @returns {Promise<Uint8Array>} The CAR file bytes
@@ -107,7 +103,7 @@ const getCarFileFromPublicGateway = async (gatewayURL, cid) => {
 
 /**
  * Extract encrypted data from a CAR file.
- * 
+ *
  * @param {Uint8Array} car - The CAR file bytes
  * @param {string} encryptedDataCID - The CID of the encrypted data
  * @returns {Promise<Uint8Array>} The encrypted data bytes
