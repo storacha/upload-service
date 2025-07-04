@@ -300,6 +300,12 @@ export type SpaceInfo = InferInvokedCapability<typeof SpaceCaps.info>
 export type SpaceContentServe = InferInvokedCapability<
   typeof SpaceCaps.contentServe
 >
+export type SpaceEncryptionSetup = InferInvokedCapability<
+  typeof SpaceCaps.EncryptionSetup
+>
+export type SpaceKeyDecrypt = InferInvokedCapability<
+  typeof SpaceCaps.KeyDecrypt
+>
 export type EgressRecord = InferInvokedCapability<typeof SpaceCaps.egressRecord>
 export type EgressRecordSuccess = {
   space: SpaceDID
@@ -1019,6 +1025,8 @@ export type ServiceAbilityArray = [
   Space['can'],
   SpaceInfo['can'],
   SpaceContentServe['can'],
+  SpaceEncryptionSetup['can'],
+  SpaceKeyDecrypt['can'],
   EgressRecord['can'],
   Upload['can'],
   UploadAdd['can'],

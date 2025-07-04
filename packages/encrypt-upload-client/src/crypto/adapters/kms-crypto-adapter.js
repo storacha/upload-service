@@ -2,7 +2,7 @@ import { connect } from '@ucanto/client'
 import { CAR, HTTP } from '@ucanto/transport'
 import { base64 } from 'multiformats/bases/base64'
 import * as Type from '../../types.js'
-import * as Space from '@storacha/capabilities/space'
+import { EncryptionSetup, KeyDecrypt } from '@storacha/capabilities/space'
 import { KMSMetadata } from '../../core/metadata/encrypted-metadata.js'
 
 /**
@@ -135,7 +135,7 @@ export class KMSCryptoAdapter {
    */
   async getDecryptedSymmetricKey(encryptedSymmetricKey, spaceDID, delegationProof, issuer, keyReference) {
     // Step 1: Invoke the KeyDecrypt capability passing the decryption proof
-    const result = await Space.KeyDecrypt.invoke({
+    const result = await KeyDecrypt.invoke({
       issuer,
       audience: this.privateGatewayDID,
       with: spaceDID,
@@ -238,7 +238,7 @@ export class KMSCryptoAdapter {
    */
   async getSpacePublicKey(encryptionConfig) {
     // Step 1: Invoke the EncryptionSetup capability
-    const setupResult = await Space.EncryptionSetup.invoke({
+    const setupResult = await EncryptionSetup.invoke({
       issuer: encryptionConfig.issuer,
       audience: this.privateGatewayDID,
       with: encryptionConfig.spaceDID,
@@ -316,14 +316,18 @@ export class KMSCryptoAdapter {
       .replace('-----END PUBLIC KEY-----', '')
       .replace(/\s/g, '')
 
-    // Use multiformats base64 decoder (same as used throughout the codebase)
-    // Multibase prefixes are case sensitive: 'm' = base64, 'M' = base64 with padding
-    const hasMultibasePrefix = base64String.length > 0 && base64String[0] === 'm'
-    const multibaseString = hasMultibasePrefix ? base64String : 'm' + base64String
-    const bytes = base64.decode(multibaseString)
-    
-    // The multibase decoder always includes the prefix byte, so remove it
-    return bytes.slice(1).buffer
+    // For Node.js environment, use Buffer for standard base64 decoding
+    if (typeof Buffer !== 'undefined') {
+      return Buffer.from(base64String, 'base64')
+    }
+
+    // For browser environment, use atob for standard base64 decoding
+    const binaryString = globalThis.atob ? atob(base64String) : Buffer.from(base64String, 'base64').toString('binary')
+    const bytes = new Uint8Array(binaryString.length)
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i)
+    }
+    return bytes
   }
 
   newPrivateGatewayConnection() {
