@@ -210,7 +210,7 @@ export class Client extends Base {
   async getReceipt(taskCid, options) {
     return Receipt.poll(taskCid, {
       endpoint: new URL(this._receiptsEndpoint),
-      ...options
+      ...options,
     })
   }
 
