@@ -21,7 +21,7 @@ You can add the `@storacha/client` package to your JavaScript or TypeScript proj
 npm install @storacha/client
 ```
 
-`@storacha/client` requires a modern browser or Node 18+.
+Note: a modern browser or Node 18+ is required.
 
 ## Usage
 
