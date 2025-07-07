@@ -178,7 +178,7 @@ More information: [`ShardStoredCallback`](#shardstoredcallback)
 ### `agent`
 
 ```ts
-function agent(): Signer
+agent: Signer
 ```
 
 The user agent. The agent is a signer - an entity that can sign UCANs with keys from a `Principal` using a signing algorithm.
