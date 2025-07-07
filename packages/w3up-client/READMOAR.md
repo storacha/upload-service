@@ -1,5 +1,11 @@
 # About
 
+Most users' usage of `@storacha/client` will be for uploading data to storacha.network from applications.
+
+For authorization, Storacha services use [ucanto][ucanto], a Remote Procedure Call (RPC) framework built around [UCAN](https://ucan.xyz) (User Controlled Authorization Networks). UCANs are a powerful capability-based authorization system that allows fine-grained sharing of permissions through a process called _delegation_ on top of [public key cryptography](https://en.wikipedia.org/wiki/Public-key_cryptography). See our [intro to UCAN blog post](https://blog.storacha.network/posts/intro-to-ucan) for an overview of UCAN.
+
+You can think about UCAN as replacing bearer tokens in traditional APIs for authorization with Storacha. Since any actor can be represented by a cryptographic keypair and permissions can be delegated to them, users can interact with Storacha directly in cases where a developer might have needed to previously run additional back-end infrastructure to keep API keys secure. This can be extended even to have end users using applications integrated with Storacha using their own keypair-based identity.
+
 - [How Storacha and `@storacha/client` use UCANs](#how-storacha-and-storachaclient-use-ucans)
   - [Space](#space)
   - [Agent](#agent)
