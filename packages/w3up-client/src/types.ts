@@ -174,6 +174,7 @@ export type {
   FileLike,
   BlobLike,
   ProgressStatus,
+  ReceiptGetOptions,
 } from '@storacha/upload-client/types'
 
 export type { UTCUnixTimestamp } from '@ipld/dag-ucan'

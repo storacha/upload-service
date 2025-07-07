@@ -12,12 +12,14 @@ import { REQUEST_RETRIES } from '../constants.js'
 import { poll } from '../receipts.js'
 import { isCloudflareWorkers } from '../runtime.js'
 
+/** @import * as API from '../types.js' */
+
 /**
  * @param {string} url
- * @param {import('../types.js').ProgressFn} handler
+ * @param {API.ProgressFn} handler
  */
 function createUploadProgressHandler(url, handler) {
-  /** @param {import('../types.js').ProgressStatus} status */
+  /** @param {API.ProgressStatus} status */
   const onUploadProgress = ({ total, loaded, lengthComputable }) => {
     return handler({ total, loaded, lengthComputable, url })
   }
@@ -26,7 +28,7 @@ function createUploadProgressHandler(url, handler) {
 
 // FIXME this code has been copied over from upload-api
 /**
- * @param {import('@ucanto/interface').Invocation} concludeFx
+ * @param {API.Invocation} concludeFx
  */
 function getConcludeReceipt(concludeFx) {
   const receiptBlocks = new Map()
@@ -42,12 +44,12 @@ function getConcludeReceipt(concludeFx) {
 
 // FIXME this code has been copied over from upload-api
 /**
- * @param {import('@ucanto/interface').Receipt} receipt
+ * @param {API.Receipt} receipt
  */
 function parseBlobAddReceiptNext(receipt) {
   // Get invocations next
   /**
-   * @type {import('@ucanto/interface').Invocation[]}
+   * @type {API.Invocation[]}
    */
   // @ts-expect-error read only effect
   const forkInvocations = receipt.fx.fork
@@ -65,13 +67,17 @@ function parseBlobAddReceiptNext(receipt) {
   const putTask = forkInvocations.find(
     (fork) => fork.capabilities[0].can === HTTPCapabilities.put.can
   )
+
   const acceptTask =
-    forkInvocations.find(
-      (fork) => fork.capabilities[0].can === BlobCapabilities.accept.can
-      /* c8 ignore next 4 */ // tested by legacy integration test in w3up-client
-    ) ??
-    forkInvocations.find(
-      (fork) => fork.capabilities[0].can === W3sBlobCapabilities.accept.can
+    /** @type {API.Invocation<API.BlobAccept>|undefined} */
+    (
+      forkInvocations.find(
+        (fork) => fork.capabilities[0].can === BlobCapabilities.accept.can
+        /* c8 ignore next 4 */ // tested by legacy integration test in w3up-client
+      ) ??
+        forkInvocations.find(
+          (fork) => fork.capabilities[0].can === W3sBlobCapabilities.accept.can
+        )
     )
 
   /* c8 ignore next 3 */
@@ -81,18 +87,18 @@ function parseBlobAddReceiptNext(receipt) {
 
   // Decode receipts available
   const nextReceipts = concludefxs.map((fx) => getConcludeReceipt(fx))
-  /** @type {import('@ucanto/interface').Receipt<import('../types.js').BlobAllocateSuccess, import('../types.js').BlobAllocateFailure> | undefined} */
+  /** @type {API.Receipt<API.BlobAllocateSuccess, API.BlobAllocateFailure> | undefined} */
   // @ts-expect-error types unknown for next
   const allocateReceipt = nextReceipts.find((receipt) =>
     receipt.ran.link().equals(allocateTask.cid)
   )
-  /** @type {import('@ucanto/interface').Receipt<{}, import('@ucanto/interface').Failure> | undefined} */
+  /** @type {API.Receipt<{}, API.Failure> | undefined} */
   // @ts-expect-error types unknown for next
   const putReceipt = nextReceipts.find((receipt) =>
     receipt.ran.link().equals(putTask.cid)
   )
 
-  /** @type {import('@ucanto/interface').Receipt<import('../types.js').BlobAcceptSuccess, import('../types.js').BlobAcceptFailure> | undefined} */
+  /** @type {API.Receipt<API.BlobAcceptSuccess, API.BlobAcceptFailure> | undefined} */
   // @ts-expect-error types unknown for next
   const acceptReceipt = nextReceipts.find((receipt) =>
     receipt.ran.link().equals(acceptTask.cid)
@@ -121,9 +127,9 @@ function parseBlobAddReceiptNext(receipt) {
 
 // FIXME this code has been copied over from upload-api
 /**
- * @param {import('@ucanto/interface').Signer} id
- * @param {import('@ucanto/interface').Principal} serviceDid
- * @param {import('@ucanto/interface').Receipt} receipt
+ * @param {API.Signer} id
+ * @param {API.Principal} serviceDid
+ * @param {API.Receipt} receipt
  */
 export function createConcludeInvocation(id, serviceDid, receipt) {
   const receiptBlocks = []
@@ -159,7 +165,7 @@ export function createConcludeInvocation(id, serviceDid, receipt) {
  *
  * Required delegated capability proofs: `blob/add`
  *
- * @param {import('../types.js').InvocationConfig} conf Configuration
+ * @param {API.InvocationConfig} conf Configuration
  * for the UCAN invocation. An object with `issuer`, `with` and `proofs`.
  *
  * The `issuer` is the signing authority that is issuing the UCAN
@@ -174,8 +180,8 @@ export function createConcludeInvocation(id, serviceDid, receipt) {
  * The issuer needs the `blob/add` delegated capability.
  * @param {import('multiformats').MultihashDigest} digest
  * @param {Blob|Uint8Array} data Blob data.
- * @param {import('../types.js').RequestOptions} [options]
- * @returns {Promise<import('../types.js').BlobAddOk>}
+ * @param {API.RequestOptions} [options]
+ * @returns {Promise<API.BlobAddOk>}
  */
 export async function add(
   { issuer, with: resource, proofs, audience },
@@ -289,7 +295,7 @@ export async function add(
   let { receipt: httpPutReceipt } = nextTasks.put
   if (!httpPutReceipt?.out.ok) {
     const derivedSigner = ed25519.from(
-      /** @type {import('@ucanto/interface').SignerArchive<import('@ucanto/interface').DID, typeof ed25519.signatureCode>} */
+      /** @type {API.SignerArchive<API.DID, typeof ed25519.signatureCode>} */
       (nextTasks.put.task.facts[0]['keys'])
     )
     httpPutReceipt = await Receipt.issue({
@@ -316,8 +322,20 @@ export async function add(
 
   // Ensure the blob has been accepted
   let { receipt: acceptReceipt } = nextTasks.accept
-  if (!acceptReceipt?.out.ok) {
-    acceptReceipt = await poll(nextTasks.accept.task.link(), options)
+  if (!acceptReceipt || !acceptReceipt.out.ok) {
+    acceptReceipt = await poll(nextTasks.accept.task.link(), {
+      ...options,
+      /* c8 ignore next 3 */
+      endpoint: options.receiptsEndpoint
+        ? new URL(options.receiptsEndpoint)
+        : undefined,
+      // The connection we have is for the upload service, which does not
+      // actually implement blob/accept. However, it does provide receipts for
+      // blob accept invocations it has made to storage nodes. Hence we type
+      // assert that this connection is a connecton to a service that
+      // implements blob/accept so that we can get a typed receipt back.
+      connection: /** @type {API.Connection<API.BlobService>} */ (Object(conn)),
+    })
     /* c8 ignore next 5 */
     if (acceptReceipt.out.error) {
       throw new Error(`${BlobCapabilities.accept.can} failure`, {
@@ -333,7 +351,7 @@ export async function add(
     ])
   )
   const site = Delegation.view({
-    root: /** @type {import('@ucanto/interface').UCANLink<[import('@web3-storage/content-claims/capability/api').AssertLocation]>} */ (
+    root: /** @type {API.UCANLink<[import('@web3-storage/content-claims/capability/api').AssertLocation]>} */ (
       acceptReceipt.out.ok?.site
     ),
     blocks,
