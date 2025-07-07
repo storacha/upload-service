@@ -152,11 +152,11 @@ export async function get(taskCid, options) {
       /* c8 ignore next */
       if (inv.capabilities[0]?.can !== 'ucan/conclude') continue
       const root = Object(inv.capabilities[0].nb).receipt
+      /* c8 ignore next 5 */
       const receipt = root
         ? /** @type {API.InferReceipt<C, S>|null} */ (
             Receipt.view({ root, blocks }, null)
           )
-        /* c8 ignore next */
         : null
       /* c8 ignore next */
       if (!receipt) continue
