@@ -1,11 +1,17 @@
 import retry, { AbortError } from 'p-retry'
 import { CAR } from '@ucanto/transport'
-import { receiptsEndpoint as defaultReceiptsEndpoint } from './service.js'
+import { isDelegation, Receipt } from '@ucanto/core'
+import { receiptsEndpoint } from './service.js'
 import { REQUEST_RETRIES } from './constants.js'
 
+/** @import * as API from '../src/types.js' */
+
+/** @implements {API.ReceiptNotFound} */
 export class ReceiptNotFound extends Error {
+  name = /** @type {const} */ ('ReceiptNotFound')
+
   /**
-   * @param {import('multiformats').UnknownLink} taskCid
+   * @param {API.UnknownLink} taskCid
    */
   constructor(taskCid) {
     super()
@@ -17,15 +23,14 @@ export class ReceiptNotFound extends Error {
     return `receipt not found for task ${this.taskCid} in the indexed workflow`
   }
   /* c8 ignore end */
-
-  get name() {
-    return 'ReceiptNotFound'
-  }
 }
 
+/** @implements {API.ReceiptMissing} */
 export class ReceiptMissing extends Error {
+  name = /** @type {const} */ ('ReceiptMissing')
+
   /**
-   * @param {import('multiformats').UnknownLink} taskCid
+   * @param {API.UnknownLink} taskCid
    */
   constructor(taskCid) {
     super()
@@ -37,20 +42,18 @@ export class ReceiptMissing extends Error {
     return `receipt missing for task ${this.taskCid}`
   }
   /* c8 ignore end */
-
-  get name() {
-    return 'ReceiptMissing'
-  }
 }
 
 /**
  * Polls for a receipt for an executed task by its CID.
  *
- * @param {import('multiformats').UnknownLink} taskCid
- * @param {import('./types.js').RequestOptions} [options]
- * @returns {Promise<import('@ucanto/interface').Receipt>}
+ * @template {API.Capability} C
+ * @template {Record<string, any>} S
+ * @param {API.UCANLink<[C]>} taskCid
+ * @param {API.ReceiptGetOptions<S> & API.Retryable} [options]
+ * @returns {Promise<API.InferReceipt<C, S>>}
  */
-export async function poll(taskCid, options = {}) {
+export async function poll(taskCid, options) {
   return await retry(
     async () => {
       const res = await get(taskCid, options)
@@ -61,7 +64,7 @@ export async function poll(taskCid, options = {}) {
           throw res.error
         } else {
           throw new AbortError(
-            new Error('failed to fetch blob/accept receipt', {
+            new Error(`failed to fetch receipt for task: ${taskCid}`, {
               cause: res.error,
             })
           )
@@ -70,9 +73,10 @@ export async function poll(taskCid, options = {}) {
       return res.ok
     },
     {
+      signal: options?.signal,
       onFailedAttempt: console.warn,
       /* c8 ignore next */
-      retries: options.retries ?? REQUEST_RETRIES,
+      retries: options?.retries ?? REQUEST_RETRIES,
     }
   )
 }
@@ -80,7 +84,7 @@ export async function poll(taskCid, options = {}) {
 /**
  * Calculate a receipt endpoint from the URL of a channel, if it has one.
  *
- * @param {import('@ucanto/interface').Channel<Record<string, any>>} channel
+ * @param {API.Channel<Record<string, any>>} channel
  */
 function receiptEndpointFromChannel(channel) {
   if ('url' in channel && channel.url instanceof URL) {
@@ -94,21 +98,23 @@ function receiptEndpointFromChannel(channel) {
 /**
  * Get a receipt for an executed task by its CID.
  *
- * @param {import('multiformats').UnknownLink} taskCid
- * @param {import('./types.js').RequestOptions} [options]
- * @returns {Promise<import('@ucanto/client').Result<import('@ucanto/interface').Receipt, Error>>}
+ * @template {API.Capability} C
+ * @template {Record<string, any>} S
+ * @param {API.UCANLink<[C]>} taskCid
+ * @param {API.ReceiptGetOptions<S>} [options]
+ * @returns {Promise<API.Result<API.InferReceipt<C, S>, API.ReceiptNotFound|API.ReceiptMissing>>}
  */
-async function get(taskCid, options = {}) {
-  const channel = options.connection?.channel
-  const receiptsEndpoint =
-    options.receiptsEndpoint ??
+export async function get(taskCid, options) {
+  const channel = options?.connection?.channel
+  const endpoint =
+    options?.endpoint ??
     (channel && receiptEndpointFromChannel(channel)) ??
-    defaultReceiptsEndpoint
+    receiptsEndpoint
 
   // Fetch receipt from endpoint
-  const url = new URL(taskCid.toString(), receiptsEndpoint)
-  const fetchReceipt = options.fetch ?? globalThis.fetch.bind(globalThis)
-  const workflowResponse = await fetchReceipt(url)
+  const url = new URL(taskCid.toString(), endpoint)
+  const fetchReceipt = options?.fetch ?? globalThis.fetch.bind(globalThis)
+  const workflowResponse = await fetchReceipt(url, { signal: options?.signal })
   /* c8 ignore start */
   if (workflowResponse.status === 404) {
     return {
@@ -124,8 +130,42 @@ async function get(taskCid, options = {}) {
     headers: {},
   })
   // Get receipt from the potential multiple receipts in the message
-  const receipt = agentMessage.receipts.get(`${taskCid}`)
+
+  const receipt =
+    /** @type {API.InferReceipt<C, S>|undefined} */
+    (agentMessage.receipts.get(`${taskCid}`))
   if (!receipt) {
+    // This could be an agent message containing an invocation for ucan/conclude
+    // that includes the receipt as an attached block, or it may contain a
+    // receipt for ucan/conclude that includes the receipt as an attached block.
+    const blocks = new Map()
+    for (const b of agentMessage.iterateIPLDBlocks()) {
+      blocks.set(b.cid.toString(), b)
+    }
+    const invocations = [...agentMessage.invocations]
+    for (const receipt of agentMessage.receipts.values()) {
+      if (isDelegation(receipt.ran)) {
+        invocations.push(receipt.ran)
+      }
+    }
+    for (const inv of invocations) {
+      /* c8 ignore next */
+      if (inv.capabilities[0]?.can !== 'ucan/conclude') continue
+      const root = Object(inv.capabilities[0].nb).receipt
+      /* c8 ignore next 5 */
+      const receipt = root
+        ? /** @type {API.InferReceipt<C, S>|null} */ (
+            Receipt.view({ root, blocks }, null)
+          )
+        : null
+      /* c8 ignore next */
+      if (!receipt) continue
+      /* c8 ignore next */
+      const ran = isDelegation(receipt.ran) ? receipt.ran.cid : receipt.ran
+      if (ran.toString() === taskCid.toString()) {
+        return { ok: receipt }
+      }
+    }
     return {
       error: new ReceiptMissing(taskCid),
     }

@@ -61,7 +61,8 @@
     "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "test": "npm run test:node",
-    "test:node": "vitest",
+    "test:node": "vitest --run",
+    "test:watch": "vitest",
     "coverage": "vitest --coverage"
   },
   "keywords": [

@@ -94,8 +94,19 @@ export const blobReplicateProvider = (context) => {
         }
       }
 
-      // TODO: support reducing the number of replicas?
-      const newReplicasCount = nb.replicas - activeReplicas.length
+      // Note: We +1 below to include the source blob, which is not recorded in
+      // the replicas table.
+      const newReplicasCount = nb.replicas - (activeReplicas.length + 1)
+
+      // TODO: support reducing the number of replicas
+      if (newReplicasCount < 0) {
+        return Server.error(
+          /** @type {API.ReplicationCountRangeError} */ ({
+            name: 'ReplicationCountRangeError',
+            message: 'reducing replica count not implemented',
+          })
+        )
+      }
 
       // lets allocate some replicas!
       if (newReplicasCount > 0) {
@@ -223,12 +234,11 @@ export const blobReplicateProvider = (context) => {
       const site = transferTasks.map((t) => ({
         'ucan/await': ['.out.ok.site', t.cid],
       }))
+      /** @type {API.OkBuilder<API.SpaceBlobReplicateSuccess, API.Failure> | API.ForkBuilder<API.SpaceBlobReplicateSuccess, API.Failure>} */
       let result = Server.ok(
         /** @type {API.SpaceBlobReplicateSuccess} */ ({ site })
       )
-        // add allocation tasks
-        .fork(allocTasks[0])
-      for (const t of allocTasks.slice(1)) {
+      for (const t of allocTasks) {
         result = result.fork(t)
       }
       // add transfer tasks

@@ -2,12 +2,14 @@ import { ok, error } from '@ucanto/core'
 import { DIDResolutionError } from '@ucanto/validator'
 import { IPNIService } from './ipni.js'
 import * as ClaimsService from './content-claims.js'
+import * as IndexingService from './indexing-service.js'
 import { BrowserStorageNode, StorageNode } from './storage-node.js'
 import * as BlobRetriever from './blob-retriever.js'
 import * as RoutingService from './router.js'
 
 export {
   ClaimsService,
+  IndexingService,
   BrowserStorageNode,
   StorageNode,
   BlobRetriever,
@@ -30,40 +32,41 @@ export const getExternalServiceImplementations = async (config) => {
   }
 
   const claimsService = await ClaimsService.activate(config)
-  const blobRetriever = BlobRetriever.create(claimsService)
+  const indexingService = await IndexingService.activate(config)
+  const blobRetriever = BlobRetriever.create(indexingService, claimsService)
   const storageProviders = await Promise.all(
     config.http
       ? [
           StorageNode.activate({
             http: config.http,
-            claimsService,
+            indexingService,
             ...principalResolver,
           }),
           StorageNode.activate({
             http: config.http,
-            claimsService,
+            indexingService,
             ...principalResolver,
           }),
           StorageNode.activate({
             http: config.http,
-            claimsService,
+            indexingService,
             ...principalResolver,
           }),
         ]
       : [
           BrowserStorageNode.activate({
             port: 8989,
-            claimsService,
+            indexingService,
             ...principalResolver,
           }),
           BrowserStorageNode.activate({
             port: 8990,
-            claimsService,
+            indexingService,
             ...principalResolver,
           }),
           BrowserStorageNode.activate({
             port: 8991,
-            claimsService,
+            indexingService,
             ...principalResolver,
           }),
         ]
@@ -72,9 +75,10 @@ export const getExternalServiceImplementations = async (config) => {
   return {
     ipniService: new IPNIService(),
     claimsService,
+    indexingService,
     storageProviders,
     blobRetriever,
     router,
-    maxReplicas: 2, // since we have 3 storage nodes, the max replicas is 2
+    maxReplicas: storageProviders.length,
   }
 }

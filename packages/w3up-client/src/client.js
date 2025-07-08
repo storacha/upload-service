@@ -201,11 +201,17 @@ export class Client extends Base {
   /**
    * Get a receipt for an executed task by its CID.
    *
-   * @param {import('multiformats').UnknownLink} taskCid
+   * @template {import('./types.js').Capability} C
+   * @template {Record<string, any>} S
+   * @param {import('./types.js').UCANLink<[C]>} taskCid
+   * @param {import('./types.js').ReceiptGetOptions<S> & import('./types.js').Retryable} [options]
+   * @returns {Promise<import('./types.js').InferReceipt<C, S>>}
    */
-  async getReceipt(taskCid) {
-    const receiptsEndpoint = new URL(this._receiptsEndpoint).toString()
-    return Receipt.poll(taskCid, { receiptsEndpoint })
+  async getReceipt(taskCid, options) {
+    return Receipt.poll(taskCid, {
+      endpoint: new URL(this._receiptsEndpoint),
+      ...options,
+    })
   }
 
   /**
