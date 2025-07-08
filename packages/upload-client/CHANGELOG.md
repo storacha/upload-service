@@ -1,3 +1,13 @@
+## 1.2.4 (2025-07-08)
+
+### 🩹 Fixes
+
+- fix: legacy space claim publishing ([#278](https://github.com/storacha/upload-service/pull/278))
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.2.3 (2025-05-28)
 
 ### 🧱 Updated Dependencies
