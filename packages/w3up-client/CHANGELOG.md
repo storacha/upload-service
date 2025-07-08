@@ -1,3 +1,18 @@
+## 1.4.1 (2025-07-08)
+
+### 🩹 Fixes
+
+- docs: make the docs a lot better ([#296](https://github.com/storacha/upload-service/pull/296))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/upload-client to 1.2.4
+- Updated @storacha/upload-api to 2.0.0
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.4.0 (2025-06-04)
 
 ### 🚀 Features
