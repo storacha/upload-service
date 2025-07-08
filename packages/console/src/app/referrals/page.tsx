@@ -15,13 +15,15 @@ export function RefcodeCreator ({
   urlQueryEmail,
   createRefcode,
   mutateRefcode,
-  setReferrerEmail
+  setReferrerEmail,
+  setError
 }: {
   accountEmail: string
   urlQueryEmail: string | null
   createRefcode: (form: FormData) => Promise<Response>
   mutateRefcode: KeyedMutator<RefcodeResult>
   setReferrerEmail: (email: string) => void
+  setError: (error: string) => void
 }
 ) {
   const prefilledEmail = urlQueryEmail || accountEmail
@@ -46,11 +48,11 @@ export function RefcodeCreator ({
             try {
               const form = new FormData(e.currentTarget)
               const email = form.get('email')
-              if (email){
+              if (email) {
                 setReferrerEmail(email.toString())
                 await createRefcode(form)
               } else {
-                console.log("email was undefined, this is strange!")
+                setError('Email is required for referral tracking')
               }
             } finally {
               // mutate here to pick up any changes from either create or set
@@ -124,7 +126,7 @@ export function ReferralsList () {
 }
 
 export default function ReferralsPage () {
-  const { refcodeIsLoading, referralLink, setReferrerEmail, accountEmail, urlQueryEmail, createRefcode, mutateRefcode, } = useReferrals()
+  const { refcodeIsLoading, referralLink, setReferrerEmail, accountEmail, urlQueryEmail, createRefcode, mutateRefcode, setError } = useReferrals()
   return (
     <div className='p-10 bg-racha-fire/50 w-full h-screen'>
       <H1>Generate a Referral Code</H1>
@@ -142,7 +144,8 @@ export default function ReferralsPage () {
                 urlQueryEmail={urlQueryEmail}
                 createRefcode={createRefcode}
                 mutateRefcode={mutateRefcode}
-                setReferrerEmail={setReferrerEmail} />
+                setReferrerEmail={setReferrerEmail}
+                setError={setError} />
             )}
           </>
         )}
