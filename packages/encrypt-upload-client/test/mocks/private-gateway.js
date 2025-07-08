@@ -88,13 +88,19 @@ export function createMockGatewayService(options) {
 }
 
 /**
- * Create a mock private gateway HTTP server
+ * Create a mock private gateway server
  *
  * @param {object} service - The service object with capability handlers
  * @param {*} gatewayDID - The gateway DID keypair
  * @param {number} port - The port to listen on
+ * @param {boolean} [useHttps] - Whether to use HTTPS URLs (testing HTTPS scenarios)
  */
-export function createMockGatewayServer(service, gatewayDID, port) {
+export function createMockGatewayServer(
+  service,
+  gatewayDID,
+  port,
+  useHttps = false
+) {
   const ucantoServer = Server.create({
     id: gatewayDID,
     service,
@@ -139,9 +145,10 @@ export function createMockGatewayServer(service, gatewayDID, port) {
       if (err) {
         reject(err)
       } else {
+        const protocol = useHttps ? 'https' : 'http'
         resolve({
           server: httpServer,
-          url: `http://localhost:${port}`,
+          url: `${protocol}://localhost:${port}`,
           close: () => new Promise((resolve) => httpServer.close(resolve)),
         })
       }

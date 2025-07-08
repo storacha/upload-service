@@ -28,6 +28,36 @@ export class BrowserAesCtrCrypto {
   }
 
   /**
+   * Properly increment AES-CTR counter with 128-bit arithmetic
+   * to prevent AES-CTR Counter Reuse Vulnerability
+   *
+   * @param {Uint8Array} counter - The base counter (16 bytes)
+   * @param {number} increment - The value to add
+   * @returns {Uint8Array} - New counter with proper carry propagation
+   */
+  incrementCounter(counter, increment) {
+    const result = new Uint8Array(counter)
+    let carry = increment
+
+    // Implement proper 128-bit arithmetic with carry propagation
+    // Start from the least significant byte (rightmost) and propagate carry
+    for (let i = result.length - 1; i >= 0 && carry > 0; i--) {
+      const sum = result[i] + carry
+      result[i] = sum & 0xff // Keep only the low 8 bits
+      carry = sum >> 8 // Carry the high bits to next position
+    }
+
+    // Check for counter overflow (extremely unlikely with 128-bit counter)
+    if (carry > 0) {
+      throw new Error(
+        'Counter overflow: exceeded 128-bit limit. This should never happen in practice.'
+      )
+    }
+
+    return result
+  }
+
+  /**
    * Encrypt a stream of data using AES-CTR (chunked, Web Crypto API).
    *
    * @param {Blob} data The data to encrypt.
@@ -54,10 +84,8 @@ export class BrowserAesCtrCrypto {
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
-      // Increment counter for each chunk
-      const chunkCounter = new Uint8Array(counter)
-      // For each chunk, increment the last byte of the counter
-      chunkCounter[chunkCounter.length - 1] += chunkIndex
+      //Proper 128-bit counter increment with carry propagation
+      const chunkCounter = this.incrementCounter(counter, chunkIndex)
       chunkIndex++
       const encrypted = new Uint8Array(
         await globalThis.crypto.subtle.encrypt(
@@ -112,8 +140,8 @@ export class BrowserAesCtrCrypto {
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
-      const chunkCounter = new Uint8Array(counter)
-      chunkCounter[chunkCounter.length - 1] += chunkIndex
+      // Proper counter increment (same as encrypt)
+      const chunkCounter = this.incrementCounter(counter, chunkIndex)
       chunkIndex++
       const decrypted = new Uint8Array(
         await globalThis.crypto.subtle.decrypt(

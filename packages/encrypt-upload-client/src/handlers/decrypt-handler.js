@@ -1,5 +1,5 @@
 import { CID } from 'multiformats'
-import { CarIndexer } from '@ipld/car'
+import { CarIndexer, CarReader } from '@ipld/car'
 import { exporter } from 'ipfs-unixfs-exporter'
 import { MemoryBlockstore } from 'blockstore-core'
 
@@ -82,13 +82,17 @@ export function decryptFileWithKey(cryptoAdapter, key, iv, content) {
 }
 
 /**
- * Fetch a CAR file from the public IPFS gateway.
+ * Fetch a CAR file from the public IPFS gateway with root CID verification.
+ *
+ * SECURITY: This function provides metadata integrity protection (P0.2).
+ * Verifies the returned CAR matches the requested CID to prevent metadata tampering.
+ * Content integrity (P2.2) is handled by existing IPFS tools in getEncryptedDataFromCar.
  *
  * @param {URL} gatewayURL - The IPFS gateway URL
  * @param {string} cid - The CID to fetch
- * @returns {Promise<Uint8Array>} The CAR file bytes
+ * @returns {Promise<Uint8Array>} The verified CAR file bytes
  */
-const getCarFileFromPublicGateway = async (gatewayURL, cid) => {
+export const getCarFileFromPublicGateway = async (gatewayURL, cid) => {
   const url = new URL(`/ipfs/${cid}?format=car`, gatewayURL)
   const response = await fetch(url)
   if (!response.ok) {
@@ -98,6 +102,24 @@ const getCarFileFromPublicGateway = async (gatewayURL, cid) => {
   }
 
   const car = new Uint8Array(await response.arrayBuffer())
+
+  // SECURITY: Verify the CAR's root CID matches what we requested
+  const reader = await CarReader.fromBytes(car)
+  const roots = await reader.getRoots()
+  const expectedCID = CID.parse(cid)
+
+  if (roots.length !== 1) {
+    throw new Error(
+      `CAR file must have exactly one root CID, found ${roots.length}`
+    )
+  }
+
+  if (!roots[0].equals(expectedCID)) {
+    throw new Error(
+      `CID verification failed: expected ${expectedCID} but CAR contains ${roots[0]}`
+    )
+  }
+
   return car
 }
 
