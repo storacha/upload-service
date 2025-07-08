@@ -167,7 +167,7 @@ await describe('KMSCryptoAdapter', async () => {
       const symmetricCrypto = new BrowserAesCtrCrypto()
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
-        'mock://gateway',
+        'https://mock-gateway.example.com',
         'did:web:mock'
       )
 
@@ -188,7 +188,7 @@ await describe('KMSCryptoAdapter', async () => {
       const symmetricCrypto = new BrowserAesCtrCrypto()
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
-        'mock://gateway',
+        'https://mock-gateway.example.com',
         'did:web:mock'
       )
 
@@ -272,19 +272,20 @@ await describe('KMSCryptoAdapter', async () => {
         }
       )
 
-      // Create mock gateway HTTP server
+      // Create mock gateway server (HTTPS by default)
       const gatewayServer = await createMockGatewayServer(
         service,
         gatewayDID,
         5555
       )
 
-      // Create KMS adapter
+      // Create KMS adapter with HTTP allowed for testing
       const symmetricCrypto = new BrowserAesCtrCrypto()
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
         gatewayServer.url,
-        gatewayDID.did()
+        gatewayDID.did(),
+        { allowInsecureHttp: true } // Allow HTTP for testing
       )
 
       try {
@@ -431,7 +432,8 @@ await describe('KMSCryptoAdapter', async () => {
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
         gatewayServer.url,
-        gatewayDID.did()
+        gatewayDID.did(),
+        { allowInsecureHttp: true } // Allow HTTP for testing
       )
 
       try {
@@ -484,7 +486,8 @@ await describe('KMSCryptoAdapter', async () => {
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
         gatewayServer.url,
-        gatewayDID.did()
+        gatewayDID.did(),
+        { allowInsecureHttp: true } // Allow HTTP for testing
       )
 
       const decryptionOptions = {
@@ -533,7 +536,7 @@ await describe('KMSCryptoAdapter', async () => {
       const symmetricCrypto = new BrowserAesCtrCrypto()
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
-        'mock://gateway',
+        'https://mock-gateway.example.com',
         'did:web:mock'
       )
 
@@ -559,7 +562,7 @@ await describe('KMSCryptoAdapter', async () => {
       const symmetricCrypto = new BrowserAesCtrCrypto()
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
-        'mock://gateway',
+        'https://mock-gateway.example.com',
         'did:web:mock'
       )
 
@@ -582,7 +585,7 @@ await describe('KMSCryptoAdapter', async () => {
       const symmetricCrypto = new BrowserAesCtrCrypto()
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
-        'mock://gateway',
+        'https://mock-gateway.example.com',
         'did:web:mock'
       )
 

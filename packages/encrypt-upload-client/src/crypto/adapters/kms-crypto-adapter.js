@@ -20,13 +20,33 @@ export class KMSCryptoAdapter {
    * @param {Type.SymmetricCrypto} symmetricCrypto - The symmetric crypto implementation (browser or node)
    * @param {URL|string} privateGatewayURL - The private gateway URL
    * @param {`did:${string}:${string}`} privateGatewayDID - The private gateway DID
+   * @param {object} [options] - Optional configuration
+   * @param {boolean} [options.allowInsecureHttp] - Allow HTTP for testing (NOT for production)
    */
-  constructor(symmetricCrypto, privateGatewayURL, privateGatewayDID) {
+  constructor(
+    symmetricCrypto,
+    privateGatewayURL,
+    privateGatewayDID,
+    options = {}
+  ) {
     this.symmetricCrypto = symmetricCrypto
-    this.privateGatewayURL =
+
+    // SECURITY: Enforce HTTPS protocol for private gateway communications (P1.1)
+    const url =
       privateGatewayURL instanceof URL
         ? privateGatewayURL
         : new URL(privateGatewayURL)
+    const { allowInsecureHttp = false } = options
+
+    if (url.protocol !== 'https:' && !allowInsecureHttp) {
+      throw new Error(
+        `Private gateway must use HTTPS protocol for security. Received: ${url.protocol}. ` +
+          `Please update the gateway URL to use HTTPS (e.g., https://your-gateway.com). ` +
+          `For testing only, you can pass { allowInsecureHttp: true } as the fourth parameter.`
+      )
+    }
+
+    this.privateGatewayURL = url
     this.privateGatewayDID = { did: () => privateGatewayDID }
   }
 
