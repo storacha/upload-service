@@ -22,6 +22,7 @@
     "clean": "rm -rf dist *.tsbuildinfo",
     "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+    "test": "run-s test:node test:browser",
     "test:node": "npm-run-all --parallel --race --npm-path pnpm mock:* 'test-:node'",
     "test-:node": "hundreds -r html -r text mocha 'test/**/!(*.browser).test.js' -n experimental-vm-modules -n no-warnings",
     "test:browser": "npm-run-all --parallel --race --npm-path pnpm mock:* 'test-:browser'",

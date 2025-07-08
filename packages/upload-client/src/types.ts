@@ -14,6 +14,7 @@ import {
   Failure,
   Delegation,
   Await,
+  Connection,
 } from '@ucanto/interface'
 import {
   UCANConclude,
@@ -23,8 +24,10 @@ import {
   SpaceBlobAdd,
   SpaceBlobAddSuccess,
   SpaceBlobAddFailure,
+  BlobAllocate,
   BlobAllocateSuccess,
   BlobAllocateFailure,
+  BlobAccept,
   BlobAcceptSuccess,
   BlobAcceptFailure,
   SpaceBlobRemove,
@@ -89,8 +92,10 @@ export type {
   BlobModel,
   SpaceBlobAddSuccess,
   SpaceBlobAddFailure,
+  BlobAllocate,
   BlobAllocateSuccess,
   BlobAllocateFailure,
+  BlobAccept,
   BlobAcceptSuccess,
   BlobAcceptFailure,
   SpaceBlobRemove,
@@ -129,6 +134,23 @@ export type {
   SliceDigest,
   Position,
 }
+
+export type {
+  Capability,
+  Channel,
+  Connection,
+  DID,
+  Failure,
+  InferReceipt,
+  Invocation,
+  Principal,
+  Receipt,
+  Result,
+  Signer,
+  SignerArchive,
+  UCANLink,
+  UnknownLink,
+} from '@ucanto/interface'
 
 export interface ProgressStatus extends XHRProgressStatus {
   url?: string
@@ -188,6 +210,18 @@ export interface Service extends StorefrontService {
   }
   usage: {
     report: ServiceMethod<UsageReport, UsageReportSuccess, UsageReportFailure>
+  }
+}
+
+/**
+ * The blob service is implemented by storage nodes, but it is used here because
+ * the upload service exposes an interface whereby receipts for invocations
+ * made by it are available.
+ */
+export interface BlobService {
+  blob: {
+    allocate: ServiceMethod<BlobAllocate, BlobAcceptSuccess, BlobAcceptFailure>
+    accept: ServiceMethod<BlobAccept, BlobAcceptSuccess, BlobAcceptFailure>
   }
 }
 
@@ -418,4 +452,22 @@ export interface FileLike extends BlobLike {
 
 export interface BlobAddOk {
   site: Delegation<[AssertLocation]>
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface ReceiptGetOptions<S extends Record<string, any>>
+  extends Abortable {
+  fetch?: typeof globalThis.fetch
+  endpoint?: URL
+  connection?: Connection<S>
+}
+
+/** A receipt was not found for the given task. */
+export interface ReceiptNotFound extends Failure {
+  name: 'ReceiptNotFound'
+}
+
+/** The agent message did not contain a receipt for the task. */
+export interface ReceiptMissing extends Failure {
+  name: 'ReceiptMissing'
 }
