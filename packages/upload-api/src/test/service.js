@@ -8,13 +8,13 @@ import { parseLink } from '@ucanto/core'
  */
 export const test = {
   'invocation idempotence': async (assert, context) => {
-    const info = Space.info.invoke({
+    const info = await Space.info.invoke({
       issuer: alice,
       audience: context.id,
       with: alice.did(),
-    })
+    }).delegate()
 
-    const receipt = await info.execute(context.connection)
+    const [receipt] = await context.connection.execute(info)
     assert.ok(receipt.out.error, 'space has not been provisioned')
 
     const provision = await context.provisionsStorage.put({
@@ -37,7 +37,7 @@ export const test = {
 
     assert.ok(newReceipt.out.ok, 'new call gets a new receipt')
 
-    const oldReceipt = await info.execute(context.connection)
+    const [oldReceipt] = await context.connection.execute(info)
     assert.deepEqual(
       receipt.link(),
       oldReceipt.link(),
