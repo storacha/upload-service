@@ -1,6 +1,6 @@
 {
   "name": "@storacha/console",
-  "version": "2.0.49",
+  "version": "2.0.54",
   "private": true,
   "scripts": {
     "dev": "next dev",
