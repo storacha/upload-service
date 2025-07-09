@@ -101,7 +101,6 @@ export class KMSCryptoAdapter {
           provider: setupResponse.provider,
           keyId: this.sanitizeSpaceDIDForKMSKeyId(encryptionConfig.spaceDID),
           algorithm: setupResponse.algorithm,
-          keyReference: this.encodeKeyReference(setupResponse.keyReference),
         },
       },
     }
@@ -219,7 +218,6 @@ export class KMSCryptoAdapter {
         provider: kmsContent.kms.provider,
         keyId: kmsContent.kms.keyId,
         algorithm: kmsContent.kms.algorithm,
-        keyReference: kmsContent.kms.keyReference,
       },
     }
   }
@@ -257,7 +255,6 @@ export class KMSCryptoAdapter {
         provider: kmsKeyMetadata.kms.provider,
         keyId: kmsKeyMetadata.kms.keyId,
         algorithm: kmsKeyMetadata.kms.algorithm,
-        keyReference: kmsKeyMetadata.kms.keyReference,
       },
     }
 
@@ -269,7 +266,7 @@ export class KMSCryptoAdapter {
    * Get the RSA public key from the space/encryption/setup
    *
    * @param {Type.EncryptionConfig} encryptionConfig
-   * @returns {Promise<{ publicKey: string, keyReference: string, provider: string, algorithm: string }>}
+   * @returns {Promise<{ publicKey: string, provider: string, algorithm: string }>}
    */
   async getSpacePublicKey(encryptionConfig) {
     // Step 1: Invoke the EncryptionSetup capability
@@ -291,7 +288,7 @@ export class KMSCryptoAdapter {
     }
 
     // Step 3: Return the public key and key reference
-    return /** @type {{ publicKey: string, keyReference: string, provider: string, algorithm: string }} */ (
+    return /** @type {{ publicKey: string, provider: string, algorithm: string }} */ (
       setupResult.out.ok
     )
   }
@@ -398,27 +395,5 @@ export class KMSCryptoAdapter {
    */
   sanitizeSpaceDIDForKMSKeyId(spaceDID) {
     return spaceDID.replace(/^did:key:/, '')
-  }
-
-  /**
-   * Encode the KMS key reference to obscure infrastructure details
-   *
-   * @param {string} keyReference - The raw KMS key reference
-   * @returns {string} - Base64-encoded key reference
-   */
-  encodeKeyReference(keyReference) {
-    const bytes = new TextEncoder().encode(keyReference)
-    return base64.encode(bytes)
-  }
-
-  /**
-   * Decode the KMS key reference for use in KMS operations
-   *
-   * @param {string} encodedKeyReference - The base64-encoded key reference
-   * @returns {string} - The original KMS key reference
-   */
-  decodeKeyReference(encodedKeyReference) {
-    const bytes = base64.decode(encodedKeyReference)
-    return new TextDecoder().decode(bytes)
   }
 }

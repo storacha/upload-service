@@ -123,7 +123,6 @@ await describe('CID Verification', async () => {
           provider: 'google-kms',
           keyId: 'test-key-id',
           algorithm: 'RSA-OAEP-2048-SHA256',
-          keyReference: 'dGVzdC1rZXktcmVmZXJlbmNl',
         },
       }
       const { car, actualRootCID } = await createTestCar(testContent)
@@ -163,7 +162,6 @@ await describe('CID Verification', async () => {
           provider: 'google-kms',
           keyId: 'original-key-id',
           algorithm: 'RSA-OAEP-2048-SHA256',
-          keyReference: 'b3JpZ2luYWwta2V5LXJlZmVyZW5jZQ==',
         },
       }
       const { actualRootCID: originalCID } = await createTestCar(
@@ -180,7 +178,6 @@ await describe('CID Verification', async () => {
           provider: 'google-kms',
           keyId: 'tampered-key-id',
           algorithm: 'RSA-OAEP-2048-SHA256',
-          keyReference: 'dGFtcGVyZWQta2V5LXJlZmVyZW5jZQ==',
         },
       }
       const { car: tamperedCar } = await createTestCar(tamperedContent)
@@ -226,7 +223,6 @@ await describe('CID Verification', async () => {
           provider: 'google-kms',
           keyId: 'attacker-controlled-key',
           algorithm: 'RSA-OAEP-2048-SHA256',
-          keyReference: 'YXR0YWNrZXItY29udHJvbGxlZC1rZXk=',
         },
       }
       const { car: maliciousCar } = await createTestCar(maliciousContent)
@@ -301,7 +297,6 @@ await describe('CID Verification', async () => {
           provider: 'google-kms',
           keyId: 'test-key-id',
           algorithm: 'RSA-OAEP-2048-SHA256',
-          keyReference: 'dGVzdC1rZXktcmVmZXJlbmNl', // base64 encoded 'test-key-reference'
         },
       }
 
@@ -341,62 +336,6 @@ await describe('CID Verification', async () => {
       }
     })
 
-    await test('should prevent modification of keyReference in metadata', async () => {
-      const gatewayURL = new URL('https://example.com')
-
-      // Original metadata with legitimate keyReference
-      const originalMetadata = {
-        encryptedDataCID:
-          'bafkreic4qpg3ycmpq7kxkqf6dlv4z7qxfj4kf3kqpgchxhlz5xkfuzwxru',
-        encryptedSymmetricKey: 'encrypted-key-data',
-        space: 'did:key:z6MkwDK3M4PxU1FqcSt6quBH1xRBSGnPRdQYP9B13h3Wq5X1',
-        kms: {
-          provider: 'google-kms',
-          keyId: 'test-key-id',
-          algorithm: 'RSA-OAEP-2048-SHA256',
-          keyReference: 'dGVzdC1rZXktcmVmZXJlbmNl', // Original key reference
-        },
-      }
-
-      // Tampered metadata with different keyReference
-      const tamperedMetadata = {
-        ...originalMetadata,
-        kms: {
-          ...originalMetadata.kms,
-          keyReference: 'bWFsaWNpb3VzLWtleS1yZWZlcmVuY2U=', // Malicious key reference!
-        },
-      }
-
-      // Create CAR files for both
-      const { actualRootCID: originalCID } = await createTestCar(
-        originalMetadata
-      )
-      const { car: tamperedCar } = await createTestCar(tamperedMetadata)
-
-      // Mock fetch to return tampered CAR when requesting original CID
-      const originalFetch = globalThis.fetch
-      // @ts-ignore - Mock fetch for testing
-      globalThis.fetch = async (url) => ({
-        ok: true,
-        status: 200,
-        statusText: 'OK',
-        arrayBuffer: async () => tamperedCar.buffer, // Returns tampered metadata!
-      })
-
-      try {
-        await getCarFileFromPublicGateway(gatewayURL, originalCID.toString())
-        assert.fail('Should detect keyReference tampering via CID verification')
-      } catch (error) {
-        assert(error instanceof Error, 'Should throw an Error')
-        assert(
-          error.message.includes('CID verification failed'),
-          `Should catch tampering via CID verification. Got: ${error.message}`
-        )
-      } finally {
-        globalThis.fetch = originalFetch
-      }
-    })
-
     await test('should prevent complete metadata substitution attacks', async () => {
       const gatewayURL = new URL('https://example.com')
 
@@ -410,7 +349,6 @@ await describe('CID Verification', async () => {
           provider: 'google-kms',
           keyId: 'legitimate-key-id',
           algorithm: 'RSA-OAEP-2048-SHA256',
-          keyReference: 'bGVnaXRpbWF0ZS1rZXktcmVmZXJlbmNl',
         },
       }
 
@@ -424,7 +362,6 @@ await describe('CID Verification', async () => {
           provider: 'google-kms',
           keyId: 'attacker-controlled-key',
           algorithm: 'RSA-OAEP-2048-SHA256',
-          keyReference: 'YXR0YWNrZXItY29udHJvbGxlZC1rZXk=',
         },
       }
 

@@ -8,7 +8,6 @@ import * as Space from '@storacha/capabilities/space'
  *
  * @param {object} options
  * @param {string} options.mockPublicKey - Mock RSA public key in PEM format
- * @param {string} options.mockKeyReference - Mock KMS key reference
  * @param {string} [options.mockProvider] - Mock KMS provider
  * @param {string} [options.mockAlgorithm] - Mock algorithm
  * @param {Function} [options.onEncryptionSetup] - Optional callback for setup calls
@@ -17,7 +16,6 @@ import * as Space from '@storacha/capabilities/space'
 export function createMockGatewayService(options) {
   const {
     mockPublicKey,
-    mockKeyReference,
     mockProvider = 'google-kms',
     mockAlgorithm = 'RSA-OAEP-2048-SHA256',
     onEncryptionSetup,
@@ -44,7 +42,6 @@ export function createMockGatewayService(options) {
           // Return mock RSA public key and metadata
           return Server.ok({
             publicKey: mockPublicKey,
-            keyReference: mockKeyReference,
             provider: mockProvider,
             algorithm: mockAlgorithm,
           })

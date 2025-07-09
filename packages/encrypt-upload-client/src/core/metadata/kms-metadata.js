@@ -18,7 +18,6 @@ export const KMSMetadataSchema = Schema.variant({
       provider: Schema.string(),
       keyId: Schema.string(),
       algorithm: Schema.string(),
-      keyReference: Schema.string().optional(),
     }),
   }),
 })
@@ -31,7 +30,6 @@ export const KMSMetadataInputSchema = Schema.struct({
     provider: Schema.string(),
     keyId: Schema.string(),
     algorithm: Schema.string(),
-    keyReference: Schema.string().optional(),
   }),
 })
 

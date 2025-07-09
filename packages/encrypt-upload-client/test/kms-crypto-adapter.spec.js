@@ -163,27 +163,6 @@ await describe('KMSCryptoAdapter', async () => {
       )
     })
 
-    await test('should encode and decode key references correctly', async () => {
-      const symmetricCrypto = new BrowserAesCtrCrypto()
-      const adapter = new KMSCryptoAdapter(
-        symmetricCrypto,
-        'https://mock-gateway.example.com',
-        'did:web:mock'
-      )
-
-      const originalKeyRef =
-        'projects/test-project/locations/us-central1/keyRings/test-ring/cryptoKeys/test-key/cryptoKeyVersions/1'
-
-      // Test encoding
-      const encoded = adapter.encodeKeyReference(originalKeyRef)
-      assert(typeof encoded === 'string')
-      assert(encoded !== originalKeyRef)
-
-      // Test decoding
-      const decoded = adapter.decodeKeyReference(encoded)
-      assert.strictEqual(decoded, originalKeyRef)
-    })
-
     await test('should sanitize space DID for KMS key ID', async () => {
       const symmetricCrypto = new BrowserAesCtrCrypto()
       const adapter = new KMSCryptoAdapter(
@@ -223,7 +202,6 @@ await describe('KMSCryptoAdapter', async () => {
       // Create mock gateway service that performs real RSA encryption/decryption
       const service = createMockGatewayService({
         mockPublicKey: publicKeyPem,
-        mockKeyReference: 'mock-key-ref-123',
         onEncryptionSetup: (/** @type {any} */ input) => {
           setupCalled = true
           assert.strictEqual(input.capability.with, spaceDID)
@@ -405,7 +383,6 @@ await describe('KMSCryptoAdapter', async () => {
       // Create service that returns errors
       const service = createMockGatewayService({
         mockPublicKey: 'invalid',
-        mockKeyReference: 'test',
         onEncryptionSetup: () => {
           // This will be called but service will return error
         },
@@ -462,7 +439,6 @@ await describe('KMSCryptoAdapter', async () => {
       // Create service that returns errors for decrypt
       const service = createMockGatewayService({
         mockPublicKey: 'mock-key',
-        mockKeyReference: 'test',
       })
 
       // Override decrypt service to return error
