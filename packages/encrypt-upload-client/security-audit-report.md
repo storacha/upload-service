@@ -11,7 +11,7 @@
 
 **Security Posture Summary**
 
-- **Critical vulnerabilities**: ✅ **2/2 RESOLVED** (100% complete)
+- **Critical vulnerabilities**: ✅ **3/3 RESOLVED** (100% complete)
 - **High-priority vulnerabilities**: ✅ **2/2 RESOLVED** (100% complete)
 - **Medium-priority vulnerabilities**: ✅ **3/3 RESOLVED** (100% complete)
 - **Low-priority vulnerabilities**: ✅ **1/1 MITIGATED** (architectural protection)
@@ -36,6 +36,7 @@ This document consolidates findings from multiple security audits of the `@stora
 **Security Issues Resolution:**
 
 - ✅ **AES-CTR counter overflow vulnerability** - **RESOLVED** (proper 128-bit arithmetic)
+- ✅ **AES-CTR counter per-chunk increment issue** - **RESOLVED** (block-based counter management)
 - ✅ **Unauthenticated metadata** - **RESOLVED** (IPFS CID verification)
 - ✅ **Transport security not enforced** - **RESOLVED** (HTTPS enforcement)
 - ✅ **Verbose error disclosure** - **RESOLVED** (gateway-side sanitization)
@@ -60,14 +61,37 @@ These vulnerabilities represent an immediate and severe risk. They must be fixed
 **Impact:** ~~Keystream reuse after 256 chunks (~16KB+ files), complete confidentiality loss for large files, attackers could XOR ciphertexts to recover plaintext differences.~~  
 **MITIGATED:** Counter overflow attacks are now prevented through proper 128-bit arithmetic.
 
-**Location:** `src/crypto/symmetric/generic-aes-ctr-streaming-crypto.js`, `incrementCounter` method (secure implementation)  
+### P0.1.1: AES-CTR Counter Increment Per-Chunk Issue ✅ **RESOLVED**
+
+**File:** `src/crypto/symmetric/generic-aes-ctr-streaming-crypto.js:85-90, 158-163`  
+**Severity:** CRITICAL  
+**CVSS:** 9.3 (Critical)  
+**Attack Vector:** Any file with variable chunk sizes
+
+**Description:** ~~Counter was incremented per-chunk instead of per-block, causing keystream reuse within chunks.~~  
+**FIXED:** Implemented block-based counter management with proper block counting.
+
+**Impact:** ~~Keystream reuse within chunks could allow XOR attacks to recover plaintext differences between chunks of the same file.~~  
+**MITIGATED:** Counter now increments by the number of AES blocks (16-byte blocks) processed, preventing keystream reuse.
+
+**Location:** `src/crypto/symmetric/generic-aes-ctr-streaming-crypto.js`, streaming transform functions (secure implementation)  
 **Status:** ✅ **IMPLEMENTED**
 
+1. ✅ **Block-based counter management** - Counters increment by actual AES blocks processed (16-byte blocks)
+2. ✅ **Applied to both encrypt and decrypt** - Consistent block counting in both code paths
+3. ✅ **Chunk boundary handling** - Proper block counting across variable chunk sizes
+4. ✅ **Keystream reuse prevention** - Each 16-byte block gets unique counter value
+5. ✅ **Security validation** - Comprehensive test coverage for counter security
+
+**Combined Location:** `src/crypto/symmetric/generic-aes-ctr-streaming-crypto.js`, `incrementCounter` method + streaming transforms (secure implementation)  
+**Combined Status:** ✅ **IMPLEMENTED**
+
 1. ✅ **Proper 128-bit counter arithmetic** - Implemented carry propagation across all 16 bytes
-2. ✅ **Applied to both encrypt and decrypt** - Consistent counter handling in both code paths
-3. ✅ **Overflow detection** - Throws error if counter exceeds 128-bit limit (extremely unlikely)
-4. ✅ **Security validation** - Counter reuse eliminated for files of any practical size
-5. ✅ **Cross-environment compatibility** - Works identically in Node.js and all browsers
+2. ✅ **Block-based counter management** - Counters increment by actual AES blocks, not chunks
+3. ✅ **Applied to both encrypt and decrypt** - Consistent counter handling in both code paths
+4. ✅ **Overflow detection** - Throws error if counter exceeds 128-bit limit (extremely unlikely)
+5. ✅ **Security validation** - Counter reuse eliminated for files of any practical size
+6. ✅ **Cross-environment compatibility** - Works identically in Node.js and all browsers
 
 ```javascript
 // SECURE IMPLEMENTATION (preserves streaming):
@@ -90,17 +114,46 @@ incrementCounter(counter, increment) {
   return result
 }
 
-// Usage in streaming context:
-const chunkCounter = this.incrementCounter(counter, chunkIndex)
+// SECURE IMPLEMENTATION (block-based counter management):
+// State for AES-CTR counter management
+let counter = new Uint8Array(iv) // Copy the IV for counter
+let totalBlocks = 0 // Track total blocks processed (CRITICAL for security)
+
+// Create TransformStream (inspired by Node.js approach)
+const encryptTransform = new TransformStream({
+  transform: async (chunk, controller) => {
+    try {
+      // ✅ SECURITY: Calculate counter based on total blocks, not chunks
+      const chunkCounter = this.incrementCounter(counter, totalBlocks)
+
+      // ✅ SECURITY: Increment by blocks in this chunk (16 bytes per block)
+      const blocksInChunk = Math.ceil(chunk.length / 16)
+      totalBlocks += blocksInChunk
+
+      // Encrypt chunk using Web Crypto API
+      const encrypted = await crypto.subtle.encrypt(
+        { name: 'AES-CTR', counter: chunkCounter, length: 128 },
+        cryptoKey,
+        chunk
+      )
+
+      controller.enqueue(new Uint8Array(encrypted))
+    } catch (error) {
+      controller.error(error)
+    }
+  }
+})
 ```
 
 **Security Benefits:**
 
 - **Eliminates keystream reuse**: Counter values never repeat for any practical file size
+- **Prevents intra-chunk attacks**: Each 16-byte block gets unique counter value
 - **Preserves streaming architecture**: No changes to memory-efficient streaming design
-- **Future-proof**: 128-bit counter space supports files up to 2^128 chunks
+- **Future-proof**: 128-bit counter space supports files up to 2^128 blocks
 - **Error detection**: Overflow detection for theoretical edge cases
 - **Universal compatibility**: Identical implementation across all environments
+- **Chunk boundary safety**: Proper block counting across variable chunk sizes
 
 ### P0.2: Unauthenticated Metadata ✅ **RESOLVED**
 
@@ -447,11 +500,16 @@ Client-side **MUST** implement proper CAR parsing and CID verification (see P2.2
 
 ### Security Test Cases Status:
 
-1. **Counter Overflow Test:**
+1. **Counter Security Tests:**
 
    - ✅ Create file >16KB (>256 chunks) - **COMPLETED**
    - ✅ Verify no counter reuse - **COMPLETED**
    - ✅ Test up to chunk 65536 for 128-bit counter safety - **COMPLETED**
+   - ✅ **Counter block-based increment tests** - **COMPLETED** (`test/crypto-counter-security.spec.js`)
+   - ✅ **Chunk boundary counter handling** - **COMPLETED** (`test/crypto-counter-security.spec.js`)
+   - ✅ **Keystream reuse prevention validation** - **COMPLETED** (`test/crypto-counter-security.spec.js`)
+   - ✅ **Counter overflow protection** - **COMPLETED** (`test/crypto-counter-security.spec.js`)
+   - ✅ **Encrypt/decrypt counter consistency** - **COMPLETED** (`test/crypto-counter-security.spec.js`)
 
 2. **CID Integrity Tests:**
 
@@ -544,7 +602,7 @@ Client-side **MUST** implement proper CAR parsing and CID verification (see P2.2
 
 **Status:** ✅ **PRODUCTION READY** (all security issues resolved)
 
-**Critical Issues:** ✅ **2/2 RESOLVED** (All critical vulnerabilities fixed)  
+**Critical Issues:** ✅ **3/3 RESOLVED** (All critical vulnerabilities fixed)  
 **High Issues:** ✅ **2/2 RESOLVED** (HTTPS enforcement and error sanitization complete)  
 **Medium Issues:** ✅ **3/3 RESOLVED** (All medium-priority vulnerabilities addressed)  
 **Low Issues:** ✅ **1/1 MITIGATED** (architectural integrity protection)

@@ -80,15 +80,18 @@ export class GenericAesCtrStreamingCrypto {
 
     // State for AES-CTR counter management
     let counter = new Uint8Array(iv) // Copy the IV for counter
-    let chunkIndex = 0
+    let totalBlocks = 0 // Track total blocks processed
 
     // Create TransformStream (inspired by Node.js approach)
     const encryptTransform = new TransformStream({
       transform: async (chunk, controller) => {
         try {
-          // Use proper counter arithmetic for AES-CTR
-          const chunkCounter = this.incrementCounter(counter, chunkIndex)
-          chunkIndex++
+          // SECURITY: Calculate counter based on total blocks, not chunks
+          const chunkCounter = this.incrementCounter(counter, totalBlocks)
+
+          // SECURITY: Increment by blocks in this chunk (16 bytes per block)
+          const blocksInChunk = Math.ceil(chunk.length / 16)
+          totalBlocks += blocksInChunk
 
           // Encrypt chunk using Web Crypto API
           const encrypted = new Uint8Array(
@@ -103,7 +106,6 @@ export class GenericAesCtrStreamingCrypto {
             )
           )
 
-          // ✅ STREAMING: Emit immediately (no buffering)
           controller.enqueue(encrypted)
         } catch (error) {
           controller.error(error)
@@ -112,7 +114,6 @@ export class GenericAesCtrStreamingCrypto {
       // Note: No flush needed for AES-CTR (unlike CBC which needs final padding)
     })
 
-    // ✅ IMPROVEMENT: Use pipeThrough() for elegant stream composition
     const encryptedStream = data.stream().pipeThrough(encryptTransform)
 
     return { key, iv, encryptedStream }
@@ -138,15 +139,18 @@ export class GenericAesCtrStreamingCrypto {
 
     // State for AES-CTR counter management
     let counter = new Uint8Array(iv)
-    let chunkIndex = 0
+    let totalBlocks = 0 // Track total blocks processed (CRITICAL for security)
 
     // Create TransformStream (inspired by Node.js approach)
     const decryptTransform = new TransformStream({
       transform: async (chunk, controller) => {
         try {
-          // Use proper counter arithmetic for AES-CTR
-          const chunkCounter = this.incrementCounter(counter, chunkIndex)
-          chunkIndex++
+          // SECURITY: Calculate counter based on total blocks, not chunks
+          const chunkCounter = this.incrementCounter(counter, totalBlocks)
+
+          // SECURITY: Increment by blocks in this chunk (16 bytes per block)
+          const blocksInChunk = Math.ceil(chunk.length / 16)
+          totalBlocks += blocksInChunk
 
           // Decrypt chunk using Web Crypto API
           const decrypted = new Uint8Array(
@@ -161,7 +165,6 @@ export class GenericAesCtrStreamingCrypto {
             )
           )
 
-          // ✅ STREAMING: Emit immediately (no buffering)
           controller.enqueue(decrypted)
         } catch (error) {
           controller.error(error)
@@ -170,7 +173,6 @@ export class GenericAesCtrStreamingCrypto {
       // Note: No flush needed for AES-CTR (unlike CBC which needs final padding)
     })
 
-    // ✅ IMPROVEMENT: Use pipeThrough() for elegant stream composition
     return encryptedData.pipeThrough(decryptTransform)
   }
 

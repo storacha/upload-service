@@ -339,7 +339,7 @@ await describe('Crypto Factory Functions', async () => {
       for (const adapter of adapters) {
         for (const method of requiredMethods) {
           assert(
-            typeof /** @type {any} */ (adapter)[method] === 'function',
+            typeof (/** @type {any} */ (adapter)[method]) === 'function',
             `${adapter.constructor.name} should have ${method} method`
           )
         }
