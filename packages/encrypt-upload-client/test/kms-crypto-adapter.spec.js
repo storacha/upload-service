@@ -16,62 +16,27 @@ if (typeof globalThis.crypto === 'undefined') {
   }
 }
 
-import { BrowserAesCtrCrypto } from '../src/crypto/symmetric/browser-aes-ctr-crypto.js'
+import { GenericAesCtrStreamingCrypto } from '../src/crypto/symmetric/generic-aes-ctr-streaming-crypto.js'
 import { KMSCryptoAdapter } from '../src/crypto/adapters/kms-crypto-adapter.js'
 import {
   createMockGatewayService,
   createMockGatewayServer,
 } from './mocks/private-gateway.js'
 import { createTestFixtures } from './fixtures/test-fixtures.js'
-
-/**
- * @param {Uint8Array} arr
- * @returns {string}
- */
-function uint8ArrayToString(arr) {
-  return new TextDecoder().decode(arr)
-}
-
-/**
- * @param {string} str
- * @returns {Uint8Array}
- */
-function stringToUint8Array(str) {
-  return new TextEncoder().encode(str)
-}
-
-/**
- * @param {ReadableStream} stream
- * @returns {Promise<Uint8Array>}
- */
-async function streamToUint8Array(stream) {
-  const reader = stream.getReader()
-  const chunks = []
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    chunks.push(value)
-  }
-  // Concatenate all chunks
-  const totalLength = chunks.reduce((acc, val) => acc + val.length, 0)
-  const result = new Uint8Array(totalLength)
-  let offset = 0
-  for (const chunk of chunks) {
-    result.set(chunk, offset)
-    offset += chunk.length
-  }
-  return result
-}
+import {
+  stringToUint8Array,
+  streamToUint8Array,
+  uint8ArrayToString,
+} from './helpers/test-file-utils.js'
 
 await describe('KMSCryptoAdapter', async () => {
   await describe('Unit Tests', async () => {
     await test('should delegate symmetric crypto operations to the injected implementation', async () => {
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
-        'https://freeway.dag.haus',
-        'did:web:freeway.dag.haus'
+        'https://private.storacha.link',
+        'did:web:private.storacha.link'
       )
 
       const originalText =
@@ -105,11 +70,11 @@ await describe('KMSCryptoAdapter', async () => {
     })
 
     await test('should initialize KMS adapter with correct configuration', async () => {
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
-        'https://freeway.dag.haus',
-        'did:web:freeway.dag.haus'
+        'https://private.storacha.link',
+        'did:web:private.storacha.link'
       )
 
       // Test that the adapter can handle encryption options directly
@@ -125,7 +90,7 @@ await describe('KMSCryptoAdapter', async () => {
       )
       assert.strictEqual(
         adapter.privateGatewayDID.did(),
-        'did:web:freeway.dag.haus',
+        'did:web:private.storacha.link',
         'Adapter should have correct gateway DID'
       )
       assert(
@@ -135,11 +100,11 @@ await describe('KMSCryptoAdapter', async () => {
     })
 
     await test('should handle metadata extraction with invalid CAR data', async () => {
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
-        'https://freeway.dag.haus',
-        'did:web:freeway.dag.haus'
+        'https://private.storacha.link',
+        'did:web:private.storacha.link'
       )
 
       // Test that the method exists
@@ -164,7 +129,7 @@ await describe('KMSCryptoAdapter', async () => {
     })
 
     await test('should sanitize space DID for KMS key ID', async () => {
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
         'https://mock-gateway.example.com',
@@ -258,7 +223,7 @@ await describe('KMSCryptoAdapter', async () => {
       )
 
       // Create KMS adapter with HTTP allowed for testing
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
         gatewayServer.url,
@@ -405,7 +370,7 @@ await describe('KMSCryptoAdapter', async () => {
         5556
       )
 
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
         gatewayServer.url,
@@ -458,7 +423,7 @@ await describe('KMSCryptoAdapter', async () => {
         5557
       )
 
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
         gatewayServer.url,
@@ -509,7 +474,7 @@ await describe('KMSCryptoAdapter', async () => {
 
   await describe('Validation Tests', async () => {
     await test('should validate required decryption parameters', async () => {
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
         'https://mock-gateway.example.com',
@@ -535,7 +500,7 @@ await describe('KMSCryptoAdapter', async () => {
       const fixtures = await createTestFixtures()
       const { spaceDID, delegationProof } = fixtures
 
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
         'https://mock-gateway.example.com',
@@ -558,7 +523,7 @@ await describe('KMSCryptoAdapter', async () => {
     })
 
     await test('should reject non-KMS metadata', async () => {
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
         'https://mock-gateway.example.com',

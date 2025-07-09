@@ -1,18 +1,18 @@
 import assert from 'node:assert'
 import { describe, test } from 'node:test'
 import { KMSCryptoAdapter } from '../src/crypto/adapters/kms-crypto-adapter.js'
-import { BrowserAesCtrCrypto } from '../src/crypto/symmetric/browser-aes-ctr-crypto.js'
+import { GenericAesCtrStreamingCrypto } from '../src/crypto/symmetric/generic-aes-ctr-streaming-crypto.js'
 
 await describe('HTTPS Enforcement', async () => {
   await describe('KMSCryptoAdapter Constructor', async () => {
     await test('should accept valid HTTPS URL as string', async () => {
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
 
       // Should not throw
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
-        'https://freeway.dag.haus',
-        'did:web:freeway.dag.haus'
+        'https://private.storacha.link',
+        'did:web:private.storacha.link'
       )
 
       assert(
@@ -26,13 +26,13 @@ await describe('HTTPS Enforcement', async () => {
       )
       assert.strictEqual(
         adapter.privateGatewayURL.toString(),
-        'https://freeway.dag.haus/',
+        'https://private.storacha.link/',
         'Should store correct URL'
       )
     })
 
     await test('should accept valid HTTPS URL object', async () => {
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
       const httpsURL = new URL('https://example.com:8443/path')
 
       // Should not throw
@@ -59,7 +59,7 @@ await describe('HTTPS Enforcement', async () => {
     })
 
     await test('should reject HTTP URL string', async () => {
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
 
       assert.throws(
         () =>
@@ -74,7 +74,7 @@ await describe('HTTPS Enforcement', async () => {
     })
 
     await test('should reject HTTP URL object', async () => {
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
       const httpURL = new URL('http://insecure.example.com')
 
       assert.throws(
@@ -86,7 +86,7 @@ await describe('HTTPS Enforcement', async () => {
     })
 
     await test('should reject other protocols', async () => {
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
 
       const protocolTestCases = [
         'ftp://example.com',
@@ -110,7 +110,7 @@ await describe('HTTPS Enforcement', async () => {
     })
 
     await test('should provide helpful error message', async () => {
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
 
       try {
         new KMSCryptoAdapter(
@@ -137,7 +137,7 @@ await describe('HTTPS Enforcement', async () => {
     })
 
     await test('should handle localhost development URLs correctly', async () => {
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
 
       // Even localhost should require HTTPS for consistency
       assert.throws(
@@ -165,7 +165,7 @@ await describe('HTTPS Enforcement', async () => {
     })
 
     await test('should handle invalid URL strings gracefully', async () => {
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
 
       assert.throws(
         () =>
@@ -180,12 +180,12 @@ await describe('HTTPS Enforcement', async () => {
     })
 
     await test('should preserve all adapter functionality after HTTPS validation', async () => {
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
 
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
-        'https://freeway.dag.haus',
-        'did:web:freeway.dag.haus'
+        'https://private.storacha.link',
+        'did:web:private.storacha.link'
       )
 
       // Verify all expected methods exist
@@ -232,7 +232,7 @@ await describe('HTTPS Enforcement', async () => {
       )
       assert.strictEqual(
         adapter.privateGatewayDID.did(),
-        'did:web:freeway.dag.haus',
+        'did:web:private.storacha.link',
         'Should store gateway DID'
       )
     })
@@ -240,7 +240,7 @@ await describe('HTTPS Enforcement', async () => {
 
   await describe('Secure by Default Principle', async () => {
     await test('should demonstrate secure by default - HTTPS is automatically used', async () => {
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
 
       // All of these should work without any special configuration
       const validHttpsUrls = [
@@ -270,7 +270,7 @@ await describe('HTTPS Enforcement', async () => {
       // If someone really needs HTTP (like for testing), they would need to
       // modify our security validation code intentionally
 
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
       const httpUrls = [
         'http://example.com',
         'http://localhost:3000',
@@ -289,7 +289,7 @@ await describe('HTTPS Enforcement', async () => {
 
     await test('should allow HTTP for testing when explicitly enabled', async () => {
       // This demonstrates the testing escape hatch
-      const symmetricCrypto = new BrowserAesCtrCrypto()
+      const symmetricCrypto = new GenericAesCtrStreamingCrypto()
 
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,

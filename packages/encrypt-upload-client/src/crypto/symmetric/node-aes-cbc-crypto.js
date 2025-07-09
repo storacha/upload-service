@@ -8,7 +8,9 @@ const IV_LENGTH = 16 // bytes (128 bits, used as initialization vector)
 /**
  * NodeAesCbcCrypto implements AES-CBC symmetric encryption for Node.js environments.
  * It uses AES-CBC mode for encryption via the Node.js crypto module.
+ * If you already encrypted a file with this class, you still need to use this class to decrypt it.
  *
+ * @deprecated Use GenericAesCtrStreamingCrypto instead for new uploads
  * @class
  * @implements {Type.SymmetricCrypto}
  */

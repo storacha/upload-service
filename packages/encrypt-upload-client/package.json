@@ -63,7 +63,9 @@
     "build-actions": "node lit-actions/esbuild.js",
     "attw": "attw --pack .",
     "rc": "npm version prerelease --preid rc",
-    "test": "node --test test/*.spec.js"
+    "test": "node --test $(find test -name '*.spec.js' ! -name '*.playwright.spec.js')",
+    "test:setup-certs": "mkdir -p test/mocks/playwright && cd test/mocks/playwright && (test -f cert.key || (npx mkcert create-ca && npx mkcert create-cert --domains localhost 127.0.0.1 ::1))",
+    "test:browser": "npm run test:setup-certs && npx playwright test"
   },
   "dependencies": {
     "@ipld/car": "catalog:",
@@ -96,8 +98,10 @@
   },
   "devDependencies": {
     "@lit-protocol/types": "^7.0.8",
+    "@playwright/test": "^1.53.2",
     "@storacha/eslint-config": "workspace:^",
     "esbuild": "^0.25.1",
+    "mkcert": "^3.2.0",
     "typescript": "catalog:"
   },
   "eslintConfig": {
@@ -120,7 +124,10 @@
       "coverage",
       "lit-actions",
       "src/types.js",
-      "*.min.js"
+      "*.min.js",
+      "**/*.playwright.spec.js",
+      "test/mocks/playwright/**",
+      "playwright.config.js"
     ]
   },
   "depcheck": {

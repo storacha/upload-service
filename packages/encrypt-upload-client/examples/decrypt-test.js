@@ -7,7 +7,7 @@ import { StoreMemory } from '@storacha/client/stores/memory'
 
 import { create, Wallet } from '../src/index.js'
 import { serviceConf, receiptsEndpoint } from '../src/config/service.js'
-import { createNodeLitAdapter } from '../src/crypto/factories.js'
+import { createLegacyLitAdapter } from '../src/crypto/factories.js'
 import { LitNodeClient } from '@lit-protocol/lit-node-client'
 
 dotenv.config()
@@ -40,7 +40,7 @@ async function main() {
 
   const encryptedClient = await create({
     storachaClient: client,
-    cryptoAdapter: createNodeLitAdapter(litClient),
+    cryptoAdapter: createLegacyLitAdapter(litClient),
   })
 
   const decryptionOptions = { wallet }
