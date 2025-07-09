@@ -174,10 +174,6 @@ export const KeyDecrypt = capability({
      * @description The encrypted symmetric key to be decrypted
      */
     encryptedSymmetricKey: Schema.string(),
-    /**
-     * @description The full KMS key reference to use for decryption. If not provided, the gateway will use the space DID and default location, keyring, and key reference.
-     */
-    keyReference: Schema.string().optional(),
   }),
   derives: (child, parent) => {
     if (child.with !== parent.with) {

@@ -134,16 +134,11 @@ export class KMSCryptoAdapter {
     }
 
     // Step 2: Get the decrypted key from KMS via gateway
-    const encodedKeyReference = metadata.kms?.keyReference
-    const decodedKeyReference = encodedKeyReference
-      ? this.decodeKeyReference(encodedKeyReference)
-      : undefined
     const { decryptedSymmetricKey } = await this.getDecryptedSymmetricKey(
       encryptedKey,
       spaceDID,
       delegationProof,
-      issuer,
-      decodedKeyReference
+      issuer
     )
 
     // Step 3: Decode and split the combined key and IV
@@ -158,15 +153,13 @@ export class KMSCryptoAdapter {
    * @param {Type.SpaceDID} spaceDID - The space DID
    * @param {import('@ucanto/interface').Proof} delegationProof - The delegation proof
    * @param {import('@storacha/client/types').Signer<import('@storacha/client/types').DID, import('@storacha/client/types').SigAlg>} issuer - The issuer
-   * @param {string} [keyReference] - Optional KMS key reference
    * @returns {Promise<{decryptedSymmetricKey: string}>} - The decrypted symmetric key (base64-encoded)
    */
   async getDecryptedSymmetricKey(
     encryptedSymmetricKey,
     spaceDID,
     delegationProof,
-    issuer,
-    keyReference
+    issuer
   ) {
     // Step 1: Invoke the KeyDecrypt capability passing the decryption proof
     const result = await KeyDecrypt.invoke({
@@ -175,7 +168,6 @@ export class KMSCryptoAdapter {
       with: spaceDID,
       nb: {
         encryptedSymmetricKey,
-        keyReference,
       },
       proofs: [delegationProof],
     }).execute(this.newPrivateGatewayConnection())
