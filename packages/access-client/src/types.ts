@@ -345,5 +345,5 @@ export type BytesDelegation<C extends Capabilities = Capabilities> =
 export enum AppName {
   BskyBackups = 'bsky-backups',
   TGMiniapp = 'tg-miniapp',
-  Console = 'console'
+  Console = 'console',
 }
