@@ -152,7 +152,6 @@ export interface KMSKeyMetadata {
     provider: string
     keyId: string
     algorithm: string
-    keyReference: string
   }
 }
 
@@ -195,7 +194,6 @@ export interface KMSMetadata {
     provider: string
     keyId: string
     algorithm: string
-    keyReference?: string
   }
 }
 
@@ -207,7 +205,6 @@ export interface KMSMetadataInput {
     provider: string
     keyId: string
     algorithm: string
-    keyReference?: string
   }
 }
 
@@ -286,6 +283,5 @@ export interface KMSExtractedMetadata {
     provider: string
     keyId: string
     algorithm: string
-    keyReference?: string
   }
 }
