@@ -13,51 +13,16 @@ if (typeof globalThis.crypto === 'undefined') {
   }
 }
 
-import { BrowserAesCtrCrypto } from '../src/crypto/symmetric/browser-aes-ctr-crypto.js'
+import { GenericAesCtrStreamingCrypto } from '../src/crypto/symmetric/generic-aes-ctr-streaming-crypto.js'
+import {
+  stringToUint8Array,
+  streamToUint8Array,
+  uint8ArrayToString,
+} from './helpers/test-file-utils.js'
 
-/**
- * @param {Uint8Array} arr
- * @returns {string}
- */
-function uint8ArrayToString(arr) {
-  return new TextDecoder().decode(arr)
-}
-
-/**
- * @param {string} str
- * @returns {Uint8Array}
- */
-function stringToUint8Array(str) {
-  return new TextEncoder().encode(str)
-}
-
-/**
- * @param {ReadableStream} stream
- * @returns {Promise<Uint8Array>}
- */
-async function streamToUint8Array(stream) {
-  const reader = stream.getReader()
-  const chunks = []
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    chunks.push(value)
-  }
-  // Concatenate all chunks
-  const totalLength = chunks.reduce((acc, val) => acc + val.length, 0)
-  const result = new Uint8Array(totalLength)
-  let offset = 0
-  for (const chunk of chunks) {
-    result.set(chunk, offset)
-    offset += chunk.length
-  }
-  return result
-}
-
-await describe('BrowserAesCtrCrypto', async () => {
+await describe('GenericAesCtrStreamingCrypto (Node Environment)', async () => {
   await test('should encrypt and decrypt a Blob and return the original data', async () => {
-    const adapter = new BrowserAesCtrCrypto()
+    const adapter = new GenericAesCtrStreamingCrypto()
     const originalText = 'Op, this is a test for streaming encryption!'
     const blob = new Blob([stringToUint8Array(originalText)])
 
@@ -77,7 +42,7 @@ await describe('BrowserAesCtrCrypto', async () => {
   })
 
   await test('should handle empty data', async () => {
-    const adapter = new BrowserAesCtrCrypto()
+    const adapter = new GenericAesCtrStreamingCrypto()
     const blob = new Blob([])
 
     const { key, iv, encryptedStream } = await adapter.encryptStream(blob)
@@ -92,7 +57,7 @@ await describe('BrowserAesCtrCrypto', async () => {
   })
 
   await test('should combine key and IV correctly', async () => {
-    const adapter = new BrowserAesCtrCrypto()
+    const adapter = new GenericAesCtrStreamingCrypto()
     const key = new Uint8Array(32).fill(1) // 32-byte AES-256 key
     const iv = new Uint8Array(16).fill(2) // 16-byte AES-CTR IV
 
@@ -116,7 +81,7 @@ await describe('BrowserAesCtrCrypto', async () => {
   })
 
   await test('should split combined key and IV correctly', async () => {
-    const adapter = new BrowserAesCtrCrypto()
+    const adapter = new GenericAesCtrStreamingCrypto()
     const originalKey = new Uint8Array(32).fill(42)
     const originalIV = new Uint8Array(16).fill(84)
 
@@ -146,7 +111,7 @@ await describe('BrowserAesCtrCrypto', async () => {
   })
 
   await test('should roundtrip combine/split correctly', async () => {
-    const adapter = new BrowserAesCtrCrypto()
+    const adapter = new GenericAesCtrStreamingCrypto()
     const originalKey = globalThis.crypto.getRandomValues(new Uint8Array(32))
     const originalIV = globalThis.crypto.getRandomValues(new Uint8Array(16))
 
@@ -162,7 +127,7 @@ await describe('BrowserAesCtrCrypto', async () => {
   })
 
   await test('should validate key length in combineKeyAndIV', async () => {
-    const adapter = new BrowserAesCtrCrypto()
+    const adapter = new GenericAesCtrStreamingCrypto()
     const wrongKey = new Uint8Array(31) // Wrong size
     const correctIV = new Uint8Array(16)
 
@@ -177,7 +142,7 @@ await describe('BrowserAesCtrCrypto', async () => {
   })
 
   await test('should validate IV length in combineKeyAndIV', async () => {
-    const adapter = new BrowserAesCtrCrypto()
+    const adapter = new GenericAesCtrStreamingCrypto()
     const correctKey = new Uint8Array(32)
     const wrongIV = new Uint8Array(15) // Wrong size
 
@@ -192,7 +157,7 @@ await describe('BrowserAesCtrCrypto', async () => {
   })
 
   await test('should validate combined length in splitKeyAndIV', async () => {
-    const adapter = new BrowserAesCtrCrypto()
+    const adapter = new GenericAesCtrStreamingCrypto()
     const wrongCombined = new Uint8Array(47) // Wrong size
 
     assert.throws(

@@ -1,65 +1,12 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert'
 import { NodeAesCbcCrypto } from '../src/crypto/symmetric/node-aes-cbc-crypto.js'
-
-/**
- * @param {Uint8Array} arr
- * @returns {string}
- */
-function uint8ArrayToString(arr) {
-  return new TextDecoder().decode(arr)
-}
-
-/**
- * @param {string} str
- * @returns {Uint8Array}
- */
-function stringToUint8Array(str) {
-  return new TextEncoder().encode(str)
-}
-
-/**
- * @param {ReadableStream} stream
- * @returns {Promise<Uint8Array>}
- */
-async function streamToUint8Array(stream) {
-  const reader = stream.getReader()
-  const chunks = []
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    chunks.push(value)
-  }
-  // Concatenate all chunks
-  const totalLength = chunks.reduce((acc, val) => acc + val.length, 0)
-  const result = new Uint8Array(totalLength)
-  let offset = 0
-  for (const chunk of chunks) {
-    result.set(chunk, offset)
-    offset += chunk.length
-  }
-  return result
-}
-
-/**
- * Create a mock BlobLike object for testing
- *
- * @param {Uint8Array} data
- * @returns {import('../src/types.js').BlobLike}
- */
-function createMockBlob(data) {
-  return {
-    stream() {
-      return new ReadableStream({
-        start(controller) {
-          controller.enqueue(data)
-          controller.close()
-        },
-      })
-    },
-  }
-}
+import {
+  stringToUint8Array,
+  uint8ArrayToString,
+  streamToUint8Array,
+  createMockBlob,
+} from './helpers/test-file-utils.js'
 
 await describe('NodeAesCbcCrypto', async () => {
   await test('should encrypt and decrypt data and return the original data', async () => {

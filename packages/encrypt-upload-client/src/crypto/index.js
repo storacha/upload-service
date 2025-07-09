@@ -1,5 +1,5 @@
 // Symmetric crypto implementations (algorithm-specific)
-export { BrowserAesCtrCrypto } from './symmetric/browser-aes-ctr-crypto.js'
+export { GenericAesCtrStreamingCrypto } from './symmetric/generic-aes-ctr-streaming-crypto.js'
 export { NodeAesCbcCrypto } from './symmetric/node-aes-cbc-crypto.js'
 
 // Strategy adapters (composition-based)
@@ -8,8 +8,10 @@ export { KMSCryptoAdapter } from './adapters/kms-crypto-adapter.js'
 
 // Convenience factory functions
 export {
-  createBrowserLitAdapter,
-  createNodeLitAdapter,
-  createBrowserKMSAdapter,
+  createCrossEnvLitAdapter as createBrowserLitAdapter,
+  createLegacyLitAdapter as createNodeLitAdapter,
+  createGenericLitAdapter,
+  createGenericKMSAdapter as createBrowserKMSAdapter,
   createNodeKMSAdapter,
+  createGenericKMSAdapter,
 } from './factories.js'

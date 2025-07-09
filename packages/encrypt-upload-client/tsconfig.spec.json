@@ -1,6 +1,11 @@
 {
   "extends": "./tsconfig.json",
   "include": ["test/**/*", "examples/*"],
+  "exclude": [
+    "**/*.playwright.spec.js",
+    "test/mocks/playwright/**/*",
+    "playwright.config.js"
+  ],
   "compilerOptions": {
     "rootDir": "."
   },

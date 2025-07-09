@@ -1,25 +1,7 @@
 import assert from 'node:assert'
 import { describe, test } from 'node:test'
 import { getCarFileFromPublicGateway } from '../src/handlers/decrypt-handler.js'
-import * as KMSMetadata from '../src/core/metadata/kms-metadata.js'
-
-/**
- * Create a CAR file with KMS metadata content
- *
- * @param {any} content - The KMS metadata content
- * @returns {Promise<{car: Uint8Array, actualRootCID: import('multiformats').UnknownLink}>}
- */
-async function createTestCar(content) {
-  // Create KMS metadata and archive it to get the CAR
-  const kmsMetadata = KMSMetadata.create(content)
-  const { cid, bytes } = await kmsMetadata.archiveBlock()
-
-  // Use UCANTO's CAR encoding to create a proper CAR file
-  const { CAR } = await import('@ucanto/core')
-  const car = CAR.encode({ roots: [{ cid, bytes }] })
-
-  return { car, actualRootCID: cid }
-}
+import { createTestCar } from './helpers/test-file-utils.js'
 
 await describe('CID Verification', async () => {
   await describe('getCarFileFromPublicGateway', async () => {
