@@ -13,8 +13,8 @@ import * as ShardedDAGIndex from './sharded-dag-index.js'
 
 /** @import * as API from './api.js' */
 
-// @ts-expect-error JSON.parse works with Buffer in Node.js
 const getVersion = () =>
+  // @ts-expect-error JSON.parse works with Buffer in Node.js
   JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url)))
 
 const cli = sade('blob-index')
