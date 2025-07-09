@@ -1,3 +1,13 @@
+## 1.3.0 (2025-07-09)
+
+### 🚀 Features
+
+- add more appNames ([#302](https://github.com/storacha/upload-service/pull/302))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 1.2.2 (2025-05-28)
 
 ### 🧱 Updated Dependencies
