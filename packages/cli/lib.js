@@ -91,15 +91,15 @@ export function getClient() {
       ({
         access: Service.accessServiceConnection({
           id: uploadServiceDID,
-          url: uploadServiceURL
+          url: uploadServiceURL,
         }),
         upload: Service.uploadServiceConnection({
           id: uploadServiceDID,
-          url: uploadServiceURL
+          url: uploadServiceURL,
         }),
         filecoin: Service.filecoinServiceConnection({
           id: uploadServiceDID,
-          url: uploadServiceURL
+          url: uploadServiceURL,
         }),
         gateway: Service.gatewayServiceConnection(),
       })
