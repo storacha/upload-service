@@ -3,9 +3,7 @@ import path from 'node:path'
 // @ts-expect-error no typings :(
 import tree from 'pretty-tree'
 import { importDAG } from '@ucanto/core/delegation'
-import { connect } from '@ucanto/client'
 import * as CAR from '@ucanto/transport/car'
-import * as HTTP from '@ucanto/transport/http'
 import * as Signer from '@ucanto/principal/ed25519'
 import * as Link from 'multiformats/link'
 import { base58btc } from 'multiformats/bases/base58'
@@ -14,6 +12,7 @@ import * as raw from 'multiformats/codecs/raw'
 import { parse } from '@ipld/dag-ucan/did'
 import * as dagJSON from '@ipld/dag-json'
 import { create } from '@storacha/client'
+import * as Service from '@storacha/client/service'
 import { StoreConf } from '@storacha/client/stores/conf'
 import * as DIDMailto from '@storacha/did-mailto'
 import { CarReader } from '@ipld/car'
@@ -90,21 +89,19 @@ export function getClient() {
     serviceConf =
       /** @type {import('@storacha/client/types').ServiceConf} */
       ({
-        access: connect({
+        access: Service.accessServiceConnection({
           id: uploadServiceDID,
-          codec: CAR.outbound,
-          channel: HTTP.open({ url: uploadServiceURL, method: 'POST' }),
+          url: uploadServiceURL
         }),
-        upload: connect({
+        upload: Service.uploadServiceConnection({
           id: uploadServiceDID,
-          codec: CAR.outbound,
-          channel: HTTP.open({ url: uploadServiceURL, method: 'POST' }),
+          url: uploadServiceURL
         }),
-        filecoin: connect({
+        filecoin: Service.filecoinServiceConnection({
           id: uploadServiceDID,
-          codec: CAR.outbound,
-          channel: HTTP.open({ url: uploadServiceURL, method: 'POST' }),
+          url: uploadServiceURL
         }),
+        gateway: Service.gatewayServiceConnection(),
       })
   }
 
