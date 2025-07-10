@@ -62,6 +62,7 @@
     "lint:fix": "tsc --build && eslint '**/*.{js,ts}' --fix && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "build-actions": "node lit-actions/esbuild.js",
     "attw": "attw --pack .",
+    "prepare-environment": "playwright install",
     "rc": "npm version prerelease --preid rc",
     "test": "node --test $(find test -name '*.spec.js' ! -name '*.playwright.spec.js')",
     "test:setup-certs": "mkdir -p test/mocks/playwright && cd test/mocks/playwright && (test -f cert.key || (npx mkcert create-ca && npx mkcert create-cert --domains localhost 127.0.0.1 ::1))",
