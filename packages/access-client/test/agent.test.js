@@ -26,6 +26,159 @@ describe('Agent', function () {
     assert(typeof space.did() === 'string')
   })
 
+  it('should create space with accessType private', async function () {
+    const agent = await Agent.create()
+    const space = await agent.createSpace('test-private', {
+      accessType: 'private',
+    })
+
+    assert(typeof space.did() === 'string')
+    assert.equal(space.accessType, 'private')
+  })
+
+  it('should create space with accessType public', async function () {
+    const agent = await Agent.create()
+    const space = await agent.createSpace('test-public', {
+      accessType: 'public',
+    })
+
+    assert(typeof space.did() === 'string')
+    assert.equal(space.accessType, 'public')
+  })
+
+  it('should default to public accessType', async function () {
+    const agent = await Agent.create()
+    const space = await agent.createSpace('test-default')
+
+    assert(typeof space.did() === 'string')
+    assert.equal(space.accessType, 'public')
+  })
+
+  it('should handle backwards compatibility for spaces without accessType', async function () {
+    const agent = await Agent.create()
+
+    // Create a delegation manually without accessType to simulate old spaces
+    const space = await agent.createSpace('test-compat')
+
+    // Manually create a delegation without accessType (simulating old delegations)
+    const modifiedFacts = [{ space: { name: 'test-compat' } }] // No accessType
+    const oldStyleDelegation = await ucanto.delegate({
+      issuer: space.signer,
+      audience: agent.issuer,
+      capabilities: [{ can: 'space/*', with: space.did() }],
+      facts: modifiedFacts,
+    })
+
+    const importedSpace = await agent.importSpaceFromDelegation(
+      oldStyleDelegation
+    )
+
+    // Should default to 'public' for backwards compatibility
+    assert.equal(importedSpace.accessType, 'public')
+  })
+
+  it('should recover space with accessType private', async function () {
+    const agent = await Agent.create()
+    const space = await agent.createSpace('test-private-recover', {
+      accessType: 'private',
+    })
+
+    // Get the mnemonic for recovery
+    const mnemonic = space.toMnemonic()
+
+    // Recover the space with same accessType
+    const recoveredSpace = await agent.recoverSpace(mnemonic, {
+      name: 'recovered-private',
+      accessType: 'private',
+    })
+
+    assert.equal(recoveredSpace.accessType, 'private')
+    assert.equal(recoveredSpace.name, 'recovered-private')
+    assert.equal(recoveredSpace.did(), space.did()) // Should have same DID
+  })
+
+  it('should recover space with accessType public', async function () {
+    const agent = await Agent.create()
+    const space = await agent.createSpace('test-public-recover', {
+      accessType: 'public',
+    })
+
+    // Get the mnemonic for recovery
+    const mnemonic = space.toMnemonic()
+
+    // Recover the space with same accessType
+    const recoveredSpace = await agent.recoverSpace(mnemonic, {
+      name: 'recovered-public',
+      accessType: 'public',
+    })
+
+    assert.equal(recoveredSpace.accessType, 'public')
+    assert.equal(recoveredSpace.name, 'recovered-public')
+    assert.equal(recoveredSpace.did(), space.did()) // Should have same DID
+  })
+
+  it('should recover space with default accessType', async function () {
+    const agent = await Agent.create()
+    const space = await agent.createSpace('test-default-recover')
+
+    // Get the mnemonic for recovery
+    const mnemonic = space.toMnemonic()
+
+    // Recover the space without specifying accessType
+    const recoveredSpace = await agent.recoverSpace(mnemonic, {
+      name: 'recovered-default',
+    })
+
+    assert.equal(recoveredSpace.accessType, 'public') // Should default to public
+    assert.equal(recoveredSpace.name, 'recovered-default')
+    assert.equal(recoveredSpace.did(), space.did()) // Should have same DID
+  })
+
+  it('should recover public space without specifying accessType', async function () {
+    const agent = await Agent.create()
+    const space = await agent.createSpace('test-public-original', {
+      accessType: 'public',
+    })
+
+    // Get the mnemonic for recovery
+    const mnemonic = space.toMnemonic()
+
+    // Recover the space without specifying accessType (should default to public)
+    const recoveredSpace = await agent.recoverSpace(mnemonic, {
+      name: 'recovered-public-default',
+    })
+
+    assert.equal(recoveredSpace.accessType, 'public') // Should default to public
+    assert.equal(recoveredSpace.name, 'recovered-public-default')
+    assert.equal(recoveredSpace.did(), space.did()) // Should have same DID
+  })
+
+  it('should preserve accessType in delegation facts', async function () {
+    const agent = await Agent.create()
+    const space = await agent.createSpace('test-facts', {
+      accessType: 'private',
+    })
+
+    // Create authorization and check facts
+    const auth = await space.createAuthorization(agent)
+
+    assert.equal(auth.facts.length, 1)
+    const spaceFact =
+      /** @type {{space: {name: string, accessType: string}}} */ (auth.facts[0])
+    assert.equal(spaceFact.space.name, 'test-facts')
+    assert.equal(spaceFact.space.accessType, 'private')
+
+    // Import space from delegation
+    const importedSpace = await agent.importSpaceFromDelegation(auth)
+    assert.equal(importedSpace.accessType, 'private')
+
+    // Check what's stored in agent.spaces
+    const storedMeta = agent.spaces.get(space.did())
+    assert.ok(storedMeta, 'Space should be stored in agent.spaces')
+    assert.equal(storedMeta.name, 'test-facts')
+    assert.equal(storedMeta.accessType, 'private')
+  })
+
   it('should add proof when creating account', async function () {
     const agent = await Agent.create()
     const space = await agent.createSpace('test-add')
@@ -98,6 +251,34 @@ describe('Agent', function () {
     await bob.importSpaceFromDelegation(proof)
     await bob.setCurrentSpace(space.did())
 
+    const proofs = bob.proofs([{ can: 'store/add', with: space.did() }])
+    assert(proofs.length)
+  })
+
+  it('should preserve accessType when importing space delegation', async () => {
+    const alice = await Agent.create()
+    const bob = await Agent.create()
+
+    const space = await alice.createSpace('private-videos', {
+      accessType: 'private',
+    })
+    const auth = await space.createAuthorization(alice, {
+      access: { '*': {} },
+      expiration: Infinity,
+    })
+    await alice.importSpaceFromDelegation(auth)
+    await alice.setCurrentSpace(space.did())
+
+    const proof = await alice.delegate({
+      audience: bob,
+      audienceMeta: { name: 'videos', type: 'app' },
+      abilities: ['*'],
+    })
+
+    const importedSpace = await bob.importSpaceFromDelegation(proof)
+    await bob.setCurrentSpace(space.did())
+
+    assert.equal(importedSpace.accessType, 'private')
     const proofs = bob.proofs([{ can: 'store/add', with: space.did() }])
     assert(proofs.length)
   })

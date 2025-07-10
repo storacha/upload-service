@@ -138,6 +138,10 @@ cli
     'Authorize Gateways to serve the content uploaded to this space, e.g: \'[{"id":"did:key:z6Mki...","serviceEndpoint":"https://gateway.example.com"}]\''
   )
   .option('-nga, --no-gateway-authorization', 'Skip Gateway Authorization')
+  .option(
+    '-at, --access-type <type>',
+    'Access type for the space: public or private (default: public)'
+  )
   .action((name, options) => {
     let authorizeGatewayServices = []
     if (options['authorize-gateway-services']) {
@@ -151,12 +155,23 @@ cli
       }
     }
 
+    // Validate access type
+    if (
+      options['access-type'] &&
+      !['public', 'private'].includes(options['access-type'])
+    ) {
+      console.error('Invalid access type. Must be either "public" or "private"')
+      process.exit(1)
+    }
+
     const parsedOptions = {
       ...options,
       // if defined it means we want to skip gateway authorization, so the client will not validate the gateway services
       skipGatewayAuthorization: options['gateway-authorization'] === false,
       // default to empty array if not set, so the client will validate the gateway services
       authorizeGatewayServices: authorizeGatewayServices || [],
+      // pass through the access type
+      accessType: options['access-type'] || 'public',
     }
 
     return Space.create(name, parsedOptions)

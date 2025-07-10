@@ -12,6 +12,7 @@ import * as Provider from './provider.js'
  * @typedef {{
  *  signer: ED25519.EdSigner;
  *   name: string;
+ *   accessType?: 'public' | 'private';
  *   agent?: API.Agent<S>;
  * }} Model
  * @template {Record<string, any>} [S=API.Service]
@@ -22,13 +23,14 @@ import * as Provider from './provider.js'
  *
  * @template {Record<string, any>} [S=API.Service]
  * @param {object} options
- * @param {string} options.name
+ * @param {string} options.name - The name of the space.
+ * @param {'public'|'private'} [options.accessType] - The access type for the space. Defaults to 'public'.
  * @param {API.Agent<S>} [options.agent]
  */
-export const generate = async ({ name, agent }) => {
+export const generate = async ({ name, accessType = 'public', agent }) => {
   const { signer } = await ED25519.generate()
 
-  return new OwnedSpace({ signer, name, agent })
+  return new OwnedSpace({ signer, name, accessType, agent })
 }
 
 /**
@@ -37,12 +39,16 @@ export const generate = async ({ name, agent }) => {
  * @param {string} mnemonic
  * @param {object} options
  * @param {string} options.name - Name to give to the recovered space.
+ * @param {'public'|'private'} [options.accessType] - The access type for the space. Defaults to 'public'.
  * @param {API.Agent} [options.agent]
  */
-export const fromMnemonic = async (mnemonic, { name, agent }) => {
+export const fromMnemonic = async (
+  mnemonic,
+  { name, accessType = 'public', agent }
+) => {
   const secret = BIP39.mnemonicToEntropy(mnemonic, wordlist)
   const signer = await ED25519.derive(secret)
-  return new OwnedSpace({ signer, name, agent })
+  return new OwnedSpace({ signer, name, accessType, agent })
 }
 
 /**
@@ -95,13 +101,15 @@ export const SESSION_LIFETIME = 60 * 60 * 24 * 365
  * @param {API.UTCUnixTimestamp} [options.expiration]
  */
 export const createAuthorization = async (
-  { signer, name },
+  { signer, name, accessType },
   {
     audience,
     access = Access.spaceAccess,
     expiration = UCAN.now() + SESSION_LIFETIME,
   }
 ) => {
+  const facts = [{ space: { name, accessType: accessType ?? 'public' } }]
+
   return await delegate({
     issuer: signer,
     audience: audience,
@@ -109,7 +117,7 @@ export const createAuthorization = async (
       [signer.did()]: access,
     }),
     ...(expiration ? { expiration } : {}),
-    facts: [{ space: { name } }],
+    facts,
   })
 }
 
@@ -156,6 +164,10 @@ export class OwnedSpace {
     return this.model.name
   }
 
+  get accessType() {
+    return this.model.accessType ?? 'public'
+  }
+
   did() {
     return this.signer.did()
   }
@@ -166,7 +178,11 @@ export class OwnedSpace {
    * @param {string} name
    */
   withName(name) {
-    return new OwnedSpace({ signer: this.signer, name })
+    return new OwnedSpace({
+      signer: this.signer,
+      name,
+      accessType: this.accessType,
+    })
   }
 
   /**
@@ -256,8 +272,13 @@ export const fromDelegation = (delegation) => {
     )
   }
 
-  /** @type {{name?:string}} */
+  /** @type {{name?:string, accessType?:string}} */
   const meta = delegation.facts[0]?.space ?? {}
+
+  // Ensure accessType defaults to 'public' for backwards compatibility
+  if (!meta.accessType) {
+    meta.accessType = 'public'
+  }
 
   return new SharedSpace({ id: result.ok, delegation, meta })
 }
@@ -303,7 +324,7 @@ export class SharedSpace {
    * @typedef {object} SharedSpaceModel
    * @property {API.SpaceDID} id
    * @property {API.Delegation} delegation
-   * @property {{name?:string}} meta
+   * @property {{name?:string, accessType?:string}} meta
    * @property {API.Agent} [agent]
    *
    * @param {SharedSpaceModel} model
@@ -324,6 +345,10 @@ export class SharedSpace {
     return this.meta.name ?? ''
   }
 
+  get accessType() {
+    return this.meta.accessType ?? 'public'
+  }
+
   did() {
     return this.model.id
   }
@@ -334,7 +359,7 @@ export class SharedSpace {
   withName(name) {
     return new SharedSpace({
       ...this.model,
-      meta: { ...this.meta, name },
+      meta: { ...this.meta, name, accessType: this.accessType },
     })
   }
 }

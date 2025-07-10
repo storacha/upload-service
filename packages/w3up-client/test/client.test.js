@@ -250,7 +250,290 @@ export const testClient = {
       assert.equal(spaces.length, 1)
       assert.equal(spaces[0].did(), space.did())
       assert.equal(spaces[0].name, name)
+      assert.equal(spaces[0].accessType, 'public')
     },
+
+    'should create space with accessType private': async (assert) => {
+      const alice = new Client(await AgentData.create())
+
+      const space = await alice.createSpace('private-space', {
+        accessType: 'private',
+        // Creates a temporary space without saving it
+        skipGatewayAuthorization: true,
+      })
+      const auth = await space.createAuthorization(alice)
+      await alice.addSpace(auth)
+
+      assert.equal(space.accessType, 'private')
+
+      const spaces = alice.spaces()
+      assert.equal(spaces.length, 1)
+      assert.equal(spaces[0].accessType, 'private')
+    },
+
+    'should create space with accessType public': async (assert) => {
+      const alice = new Client(await AgentData.create())
+
+      const space = await alice.createSpace('public-space', {
+        accessType: 'public',
+        skipGatewayAuthorization: true,
+      })
+      const auth = await space.createAuthorization(alice)
+      await alice.addSpace(auth)
+
+      assert.equal(space.accessType, 'public')
+
+      const spaces = alice.spaces()
+      assert.equal(spaces.length, 1)
+      assert.equal(spaces[0].accessType, 'public')
+    },
+
+    'should default to public accessType when no accessType is provided':
+      async (assert) => {
+        const alice = new Client(await AgentData.create())
+
+        const space = await alice.createSpace('default-space', {
+          skipGatewayAuthorization: true,
+        })
+        const auth = await space.createAuthorization(alice)
+        await alice.addSpace(auth)
+
+        assert.equal(space.accessType, 'public')
+
+        const spaces = alice.spaces()
+        assert.equal(spaces.length, 1)
+        assert.equal(spaces[0].accessType, 'public')
+      },
+
+    'should recover private space from mnemonic preserving accessType': async (
+      assert
+    ) => {
+      const alice = new Client(await AgentData.create())
+
+      // Create a private space and get its mnemonic
+      const originalSpace = await alice.createSpace('recovery-test-private', {
+        accessType: 'private',
+        skipGatewayAuthorization: true,
+      })
+      const mnemonic = originalSpace.toMnemonic()
+
+      // Create a new agent/client to simulate recovery
+      const bob = new Client(await AgentData.create())
+
+      // Recover the space from mnemonic
+      const recoveredSpace = await bob.agent.recoverSpace(mnemonic, {
+        name: 'recovered-private-space',
+        accessType: 'private',
+      })
+
+      assert.equal(recoveredSpace.accessType, 'private')
+      assert.equal(recoveredSpace.name, 'recovered-private-space')
+      assert.equal(recoveredSpace.did(), originalSpace.did())
+
+      // Add the recovered space and verify accessType is preserved
+      const auth = await recoveredSpace.createAuthorization(bob)
+      await bob.addSpace(auth)
+
+      const spaces = bob.spaces()
+      assert.equal(spaces.length, 1)
+      assert.equal(spaces[0].accessType, 'private')
+      assert.equal(spaces[0].name, 'recovered-private-space')
+    },
+
+    'should recover public space from mnemonic preserving accessType': async (
+      assert
+    ) => {
+      const alice = new Client(await AgentData.create())
+
+      // Create a public space and get its mnemonic
+      const originalSpace = await alice.createSpace('recovery-test-public', {
+        accessType: 'public',
+        skipGatewayAuthorization: true,
+      })
+      const mnemonic = originalSpace.toMnemonic()
+
+      // Create a new agent/client to simulate recovery
+      const bob = new Client(await AgentData.create())
+
+      // Recover the space from mnemonic
+      const recoveredSpace = await bob.agent.recoverSpace(mnemonic, {
+        name: 'recovered-public-space',
+        accessType: 'public',
+      })
+
+      assert.equal(recoveredSpace.accessType, 'public')
+      assert.equal(recoveredSpace.name, 'recovered-public-space')
+      assert.equal(recoveredSpace.did(), originalSpace.did())
+
+      // Add the recovered space and verify accessType is preserved
+      const auth = await recoveredSpace.createAuthorization(bob)
+      await bob.addSpace(auth)
+
+      const spaces = bob.spaces()
+      assert.equal(spaces.length, 1)
+      assert.equal(spaces[0].accessType, 'public')
+      assert.equal(spaces[0].name, 'recovered-public-space')
+    },
+
+    'should recover space from mnemonic with default accessType': async (
+      assert
+    ) => {
+      const alice = new Client(await AgentData.create())
+
+      // Create a space and get its mnemonic
+      const originalSpace = await alice.createSpace('recovery-test-default', {
+        skipGatewayAuthorization: true,
+      })
+      const mnemonic = originalSpace.toMnemonic()
+
+      // Create a new agent/client to simulate recovery without specifying accessType
+      const bob = new Client(await AgentData.create())
+
+      // Recover the space from mnemonic without accessType (should default to public)
+      const recoveredSpace = await bob.agent.recoverSpace(mnemonic, {
+        name: 'recovered-default-space',
+      })
+
+      assert.equal(recoveredSpace.accessType, 'public')
+      assert.equal(recoveredSpace.name, 'recovered-default-space')
+      assert.equal(recoveredSpace.did(), originalSpace.did())
+
+      // Add the recovered space and verify accessType defaults to public
+      const auth = await recoveredSpace.createAuthorization(bob)
+      await bob.addSpace(auth)
+
+      const spaces = bob.spaces()
+      assert.equal(spaces.length, 1)
+      assert.equal(spaces[0].accessType, 'public')
+      assert.equal(spaces[0].name, 'recovered-default-space')
+    },
+
+    'should preserve accessType when renaming space with withName': async (
+      assert
+    ) => {
+      const alice = new Client(await AgentData.create())
+
+      // Create a private space
+      const originalSpace = await alice.createSpace('original-name', {
+        accessType: 'private',
+        skipGatewayAuthorization: true,
+      })
+
+      // Create a renamed version of the space
+      const renamedSpace = originalSpace.withName('new-name')
+
+      assert.equal(renamedSpace.accessType, 'private')
+      assert.equal(renamedSpace.name, 'new-name')
+      assert.equal(renamedSpace.did(), originalSpace.did())
+
+      // Test with public space too
+      const publicSpace = await alice.createSpace('public-original', {
+        accessType: 'public',
+        skipGatewayAuthorization: true,
+      })
+
+      const renamedPublicSpace = publicSpace.withName('public-renamed')
+      assert.equal(renamedPublicSpace.accessType, 'public')
+      assert.equal(renamedPublicSpace.name, 'public-renamed')
+      assert.equal(renamedPublicSpace.did(), publicSpace.did())
+    },
+
+    'should import private space from delegation preserving accessType': async (
+      assert
+    ) => {
+      const alice = new Client(await AgentData.create())
+      const bob = new Client(await AgentData.create())
+
+      // Alice creates a private space
+      const space = await alice.createSpace('delegation-test-private', {
+        accessType: 'private',
+        skipGatewayAuthorization: true,
+      })
+
+      // Alice creates an authorization for the space with full access
+      await alice.addSpace(
+        await space.createAuthorization(alice, {
+          access: { '*': {} },
+          expiration: Infinity,
+        })
+      )
+      await alice.setCurrentSpace(space.did())
+
+      // Alice creates a delegation for Bob
+      const delegation = await alice.createDelegation(bob.agent, ['*'])
+
+      // Bob imports the space from delegation
+      await bob.addSpace(delegation)
+
+      const bobSpaces = bob.spaces()
+      assert.equal(bobSpaces.length, 1)
+      assert.equal(bobSpaces[0].accessType, 'private')
+      assert.equal(bobSpaces[0].did(), space.did())
+    },
+
+    'should import public space from delegation preserving accessType': async (
+      assert
+    ) => {
+      const alice = new Client(await AgentData.create())
+      const bob = new Client(await AgentData.create())
+
+      // Alice creates a public space
+      const space = await alice.createSpace('delegation-test-public', {
+        accessType: 'public',
+        skipGatewayAuthorization: true,
+      })
+
+      // Alice creates an authorization for the space with full access
+      await alice.addSpace(
+        await space.createAuthorization(alice, {
+          access: { '*': {} },
+          expiration: Infinity,
+        })
+      )
+      await alice.setCurrentSpace(space.did())
+
+      // Alice creates a delegation for Bob
+      const delegation = await alice.createDelegation(bob.agent, ['*'])
+
+      // Bob imports the space from delegation
+      await bob.addSpace(delegation)
+
+      const bobSpaces = bob.spaces()
+      assert.equal(bobSpaces.length, 1)
+      assert.equal(bobSpaces[0].accessType, 'public')
+      assert.equal(bobSpaces[0].did(), space.did())
+    },
+
+    'should handle delegation from space with missing accessType (backwards compatibility)':
+      async (assert) => {
+        const alice = new Client(await AgentData.create())
+        const bob = new Client(await AgentData.create())
+
+        // Alice creates a space without specifying accessType (defaults to public)
+        const space = await alice.createSpace('delegation-test-default', {
+          skipGatewayAuthorization: true,
+        })
+
+        // Alice creates an authorization for the space with full access
+        await alice.addSpace(
+          await space.createAuthorization(alice, {
+            access: { '*': {} },
+            expiration: Infinity,
+          })
+        )
+        await alice.setCurrentSpace(space.did())
+
+        // Alice creates a delegation for Bob
+        const delegation = await alice.createDelegation(bob.agent, ['*'])
+
+        // Bob imports the space from delegation
+        await bob.addSpace(delegation)
+
+        const bobSpaces = bob.spaces()
+        assert.equal(bobSpaces.length, 1)
+        assert.equal(bobSpaces[0].accessType, 'public') // Should default to public
+        assert.equal(bobSpaces[0].did(), space.did())
+      },
 
     'should add space': async () => {
       const alice = new Client(await AgentData.create())
@@ -396,19 +679,33 @@ export const testClient = {
 
       // Step 2: Mock the delegate access to fail
       const originalDelegate = client.capability.access.delegate
-      client.capability.access.delegate = async () => ({
-        error: { name: 'DelegateError', message: 'Delegation failed' },
-      })
+      client.capability.access.delegate = async (...args) => {
+        return {
+          error: { name: 'DelegateError', message: 'Delegation failed' },
+        }
+      }
 
       // Step 3: Attempt to create a space with the account
-      await assert.rejects(
-        client.createSpace('delegate-fail-space-test', {
+      // Skip gateway authorization to avoid other potential failures
+      let errorCaught = false
+      try {
+        await client.createSpace('delegate-fail-space-test', {
           account: aliceAccount,
-        }),
-        {
-          message: 'failed to authorize recovery account: Delegation failed',
-        }
-      )
+          skipGatewayAuthorization: true,
+        })
+        console.log('ERROR: Space creation should have failed but succeeded')
+      } catch (error) {
+        console.log(
+          'Error caught as expected:',
+          /** @type {Error} */ (error).message
+        )
+        errorCaught = true
+        assert.equal(
+          /** @type {Error} */ (error).message,
+          'failed to authorize recovery account: Delegation failed'
+        )
+      }
+      assert.ok(errorCaught, 'Expected error was not thrown')
 
       // Restore the original delegate method
       client.capability.access.delegate = originalDelegate

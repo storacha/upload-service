@@ -22,6 +22,7 @@ import * as Result from '@storacha/client/result'
  * @property {string|false} [account]
  * @property {Array<{id: import('@ucanto/interface').DID, serviceEndpoint: string}>} [authorizeGatewayServices] - The DID Key or DID Web and URL of the Gateway to authorize to serve content from the created space.
  * @property {boolean} [skipGatewayAuthorization] - Whether to skip the Gateway authorization. It means that the content of the space will not be served by any Gateway.
+ * @property {'public'|'private'} [accessType] - The access type for the space. Defaults to 'public'.
  *
  * @param {string|undefined} name
  * @param {CreateOptions} options
@@ -34,6 +35,7 @@ export const create = async (name, options) => {
   if (options.skipGatewayAuthorization === true) {
     space = await client.createSpace(await chooseName(name ?? '', spaces), {
       skipGatewayAuthorization: true,
+      accessType: options.accessType || 'public',
     })
   } else {
     const gateways = options.authorizeGatewayServices ?? []
@@ -50,6 +52,7 @@ export const create = async (name, options) => {
     })
     space = await client.createSpace(await chooseName(name ?? '', spaces), {
       authorizeGatewayServices: connections,
+      accessType: options.accessType || 'public',
     })
   }
 

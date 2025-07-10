@@ -327,18 +327,21 @@ export class Agent {
    * Creates a space signer and a delegation to the agent
    *
    * @param {string} name
+   * @param {object} [options]
+   * @param {'public'|'private'} [options.accessType] - The access type for the space. Defaults to 'public'.
    */
-  async createSpace(name) {
-    return await Space.generate({ name, agent: this })
+  async createSpace(name, { accessType = 'public' } = {}) {
+    return await Space.generate({ name, accessType, agent: this })
   }
 
   /**
    * @param {string} secret
    * @param {object} options
-   * @param {string} options.name
+   * @param {string} options.name - The name of the space.
+   * @param {'public'|'private'} [options.accessType] - The access type for the space. Defaults to 'public'.
    */
-  async recoverSpace(secret, { name }) {
-    return await Space.fromMnemonic(secret, { name, agent: this })
+  async recoverSpace(secret, { name, accessType = 'public' }) {
+    return await Space.fromMnemonic(secret, { name, accessType, agent: this })
   }
 
   /**
@@ -354,7 +357,12 @@ export class Agent {
         ? Space.fromDelegation(delegation)
         : Space.fromDelegation(delegation).withName(name)
 
-    this.#data.spaces.set(space.did(), { ...space.meta, name: space.name })
+    this.#data.spaces.set(space.did(), {
+      name: space.name,
+      accessType: /** @type {'public'|'private'|undefined} */ (
+        space.accessType
+      ),
+    })
 
     await this.addProof(space.delegation)
 

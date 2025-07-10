@@ -124,6 +124,8 @@ Add a space to the agent. The proof is a CAR encoded UCAN delegating capabilitie
 
 Create a new space with an optional name.
 
+- `--access-type` Access type for the space: `public` or `private` (default: `public`). Private spaces have restricted access and are not publicly discoverable.
+
 ### `storacha space ls`
 
 List spaces known to the agent.

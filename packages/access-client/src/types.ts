@@ -223,6 +223,10 @@ export interface SpaceMeta {
    * Human readable name for the space
    */
   name: string
+  /**
+   * Access type for the space - determines client-side encryption behavior
+   */
+  accessType?: 'public' | 'private'
 }
 
 /**
