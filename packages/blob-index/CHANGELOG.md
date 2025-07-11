@@ -1,3 +1,13 @@
+## 1.2.0 (2025-07-11)
+
+### 🚀 Features
+
+- feat: add a simple CLI ([#300](https://github.com/storacha/upload-service/pull/300))
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.1.0 (2025-05-28)
 
 ### 🚀 Features
