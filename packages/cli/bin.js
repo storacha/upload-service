@@ -142,6 +142,14 @@ cli
     '-at, --access-type <type>',
     'Access type for the space: public or private (default: public)'
   )
+  .option(
+    '-ep, --encryption-provider <provider>',
+    'Encryption provider for private spaces: google-kms (default: google-kms)'
+  )
+  .option(
+    '-ea, --encryption-algorithm <algorithm>',
+    'Encryption algorithm for private spaces (default: RSA_DECRYPT_OAEP_3072_SHA256)'
+  )
   .action((name, options) => {
     let authorizeGatewayServices = []
     if (options['authorize-gateway-services']) {
@@ -164,14 +172,49 @@ cli
       process.exit(1)
     }
 
+    // Validate encryption provider
+    if (
+      options['encryption-provider'] &&
+      !['google-kms'].includes(options['encryption-provider'])
+    ) {
+      console.error('Invalid encryption provider. Must be "google-kms"')
+      process.exit(1)
+    }
+
+    // Create access type object
+    let access
+    const accessType = options['access-type'] || 'public'
+
+    if (accessType === 'public') {
+      access = { type: 'public' }
+    } else {
+      const provider = options['encryption-provider'] || 'google-kms'
+
+      // Ensure only Google KMS is supported
+      if (provider !== 'google-kms') {
+        console.error(
+          'Invalid encryption provider. Only "google-kms" is supported for private spaces.'
+        )
+        process.exit(1)
+      }
+
+      const algorithm =
+        options['encryption-algorithm'] || 'RSA_DECRYPT_OAEP_3072_SHA256'
+
+      access = {
+        type: 'private',
+        encryption: { provider, algorithm },
+      }
+    }
+
     const parsedOptions = {
       ...options,
       // if defined it means we want to skip gateway authorization, so the client will not validate the gateway services
       skipGatewayAuthorization: options['gateway-authorization'] === false,
       // default to empty array if not set, so the client will validate the gateway services
       authorizeGatewayServices: authorizeGatewayServices || [],
-      // pass through the access type
-      accessType: options['access-type'] || 'public',
+      // pass through the access object
+      access,
     }
 
     return Space.create(name, parsedOptions)

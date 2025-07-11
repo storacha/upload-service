@@ -216,6 +216,19 @@ export interface DelegationMeta {
 }
 
 /**
+ * Access type for spaces - determines client-side encryption behavior
+ */
+export type SpaceAccessType =
+  | { type: 'public' }
+  | {
+      type: 'private'
+      encryption: {
+        provider: 'google-kms'
+        algorithm: string
+      }
+    }
+
+/**
  * Space metadata
  */
 export interface SpaceMeta {
@@ -226,7 +239,7 @@ export interface SpaceMeta {
   /**
    * Access type for the space - determines client-side encryption behavior
    */
-  accessType?: 'public' | 'private'
+  access?: SpaceAccessType
 }
 
 /**

@@ -7,12 +7,78 @@ import * as Access from './access.js'
 import * as Provider from './provider.js'
 
 /**
+ * Normalizes access type to ensure defaults are applied
+ * This is mainly for backward compatibility when loading existing spaces
+ * that might not have the encryption field in their delegation facts.
+ *
+ * @param {API.SpaceAccessType} [access]
+ * @returns {API.SpaceAccessType}
+ */
+const normalizeAccessType = (access) => {
+  if (!access || access.type === 'public') {
+    return { type: 'public' }
+  }
+
+  if (access.type === 'private') {
+    // Ensure encryption field exists for backward compatibility
+    if (!access.encryption) {
+      return {
+        type: 'private',
+        encryption: {
+          provider: 'google-kms',
+          algorithm: 'RSA_DECRYPT_OAEP_3072_SHA256',
+        },
+      }
+    }
+    // Ensure algorithm field exists for backward compatibility
+    if (!access.encryption.algorithm) {
+      if (access.encryption.provider === 'google-kms') {
+        return {
+          type: 'private',
+          encryption: {
+            provider: access.encryption.provider,
+            algorithm: 'RSA_DECRYPT_OAEP_3072_SHA256',
+          },
+        }
+      } else {
+        throw new Error(
+          `No default algorithm available for provider "${access.encryption.provider}". Please specify an algorithm.`
+        )
+      }
+    }
+    return access
+  }
+
+  return access
+}
+
+/**
+ * Helper to create a private space access type with default google-kms provider
+ *
+ * @param {string} [algorithm] - The algorithm to use for key encryption
+ * @returns {API.SpaceAccessType}
+ */
+export const createPrivateAccess = (
+  algorithm = 'RSA_DECRYPT_OAEP_3072_SHA256'
+) => ({
+  type: 'private',
+  encryption: { provider: 'google-kms', algorithm },
+})
+
+/**
+ * Helper to create a public space access type
+ *
+ * @returns {API.SpaceAccessType}
+ */
+export const createPublicAccess = () => ({ type: 'public' })
+
+/**
  * Data model for the (owned) space.
  *
  * @typedef {{
  *  signer: ED25519.EdSigner;
  *   name: string;
- *   accessType?: 'public' | 'private';
+ *   access?: API.SpaceAccessType;
  *   agent?: API.Agent<S>;
  * }} Model
  * @template {Record<string, any>} [S=API.Service]
@@ -24,13 +90,14 @@ import * as Provider from './provider.js'
  * @template {Record<string, any>} [S=API.Service]
  * @param {object} options
  * @param {string} options.name - The name of the space.
- * @param {'public'|'private'} [options.accessType] - The access type for the space. Defaults to 'public'.
+ * @param {API.SpaceAccessType} [options.access] - The access type for the space. Defaults to { type: 'public' }.
  * @param {API.Agent<S>} [options.agent]
  */
-export const generate = async ({ name, accessType = 'public', agent }) => {
+export const generate = async ({ name, access, agent }) => {
   const { signer } = await ED25519.generate()
+  const normalizedAccess = normalizeAccessType(access)
 
-  return new OwnedSpace({ signer, name, accessType, agent })
+  return new OwnedSpace({ signer, name, access: normalizedAccess, agent })
 }
 
 /**
@@ -39,16 +106,17 @@ export const generate = async ({ name, accessType = 'public', agent }) => {
  * @param {string} mnemonic
  * @param {object} options
  * @param {string} options.name - Name to give to the recovered space.
- * @param {'public'|'private'} [options.accessType] - The access type for the space. Defaults to 'public'.
+ * @param {API.SpaceAccessType} [options.access] - The access type for the space. Defaults to { type: 'public' }.
  * @param {API.Agent} [options.agent]
  */
-export const fromMnemonic = async (
-  mnemonic,
-  { name, accessType = 'public', agent }
-) => {
+export const fromMnemonic = async (mnemonic, { name, access, agent }) => {
+  // TODO: Improve recovery UX by auto-detecting access type from existing space metadata
+  // or storing access type with space mnemonic. Should default to public if mnemonic
+  // doesn't contain access type information.
   const secret = BIP39.mnemonicToEntropy(mnemonic, wordlist)
   const signer = await ED25519.derive(secret)
-  return new OwnedSpace({ signer, name, accessType, agent })
+  const normalizedAccess = normalizeAccessType(access)
+  return new OwnedSpace({ signer, name, access: normalizedAccess, agent })
 }
 
 /**
@@ -101,20 +169,21 @@ export const SESSION_LIFETIME = 60 * 60 * 24 * 365
  * @param {API.UTCUnixTimestamp} [options.expiration]
  */
 export const createAuthorization = async (
-  { signer, name, accessType },
+  { signer, name, access },
   {
     audience,
-    access = Access.spaceAccess,
+    access: spaceAccess = Access.spaceAccess,
     expiration = UCAN.now() + SESSION_LIFETIME,
   }
 ) => {
-  const facts = [{ space: { name, accessType: accessType ?? 'public' } }]
+  const normalizedAccess = normalizeAccessType(access)
+  const facts = [{ space: { name, access: normalizedAccess } }]
 
   return await delegate({
     issuer: signer,
     audience: audience,
     capabilities: toCapabilities({
-      [signer.did()]: access,
+      [signer.did()]: spaceAccess,
     }),
     ...(expiration ? { expiration } : {}),
     facts,
@@ -164,8 +233,23 @@ export class OwnedSpace {
     return this.model.name
   }
 
+  get access() {
+    return normalizeAccessType(this.model.access)
+  }
+
   get accessType() {
-    return this.model.accessType ?? 'public'
+    return this.access.type
+  }
+
+  /**
+   * Get the encryption provider for private spaces
+   *
+   * @returns {'google-kms' | undefined}
+   */
+  get encryptionProvider() {
+    return this.access.type === 'private'
+      ? this.access.encryption?.provider
+      : undefined
   }
 
   did() {
@@ -181,7 +265,7 @@ export class OwnedSpace {
     return new OwnedSpace({
       signer: this.signer,
       name,
-      accessType: this.accessType,
+      access: this.access,
     })
   }
 
@@ -272,12 +356,14 @@ export const fromDelegation = (delegation) => {
     )
   }
 
-  /** @type {{name?:string, accessType?:string}} */
+  /** @type {{name?:string, access?:API.SpaceAccessType}} */
   const meta = delegation.facts[0]?.space ?? {}
 
-  // Ensure accessType defaults to 'public' for backwards compatibility
-  if (!meta.accessType) {
-    meta.accessType = 'public'
+  // Ensure access defaults to public for backwards compatibility
+  if (!meta.access) {
+    meta.access = { type: 'public' }
+  } else {
+    meta.access = normalizeAccessType(meta.access)
   }
 
   return new SharedSpace({ id: result.ok, delegation, meta })
@@ -324,7 +410,7 @@ export class SharedSpace {
    * @typedef {object} SharedSpaceModel
    * @property {API.SpaceDID} id
    * @property {API.Delegation} delegation
-   * @property {{name?:string, accessType?:string}} meta
+   * @property {{name?:string, access?:API.SpaceAccessType}} meta
    * @property {API.Agent} [agent]
    *
    * @param {SharedSpaceModel} model
@@ -345,8 +431,34 @@ export class SharedSpace {
     return this.meta.name ?? ''
   }
 
+  get access() {
+    return normalizeAccessType(this.meta.access)
+  }
+
   get accessType() {
-    return this.meta.accessType ?? 'public'
+    return this.access.type
+  }
+
+  /**
+   * Get the encryption provider for private spaces
+   *
+   * @returns {'google-kms' | undefined}
+   */
+  get encryptionProvider() {
+    return this.access.type === 'private'
+      ? this.access.encryption?.provider
+      : undefined
+  }
+
+  /**
+   * Get the encryption algorithm for private spaces
+   *
+   * @returns {string | undefined}
+   */
+  get encryptionAlgorithm() {
+    return this.access.type === 'private'
+      ? this.access.encryption?.algorithm
+      : undefined
   }
 
   did() {
@@ -359,7 +471,7 @@ export class SharedSpace {
   withName(name) {
     return new SharedSpace({
       ...this.model,
-      meta: { ...this.meta, name, accessType: this.accessType },
+      meta: { ...this.meta, name, access: this.access },
     })
   }
 }

@@ -5,7 +5,7 @@ import * as API from './types.js'
 /**
  * @typedef {object} Model
  * @property {API.SpaceDID} id
- * @property {{name?:string, accessType?:'public'|'private'}} [meta]
+ * @property {{name?:string, access?:import('@storacha/access').SpaceAccessType}} [meta]
  * @property {API.Agent} agent
  */
 
@@ -28,8 +28,34 @@ export class Space {
     return String(this.#model.meta?.name ?? '')
   }
 
+  get access() {
+    return this.#model.meta?.access ?? { type: 'public' }
+  }
+
   get accessType() {
-    return this.#model.meta?.accessType ?? 'public'
+    return this.access.type
+  }
+
+  /**
+   * Get the encryption provider for private spaces
+   *
+   * @returns {'google-kms' | undefined}
+   */
+  get encryptionProvider() {
+    return this.access.type === 'private'
+      ? this.access.encryption?.provider
+      : undefined
+  }
+
+  /**
+   * Get the encryption algorithm for private spaces
+   *
+   * @returns {string | undefined}
+   */
+  get encryptionAlgorithm() {
+    return this.access.type === 'private'
+      ? this.access.encryption?.algorithm
+      : undefined
   }
 
   /**

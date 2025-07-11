@@ -268,7 +268,7 @@ export class Client extends Base {
    * @property {Account.Account} [account] - The account configured as the recovery account for the space.
    * @property {Array<ConnectionView>} [authorizeGatewayServices] - The DID Key or DID Web of the Gateway to authorize to serve content from the created space.
    * @property {boolean} [skipGatewayAuthorization] - Whether to skip the Gateway authorization. It means that the content of the space will not be served by any Gateway.
-   * @property {'public'|'private'} [accessType] - Access type for the space - determines client-side encryption behavior.
+   * @property {import('@storacha/access').SpaceAccessType} [access] - Access type for the space - determines client-side encryption behavior.
    *
    * @param {string} name - The name of the space to create.
    * @param {SpaceCreateOptions} [options] - Options for the space creation.
@@ -277,12 +277,12 @@ export class Client extends Base {
   async createSpace(name, options = {}) {
     // Save the space to authorize the client to use the space
     const {
-      accessType = 'public',
+      access,
       account,
       skipGatewayAuthorization,
       authorizeGatewayServices,
     } = options
-    const space = await this._agent.createSpace(name, { accessType })
+    const space = await this._agent.createSpace(name, { access })
 
     if (account) {
       // Provision the account with the space

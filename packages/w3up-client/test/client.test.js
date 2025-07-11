@@ -257,7 +257,10 @@ export const testClient = {
       const alice = new Client(await AgentData.create())
 
       const space = await alice.createSpace('private-space', {
-        accessType: 'private',
+        access: {
+          type: 'private',
+          encryption: { provider: 'google-kms', algorithm: 'aes-256-gcm' },
+        },
         // Creates a temporary space without saving it
         skipGatewayAuthorization: true,
       })
@@ -265,27 +268,32 @@ export const testClient = {
       await alice.addSpace(auth)
 
       assert.equal(space.accessType, 'private')
+      assert.equal(space.encryptionProvider, 'google-kms')
 
       const spaces = alice.spaces()
       assert.equal(spaces.length, 1)
       assert.equal(spaces[0].accessType, 'private')
+      assert.equal(spaces[0].encryptionProvider, 'google-kms')
+      assert.equal(spaces[0].encryptionAlgorithm, 'aes-256-gcm')
     },
 
     'should create space with accessType public': async (assert) => {
       const alice = new Client(await AgentData.create())
 
       const space = await alice.createSpace('public-space', {
-        accessType: 'public',
+        access: { type: 'public' },
         skipGatewayAuthorization: true,
       })
       const auth = await space.createAuthorization(alice)
       await alice.addSpace(auth)
 
       assert.equal(space.accessType, 'public')
+      assert.equal(space.encryptionProvider, undefined) // public spaces have no encryption provider
 
       const spaces = alice.spaces()
       assert.equal(spaces.length, 1)
       assert.equal(spaces[0].accessType, 'public')
+      assert.equal(spaces[0].encryptionProvider, undefined)
     },
 
     'should default to public accessType when no accessType is provided':
@@ -299,10 +307,12 @@ export const testClient = {
         await alice.addSpace(auth)
 
         assert.equal(space.accessType, 'public')
+        assert.equal(space.encryptionProvider, undefined)
 
         const spaces = alice.spaces()
         assert.equal(spaces.length, 1)
         assert.equal(spaces[0].accessType, 'public')
+        assert.equal(spaces[0].encryptionProvider, undefined)
       },
 
     'should recover private space from mnemonic preserving accessType': async (
@@ -312,7 +322,10 @@ export const testClient = {
 
       // Create a private space and get its mnemonic
       const originalSpace = await alice.createSpace('recovery-test-private', {
-        accessType: 'private',
+        access: {
+          type: 'private',
+          encryption: { provider: 'google-kms', algorithm: 'aes-256-gcm' },
+        },
         skipGatewayAuthorization: true,
       })
       const mnemonic = originalSpace.toMnemonic()
@@ -323,10 +336,14 @@ export const testClient = {
       // Recover the space from mnemonic
       const recoveredSpace = await bob.agent.recoverSpace(mnemonic, {
         name: 'recovered-private-space',
-        accessType: 'private',
+        access: {
+          type: 'private',
+          encryption: { provider: 'google-kms', algorithm: 'aes-256-gcm' },
+        },
       })
 
       assert.equal(recoveredSpace.accessType, 'private')
+      assert.equal(recoveredSpace.encryptionProvider, 'google-kms')
       assert.equal(recoveredSpace.name, 'recovered-private-space')
       assert.equal(recoveredSpace.did(), originalSpace.did())
 
@@ -337,6 +354,7 @@ export const testClient = {
       const spaces = bob.spaces()
       assert.equal(spaces.length, 1)
       assert.equal(spaces[0].accessType, 'private')
+      assert.equal(spaces[0].encryptionProvider, 'google-kms')
       assert.equal(spaces[0].name, 'recovered-private-space')
     },
 
@@ -347,7 +365,7 @@ export const testClient = {
 
       // Create a public space and get its mnemonic
       const originalSpace = await alice.createSpace('recovery-test-public', {
-        accessType: 'public',
+        access: { type: 'public' },
         skipGatewayAuthorization: true,
       })
       const mnemonic = originalSpace.toMnemonic()
@@ -358,7 +376,7 @@ export const testClient = {
       // Recover the space from mnemonic
       const recoveredSpace = await bob.agent.recoverSpace(mnemonic, {
         name: 'recovered-public-space',
-        accessType: 'public',
+        access: { type: 'public' },
       })
 
       assert.equal(recoveredSpace.accessType, 'public')
@@ -415,7 +433,10 @@ export const testClient = {
 
       // Create a private space
       const originalSpace = await alice.createSpace('original-name', {
-        accessType: 'private',
+        access: {
+          type: 'private',
+          encryption: { provider: 'google-kms', algorithm: 'aes-256-gcm' },
+        },
         skipGatewayAuthorization: true,
       })
 
@@ -423,17 +444,19 @@ export const testClient = {
       const renamedSpace = originalSpace.withName('new-name')
 
       assert.equal(renamedSpace.accessType, 'private')
+      assert.equal(renamedSpace.encryptionProvider, 'google-kms')
       assert.equal(renamedSpace.name, 'new-name')
       assert.equal(renamedSpace.did(), originalSpace.did())
 
       // Test with public space too
       const publicSpace = await alice.createSpace('public-original', {
-        accessType: 'public',
+        access: { type: 'public' },
         skipGatewayAuthorization: true,
       })
 
       const renamedPublicSpace = publicSpace.withName('public-renamed')
       assert.equal(renamedPublicSpace.accessType, 'public')
+      assert.equal(renamedPublicSpace.encryptionProvider, undefined)
       assert.equal(renamedPublicSpace.name, 'public-renamed')
       assert.equal(renamedPublicSpace.did(), publicSpace.did())
     },
@@ -446,7 +469,10 @@ export const testClient = {
 
       // Alice creates a private space
       const space = await alice.createSpace('delegation-test-private', {
-        accessType: 'private',
+        access: {
+          type: 'private',
+          encryption: { provider: 'google-kms', algorithm: 'aes-256-gcm' },
+        },
         skipGatewayAuthorization: true,
       })
 
@@ -468,6 +494,7 @@ export const testClient = {
       const bobSpaces = bob.spaces()
       assert.equal(bobSpaces.length, 1)
       assert.equal(bobSpaces[0].accessType, 'private')
+      assert.equal(bobSpaces[0].encryptionProvider, 'google-kms')
       assert.equal(bobSpaces[0].did(), space.did())
     },
 
@@ -479,7 +506,7 @@ export const testClient = {
 
       // Alice creates a public space
       const space = await alice.createSpace('delegation-test-public', {
-        accessType: 'public',
+        access: { type: 'public' },
         skipGatewayAuthorization: true,
       })
 
