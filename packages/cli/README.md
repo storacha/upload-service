@@ -124,6 +124,23 @@ Add a space to the agent. The proof is a CAR encoded UCAN delegating capabilitie
 
 Create a new space with an optional name.
 
+- `--access-type` Access type for the space: `public` or `private` (default: `public`). Private spaces have restricted access and are not publicly discoverable.
+- `--encryption-provider` Encryption provider for private spaces: `google-kms` (default: `google-kms`). Only relevant when `--access-type` is `private`.
+- `--encryption-algorithm` Encryption algorithm for private spaces (default: `RSA_DECRYPT_OAEP_3072_SHA256`). Only relevant when `--access-type` is `private`.
+
+Examples:
+
+```bash
+# Create a public space (default)
+storacha space create "My Documents"
+
+# Create a private space with Google KMS encryption (default)
+storacha space create "Private Files" --access-type private
+
+# Create a private space with custom algorithm
+storacha space create "Secure Vault" --access-type private --encryption-algorithm "RSA_DECRYPT_OAEP_4096_SHA256"
+```
+
 ### `storacha space ls`
 
 List spaces known to the agent.
