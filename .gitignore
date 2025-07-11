@@ -74,3 +74,11 @@ terraform.rc
 
 # TypeScript
 *.tsbuildinfo
+
+# Playwright
+playwright-report
+test-results
+
+# mkcert
+*.crt
+*.key
