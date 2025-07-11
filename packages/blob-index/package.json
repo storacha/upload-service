@@ -15,6 +15,9 @@
   "type": "module",
   "types": "dist/src/index.d.ts",
   "main": "src/index.js",
+  "bin": {
+    "blob-index": "src/bin.js"
+  },
   "files": [
     "dist",
     "!dist/**/*.js.map"
@@ -42,6 +45,7 @@
     "@ucanto/interface": "catalog:",
     "carstream": "catalog:",
     "multiformats": "catalog:",
+    "sade": "catalog:",
     "uint8arrays": "^5.0.3"
   },
   "devDependencies": {
