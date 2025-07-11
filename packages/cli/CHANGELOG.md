@@ -1,3 +1,13 @@
+## 1.2.42 (2025-07-11)
+
+### 🩹 Fixes
+
+- fix: gateway service connection for non default service ([#304](https://github.com/storacha/upload-service/pull/304))
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.2.41 (2025-07-09)
 
 ### 🧱 Updated Dependencies
