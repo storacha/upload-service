@@ -1,3 +1,9 @@
+## 1.2.5 (2025-07-11)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/blob-index to 1.2.0
+
 ## 1.2.4 (2025-07-08)
 
 ### 🩹 Fixes
