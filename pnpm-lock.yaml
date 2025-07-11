@@ -297,15 +297,10 @@ overrides:
   hd-scripts>@typescript-eslint/parser: 8.26.1
   eslint-config-standard-with-typescript>@typescript-eslint/eslint-plugin: 8.26.1
   eslint-config-standard-with-typescript>@typescript-eslint/parser: 8.26.1
-  '@storacha/blob-index': 'link:'
 
 importers:
 
   .:
-    dependencies:
-      '@storacha/blob-index':
-        specifier: 'link:'
-        version: 'link:'
     devDependencies:
       '@nx/devkit':
         specifier: 20.3.2
@@ -1585,8 +1580,8 @@ importers:
         specifier: workspace:^
         version: link:../access-client
       '@storacha/blob-index':
-        specifier: link:../..
-        version: link:../..
+        specifier: workspace:^
+        version: link:../blob-index
       '@storacha/capabilities':
         specifier: workspace:^
         version: link:../capabilities
@@ -1685,8 +1680,8 @@ importers:
         specifier: 'catalog:'
         version: 3.0.0
       '@storacha/blob-index':
-        specifier: link:../..
-        version: link:../..
+        specifier: workspace:^
+        version: link:../blob-index
       '@storacha/capabilities':
         specifier: workspace:^
         version: link:../capabilities
@@ -1788,8 +1783,8 @@ importers:
         specifier: workspace:^
         version: link:../access-client
       '@storacha/blob-index':
-        specifier: link:../..
-        version: link:../..
+        specifier: workspace:^
+        version: link:../blob-index
       '@storacha/capabilities':
         specifier: workspace:^
         version: link:../capabilities
@@ -5100,6 +5095,13 @@ packages:
 
   '@stablelib/x25519@1.0.3':
     resolution: {integrity: sha512-KnTbKmUhPhHavzobclVJQG5kuivH+qDLpe84iRqX3CLrKp881cF160JvXJ+hjn1aMyCwYOKeIZefIH/P5cJoRw==}
+
+  '@storacha/blob-index@1.1.0-rc.0':
+    resolution: {integrity: sha512-LTPfv0POAKbFJAem1Iz7utZzlh2auIhUZ7TQYz9YM9tZOWXwWz4oKXv6v0sXsqK5NGZsnolT5iQbNJ2f8GXZBg==}
+    engines: {node: '>=16.15'}
+
+  '@storacha/capabilities@1.7.0':
+    resolution: {integrity: sha512-YMIuocTgaVpqlgyds5NG+eJqfr+dfFkxdk33lJcFIRD30SZaGiA8vQ0ZPUHqcC9Azj0XZCRexz6nHXqEsn1aag==}
 
   '@storacha/capabilities@1.7.0-rc.0':
     resolution: {integrity: sha512-y+BhKDY8fem15+4YstC07BQY2jLO5zD8zcsBUpnMmZOmouDfPiq/SK/e8S5FbXS7J+xcqCTamSacXLxCojsAsg==}
@@ -18096,6 +18098,27 @@ snapshots:
       '@stablelib/random': 1.0.2
       '@stablelib/wipe': 1.0.1
 
+  '@storacha/blob-index@1.1.0-rc.0':
+    dependencies:
+      '@ipld/dag-cbor': 9.2.4
+      '@storacha/capabilities': 1.7.0
+      '@storacha/one-webcrypto': 1.0.1
+      '@ucanto/core': 10.4.0
+      '@ucanto/interface': 10.3.0
+      carstream: 2.3.0
+      multiformats: 13.3.6
+      uint8arrays: 5.1.0
+
+  '@storacha/capabilities@1.7.0':
+    dependencies:
+      '@ucanto/core': 10.4.0
+      '@ucanto/interface': 10.3.0
+      '@ucanto/principal': 9.0.2
+      '@ucanto/transport': 9.2.0
+      '@ucanto/validator': 9.1.0
+      '@web3-storage/data-segment': 5.3.0
+      multiformats: 13.3.6
+
   '@storacha/capabilities@1.7.0-rc.0':
     dependencies:
       '@ucanto/core': 10.4.0
@@ -18109,7 +18132,7 @@ snapshots:
   '@storacha/indexing-service-client@2.2.0-rc.3':
     dependencies:
       '@ipld/dag-cbor': 9.2.4
-      '@storacha/blob-index': 'link:'
+      '@storacha/blob-index': 1.1.0-rc.0
       '@storacha/capabilities': 1.7.0-rc.0
       '@ucanto/core': 10.4.0
       '@ucanto/interface': 10.3.0
@@ -22037,7 +22060,7 @@ snapshots:
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1)
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
       eslint-plugin-jsx-a11y: 6.10.2(eslint@8.57.1)
       eslint-plugin-react: 7.37.4(eslint@8.57.1)
       eslint-plugin-react-hooks: 4.6.2(eslint@8.57.1)
@@ -22108,7 +22131,7 @@ snapshots:
       tinyglobby: 0.2.13
       unrs-resolver: 1.7.0
     optionalDependencies:
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -22152,7 +22175,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1):
+  eslint-plugin-import@2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.8
