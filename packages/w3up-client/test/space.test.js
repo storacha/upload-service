@@ -56,7 +56,7 @@ export const testSpace = Test.withContext({
     })
     assert.equal(space.did(), signer.did())
     assert.equal(space.name, name)
-    assert.equal(space.accessType, 'private')
+    assert.equal(space.access.type, 'private')
     assert.equal(space.meta()?.name, name)
     assert.equal(space.meta()?.access?.type, 'private')
   },
@@ -72,7 +72,7 @@ export const testSpace = Test.withContext({
       meta: { name },
       agent: client.agent,
     })
-    assert.equal(space.accessType, 'public')
+    assert.equal(space.access.type, 'public')
   },
 
   'should handle space with no meta': async (assert, { client }) => {
@@ -82,7 +82,7 @@ export const testSpace = Test.withContext({
       agent: client.agent,
     })
     assert.equal(space.name, '')
-    assert.equal(space.accessType, 'public')
+    assert.equal(space.access.type, 'public')
     assert.equal(space.meta(), undefined)
   },
 
@@ -102,7 +102,7 @@ export const testSpace = Test.withContext({
       agent: client.agent,
     })
     assert.equal(space.name, '')
-    assert.equal(space.accessType, 'private')
+    assert.equal(space.access.type, 'private')
     assert.deepEqual(space.meta(), {
       access: {
         type: 'private',
@@ -189,7 +189,7 @@ export const testSpace = Test.withContext({
     })
     assert.ok(space instanceof OwnedSpace)
     assert.equal(space.name, 'test-space')
-    assert.equal(space.accessType, 'private')
+    assert.equal(space.access.type, 'private')
   },
 
   'should convert space to mnemonic and recover': async (
@@ -237,8 +237,10 @@ export const testSpace = Test.withContext({
     const sharedSpace = fromDelegation(auth)
     assert.ok(sharedSpace instanceof SharedSpace)
     assert.equal(sharedSpace.name, 'test-space')
-    assert.equal(sharedSpace.accessType, 'private')
-    assert.equal(sharedSpace.encryptionProvider, 'google-kms')
+    assert.equal(sharedSpace.access.type, 'private')
+    if (sharedSpace.access.type === 'private') {
+      assert.equal(sharedSpace.access.encryption.provider, 'google-kms')
+    }
     assert.equal(sharedSpace.did(), space.did())
   },
 
@@ -274,8 +276,10 @@ export const testSpace = Test.withContext({
     // Test withName method
     const renamedSpace = space.withName('renamed-space')
     assert.equal(renamedSpace.name, 'renamed-space')
-    assert.equal(renamedSpace.accessType, 'private')
-    assert.equal(renamedSpace.encryptionProvider, 'google-kms')
+    assert.equal(renamedSpace.access.type, 'private')
+    if (renamedSpace.access.type === 'private') {
+      assert.equal(renamedSpace.access.encryption.provider, 'google-kms')
+    }
     assert.equal(renamedSpace.did(), space.did())
 
     // Test createRecovery method
@@ -311,8 +315,10 @@ export const testSpace = Test.withContext({
 
     const renamedSharedSpace = sharedSpace.withName('renamed-shared')
     assert.equal(renamedSharedSpace.name, 'renamed-shared')
-    assert.equal(renamedSharedSpace.accessType, 'private')
-    assert.equal(renamedSharedSpace.encryptionProvider, 'google-kms')
+    assert.equal(renamedSharedSpace.access.type, 'private')
+    if (renamedSharedSpace.access.type === 'private') {
+      assert.equal(renamedSharedSpace.access.encryption.provider, 'google-kms')
+    }
     assert.equal(renamedSharedSpace.did(), sharedSpace.did())
 
     // Test getters
@@ -334,8 +340,8 @@ export const testSpace = Test.withContext({
 
     const renamedSharedSpace = sharedSpace.withName('renamed-shared')
     assert.equal(renamedSharedSpace.name, 'renamed-shared')
-    assert.equal(renamedSharedSpace.accessType, 'public')
-    assert.equal(renamedSharedSpace.encryptionProvider, undefined)
+    assert.equal(renamedSharedSpace.access.type, 'public')
+    assert.ok(!('encryption' in renamedSharedSpace.access))
     assert.equal(renamedSharedSpace.did(), sharedSpace.did())
 
     // Test getters
@@ -351,8 +357,8 @@ export const testSpace = Test.withContext({
 
       const renamedSharedSpace = sharedSpace.withName('renamed-shared')
       assert.equal(renamedSharedSpace.name, 'renamed-shared')
-      assert.equal(renamedSharedSpace.accessType, 'public')
-      assert.equal(renamedSharedSpace.encryptionProvider, undefined)
+      assert.equal(renamedSharedSpace.access.type, 'public')
+      assert.ok(!('encryption' in renamedSharedSpace.access))
       assert.equal(renamedSharedSpace.did(), sharedSpace.did())
 
       // Test getters
@@ -390,11 +396,14 @@ export const testSpace = Test.withContext({
         },
         agent: client.agent,
       })
-      assert.equal(privateSpace.encryptionProvider, 'google-kms')
-      assert.equal(
-        privateSpace.encryptionAlgorithm,
-        'RSA_DECRYPT_OAEP_3072_SHA256'
-      )
+      assert.equal(privateSpace.access.type, 'private')
+      if (privateSpace.access.type === 'private') {
+        assert.equal(privateSpace.access.encryption.provider, 'google-kms')
+        assert.equal(
+          privateSpace.access.encryption.algorithm,
+          'RSA_DECRYPT_OAEP_3072_SHA256'
+        )
+      }
 
       // Test public space
       const publicSpace = new Space({
@@ -405,8 +414,8 @@ export const testSpace = Test.withContext({
         },
         agent: client.agent,
       })
-      assert.equal(publicSpace.encryptionProvider, undefined)
-      assert.equal(publicSpace.encryptionAlgorithm, undefined)
+      assert.equal(publicSpace.access.type, 'public')
+      assert.ok(!('encryption' in publicSpace.access))
 
       // Test space with no access metadata
       const noAccessSpace = new Space({
@@ -414,16 +423,16 @@ export const testSpace = Test.withContext({
         meta: { name: 'no-access-test' },
         agent: client.agent,
       })
-      assert.equal(noAccessSpace.encryptionProvider, undefined)
-      assert.equal(noAccessSpace.encryptionAlgorithm, undefined)
+      assert.equal(noAccessSpace.access.type, 'public')
+      assert.ok(!('encryption' in noAccessSpace.access))
 
       // Test space with no meta at all
       const noMetaSpace = new Space({
         id: (await Signer.generate()).did(),
         agent: client.agent,
       })
-      assert.equal(noMetaSpace.encryptionProvider, undefined)
-      assert.equal(noMetaSpace.encryptionAlgorithm, undefined)
+      assert.equal(noMetaSpace.access.type, 'public')
+      assert.ok(!('encryption' in noMetaSpace.access))
     },
 
   'should test date utility functions coverage': async (assert, { client }) => {

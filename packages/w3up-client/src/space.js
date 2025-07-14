@@ -32,32 +32,6 @@ export class Space {
     return this.#model.meta?.access ?? { type: 'public' }
   }
 
-  get accessType() {
-    return this.access.type
-  }
-
-  /**
-   * Get the encryption provider for private spaces
-   *
-   * @returns {'google-kms' | undefined}
-   */
-  get encryptionProvider() {
-    return this.access.type === 'private'
-      ? this.access.encryption?.provider
-      : undefined
-  }
-
-  /**
-   * Get the encryption algorithm for private spaces
-   *
-   * @returns {string | undefined}
-   */
-  get encryptionAlgorithm() {
-    return this.access.type === 'private'
-      ? this.access.encryption?.algorithm
-      : undefined
-  }
-
   /**
    * The DID of the space.
    */

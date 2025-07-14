@@ -5,72 +5,7 @@ import { wordlist } from '@scure/bip39/wordlists/english'
 import * as API from './types.js'
 import * as Access from './access.js'
 import * as Provider from './provider.js'
-
-/**
- * Normalizes access type to ensure defaults are applied
- * This is mainly for backward compatibility when loading existing spaces
- * that might not have the encryption field in their delegation facts.
- *
- * @param {API.SpaceAccessType} [access]
- * @returns {API.SpaceAccessType}
- */
-const normalizeAccessType = (access) => {
-  if (!access || access.type === 'public') {
-    return { type: 'public' }
-  }
-
-  if (access.type === 'private') {
-    // Ensure encryption field exists for backward compatibility
-    if (!access.encryption) {
-      return {
-        type: 'private',
-        encryption: {
-          provider: 'google-kms',
-          algorithm: 'RSA_DECRYPT_OAEP_3072_SHA256',
-        },
-      }
-    }
-    // Ensure algorithm field exists for backward compatibility
-    if (!access.encryption.algorithm) {
-      if (access.encryption.provider === 'google-kms') {
-        return {
-          type: 'private',
-          encryption: {
-            provider: access.encryption.provider,
-            algorithm: 'RSA_DECRYPT_OAEP_3072_SHA256',
-          },
-        }
-      } else {
-        throw new Error(
-          `No default algorithm available for provider "${access.encryption.provider}". Please specify an algorithm.`
-        )
-      }
-    }
-    return access
-  }
-
-  return access
-}
-
-/**
- * Helper to create a private space access type with default google-kms provider
- *
- * @param {string} [algorithm] - The algorithm to use for key encryption
- * @returns {API.SpaceAccessType}
- */
-export const createPrivateAccess = (
-  algorithm = 'RSA_DECRYPT_OAEP_3072_SHA256'
-) => ({
-  type: 'private',
-  encryption: { provider: 'google-kms', algorithm },
-})
-
-/**
- * Helper to create a public space access type
- *
- * @returns {API.SpaceAccessType}
- */
-export const createPublicAccess = () => ({ type: 'public' })
+import { SpaceAccess } from './space-access.js'
 
 /**
  * Data model for the (owned) space.
@@ -95,7 +30,7 @@ export const createPublicAccess = () => ({ type: 'public' })
  */
 export const generate = async ({ name, access, agent }) => {
   const { signer } = await ED25519.generate()
-  const normalizedAccess = normalizeAccessType(access)
+  const normalizedAccess = SpaceAccess.from(access)
 
   return new OwnedSpace({ signer, name, access: normalizedAccess, agent })
 }
@@ -115,7 +50,7 @@ export const fromMnemonic = async (mnemonic, { name, access, agent }) => {
   // doesn't contain access type information.
   const secret = BIP39.mnemonicToEntropy(mnemonic, wordlist)
   const signer = await ED25519.derive(secret)
-  const normalizedAccess = normalizeAccessType(access)
+  const normalizedAccess = SpaceAccess.from(access)
   return new OwnedSpace({ signer, name, access: normalizedAccess, agent })
 }
 
@@ -176,7 +111,7 @@ export const createAuthorization = async (
     expiration = UCAN.now() + SESSION_LIFETIME,
   }
 ) => {
-  const normalizedAccess = normalizeAccessType(access)
+  const normalizedAccess = SpaceAccess.from(access)
   const facts = [{ space: { name, access: normalizedAccess } }]
 
   return await delegate({
@@ -234,22 +169,7 @@ export class OwnedSpace {
   }
 
   get access() {
-    return normalizeAccessType(this.model.access)
-  }
-
-  get accessType() {
-    return this.access.type
-  }
-
-  /**
-   * Get the encryption provider for private spaces
-   *
-   * @returns {'google-kms' | undefined}
-   */
-  get encryptionProvider() {
-    return this.access.type === 'private'
-      ? this.access.encryption?.provider
-      : undefined
+    return SpaceAccess.from(this.model.access)
   }
 
   did() {
@@ -360,11 +280,7 @@ export const fromDelegation = (delegation) => {
   const meta = delegation.facts[0]?.space ?? {}
 
   // Ensure access defaults to public for backwards compatibility
-  if (!meta.access) {
-    meta.access = { type: 'public' }
-  } else {
-    meta.access = normalizeAccessType(meta.access)
-  }
+  meta.access = SpaceAccess.from(meta.access)
 
   return new SharedSpace({ id: result.ok, delegation, meta })
 }
@@ -432,33 +348,7 @@ export class SharedSpace {
   }
 
   get access() {
-    return normalizeAccessType(this.meta.access)
-  }
-
-  get accessType() {
-    return this.access.type
-  }
-
-  /**
-   * Get the encryption provider for private spaces
-   *
-   * @returns {'google-kms' | undefined}
-   */
-  get encryptionProvider() {
-    return this.access.type === 'private'
-      ? this.access.encryption?.provider
-      : undefined
-  }
-
-  /**
-   * Get the encryption algorithm for private spaces
-   *
-   * @returns {string | undefined}
-   */
-  get encryptionAlgorithm() {
-    return this.access.type === 'private'
-      ? this.access.encryption?.algorithm
-      : undefined
+    return SpaceAccess.from(this.meta.access)
   }
 
   did() {
