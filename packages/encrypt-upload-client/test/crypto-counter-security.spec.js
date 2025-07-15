@@ -55,7 +55,7 @@ await describe('AES-CTR Counter Security', async () => {
     assert.strictEqual(counter3[15], 2, 'Third counter should be 2')
     assert.strictEqual(counter4[15], 7, 'Eighth counter should be 7')
 
-    console.log('✅ Counter increments by blocks correctly')
+    console.log('Counter increments by blocks correctly')
   })
 
   await test('should handle chunk sizes correctly', async () => {
@@ -204,6 +204,23 @@ await describe('AES-CTR Counter Security', async () => {
       )
     }
 
-    console.log('✅ No keystream reuse detected across different chunk sizes')
+    console.log('No keystream reuse detected across different chunk sizes')
+  })
+
+  await test('should throw a clear error if Web Crypto API is not available', async () => {
+    // Save and remove globalThis.crypto
+    const originalCrypto = globalThis.crypto
+    try {
+      // @ts-expect-error
+      delete globalThis.crypto
+      assert.throws(
+        () => new GenericAesCtrStreamingCrypto(),
+        /Web Crypto API|crypto( is)? not available/i,
+        'Should throw if Web Crypto API is missing'
+      )
+    } finally {
+      // Restore globalThis.crypto
+      globalThis.crypto = originalCrypto
+    }
   })
 })

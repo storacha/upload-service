@@ -76,17 +76,6 @@ class LitEncryptedMetadata {
     return this.#accessControlConditions
   }
 
-  archive() {
-    /** @type {Types.LitMetadata} */
-    const input = {
-      encryptedDataCID: this.encryptedDataCID,
-      identityBoundCiphertext: this.identityBoundCiphertext,
-      plaintextKeyHash: this.plaintextKeyHash,
-      accessControlConditions: this.accessControlConditions,
-    }
-    return archive(input)
-  }
-
   archiveBlock() {
     /** @type {Types.LitMetadata} */
     const input = {

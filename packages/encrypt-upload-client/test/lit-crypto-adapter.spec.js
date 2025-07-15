@@ -231,10 +231,9 @@ await describe('LitCryptoAdapter', async () => {
     })
 
     await test('should verify factory function behavior', async () => {
-      const {
-        createGenericLitAdapter,
-        createLegacyLitAdapter: createNodeLitAdapter,
-      } = await import('../src/crypto/factories.js')
+      const { createGenericLitAdapter, createNodeLitAdapter } = await import(
+        '../src/crypto/factories.node.js'
+      )
 
       const genericAdapter = createGenericLitAdapter(mockLitClient)
       const nodeAdapter = createNodeLitAdapter(mockLitClient)

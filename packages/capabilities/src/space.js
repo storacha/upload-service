@@ -137,11 +137,11 @@ export const EncryptionSetup = capability({
   with: SpaceDID,
   nb: Schema.struct({
     /**
-     * @description The location of the KMS key to use for encryption. If not provided, the gateway will use the default location.
+     * The location of the KMS key to use for encryption. If not provided, the Storacha Key Manager will use the default location.
      */
     location: Schema.string().optional(),
     /**
-     * @description The keyring of the KMS key to use for encryption. If not provided, the gateway will use the default keyring.
+     * The keyring of the KMS key to use for encryption. If not provided, the Storacha Key Manager will use the default keyring.
      */
     keyring: Schema.string().optional(),
   }),
@@ -149,6 +149,16 @@ export const EncryptionSetup = capability({
     if (child.with !== parent.with) {
       return fail(
         `Can not derive ${child.can} with ${child.with} from ${parent.with}`
+      )
+    }
+    if (child.nb.location !== parent.nb.location) {
+      return fail(
+        `Can not derive ${child.can} location ${child.nb.location} from ${parent.nb.location}`
+      )
+    }
+    if (child.nb.keyring !== parent.nb.keyring) {
+      return fail(
+        `Can not derive ${child.can} keyring ${child.nb.keyring} from ${parent.nb.keyring}`
       )
     }
     return ok({})
@@ -166,19 +176,24 @@ export const EncryptionSetup = capability({
  * The gateway will validate this capability against UCAN delegations before
  * providing decrypted Data Encryption Keys (DEKs) to authorized clients.
  */
-export const KeyDecrypt = capability({
+export const EncryptionKeyDecrypt = capability({
   can: 'space/encryption/key/decrypt',
   with: SpaceDID,
   nb: Schema.struct({
     /**
-     * @description The encrypted symmetric key to be decrypted
+     * The encrypted symmetric key to be decrypted
      */
-    encryptedSymmetricKey: Schema.string(),
+    key: Schema.bytes(),
   }),
   derives: (child, parent) => {
     if (child.with !== parent.with) {
       return fail(
         `Can not derive ${child.can} with ${child.with} from ${parent.with}`
+      )
+    }
+    if (child.nb.key !== parent.nb.key) {
+      return fail(
+        `Can not derive ${child.can} key ${child.nb.key} from ${parent.nb.key}`
       )
     }
     return ok({})

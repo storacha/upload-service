@@ -303,8 +303,8 @@ export type SpaceContentServe = InferInvokedCapability<
 export type SpaceEncryptionSetup = InferInvokedCapability<
   typeof SpaceCaps.EncryptionSetup
 >
-export type SpaceKeyDecrypt = InferInvokedCapability<
-  typeof SpaceCaps.KeyDecrypt
+export type SpaceEncryptionKeyDecrypt = InferInvokedCapability<
+  typeof SpaceCaps.EncryptionKeyDecrypt
 >
 export type EgressRecord = InferInvokedCapability<typeof SpaceCaps.egressRecord>
 export type EgressRecordSuccess = {
@@ -1026,7 +1026,7 @@ export type ServiceAbilityArray = [
   SpaceInfo['can'],
   SpaceContentServe['can'],
   SpaceEncryptionSetup['can'],
-  SpaceKeyDecrypt['can'],
+  SpaceEncryptionKeyDecrypt['can'],
   EgressRecord['can'],
   Upload['can'],
   UploadAdd['can'],

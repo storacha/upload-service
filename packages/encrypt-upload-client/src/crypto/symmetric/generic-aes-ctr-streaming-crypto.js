@@ -16,16 +16,27 @@ const COUNTER_LENGTH = 64 // bits (Web Crypto API default for AES-CTR)
  * - Provides identical results across Node.js and browser environments
  *
  * Key features:
- * - ✅ Memory usage: O(1) - constant memory regardless of file size
- * - ✅ Supports unlimited file sizes (1TB+)
- * - ✅ Cross-platform compatibility (Node.js 16+ and modern browsers)
- * - ✅ Clean streaming implementation with automatic resource management
- * - ✅ Built-in error handling via TransformStream
+ * - Memory usage: O(1) - constant memory regardless of file size
+ * - Supports unlimited file sizes (1TB+)
+ * - Cross-platform compatibility (Node.js 16+ and modern browsers)
+ * - Clean streaming implementation with automatic resource management
+ * - Built-in error handling via TransformStream
  *
  * @class
  * @implements {Type.SymmetricCrypto}
  */
 export class GenericAesCtrStreamingCrypto {
+  constructor() {
+    if (typeof globalThis.crypto === 'undefined') {
+      throw new Error('Web Crypto API is not available.')
+    }
+  }
+
+  /**
+   * Generate a random AES key
+   *
+   * @returns {Promise<Uint8Array>} A random AES key
+   */
   async generateKey() {
     return globalThis.crypto.getRandomValues(new Uint8Array(KEY_LENGTH / 8))
   }

@@ -19,9 +19,9 @@ if (typeof globalThis.crypto === 'undefined') {
 import { GenericAesCtrStreamingCrypto } from '../src/crypto/symmetric/generic-aes-ctr-streaming-crypto.js'
 import { KMSCryptoAdapter } from '../src/crypto/adapters/kms-crypto-adapter.js'
 import {
-  createMockGatewayService,
-  createMockGatewayServer,
-} from './mocks/private-gateway.js'
+  createMockKeyManagerService,
+  createMockKeyManagerServer,
+} from './mocks/key-manager.js'
 import { createTestFixtures } from './fixtures/test-fixtures.js'
 import {
   stringToUint8Array,
@@ -85,16 +85,16 @@ await describe('KMSCryptoAdapter', async () => {
 
       // Verify adapter constructor sets properties correctly
       assert(
-        typeof adapter.privateGatewayDID === 'object',
+        typeof adapter.keyManagerServiceDID === 'object',
         'Adapter should have gateway DID object'
       )
       assert.strictEqual(
-        adapter.privateGatewayDID.did(),
+        adapter.keyManagerServiceDID.did(),
         'did:web:private.storacha.link',
         'Adapter should have correct gateway DID'
       )
       assert(
-        adapter.privateGatewayURL instanceof URL,
+        adapter.keyManagerServiceURL instanceof URL,
         'Adapter should have gateway URL'
       )
     })
@@ -152,7 +152,7 @@ await describe('KMSCryptoAdapter', async () => {
     await test('should complete full encryption workflow with mocked private gateway', async () => {
       const fixtures = await createTestFixtures()
       const {
-        gatewayDID,
+        keyManagerServiceDID,
         spaceDID,
         issuer,
         publicKeyPem,
@@ -165,7 +165,7 @@ await describe('KMSCryptoAdapter', async () => {
       let actualEncryptedKey = ''
 
       // Create mock gateway service that performs real RSA encryption/decryption
-      const service = createMockGatewayService({
+      const service = createMockKeyManagerService({
         mockPublicKey: publicKeyPem,
         onEncryptionSetup: (/** @type {any} */ input) => {
           setupCalled = true
@@ -184,7 +184,7 @@ await describe('KMSCryptoAdapter', async () => {
 
       // Override the decrypt handler to actually decrypt with the private key
       service.space.encryption.key.decrypt = Server.provide(
-        Space.KeyDecrypt,
+        Space.EncryptionKeyDecrypt,
         async (input) => {
           decryptCalled = true
           assert.strictEqual(input.capability.with, spaceDID)
@@ -194,12 +194,12 @@ await describe('KMSCryptoAdapter', async () => {
           )
 
           // Get the encrypted key from the request
-          const encryptedSymmetricKey =
-            input.capability.nb.encryptedSymmetricKey
+          const encryptedKeyBytes = input.capability.nb.key
+          const encryptedSymmetricKey = base64.encode(encryptedKeyBytes)
           actualEncryptedKey = encryptedSymmetricKey
 
           // Decrypt with RSA private key (simulate real KMS decryption)
-          const encryptedBytes = base64.decode(encryptedSymmetricKey)
+          const encryptedBytes = encryptedKeyBytes
           const decryptedBytes = await globalThis.crypto.subtle.decrypt(
             { name: 'RSA-OAEP' },
             keyPair.privateKey,
@@ -216,9 +216,9 @@ await describe('KMSCryptoAdapter', async () => {
       )
 
       // Create mock gateway server (HTTPS by default)
-      const gatewayServer = await createMockGatewayServer(
+      const keyManagerServiceServer = await createMockKeyManagerServer(
         service,
-        gatewayDID,
+        keyManagerServiceDID,
         5555
       )
 
@@ -226,8 +226,8 @@ await describe('KMSCryptoAdapter', async () => {
       const symmetricCrypto = new GenericAesCtrStreamingCrypto()
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
-        gatewayServer.url,
-        gatewayDID.did(),
+        keyManagerServiceServer.url,
+        keyManagerServiceDID.did(),
         { allowInsecureHttp: true } // Allow HTTP for testing
       )
 
@@ -289,7 +289,7 @@ await describe('KMSCryptoAdapter', async () => {
               /** @type {any} */ ('bafybeid')
             ),
           issuer,
-          audience: gatewayDID.did(),
+          audience: keyManagerServiceDID.did(),
         }
 
         const decryptResult = await adapter.decryptSymmetricKey(
@@ -337,16 +337,16 @@ await describe('KMSCryptoAdapter', async () => {
         throw error
       } finally {
         // Clean up server
-        await gatewayServer.close()
+        await keyManagerServiceServer.close()
       }
     })
 
     await test('should handle encryption setup errors gracefully', async () => {
       const fixtures = await createTestFixtures()
-      const { gatewayDID, spaceDID, issuer } = fixtures
+      const { keyManagerServiceDID, spaceDID, issuer } = fixtures
 
       // Create service that returns errors
-      const service = createMockGatewayService({
+      const service = createMockKeyManagerService({
         mockPublicKey: 'invalid',
         onEncryptionSetup: () => {
           // This will be called but service will return error
@@ -364,17 +364,17 @@ await describe('KMSCryptoAdapter', async () => {
         }
       )
 
-      const gatewayServer = await createMockGatewayServer(
+      const keyManagerServiceServer = await createMockKeyManagerServer(
         service,
-        gatewayDID,
+        keyManagerServiceDID,
         5556
       )
 
       const symmetricCrypto = new GenericAesCtrStreamingCrypto()
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
-        gatewayServer.url,
-        gatewayDID.did(),
+        keyManagerServiceServer.url,
+        keyManagerServiceDID.did(),
         { allowInsecureHttp: true } // Allow HTTP for testing
       )
 
@@ -393,22 +393,23 @@ await describe('KMSCryptoAdapter', async () => {
           /SpaceNotProvisioned/
         )
       } finally {
-        await gatewayServer.close()
+        await keyManagerServiceServer.close()
       }
     })
 
     await test('should handle key decryption errors gracefully', async () => {
       const fixtures = await createTestFixtures()
-      const { gatewayDID, spaceDID, issuer, delegationProof } = fixtures
+      const { keyManagerServiceDID, spaceDID, issuer, delegationProof } =
+        fixtures
 
       // Create service that returns errors for decrypt
-      const service = createMockGatewayService({
+      const service = createMockKeyManagerService({
         mockPublicKey: 'mock-key',
       })
 
       // Override decrypt service to return error
       service.space.encryption.key.decrypt = Server.provide(
-        Space.KeyDecrypt,
+        Space.EncryptionKeyDecrypt,
         async () => {
           return Server.error({
             name: 'KeyNotFound',
@@ -417,17 +418,17 @@ await describe('KMSCryptoAdapter', async () => {
         }
       )
 
-      const gatewayServer = await createMockGatewayServer(
+      const keyManagerServiceServer = await createMockKeyManagerServer(
         service,
-        gatewayDID,
+        keyManagerServiceDID,
         5557
       )
 
       const symmetricCrypto = new GenericAesCtrStreamingCrypto()
       const adapter = new KMSCryptoAdapter(
         symmetricCrypto,
-        gatewayServer.url,
-        gatewayDID.did(),
+        keyManagerServiceServer.url,
+        keyManagerServiceDID.did(),
         { allowInsecureHttp: true } // Allow HTTP for testing
       )
 
@@ -436,10 +437,12 @@ await describe('KMSCryptoAdapter', async () => {
         delegationProof,
       }
 
+      const mockKey = new Uint8Array([1, 2, 3]) // test value as bytes
+      const mockKeyString = base64.encode(mockKey)
       const mockMetadata = {
         strategy: /** @type {'kms'} */ ('kms'),
         encryptedDataCID: 'bafybeid',
-        encryptedSymmetricKey: 'mock-encrypted-key',
+        key: mockKey, // use bytes, not string
         space: spaceDID,
         kms: {
           provider: /** @type {'google-kms'} */ ('google-kms'),
@@ -456,18 +459,17 @@ await describe('KMSCryptoAdapter', async () => {
         delegationCAR: new Uint8Array(),
         resourceCID: 'bafybeid',
         issuer,
-        audience: gatewayDID.did(),
+        audience: keyManagerServiceDID.did(),
       })
 
       try {
         // Should throw error
         await assert.rejects(
-          () =>
-            adapter.decryptSymmetricKey('mock-encrypted-key', decryptConfigs),
+          () => adapter.decryptSymmetricKey(mockKeyString, decryptConfigs),
           /KeyNotFound/
         )
       } finally {
-        await gatewayServer.close()
+        await keyManagerServiceServer.close()
       }
     })
   })

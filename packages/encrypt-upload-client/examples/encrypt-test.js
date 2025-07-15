@@ -8,7 +8,7 @@ import { StoreMemory } from '@storacha/client/stores/memory'
 
 import * as EncryptClient from '../src/index.js'
 import { serviceConf, receiptsEndpoint } from '../src/config/service.js'
-import { createLegacyLitAdapter } from '../src/crypto/factories.js'
+import { createNodeLitAdapter } from '../src/crypto/factories.node.js'
 import { LitNodeClient } from '@lit-protocol/lit-node-client'
 
 dotenv.config()
@@ -48,7 +48,7 @@ async function main() {
 
   const encryptedClient = await EncryptClient.create({
     storachaClient: client,
-    cryptoAdapter: createLegacyLitAdapter(litClient),
+    cryptoAdapter: createNodeLitAdapter(litClient),
   })
 
   const fileContent = await fs.promises.readFile('./README.md')

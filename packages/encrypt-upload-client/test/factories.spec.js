@@ -14,11 +14,10 @@ if (typeof globalThis.crypto === 'undefined') {
 }
 
 import {
-  createCrossEnvLitAdapter,
-  createLegacyLitAdapter,
   createGenericKMSAdapter,
-  createNodeKMSAdapter,
-} from '../src/crypto/factories.js'
+  createGenericLitAdapter,
+  createNodeLitAdapter,
+} from '../src/crypto/factories.node.js'
 import { GenericAesCtrStreamingCrypto } from '../src/crypto/symmetric/generic-aes-ctr-streaming-crypto.js'
 import { NodeAesCbcCrypto } from '../src/crypto/symmetric/node-aes-cbc-crypto.js'
 import { LitCryptoAdapter } from '../src/crypto/adapters/lit-crypto-adapter.js'
@@ -33,7 +32,7 @@ const mockLitClient = /** @type {any} */ ({
 await describe('Crypto Factory Functions', async () => {
   await describe('createBrowserLitAdapter', async () => {
     await test('should create LitCryptoAdapter with streaming crypto', async () => {
-      const adapter = createCrossEnvLitAdapter(mockLitClient)
+      const adapter = createGenericLitAdapter(mockLitClient)
 
       // Verify adapter type
       assert(
@@ -56,7 +55,7 @@ await describe('Crypto Factory Functions', async () => {
     })
 
     await test('should create adapter with required interface methods', async () => {
-      const adapter = createCrossEnvLitAdapter(mockLitClient)
+      const adapter = createGenericLitAdapter(mockLitClient)
 
       // Verify adapter has all required methods
       assert(
@@ -87,7 +86,7 @@ await describe('Crypto Factory Functions', async () => {
 
     await test('should handle null or undefined lit client gracefully', async () => {
       // This should still create the adapter (validation happens at runtime)
-      const adapter = createCrossEnvLitAdapter(/** @type {any} */ (null))
+      const adapter = createGenericLitAdapter(/** @type {any} */ (null))
       assert(
         adapter instanceof LitCryptoAdapter,
         'Should create adapter even with null client'
@@ -97,7 +96,7 @@ await describe('Crypto Factory Functions', async () => {
 
   await describe('createNodeLitAdapter', async () => {
     await test('should create LitCryptoAdapter with Node crypto', async () => {
-      const adapter = createLegacyLitAdapter(mockLitClient)
+      const adapter = createNodeLitAdapter(mockLitClient)
 
       // Verify adapter type
       assert(
@@ -122,12 +121,12 @@ await describe('Crypto Factory Functions', async () => {
 
   await describe('createBrowserKMSAdapter', async () => {
     await test('should create KMSCryptoAdapter with streaming crypto', async () => {
-      const privateGatewayURL = 'https://gateway.example.com'
-      const privateGatewayDID = 'did:web:gateway.example.com'
+      const keyManagerServiceURL = 'https://gateway.example.com'
+      const keyManagerServiceDID = 'did:web:gateway.example.com'
 
       const adapter = createGenericKMSAdapter(
-        privateGatewayURL,
-        privateGatewayDID
+        keyManagerServiceURL,
+        keyManagerServiceDID
       )
 
       // Verify adapter type
@@ -144,24 +143,24 @@ await describe('Crypto Factory Functions', async () => {
 
       // Verify configuration is passed through
       assert.strictEqual(
-        adapter.privateGatewayURL.toString(),
-        privateGatewayURL + '/',
-        'Should set the private gateway URL'
+        adapter.keyManagerServiceURL.toString(),
+        keyManagerServiceURL + '/',
+        'Should set the key manager service URL'
       )
       assert.strictEqual(
-        adapter.privateGatewayDID.did(),
-        privateGatewayDID,
-        'Should set the private gateway DID'
+        adapter.keyManagerServiceDID.did(),
+        keyManagerServiceDID,
+        'Should set the key manager service DID'
       )
     })
 
     await test('should accept URL object for gateway URL', async () => {
-      const privateGatewayURL = new URL('https://gateway.example.com')
-      const privateGatewayDID = 'did:web:gateway.example.com'
+      const keyManagerServiceURL = new URL('https://gateway.example.com')
+      const keyManagerServiceDID = 'did:web:gateway.example.com'
 
       const adapter = createGenericKMSAdapter(
-        privateGatewayURL,
-        privateGatewayDID
+        keyManagerServiceURL,
+        keyManagerServiceDID
       )
 
       assert(
@@ -169,19 +168,23 @@ await describe('Crypto Factory Functions', async () => {
         'Should create KMSCryptoAdapter with URL object'
       )
       assert.strictEqual(
-        adapter.privateGatewayURL.toString(),
-        privateGatewayURL.toString(),
+        adapter.keyManagerServiceURL.toString(),
+        keyManagerServiceURL.toString(),
         'Should handle URL object input'
       )
     })
 
     await test('should enforce HTTPS for security', async () => {
-      const httpGatewayURL = 'http://insecure.example.com'
-      const privateGatewayDID = 'did:web:example.com'
+      const httpKeyManagerServiceURL = 'http://insecure.example.com'
+      const keyManagerServiceDID = 'did:web:example.com'
 
       assert.throws(
-        () => createGenericKMSAdapter(httpGatewayURL, privateGatewayDID),
-        /Private gateway must use HTTPS protocol for security/,
+        () =>
+          createGenericKMSAdapter(
+            httpKeyManagerServiceURL,
+            keyManagerServiceDID
+          ),
+        /Key manager service must use HTTPS protocol for security/,
         'Should reject HTTP URLs for security'
       )
     })
@@ -189,12 +192,16 @@ await describe('Crypto Factory Functions', async () => {
     await test('should allow HTTP with explicit insecure option', async () => {
       // Note: The current implementation doesn't expose options in the factory
       // but we can test this through direct adapter construction
-      const httpGatewayURL = 'http://localhost:3000'
-      const privateGatewayDID = 'did:web:localhost'
+      const httpKeyManagerServiceURL = 'http://localhost:3000'
+      const keyManagerServiceDID = 'did:web:localhost'
 
       assert.throws(
-        () => createGenericKMSAdapter(httpGatewayURL, privateGatewayDID),
-        /Private gateway must use HTTPS protocol for security/,
+        () =>
+          createGenericKMSAdapter(
+            httpKeyManagerServiceURL,
+            keyManagerServiceDID
+          ),
+        /Key manager service must use HTTPS protocol for security/,
         'Should reject HTTP URLs even for localhost by default'
       )
     })
@@ -225,60 +232,9 @@ await describe('Crypto Factory Functions', async () => {
     })
   })
 
-  await describe('createNodeKMSAdapter', async () => {
-    await test('should create KMSCryptoAdapter with Node crypto', async () => {
-      const privateGatewayURL = 'https://gateway.example.com'
-      const privateGatewayDID = 'did:web:gateway.example.com'
-
-      const adapter = createNodeKMSAdapter(privateGatewayURL, privateGatewayDID)
-
-      // Verify adapter type
-      assert(
-        adapter instanceof KMSCryptoAdapter,
-        'Should create KMSCryptoAdapter instance'
-      )
-
-      // Verify symmetric crypto implementation
-      assert(
-        adapter.symmetricCrypto instanceof NodeAesCbcCrypto,
-        'Should use NodeAesCbcCrypto for Node.js environment'
-      )
-    })
-
-    await test('should require DID parameter', async () => {
-      const privateGatewayURL = 'https://gateway.example.com'
-      const privateGatewayDID = 'did:web:private.storacha.link'
-
-      const adapter = createNodeKMSAdapter(privateGatewayURL, privateGatewayDID)
-
-      assert(
-        adapter instanceof KMSCryptoAdapter,
-        'Should create adapter with explicit DID'
-      )
-      assert.strictEqual(
-        adapter.privateGatewayDID.did(),
-        privateGatewayDID,
-        'Should use provided DID'
-      )
-    })
-
-    await test('should use provided DID when specified', async () => {
-      const privateGatewayURL = 'https://gateway.example.com'
-      const customDID = 'did:web:custom.gateway.com'
-
-      const adapter = createNodeKMSAdapter(privateGatewayURL, customDID)
-
-      assert.strictEqual(
-        adapter.privateGatewayDID.did(),
-        customDID,
-        'Should use provided DID when specified'
-      )
-    })
-  })
-
   await describe('Factory Function Consistency', async () => {
     await test('browser factories should use streaming crypto', async () => {
-      const litAdapter = createCrossEnvLitAdapter(mockLitClient)
+      const litAdapter = createGenericLitAdapter(mockLitClient)
       const kmsAdapter = createGenericKMSAdapter(
         'https://gateway.example.com',
         'did:web:gateway.example.com'
@@ -297,31 +253,23 @@ await describe('Crypto Factory Functions', async () => {
     })
 
     await test('node factories should use Node crypto', async () => {
-      const litAdapter = createLegacyLitAdapter(mockLitClient)
-      const kmsAdapter = createNodeKMSAdapter(
-        'https://gateway.example.com',
-        'did:web:gateway.example.com'
-      )
+      const litAdapter = createNodeLitAdapter(mockLitClient)
 
       assert(
         litAdapter.symmetricCrypto.constructor.name === 'NodeAesCbcCrypto',
         'Node Lit adapter should use Node crypto'
       )
-      assert(
-        kmsAdapter.symmetricCrypto.constructor.name === 'NodeAesCbcCrypto',
-        'Node KMS adapter should use Node crypto'
-      )
     })
 
     await test('all adapters should implement the same interface', async () => {
       const adapters = [
-        createCrossEnvLitAdapter(mockLitClient),
-        createLegacyLitAdapter(mockLitClient),
+        createGenericLitAdapter(mockLitClient),
+        createNodeLitAdapter(mockLitClient),
         createGenericKMSAdapter(
           'https://gateway.example.com',
           'did:web:gateway.example.com'
         ),
-        createNodeKMSAdapter(
+        createGenericKMSAdapter(
           'https://gateway.example.com',
           'did:web:gateway.example.com'
         ),
@@ -349,7 +297,7 @@ await describe('Crypto Factory Functions', async () => {
 
   await describe('Memory Usage Verification', async () => {
     await test('browser adapters should use memory-efficient streaming crypto', async () => {
-      const litAdapter = createCrossEnvLitAdapter(mockLitClient)
+      const litAdapter = createGenericLitAdapter(mockLitClient)
       const kmsAdapter = createGenericKMSAdapter(
         'https://gateway.example.com',
         'did:web:gateway.example.com'

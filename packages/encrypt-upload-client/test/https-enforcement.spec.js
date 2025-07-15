@@ -20,12 +20,12 @@ await describe('HTTPS Enforcement', async () => {
         'Should create adapter successfully'
       )
       assert.strictEqual(
-        adapter.privateGatewayURL.protocol,
+        adapter.keyManagerServiceURL.protocol,
         'https:',
         'Should store HTTPS protocol'
       )
       assert.strictEqual(
-        adapter.privateGatewayURL.toString(),
+        adapter.keyManagerServiceURL.toString(),
         'https://private.storacha.link/',
         'Should store correct URL'
       )
@@ -47,12 +47,12 @@ await describe('HTTPS Enforcement', async () => {
         'Should create adapter successfully'
       )
       assert.strictEqual(
-        adapter.privateGatewayURL.protocol,
+        adapter.keyManagerServiceURL.protocol,
         'https:',
         'Should store HTTPS protocol'
       )
       assert.strictEqual(
-        adapter.privateGatewayURL.toString(),
+        adapter.keyManagerServiceURL.toString(),
         'https://example.com:8443/path',
         'Should preserve URL structure'
       )
@@ -68,7 +68,7 @@ await describe('HTTPS Enforcement', async () => {
             'http://insecure.example.com',
             'did:web:example.com'
           ),
-        /Private gateway must use HTTPS protocol for security.*Received: http:/,
+        /Key manager service must use HTTPS protocol for security/,
         'Should reject HTTP protocol'
       )
     })
@@ -80,7 +80,7 @@ await describe('HTTPS Enforcement', async () => {
       assert.throws(
         () =>
           new KMSCryptoAdapter(symmetricCrypto, httpURL, 'did:web:example.com'),
-        /Private gateway must use HTTPS protocol for security.*Received: http:/,
+        /Key manager service must use HTTPS protocol for security/,
         'Should reject HTTP URL object'
       )
     })
@@ -103,7 +103,7 @@ await describe('HTTPS Enforcement', async () => {
               testURL,
               'did:web:example.com'
             ),
-          /Private gateway must use HTTPS protocol for security/,
+          /Key manager service must use HTTPS protocol for security/,
           `Should reject protocol: ${testURL}`
         )
       }
@@ -122,7 +122,7 @@ await describe('HTTPS Enforcement', async () => {
       } catch (error) {
         assert(error instanceof Error, 'Should throw Error instance')
         assert(
-          error.message.includes('Private gateway must use HTTPS protocol'),
+          error.message.includes('Key manager service must use HTTPS protocol'),
           'Should include main error message'
         )
         assert(
@@ -130,7 +130,7 @@ await describe('HTTPS Enforcement', async () => {
           'Should include received protocol'
         )
         assert(
-          error.message.includes('https://your-gateway.com'),
+          error.message.includes('https://your-key-manager-service.com'),
           'Should include example of correct format'
         )
       }
@@ -147,7 +147,7 @@ await describe('HTTPS Enforcement', async () => {
             'http://localhost:3000',
             'did:web:localhost'
           ),
-        /Private gateway must use HTTPS protocol for security.*Received: http:/,
+        /Key manager service must use HTTPS protocol for security/,
         'Should reject HTTP even for localhost'
       )
 
@@ -231,7 +231,7 @@ await describe('HTTPS Enforcement', async () => {
         'Should store symmetric crypto reference'
       )
       assert.strictEqual(
-        adapter.privateGatewayDID.did(),
+        adapter.keyManagerServiceDID.did(),
         'did:web:private.storacha.link',
         'Should store gateway DID'
       )
@@ -258,7 +258,7 @@ await describe('HTTPS Enforcement', async () => {
         )
 
         assert.strictEqual(
-          adapter.privateGatewayURL.protocol,
+          adapter.keyManagerServiceURL.protocol,
           'https:',
           `Should store HTTPS protocol for URL: ${url}`
         )
@@ -281,7 +281,7 @@ await describe('HTTPS Enforcement', async () => {
         assert.throws(
           () =>
             new KMSCryptoAdapter(symmetricCrypto, url, 'did:web:example.com'),
-          /Private gateway must use HTTPS protocol for security/,
+          /Key manager service must use HTTPS protocol for security/,
           `Should reject HTTP URL: ${url}`
         )
       }
@@ -299,12 +299,12 @@ await describe('HTTPS Enforcement', async () => {
       )
 
       assert.strictEqual(
-        adapter.privateGatewayURL.protocol,
+        adapter.keyManagerServiceURL.protocol,
         'http:',
         'Should allow HTTP when explicitly enabled for testing'
       )
       assert.strictEqual(
-        adapter.privateGatewayURL.toString(),
+        adapter.keyManagerServiceURL.toString(),
         'http://localhost:8080/',
         'Should preserve HTTP URL when testing option is enabled'
       )

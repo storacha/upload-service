@@ -37,6 +37,14 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     },
+    "./factories.node": {
+      "import": "./dist/crypto/factories.node.js",
+      "require": "./dist/crypto/factories.node.js"
+    },
+    "./factories.browser": {
+      "import": "./dist/crypto/factories.browser.js",
+      "require": "./dist/crypto/factories.browser.js"
+    },
     "./node": {
       "import": "./dist/crypto-adapters/node-crypto-adapter.js",
       "require": "./dist/crypto-adapters/node-crypto-adapter.js"

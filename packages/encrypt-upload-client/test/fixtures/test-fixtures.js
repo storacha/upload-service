@@ -41,8 +41,8 @@ export async function generateMockRSAKeyPair() {
  * Helper to create test fixtures
  */
 export async function createTestFixtures() {
-  // Create mock gateway DID
-  const gatewayDID = await ed25519.generate()
+  // Create mock key manager service DID
+  const keyManagerServiceDID = await ed25519.generate()
 
   // Create mock space DID - this will be the issuer
   const spaceSigner = await ed25519.generate()
@@ -69,7 +69,7 @@ export async function createTestFixtures() {
   })
 
   return {
-    gatewayDID,
+    keyManagerServiceDID,
     spaceDID,
     spaceSigner,
     issuer: spaceSigner, // Use space signer as issuer

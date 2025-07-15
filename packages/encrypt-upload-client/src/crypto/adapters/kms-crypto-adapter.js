@@ -2,8 +2,12 @@ import { connect } from '@ucanto/client'
 import { CAR, HTTP } from '@ucanto/transport'
 import { base64 } from 'multiformats/bases/base64'
 import * as Type from '../../types.js'
-import { EncryptionSetup, KeyDecrypt } from '@storacha/capabilities/space'
+import {
+  EncryptionSetup,
+  EncryptionKeyDecrypt,
+} from '@storacha/capabilities/space'
 import { KMSMetadata } from '../../core/metadata/encrypted-metadata.js'
+import * as DID from '@ipld/dag-ucan/did'
 
 /**
  * KMSCryptoAdapter implements the complete CryptoAdapter interface using KMS.
@@ -18,36 +22,36 @@ export class KMSCryptoAdapter {
    * Create a new KMS crypto adapter
    *
    * @param {Type.SymmetricCrypto} symmetricCrypto - The symmetric crypto implementation (browser or node)
-   * @param {URL|string} privateGatewayURL - The private gateway URL
-   * @param {`did:${string}:${string}`} privateGatewayDID - The private gateway DID
+   * @param {URL|string} keyManagerServiceURL - The key manager service URL
+   * @param {`did:${string}:${string}`} keyManagerServiceDID - The key manager service DID
    * @param {object} [options] - Optional configuration
    * @param {boolean} [options.allowInsecureHttp] - Allow HTTP for testing (NOT for production)
    */
   constructor(
     symmetricCrypto,
-    privateGatewayURL,
-    privateGatewayDID,
+    keyManagerServiceURL,
+    keyManagerServiceDID,
     options = {}
   ) {
     this.symmetricCrypto = symmetricCrypto
 
-    // SECURITY: Enforce HTTPS protocol for private gateway communications (P1.1)
+    // SECURITY: Enforce HTTPS protocol for key manager service communications (P1.1)
     const url =
-      privateGatewayURL instanceof URL
-        ? privateGatewayURL
-        : new URL(privateGatewayURL)
+      keyManagerServiceURL instanceof URL
+        ? keyManagerServiceURL
+        : new URL(keyManagerServiceURL)
     const { allowInsecureHttp = false } = options
 
     if (url.protocol !== 'https:' && !allowInsecureHttp) {
       throw new Error(
-        `Private gateway must use HTTPS protocol for security. Received: ${url.protocol}. ` +
-          `Please update the gateway URL to use HTTPS (e.g., https://your-gateway.com). ` +
+        `Key manager service must use HTTPS protocol for security. Received: ${url.protocol}. ` +
+          `Please update the service URL to use HTTPS (e.g., https://your-key-manager-service.com). ` +
           `For testing only, you can pass { allowInsecureHttp: true } as the fourth parameter.`
       )
     }
 
-    this.privateGatewayURL = url
-    this.privateGatewayDID = { did: () => privateGatewayDID }
+    this.keyManagerServiceURL = url
+    this.keyManagerServiceDID = DID.parse(keyManagerServiceDID)
   }
 
   /**
@@ -148,7 +152,7 @@ export class KMSCryptoAdapter {
   /**
    * Get decrypted symmetric key in base64 string from KMS via private gateway
    *
-   * @param {string} encryptedSymmetricKey - The encrypted symmetric key
+   * @param {string} encryptedSymmetricKey - The encrypted symmetric key (base64-encoded)
    * @param {Type.SpaceDID} spaceDID - The space DID
    * @param {import('@ucanto/interface').Proof} delegationProof - The delegation proof
    * @param {import('@storacha/client/types').Signer<import('@storacha/client/types').DID, import('@storacha/client/types').SigAlg>} issuer - The issuer
@@ -161,15 +165,15 @@ export class KMSCryptoAdapter {
     issuer
   ) {
     // Step 1: Invoke the KeyDecrypt capability passing the decryption proof
-    const result = await KeyDecrypt.invoke({
+    const result = await EncryptionKeyDecrypt.invoke({
       issuer,
-      audience: this.privateGatewayDID,
+      audience: this.keyManagerServiceDID,
       with: spaceDID,
       nb: {
-        encryptedSymmetricKey,
+        key: base64.decode(encryptedSymmetricKey), // Convert base64 string to bytes
       },
       proofs: [delegationProof],
-    }).execute(this.newPrivateGatewayConnection())
+    }).execute(this.newKeyManagerServiceConnection())
 
     // Step 2: Handle the result
     if (result.out.error) {
@@ -244,7 +248,8 @@ export class KMSCryptoAdapter {
    * @returns {Promise<{ cid: import('@storacha/upload-client/types').AnyLink, bytes: Uint8Array }>} - The encoded metadata
    */
   async encodeMetadata(encryptedDataCID, encryptedKey, metadata) {
-    const kmsKeyMetadata = /** @type {Type.KMSKeyMetadata} */ (metadata)
+    const kmsKeyMetadata =
+      /** @type {import('../../types.js').KMSKeyMetadata} */ (metadata)
 
     /** @type {Type.KMSMetadataInput} */
     const uploadData = {
@@ -272,13 +277,13 @@ export class KMSCryptoAdapter {
     // Step 1: Invoke the EncryptionSetup capability
     const setupResult = await EncryptionSetup.invoke({
       issuer: encryptionConfig.issuer,
-      audience: this.privateGatewayDID,
+      audience: this.keyManagerServiceDID,
       with: encryptionConfig.spaceDID,
       nb: {
         location: encryptionConfig.location,
         keyring: encryptionConfig.keyring,
       },
-    }).execute(this.newPrivateGatewayConnection())
+    }).execute(this.newKeyManagerServiceConnection())
 
     // Step 2: Handle the result
     if (setupResult.out.error) {
@@ -376,12 +381,12 @@ export class KMSCryptoAdapter {
     return bytes
   }
 
-  newPrivateGatewayConnection() {
+  newKeyManagerServiceConnection() {
     return connect({
-      id: this.privateGatewayDID,
+      id: this.keyManagerServiceDID,
       codec: CAR.outbound,
       channel: HTTP.open({
-        url: this.privateGatewayURL,
+        url: this.keyManagerServiceURL,
         method: 'POST',
       }),
     })

@@ -180,7 +180,6 @@ export interface LitMetadata {
 
 export interface LitMetadataView extends LitMetadata {
   /** Encode it to a CAR file. */
-  archive(): Promise<Result<Uint8Array>>
   archiveBlock(): Promise<Block>
   toJSON(): LitMetadataInput
 }
@@ -210,7 +209,6 @@ export interface KMSMetadataInput {
 
 export interface KMSMetadataView extends KMSMetadata {
   /** Encode it to a CAR file. */
-  archive(): Promise<Result<Uint8Array>>
   archiveBlock(): Promise<Block>
   toJSON(): KMSMetadataInput
 }

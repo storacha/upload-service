@@ -45,16 +45,6 @@ test.describe('Secure Cross-Environment Crypto with HTTPS Server', () => {
       timeout: 5000,
     })
 
-    // Check if crypto is available in this browser
-    const hasCrypto = await page.evaluate(() => window.hasCrypto)
-
-    if (!hasCrypto) {
-      console.warn(
-        `Web Crypto API not available in ${browserName}, skipping test`
-      )
-      test.skip()
-    }
-
     console.log(`Web Crypto API available in ${browserName}`)
 
     // Step 1: Encrypt data in browser

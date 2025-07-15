@@ -131,27 +131,27 @@ export const getCarFileFromPublicGateway = async (gatewayURL, cid) => {
  * @returns {Promise<Uint8Array>} The encrypted data bytes
  */
 const getEncryptedDataFromCar = async (car, encryptedDataCID) => {
-  // Step 1: Convert CAR to a block store
+  // Step 1: Index the CAR file for efficient block lookup
   const iterable = await CarIndexer.fromBytes(car)
-  const blockstore = new MemoryBlockstore()
-
+  const blockIndex = new Map()
   for await (const { cid, blockLength, blockOffset } of iterable) {
-    const blockBytes = car.slice(blockOffset, blockOffset + blockLength)
-    await blockstore.put(cid, blockBytes)
+    blockIndex.set(cid.toString(), { blockOffset, blockLength })
   }
 
-  // Step 2: Get the encrypted data from the CAR file
+  // Step 2: Use the index to extract the encrypted data block bytes as needed
+  const { blockOffset, blockLength } = blockIndex.get(encryptedDataCID)
+  const blockBytes = car.subarray(blockOffset, blockOffset + blockLength)
+
+  // Step 3: Put the block in a blockstore for exporter compatibility
+  const blockstore = new MemoryBlockstore()
+  await blockstore.put(CID.parse(encryptedDataCID), blockBytes)
+
+  // Step 4: Get the encrypted data from the CAR file
   const encryptedDataEntry = await exporter(
     CID.parse(encryptedDataCID),
     blockstore
   )
-  const encryptedDataBytes = new Uint8Array(Number(encryptedDataEntry.size))
-  let offset = 0
-  for await (const chunk of encryptedDataEntry.content()) {
-    encryptedDataBytes.set(chunk, offset)
-    offset += chunk.length
-  }
 
-  // Step 3: Return the encrypted data bytes
-  return encryptedDataBytes
+  // Step 5: Return the async iterable (stream of chunks)
+  return encryptedDataEntry.content() // async iterable of Uint8Array
 }

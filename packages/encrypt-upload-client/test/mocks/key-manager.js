@@ -2,6 +2,7 @@ import { createServer } from 'node:http'
 import * as Server from '@ucanto/server'
 import { CAR } from '@ucanto/transport'
 import * as Space from '@storacha/capabilities/space'
+import { base64 } from 'multiformats/bases/base64'
 
 /**
  * Create mock KMS service with proper capability handlers
@@ -13,7 +14,7 @@ import * as Space from '@storacha/capabilities/space'
  * @param {Function} [options.onEncryptionSetup] - Optional callback for setup calls
  * @param {Function} [options.onKeyDecrypt] - Optional callback for decrypt calls
  */
-export function createMockGatewayService(options) {
+export function createMockKeyManagerService(options) {
   const {
     mockPublicKey,
     mockProvider = 'google-kms',
@@ -48,7 +49,7 @@ export function createMockGatewayService(options) {
         }),
 
         key: {
-          decrypt: Server.provide(Space.KeyDecrypt, async (input) => {
+          decrypt: Server.provide(Space.EncryptionKeyDecrypt, async (input) => {
             // Call optional callback for testing
             if (onKeyDecrypt) {
               onKeyDecrypt(input)
@@ -63,16 +64,18 @@ export function createMockGatewayService(options) {
             }
 
             // Validate encrypted key is provided
-            if (!input.capability.nb.encryptedSymmetricKey) {
+            if (!input.capability.nb.key) {
               return Server.error({
-                name: 'MissingKey',
-                message: 'encryptedSymmetricKey is required',
+                name: 'KeyNotFound',
+                message: 'key is required',
               })
             }
 
-            // For testing purposes, "decrypt" by base64 decoding the input
+            // For testing purposes, "decrypt" by converting bytes back to base64 string
             // In real implementation, this would call Google KMS
-            const mockDecryptedKey = input.capability.nb.encryptedSymmetricKey
+            const keyBytes = input.capability.nb.key
+            // No base64 decode here, just return the bytes as base64 string for mock
+            const mockDecryptedKey = base64.encode(keyBytes)
 
             return Server.ok({
               decryptedSymmetricKey: mockDecryptedKey,
@@ -85,21 +88,21 @@ export function createMockGatewayService(options) {
 }
 
 /**
- * Create a mock private gateway server
+ * Create a mock key manager service server
  *
  * @param {object} service - The service object with capability handlers
- * @param {*} gatewayDID - The gateway DID keypair
+ * @param {*} keyManagerServiceDID - The key manager service DID keypair
  * @param {number} port - The port to listen on
  * @param {boolean} [useHttps] - Whether to use HTTPS URLs (testing HTTPS scenarios)
  */
-export function createMockGatewayServer(
+export function createMockKeyManagerServer(
   service,
-  gatewayDID,
+  keyManagerServiceDID,
   port,
   useHttps = false
 ) {
   const ucantoServer = Server.create({
-    id: gatewayDID,
+    id: keyManagerServiceDID,
     service,
     codec: CAR.inbound,
     validateAuthorization: () => ({ ok: {} }), // Skip auth validation for tests
