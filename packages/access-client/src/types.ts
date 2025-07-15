@@ -216,6 +216,43 @@ export interface DelegationMeta {
 }
 
 /**
+ * Base encryption provider interface
+ */
+export interface EncryptionProvider {
+  provider: string
+  algorithm: string
+}
+
+/**
+ * Google KMS encryption provider
+ */
+export interface GoogleKMSEncryptionProvider extends EncryptionProvider {
+  provider: 'google-kms'
+}
+
+/**
+ * Public access type for spaces
+ */
+export interface PublicAccess {
+  type: 'public'
+}
+
+/**
+ * Private access type for spaces
+ */
+export interface PrivateAccess<P extends EncryptionProvider> {
+  type: 'private'
+  encryption: P
+}
+
+/**
+ * Access type for spaces - determines client-side encryption behavior
+ */
+export type SpaceAccessType =
+  | PublicAccess
+  | PrivateAccess<GoogleKMSEncryptionProvider>
+
+/**
  * Space metadata
  */
 export interface SpaceMeta {
@@ -223,6 +260,10 @@ export interface SpaceMeta {
    * Human readable name for the space
    */
   name: string
+  /**
+   * Access type for the space - determines client-side encryption behavior
+   */
+  access?: SpaceAccessType
 }
 
 /**

@@ -5,6 +5,7 @@ import { wordlist } from '@scure/bip39/wordlists/english'
 import * as API from './types.js'
 import * as Access from './access.js'
 import * as Provider from './provider.js'
+import { SpaceAccess } from './space-access.js'
 
 /**
  * Data model for the (owned) space.
@@ -12,6 +13,7 @@ import * as Provider from './provider.js'
  * @typedef {{
  *  signer: ED25519.EdSigner;
  *   name: string;
+ *   access?: API.SpaceAccessType;
  *   agent?: API.Agent<S>;
  * }} Model
  * @template {Record<string, any>} [S=API.Service]
@@ -22,13 +24,15 @@ import * as Provider from './provider.js'
  *
  * @template {Record<string, any>} [S=API.Service]
  * @param {object} options
- * @param {string} options.name
+ * @param {string} options.name - The name of the space.
+ * @param {API.SpaceAccessType} [options.access] - The access type for the space. Defaults to { type: 'public' }.
  * @param {API.Agent<S>} [options.agent]
  */
-export const generate = async ({ name, agent }) => {
+export const generate = async ({ name, access, agent }) => {
   const { signer } = await ED25519.generate()
+  const normalizedAccess = SpaceAccess.from(access)
 
-  return new OwnedSpace({ signer, name, agent })
+  return new OwnedSpace({ signer, name, access: normalizedAccess, agent })
 }
 
 /**
@@ -37,12 +41,17 @@ export const generate = async ({ name, agent }) => {
  * @param {string} mnemonic
  * @param {object} options
  * @param {string} options.name - Name to give to the recovered space.
+ * @param {API.SpaceAccessType} [options.access] - The access type for the space. Defaults to { type: 'public' }.
  * @param {API.Agent} [options.agent]
  */
-export const fromMnemonic = async (mnemonic, { name, agent }) => {
+export const fromMnemonic = async (mnemonic, { name, access, agent }) => {
+  // TODO: Improve recovery UX by auto-detecting access type from existing space metadata
+  // or storing access type with space mnemonic. Should default to public if mnemonic
+  // doesn't contain access type information.
   const secret = BIP39.mnemonicToEntropy(mnemonic, wordlist)
   const signer = await ED25519.derive(secret)
-  return new OwnedSpace({ signer, name, agent })
+  const normalizedAccess = SpaceAccess.from(access)
+  return new OwnedSpace({ signer, name, access: normalizedAccess, agent })
 }
 
 /**
@@ -95,21 +104,24 @@ export const SESSION_LIFETIME = 60 * 60 * 24 * 365
  * @param {API.UTCUnixTimestamp} [options.expiration]
  */
 export const createAuthorization = async (
-  { signer, name },
+  { signer, name, access },
   {
     audience,
-    access = Access.spaceAccess,
+    access: spaceAccess = Access.spaceAccess,
     expiration = UCAN.now() + SESSION_LIFETIME,
   }
 ) => {
+  const normalizedAccess = SpaceAccess.from(access)
+  const facts = [{ space: { name, access: normalizedAccess } }]
+
   return await delegate({
     issuer: signer,
     audience: audience,
     capabilities: toCapabilities({
-      [signer.did()]: access,
+      [signer.did()]: spaceAccess,
     }),
     ...(expiration ? { expiration } : {}),
-    facts: [{ space: { name } }],
+    facts,
   })
 }
 
@@ -156,6 +168,10 @@ export class OwnedSpace {
     return this.model.name
   }
 
+  get access() {
+    return SpaceAccess.from(this.model.access)
+  }
+
   did() {
     return this.signer.did()
   }
@@ -166,7 +182,11 @@ export class OwnedSpace {
    * @param {string} name
    */
   withName(name) {
-    return new OwnedSpace({ signer: this.signer, name })
+    return new OwnedSpace({
+      signer: this.signer,
+      name,
+      access: this.access,
+    })
   }
 
   /**
@@ -256,8 +276,11 @@ export const fromDelegation = (delegation) => {
     )
   }
 
-  /** @type {{name?:string}} */
+  /** @type {{name?:string, access?:API.SpaceAccessType}} */
   const meta = delegation.facts[0]?.space ?? {}
+
+  // Ensure access defaults to public for backwards compatibility
+  meta.access = SpaceAccess.from(meta.access)
 
   return new SharedSpace({ id: result.ok, delegation, meta })
 }
@@ -303,7 +326,7 @@ export class SharedSpace {
    * @typedef {object} SharedSpaceModel
    * @property {API.SpaceDID} id
    * @property {API.Delegation} delegation
-   * @property {{name?:string}} meta
+   * @property {{name?:string, access?:API.SpaceAccessType}} meta
    * @property {API.Agent} [agent]
    *
    * @param {SharedSpaceModel} model
@@ -324,6 +347,10 @@ export class SharedSpace {
     return this.meta.name ?? ''
   }
 
+  get access() {
+    return SpaceAccess.from(this.meta.access)
+  }
+
   did() {
     return this.model.id
   }
@@ -334,7 +361,7 @@ export class SharedSpace {
   withName(name) {
     return new SharedSpace({
       ...this.model,
-      meta: { ...this.meta, name },
+      meta: { ...this.meta, name, access: this.access },
     })
   }
 }

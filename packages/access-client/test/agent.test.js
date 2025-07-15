@@ -11,6 +11,7 @@ import { UCAN, Provider } from '@storacha/capabilities'
 import { Absentee } from '@ucanto/principal'
 import * as DidMailto from '@storacha/did-mailto'
 import * as API from '../src/types.js'
+import { SpaceAccess } from '../src/space-access.js'
 
 describe('Agent', function () {
   it('should return did', async function () {
@@ -24,6 +25,222 @@ describe('Agent', function () {
     const space = await agent.createSpace('test-create')
 
     assert(typeof space.did() === 'string')
+  })
+
+  it('should create space with accessType private', async function () {
+    const agent = await Agent.create()
+    const space = await agent.createSpace('test-private', {
+      access: {
+        type: 'private',
+        encryption: {
+          provider: 'google-kms',
+          algorithm: 'RSA_DECRYPT_OAEP_3072_SHA256',
+        },
+      },
+    })
+
+    assert(typeof space.did() === 'string')
+    assert.equal(space.access.type, 'private')
+    if (space.access.type === 'private') {
+      assert.equal(space.access.encryption.provider, 'google-kms')
+      assert.equal(
+        space.access.encryption.algorithm,
+        'RSA_DECRYPT_OAEP_3072_SHA256'
+      )
+    }
+  })
+
+  it('should create space with accessType public', async function () {
+    const agent = await Agent.create()
+    const space = await agent.createSpace('test-public', {
+      access: { type: 'public' },
+    })
+
+    assert(typeof space.did() === 'string')
+    assert.equal(space.access.type, 'public')
+    assert.ok(!('encryption' in space.access))
+  })
+
+  it('should default to public accessType', async function () {
+    const agent = await Agent.create()
+    const space = await agent.createSpace('test-default')
+
+    assert(typeof space.did() === 'string')
+    assert.equal(space.access.type, 'public')
+    assert.ok(!('encryption' in space.access))
+  })
+
+  it('should handle backwards compatibility for spaces without accessType', async function () {
+    const agent = await Agent.create()
+
+    // Create a delegation manually without accessType to simulate old spaces
+    const space = await agent.createSpace('test-compat')
+
+    // Manually create a delegation without accessType (simulating old delegations)
+    const modifiedFacts = [{ space: { name: 'test-compat' } }] // No accessType
+    const oldStyleDelegation = await ucanto.delegate({
+      issuer: space.signer,
+      audience: agent.issuer,
+      capabilities: [{ can: 'space/*', with: space.did() }],
+      facts: modifiedFacts,
+    })
+
+    const importedSpace = await agent.importSpaceFromDelegation(
+      oldStyleDelegation
+    )
+
+    // Should default to 'public' for backwards compatibility
+    assert.equal(importedSpace.access.type, 'public')
+  })
+
+  it('should recover space with accessType private', async function () {
+    const agent = await Agent.create()
+    const space = await agent.createSpace('test-private-recover', {
+      access: {
+        type: 'private',
+        encryption: {
+          provider: 'google-kms',
+          algorithm: 'RSA_DECRYPT_OAEP_3072_SHA256',
+        },
+      },
+    })
+
+    // Get the mnemonic for recovery
+    const mnemonic = space.toMnemonic()
+
+    // Recover the space with same accessType
+    const recoveredSpace = await agent.recoverSpace(mnemonic, {
+      name: 'recovered-private',
+      access: {
+        type: 'private',
+        encryption: {
+          provider: 'google-kms',
+          algorithm: 'RSA_DECRYPT_OAEP_3072_SHA256',
+        },
+      },
+    })
+
+    assert.equal(recoveredSpace.access.type, 'private')
+    if (recoveredSpace.access.type === 'private') {
+      assert.equal(recoveredSpace.access.encryption.provider, 'google-kms')
+      assert.equal(
+        recoveredSpace.access.encryption.algorithm,
+        'RSA_DECRYPT_OAEP_3072_SHA256'
+      )
+    }
+    assert.equal(recoveredSpace.name, 'recovered-private')
+    assert.equal(recoveredSpace.did(), space.did()) // Should have same DID
+  })
+
+  it('should recover space with accessType public', async function () {
+    const agent = await Agent.create()
+    const space = await agent.createSpace('test-public-recover', {
+      access: { type: 'public' },
+    })
+
+    // Get the mnemonic for recovery
+    const mnemonic = space.toMnemonic()
+
+    // Recover the space with same accessType
+    const recoveredSpace = await agent.recoverSpace(mnemonic, {
+      name: 'recovered-public',
+      access: { type: 'public' },
+    })
+
+    assert.equal(recoveredSpace.access.type, 'public')
+    assert.equal(recoveredSpace.name, 'recovered-public')
+    assert.equal(recoveredSpace.did(), space.did()) // Should have same DID
+  })
+
+  it('should recover space with default accessType', async function () {
+    const agent = await Agent.create()
+    const space = await agent.createSpace('test-default-recover')
+
+    // Get the mnemonic for recovery
+    const mnemonic = space.toMnemonic()
+
+    // Recover the space without specifying accessType
+    const recoveredSpace = await agent.recoverSpace(mnemonic, {
+      name: 'recovered-default',
+    })
+
+    assert.equal(recoveredSpace.access.type, 'public') // Should default to public
+    assert.equal(recoveredSpace.name, 'recovered-default')
+    assert.equal(recoveredSpace.did(), space.did()) // Should have same DID
+  })
+
+  it('should recover public space without specifying accessType', async function () {
+    const agent = await Agent.create()
+    const space = await agent.createSpace('test-public-original', {
+      access: { type: 'public' },
+    })
+
+    // Get the mnemonic for recovery
+    const mnemonic = space.toMnemonic()
+
+    // Recover the space without specifying accessType (should default to public)
+    const recoveredSpace = await agent.recoverSpace(mnemonic, {
+      name: 'recovered-public-default',
+    })
+
+    assert.equal(recoveredSpace.access.type, 'public') // Should default to public
+    assert.equal(recoveredSpace.name, 'recovered-public-default')
+    assert.equal(recoveredSpace.did(), space.did()) // Should have same DID
+  })
+
+  it('should preserve accessType in delegation facts', async function () {
+    const agent = await Agent.create()
+    const space = await agent.createSpace('test-facts', {
+      access: {
+        type: 'private',
+        encryption: {
+          provider: 'google-kms',
+          algorithm: 'RSA_DECRYPT_OAEP_3072_SHA256',
+        },
+      },
+    })
+
+    // Create authorization and check facts
+    const auth = await space.createAuthorization(agent)
+
+    assert.equal(auth.facts.length, 1)
+    const spaceFact =
+      /** @type {{space: {name: string, access: {type: string, encryption: {provider: string, algorithm: string}}}}} */ (
+        auth.facts[0]
+      )
+    assert.equal(spaceFact.space.name, 'test-facts')
+    assert.equal(spaceFact.space.access.type, 'private')
+    assert.equal(spaceFact.space.access.encryption.provider, 'google-kms')
+    assert.equal(
+      spaceFact.space.access.encryption.algorithm,
+      'RSA_DECRYPT_OAEP_3072_SHA256'
+    )
+
+    // Import space from delegation
+    const importedSpace = await agent.importSpaceFromDelegation(auth)
+    assert.equal(importedSpace.access.type, 'private')
+    if (importedSpace.access.type === 'private') {
+      assert.equal(importedSpace.access.encryption.provider, 'google-kms')
+      assert.equal(
+        importedSpace.access.encryption.algorithm,
+        'RSA_DECRYPT_OAEP_3072_SHA256'
+      )
+    }
+
+    // Check what's stored in agent.spaces
+    const storedMeta = agent.spaces.get(space.did())
+    assert.ok(storedMeta, 'Space should be stored in agent.spaces')
+    assert.equal(storedMeta.name, 'test-facts')
+    assert.ok(storedMeta.access, 'Access should be defined')
+    assert.equal(storedMeta.access.type, 'private')
+    if (storedMeta.access.type === 'private') {
+      assert.ok(storedMeta.access.encryption, 'Encryption should be defined')
+      assert.equal(storedMeta.access.encryption.provider, 'google-kms')
+      assert.equal(
+        storedMeta.access.encryption.algorithm,
+        'RSA_DECRYPT_OAEP_3072_SHA256'
+      )
+    }
   })
 
   it('should add proof when creating account', async function () {
@@ -98,6 +315,47 @@ describe('Agent', function () {
     await bob.importSpaceFromDelegation(proof)
     await bob.setCurrentSpace(space.did())
 
+    const proofs = bob.proofs([{ can: 'store/add', with: space.did() }])
+    assert(proofs.length)
+  })
+
+  it('should preserve accessType when importing space delegation', async () => {
+    const alice = await Agent.create()
+    const bob = await Agent.create()
+
+    const space = await alice.createSpace('private-videos', {
+      access: {
+        type: 'private',
+        encryption: {
+          provider: 'google-kms',
+          algorithm: 'RSA_DECRYPT_OAEP_3072_SHA256',
+        },
+      },
+    })
+    const auth = await space.createAuthorization(alice, {
+      access: { '*': {} },
+      expiration: Infinity,
+    })
+    await alice.importSpaceFromDelegation(auth)
+    await alice.setCurrentSpace(space.did())
+
+    const proof = await alice.delegate({
+      audience: bob,
+      audienceMeta: { name: 'videos', type: 'app' },
+      abilities: ['*'],
+    })
+
+    const importedSpace = await bob.importSpaceFromDelegation(proof)
+    await bob.setCurrentSpace(space.did())
+
+    assert.equal(importedSpace.access.type, 'private')
+    if (importedSpace.access.type === 'private') {
+      assert.equal(importedSpace.access.encryption.provider, 'google-kms')
+      assert.equal(
+        importedSpace.access.encryption.algorithm,
+        'RSA_DECRYPT_OAEP_3072_SHA256'
+      )
+    }
     const proofs = bob.proofs([{ can: 'store/add', with: space.did() }])
     assert(proofs.length)
   })
@@ -589,6 +847,36 @@ describe('Agent', function () {
     // the same proof proves both capabilities
     assert.equal(proofs.length, 1)
     assert.equal(proofs[0].cid.toString(), authorization.cid.toString())
+  })
+})
+
+describe('createPrivateAccess helper', function () {
+  it('should create private access type with Google KMS by default', function () {
+    const accessType = SpaceAccess.private()
+
+    assert.equal(accessType.type, 'private')
+    if (accessType.type === 'private') {
+      assert.equal(accessType.encryption.provider, 'google-kms')
+      assert.equal(
+        accessType.encryption.algorithm,
+        'RSA_DECRYPT_OAEP_3072_SHA256'
+      )
+    }
+  })
+
+  it('should not create private access type with unknown provider', function () {
+    assert.throws(
+      () =>
+        SpaceAccess.private('unknown-provider', 'RSA_DECRYPT_OAEP_3072_SHA256'),
+      /unknown encryption provider: unknown-provider/
+    )
+  })
+
+  it('should not create private access type with custom algorithm', function () {
+    assert.throws(
+      () => SpaceAccess.private('google-kms', 'custom-algorithm'),
+      /unknown encryption algorithm: custom-algorithm for provider: google-kms/
+    )
   })
 })
 

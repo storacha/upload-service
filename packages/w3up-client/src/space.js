@@ -5,7 +5,7 @@ import * as API from './types.js'
 /**
  * @typedef {object} Model
  * @property {API.SpaceDID} id
- * @property {{name?:string}} [meta]
+ * @property {{name?:string, access?:import('@storacha/access').SpaceAccessType}} [meta]
  * @property {API.Agent} agent
  */
 
@@ -26,6 +26,10 @@ export class Space {
   get name() {
     /* c8 ignore next */
     return String(this.#model.meta?.name ?? '')
+  }
+
+  get access() {
+    return this.#model.meta?.access ?? { type: 'public' }
   }
 
   /**
