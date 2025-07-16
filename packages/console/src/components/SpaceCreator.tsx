@@ -14,6 +14,8 @@ import { HTTP } from '@ucanto/transport'
 import * as CAR from '@ucanto/transport/car'
 import { gatewayHost } from './services'
 import { logAndCaptureError } from '@/sentry'
+import { useFeatureFlags } from '@/lib/featureFlags'
+import { usePrivateSpacesAccess } from '@/hooks/usePrivateSpacesAccess'
 
 export function SpaceCreatorCreating(): JSX.Element {
   return (
@@ -36,31 +38,41 @@ export function SpaceCreatorForm({
   const [created, setCreated] = useState(false)
   const [name, setName] = useState('')
   const [space, setSpace] = useState<Space>()
+  const [accessType, setAccessType] = useState<'public' | 'private'>('public')
+
+  const { canAccessPrivateSpaces, shouldShowUpgradePrompt } = usePrivateSpacesAccess()
+  const { canSeePrivateSpacesFeature } = useFeatureFlags()
 
   function resetForm(): void {
     setName('')
+    setAccessType('public')
   }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault()
     if (!client) return
-    
+
+    const account = accounts[0]
+    if (!account) {
+      throw new Error('cannot create space, no account found, have you authorized your email?')
+    }
+
+    // Check if user has required access for private spaces
+    if (accessType === 'private' && !canAccessPrivateSpaces) {
+      alert('Upgrade to a paid plan to create private spaces')
+      return
+    }
+
+    const { ok: plan } = await account.plan.get()
+    if (!plan) {
+      throw new Error('a payment plan is required on account to provision a new space.')
+    }
+
+    const toWebDID = (input?: string) =>
+      UcantoClient.Schema.DID.match({ method: 'web' }).from(input)
+
+    setSubmitted(true)
     try {
-      setSubmitted(true)
-      // TODO: account selection
-      const account = accounts[0]
-      if (!account) {
-        throw new Error('cannot create space, no account found, have you authorized your email?')
-      }
-
-      const { ok: plan } = await account.plan.get()
-      if (!plan) {
-        throw new Error('a payment plan is required on account to provision a new space.')
-      }
-
-      const toWebDID = (input?: string) =>
-        UcantoClient.Schema.DID.match({ method: 'web' }).from(input)
-
       const gatewayId = toWebDID(process.env.NEXT_PUBLIC_W3UP_GATEWAY_ID) ?? toWebDID('did:web:w3s.link')
 
       const storachaGateway = UcantoClient.connect({
@@ -72,8 +84,17 @@ export function SpaceCreatorForm({
       })
 
       const space = await client.createSpace(name, {
-        authorizeGatewayServices: [storachaGateway]
-      })
+        authorizeGatewayServices: [storachaGateway],
+        access: {
+          type: accessType,
+          ...(accessType === 'private' ? {
+            encryption: {
+              provider: 'google-kms',
+              algorithm: 'RSA_DECRYPT_OAEP_3072_SHA256',
+            },
+          } : {}),
+        },
+      } as any)
 
       const provider = toWebDID(process.env.NEXT_PUBLIC_W3UP_PROVIDER) || toWebDID('did:web:web3.storage')
       const result = await account.provision(space.did(), { provider })
@@ -140,13 +161,74 @@ export function SpaceCreatorForm({
           }}
           required={true}
         />
+        {canSeePrivateSpacesFeature && (
+          <div className='mb-4'>
+            <div className='flex flex-col gap-2'>
+              <label className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer ${
+                accessType === 'public' ? 'border-hot-red' : 'border-gray-200 hover:border-hot-red'
+              }`}>
+                <input
+                  type='radio'
+                  name='accessType'
+                  value='public'
+                  checked={accessType === 'public'}
+                  onChange={() => setAccessType('public')}
+                  className='mt-1'
+                />
+                <div>
+                  <span className='font-medium'>Public Space</span>
+                  <p className='text-sm text-gray-600 mt-1'>
+                    Files stored unencrypted and accessible via IPFS
+                  </p>
+                </div>
+              </label>
+              <label className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer ${
+                canAccessPrivateSpaces 
+                  ? accessType === 'private' ? 'border-hot-red' : 'border-gray-200 hover:border-hot-red' 
+                  : 'border-gray-100 bg-gray-50 cursor-not-allowed'
+              }`}>
+                <input
+                  type='radio'
+                  name='accessType'
+                  value='private'
+                  checked={accessType === 'private'}
+                  onChange={() => canAccessPrivateSpaces && setAccessType('private')}
+                  disabled={!canAccessPrivateSpaces}
+                  className='mt-1'
+                />
+                <div>
+                  <div className='flex items-center gap-2'>
+                    <span className='font-medium'>Private Space</span>
+                    {!canAccessPrivateSpaces && (
+                      <span className='bg-hot-red text-white px-2 py-1 rounded-full text-xs'>
+                        Upgrade Required
+                      </span>
+                    )}
+                  </div>
+                  <p className='text-sm text-gray-600 mt-1'>
+                    Files encrypted locally before upload
+                  </p>
+                  {shouldShowUpgradePrompt && (
+                    <Link 
+                      href='/plans/change'
+                      className='text-hot-red text-sm underline mt-1 inline-block'
+                    >
+                      Upgrade to Enable →
+                    </Link>
+                  )}
+                </div>
+              </label>
+            </div>
+          </div>
+        )}
         <button type='submit' className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`}>
-          <FolderPlusIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{ marginTop: -4 }} /> Create
+          <FolderPlusIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{ marginTop: -4 }} /> Create {accessType === 'private' ? 'Private' : 'Public'} Space
         </button>
       </form>
     </div>
   )
 }
+
 
 interface SpaceCreatorProps {
   className?: string

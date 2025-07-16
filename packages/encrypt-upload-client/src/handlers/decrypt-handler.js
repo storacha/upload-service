@@ -4,6 +4,7 @@ import { exporter } from 'ipfs-unixfs-exporter'
 import { MemoryBlockstore } from 'blockstore-core'
 
 import * as Type from '../types.js'
+import { extractFileMetadata } from '../utils/file-metadata.js'
 
 /**
  * Retrieve and decrypt a file from the IPFS gateway using any supported encryption strategy.
@@ -13,17 +14,15 @@ import * as Type from '../types.js'
  * encryption and decryption operations.
  * @param {URL} gatewayURL - The IPFS gateway URL
  * @param {Type.AnyLink} cid - The link to the file to retrieve
- * @param {Uint8Array} delegationCAR - The delegation that gives permission to decrypt (required for both strategies)
- * @param {Type.DecryptionOptions} decryptionOptions - User-provided decryption options
- * @returns {Promise<ReadableStream>} The decrypted file stream
+ * @param {Type.DecryptionConfig} decryptionConfig - User-provided decryption config
+ * @returns {Promise<Type.DecryptionResult>} The decrypted file stream with metadata
  */
 export const retrieveAndDecrypt = async (
   storachaClient,
   cryptoAdapter,
   gatewayURL,
   cid,
-  delegationCAR,
-  decryptionOptions
+  decryptionConfig
 ) => {
   // Step 1: Get the encrypted metadata from the public gateway
   const encryptedMetadataCar = await getCarFileFromPublicGateway(
@@ -45,9 +44,8 @@ export const retrieveAndDecrypt = async (
   const { key, iv } = await cryptoAdapter.decryptSymmetricKey(
     encryptedSymmetricKey,
     {
-      decryptionOptions,
+      decryptionConfig,
       metadata,
-      delegationCAR,
       resourceCID: cid,
       issuer: storachaClient.agent.issuer,
       audience: storachaClient.defaultProvider(),
@@ -55,7 +53,22 @@ export const retrieveAndDecrypt = async (
   )
 
   // Step 5: Decrypt the encrypted file content using the decrypted symmetric key and IV
-  return decryptFileWithKey(cryptoAdapter, key, iv, encryptedData)
+  const decryptedStreamWithMetadata = await decryptFileWithKey(
+    cryptoAdapter,
+    key,
+    iv,
+    encryptedData
+  )
+
+  // Step 6: Extract file content and metadata
+  const { fileStream, fileMetadata } = await extractFileMetadata(
+    decryptedStreamWithMetadata
+  )
+
+  return {
+    stream: fileStream,
+    fileMetadata,
+  }
 }
 
 /**
@@ -65,18 +78,54 @@ export const retrieveAndDecrypt = async (
  * encryption and decryption operations.
  * @param {Uint8Array} key - The symmetric key
  * @param {Uint8Array} iv - The initialization vector
- * @param {Uint8Array} content - The encrypted file content
+ * @param {AsyncIterable<Uint8Array>|Uint8Array} content - The encrypted file content
  * @returns {Promise<ReadableStream>} The decrypted file stream
  */
-export function decryptFileWithKey(cryptoAdapter, key, iv, content) {
+export async function decryptFileWithKey(cryptoAdapter, key, iv, content) {
+  // Convert content to ReadableStream with true on-demand streaming
+  /** @type {AsyncIterator<Uint8Array> | null} */
+  let iterator = null
   const contentStream = new ReadableStream({
-    start(controller) {
-      controller.enqueue(content)
-      controller.close()
+    start() {
+      // Initialize iterator for async iterable (no memory loading here)
+      if (!(content instanceof Uint8Array)) {
+        iterator = content[Symbol.asyncIterator]()
+      }
+    },
+    async pull(controller) {
+      try {
+        if (content instanceof Uint8Array) {
+          // Handle single Uint8Array (legacy case)
+          controller.enqueue(content)
+          controller.close()
+        } else if (iterator) {
+          // Handle async iterable - get next chunk on-demand
+          const { value, done } = await iterator.next()
+          if (done) {
+            controller.close()
+          } else {
+            controller.enqueue(value) // Only load one chunk at a time
+          }
+        } else {
+          controller.close()
+        }
+      } catch (error) {
+        controller.error(error)
+      }
+    },
+    cancel() {
+      // Clean up iterator if stream is cancelled
+      if (iterator && typeof iterator.return === 'function') {
+        void iterator.return()
+      }
     },
   })
 
-  const decryptedStream = cryptoAdapter.decryptStream(contentStream, key, iv)
+  const decryptedStream = await cryptoAdapter.decryptStream(
+    contentStream,
+    key,
+    iv
+  )
 
   return decryptedStream
 }
@@ -152,6 +201,6 @@ const getEncryptedDataFromCar = async (car, encryptedDataCID) => {
     blockstore
   )
 
-  // Step 5: Return the async iterable (stream of chunks)
-  return encryptedDataEntry.content() // async iterable of Uint8Array
+  // Step 5: Return the async iterable for streaming
+  return encryptedDataEntry.content()
 }

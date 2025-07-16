@@ -2,6 +2,7 @@ import { CARWriterStream } from 'carstream'
 import { createFileEncoderStream } from '@storacha/upload-client/unixfs'
 
 import * as Type from '../types.js'
+import { createFileWithMetadata } from '../utils/file-metadata.js'
 
 /**
  * Encrypt and upload a file to the Storacha network
@@ -97,7 +98,7 @@ const buildAndUploadEncryptedMetadata = async (
 }
 
 /**
- * Encrypt a file using the crypto adapter and return the encrypted payload.
+ * Encrypt a file with embedded metadata using the crypto adapter and return the encrypted payload.
  * The encrypted payload contains the encrypted file, the encrypted symmetric key, and the metadata.
  *
  * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter responsible for performing
@@ -107,17 +108,25 @@ const buildAndUploadEncryptedMetadata = async (
  * @returns {Promise<Type.EncryptionPayload>} - The encrypted file
  */
 const encryptFile = async (cryptoAdapter, file, encryptionConfig) => {
-  // Step 1: Encrypt the file using the crypto adapter
-  const { key, iv, encryptedStream } = await cryptoAdapter.encryptStream(file)
+  // Step 1: Embed metadata in file content if provided
+  const fileWithMetadata = createFileWithMetadata(
+    file,
+    encryptionConfig.fileMetadata
+  )
 
-  // Step 2: Use crypto adapter to encrypt the symmetric key
+  // Step 2: Encrypt the file (with embedded metadata) using the crypto adapter
+  const { key, iv, encryptedStream } = await cryptoAdapter.encryptStream(
+    fileWithMetadata
+  )
+
+  // Step 3: Use crypto adapter to encrypt the symmetric key
   const keyResult = await cryptoAdapter.encryptSymmetricKey(
     key,
     iv,
     encryptionConfig
   )
 
-  // Step 3: Return the encrypted payload
+  // Step 4: Return the encrypted payload (no separate metadata needed)
   return {
     strategy: keyResult.strategy,
     encryptedKey: keyResult.encryptedKey,

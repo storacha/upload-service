@@ -71,17 +71,21 @@ jobs:
           echo "NEXT_PUBLIC_SENTRY_ENV=staging" >> .env
           echo "NEXT_PUBLIC_HUMANODE_OAUTH_CALLBACK_URL=https://staging.up.storacha.network/oauth/humanode/callback" >> .env
           echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" >> .env
+          echo "NEXT_PUBLIC_PRIVATE_SPACES_ENABLED=true" >> .env
+          echo "NEXT_PUBLIC_PRIVATE_SPACES_DOMAINS=dmail.ai,storacha.network" >> .env
+          echo "NEXT_PUBLIC_UCAN_KMS_URL=https://ucan-kms-staging.protocol-labs.workers.dev" >> .env
+          echo "NEXT_PUBLIC_UCAN_KMS_DID=did:web:staging.kms.storacha.network" >> .env
       # as long as this uses https://github.com/cloudflare/next-on-pages/blob/dc529d7efa8f8568ea8f71b5cdcf78df89be6c12/packages/next-on-pages/bin/index.js,
       # env vars won't get passed through to wrangler, so if wrangler will need them, write them to .env like the previous step
       - run: pnpm pages:build
       - name: Deploy preview build to Cloudflare Pages
         id: cloudflare
-        run: | 
-              {
-                echo 'WRANGLER_OUTPUT<<EOF'
-                pnpm wrangler pages deploy --project-name "$CLOUDFLARE_PAGES_PROJECT_NAME" --branch "$GITHUB_REF_NAME" --commit-hash "$GITHUB_SHA" .vercel/output/static
-                echo EOF
-              } >> "$GITHUB_OUTPUT"
+        run: |
+          {
+            echo 'WRANGLER_OUTPUT<<EOF'
+            pnpm wrangler pages deploy --project-name "$CLOUDFLARE_PAGES_PROJECT_NAME" --branch "$GITHUB_REF_NAME" --commit-hash "$GITHUB_SHA" .vercel/output/static
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
@@ -179,6 +183,10 @@ jobs:
           echo "NEXT_PUBLIC_SENTRY_ENV=production" >> .env
           echo "NEXT_PUBLIC_HUMANODE_OAUTH_CALLBACK_URL=https://up.storacha.network/oauth/humanode/callback" >> .env
           echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" >> .env
+          echo "NEXT_PUBLIC_PRIVATE_SPACES_ENABLED=true" >> .env
+          echo "NEXT_PUBLIC_PRIVATE_SPACES_DOMAINS=dmail.ai,storacha.network" >> .env
+          echo "NEXT_PUBLIC_UCAN_KMS_URL=https://kms.storacha.network" >> .env
+          echo "NEXT_PUBLIC_UCAN_KMS_DID=did:web:kms.storacha.network" >> .env
       - run: pnpm pages:build
         # as long as this uses https://github.com/cloudflare/next-on-pages/blob/dc529d7efa8f8568ea8f71b5cdcf78df89be6c12/packages/next-on-pages/bin/index.js,
         # env vars won't get passed through to wrangler, so if wrangler will need them, write them to .env like the previous step

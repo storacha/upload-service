@@ -70,6 +70,7 @@ test('encrypted upload with private space', async () => {
     currentSpace: vi.fn().mockReturnValue(space),
     agent: {
       issuer: { did: () => 'did:key:agent123' },
+      proofs: vi.fn().mockReturnValue([]),
     },
   }
 
@@ -102,6 +103,9 @@ test('encrypted upload with private space', async () => {
   const submitButton = screen.getByText('Upload')
   await user.click(submitButton)
 
+  // Wait for async operations to complete
+  await new Promise(resolve => setTimeout(resolve, 100))
+
   // Verify encrypted client was created
   expect(createEncryptedClient).toHaveBeenCalledWith({
     storachaClient: client,
@@ -111,7 +115,10 @@ test('encrypted upload with private space', async () => {
   // Verify KMS adapter was created
   expect(createGenericKMSAdapter).toHaveBeenCalledWith(
     'https://kms.storacha.network',
-    'did:web:kms.storacha.network'
+    'did:web:kms.storacha.network',
+    {
+      allowInsecureHttp: false,
+    }
   )
 
   // Verify encrypted upload was called
@@ -120,6 +127,12 @@ test('encrypted upload with private space', async () => {
     {
       issuer: client.agent.issuer,
       spaceDID: space.did(),
+      proofs: [],
+      fileMetadata: {
+        name: 'secret.txt',
+        type: 'text/plain',
+        extension: 'txt',
+      },
     },
     expect.objectContaining({
       onShardStored: expect.any(Function),
@@ -171,6 +184,7 @@ test('encrypted upload with custom KMS config', async () => {
     currentSpace: vi.fn().mockReturnValue(space),
     agent: {
       issuer: { did: () => 'did:key:agent123' },
+      proofs: vi.fn().mockReturnValue([]),
     },
   }
 
@@ -209,10 +223,16 @@ test('encrypted upload with custom KMS config', async () => {
   const submitButton = screen.getByText('Upload')
   await user.click(submitButton)
 
+  // Wait for async operations to complete
+  await new Promise(resolve => setTimeout(resolve, 100))
+
   // Verify custom KMS config was used
   expect(createGenericKMSAdapter).toHaveBeenCalledWith(
     customKmsConfig.keyManagerServiceURL,
-    customKmsConfig.keyManagerServiceDID
+    customKmsConfig.keyManagerServiceDID,
+    {
+      allowInsecureHttp: false,
+    }
   )
 
   // Verify encryption config includes custom KMS settings
@@ -223,8 +243,17 @@ test('encrypted upload with custom KMS config', async () => {
       spaceDID: space.did(),
       location: customKmsConfig.location,
       keyring: customKmsConfig.keyring,
+      proofs: [],
+      fileMetadata: {
+        name: 'secret.txt',
+        type: 'text/plain',
+        extension: 'txt',
+      },
     },
-    expect.any(Object)
+    expect.objectContaining({
+      onShardStored: expect.any(Function),
+      onUploadProgress: expect.any(Function),
+    })
   )
 })
 
