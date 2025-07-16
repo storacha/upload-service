@@ -1,3 +1,17 @@
+## 1.4.0 (2025-07-16)
+
+### 🚀 Features
+
+- feat: private spaces ([#305](https://github.com/storacha/upload-service/pull/305))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/capabilities to 1.8.0
+
+### ❤️ Thank You
+
+- Felipe Forbeck @fforbeck
+
 ## 1.3.0 (2025-07-09)
 
 ### 🚀 Features

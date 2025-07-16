@@ -1,3 +1,13 @@
+## 1.8.0 (2025-07-16)
+
+### 🚀 Features
+
+- feat: encryption & decryption with KMS ([#294](https://github.com/storacha/upload-service/pull/294))
+
+### ❤️ Thank You
+
+- Felipe Forbeck @fforbeck
+
 ## 1.7.0 (2025-05-28)
 
 ### 🚀 Features

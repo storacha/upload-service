@@ -1,3 +1,19 @@
+## 1.0.0-0 (2025-07-16)
+
+### ⚠️  Breaking Changes
+
+- feat: encryption & decryption with KMS ([#294](https://github.com/storacha/upload-service/pull/294))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/upload-client to 1.2.5
+- Updated @storacha/capabilities to 1.8.0
+- Updated @storacha/client to 1.5.0
+
+### ❤️ Thank You
+
+- Felipe Forbeck @fforbeck
+
 ## 0.0.39 (2025-07-09)
 
 ### 🧱 Updated Dependencies
