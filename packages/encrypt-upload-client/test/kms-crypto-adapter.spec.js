@@ -256,9 +256,10 @@ await describe('KMSCryptoAdapter', async () => {
         assert(typeof encryptResult.encryptedKey === 'string')
 
         // Test key decryption - this will call the mock decrypt
-        const decryptionOptions = {
+        const decryptionConfig = {
           spaceDID,
-          delegationProof,
+          decryptDelegation: delegationProof,
+          proofs: [],
         }
 
         const mockMetadata = {
@@ -269,21 +270,18 @@ await describe('KMSCryptoAdapter', async () => {
           kms: kmsMetadata.kms,
         }
 
-        const decryptConfigs = {
-          decryptionOptions,
-          metadata: mockMetadata,
-          delegationCAR: new Uint8Array(),
-          resourceCID:
-            /** @type {import('@storacha/upload-client/types').AnyLink} */ (
-              /** @type {any} */ ('bafybeid')
-            ),
-          issuer,
-          audience: keyManagerServiceDID.did(),
-        }
-
         const decryptResult = await adapter.decryptSymmetricKey(
           encryptResult.encryptedKey,
-          decryptConfigs
+          {
+            decryptionConfig,
+            metadata: mockMetadata,
+            resourceCID:
+              /** @type {import('@storacha/upload-client/types').AnyLink} */ (
+                /** @type {any} */ ('bafybeid')
+              ),
+            issuer,
+            audience: keyManagerServiceDID.did(),
+          }
         )
 
         // Verify the round-trip worked
@@ -379,7 +377,7 @@ await describe('KMSCryptoAdapter', async () => {
         // Should throw error
         await assert.rejects(
           () => adapter.encryptSymmetricKey(testKey, testIV, encryptionConfig),
-          /SpaceNotProvisioned/
+          /Space is not provisioned for encryption/
         )
       } finally {
         await keyManagerServiceServer.close()
@@ -423,7 +421,7 @@ await describe('KMSCryptoAdapter', async () => {
 
       const decryptionOptions = {
         spaceDID,
-        delegationProof,
+        decryptDelegation: delegationProof,
       }
 
       const mockKey = new Uint8Array([1, 2, 3]) // test value as bytes
@@ -443,7 +441,7 @@ await describe('KMSCryptoAdapter', async () => {
       }
 
       const decryptConfigs = /** @type {any} */ ({
-        decryptionOptions,
+        decryptionConfig: decryptionOptions,
         metadata: mockMetadata,
         delegationCAR: new Uint8Array(),
         resourceCID: 'bafybeid',
@@ -455,7 +453,7 @@ await describe('KMSCryptoAdapter', async () => {
         // Should throw error
         await assert.rejects(
           () => adapter.decryptSymmetricKey(mockKeyString, decryptConfigs),
-          /KeyNotFound/
+          /KMS key not found/
         )
       } finally {
         await keyManagerServiceServer.close()
@@ -473,7 +471,7 @@ await describe('KMSCryptoAdapter', async () => {
       )
 
       const invalidConfigs = /** @type {any} */ ({
-        decryptionOptions: {}, // Missing spaceDID and delegationProof
+        decryptionConfig: {}, // Missing spaceDID and decryptDelegation
         metadata: { strategy: 'kms' },
         delegationCAR: new Uint8Array(),
         resourceCID: 'bafybeid',
@@ -483,7 +481,7 @@ await describe('KMSCryptoAdapter', async () => {
 
       await assert.rejects(
         () => adapter.decryptSymmetricKey('key', invalidConfigs),
-        /SpaceDID and delegationProof are required/
+        /SpaceDID and decryptDelegation are required/
       )
     })
 
@@ -499,7 +497,7 @@ await describe('KMSCryptoAdapter', async () => {
       )
 
       const invalidConfigs = /** @type {any} */ ({
-        decryptionOptions: { spaceDID, delegationProof },
+        decryptionConfig: { spaceDID, decryptDelegation: delegationProof },
         metadata: { strategy: 'kms' },
         delegationCAR: new Uint8Array(),
         resourceCID: 'bafybeid',

@@ -27,6 +27,9 @@
   "exclude": ["node_modules"],
   "references": [
     {
+      "path": "../encrypt-upload-client"
+    },
+    {
       "path": "../w3up-client"
     },
     {

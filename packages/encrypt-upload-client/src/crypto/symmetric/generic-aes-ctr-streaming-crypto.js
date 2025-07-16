@@ -152,7 +152,6 @@ export class GenericAesCtrStreamingCrypto {
     let counter = new Uint8Array(iv)
     let totalBlocks = 0 // Track total blocks processed (CRITICAL for security)
 
-    // Create TransformStream (inspired by Node.js approach)
     const decryptTransform = new TransformStream({
       transform: async (chunk, controller) => {
         try {
@@ -175,7 +174,6 @@ export class GenericAesCtrStreamingCrypto {
               chunk
             )
           )
-
           controller.enqueue(decrypted)
         } catch (error) {
           controller.error(error)
