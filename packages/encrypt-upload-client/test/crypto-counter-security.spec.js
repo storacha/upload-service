@@ -1,15 +1,6 @@
+import './setup.js'
 import { test, describe } from 'node:test'
 import assert from 'node:assert'
-
-// Polyfill globalThis.crypto for Node.js <19
-if (typeof globalThis.crypto === 'undefined') {
-  try {
-    // @ts-expect-error - Node.js crypto compatibility
-    globalThis.crypto = (await import('crypto')).webcrypto
-  } catch (e) {
-    throw new Error('globalThis.crypto is not available.')
-  }
-}
 
 import { GenericAesCtrStreamingCrypto } from '../src/crypto/symmetric/generic-aes-ctr-streaming-crypto.js'
 
@@ -134,7 +125,7 @@ await describe('AES-CTR Counter Security', async () => {
       'Decrypt must produce exact original data'
     )
 
-    console.log('✅ Chunk handling with block-based counters works correctly')
+    console.log('Chunk handling with block-based counters works correctly')
   })
 
   await test('should prevent keystream reuse in different chunk sizes', async () => {

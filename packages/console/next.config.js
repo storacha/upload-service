@@ -48,7 +48,7 @@ const nextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
-  }
+  },
 }
 
 /** @type {(phase: string) => Promise<import('next').NextConfig & import('@nx/next/plugins/with-nx').WithNxOptions & import('@sentry/nextjs').WithSentryConfig>} */
