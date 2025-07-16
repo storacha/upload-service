@@ -1,3 +1,22 @@
+## 1.5.0 (2025-07-16)
+
+### 🚀 Features
+
+- feat: private spaces ([#305](https://github.com/storacha/upload-service/pull/305))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-client to 1.0.10
+- Updated @storacha/access to 1.4.0
+- Updated @storacha/upload-client to 1.2.5
+- Updated @storacha/capabilities to 1.8.0
+- Updated @storacha/blob-index to 1.2.0
+- Updated @storacha/upload-api to 2.0.3
+
+### ❤️ Thank You
+
+- Felipe Forbeck @fforbeck
+
 ## 1.4.2 (2025-07-09)
 
 ### 🧱 Updated Dependencies
