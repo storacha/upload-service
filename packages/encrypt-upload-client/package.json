@@ -46,20 +46,12 @@
       "require": "./dist/crypto/factories.browser.js"
     },
     "./node": {
-      "import": "./dist/crypto-adapters/node-crypto-adapter.js",
-      "require": "./dist/crypto-adapters/node-crypto-adapter.js"
+      "import": "./dist/crypto/symmetric/node-aes-cbc-crypto.js",
+      "require": "./dist/crypto/symmetric/node-aes-cbc-crypto.js"
     },
     "./browser": {
-      "import": "./dist/crypto-adapters/browser-crypto-adapter.js",
-      "require": "./dist/crypto-adapters/browser-crypto-adapter.js"
-    },
-    "./crypto-adapters/browser-crypto-adapter": {
-      "import": "./dist/crypto-adapters/browser-crypto-adapter.js",
-      "types": "./dist/crypto-adapters/browser-crypto-adapter.d.ts"
-    },
-    "./crypto-adapters/node-crypto-adapter": {
-      "import": "./dist/crypto-adapters/node-crypto-adapter.js",
-      "types": "./dist/crypto-adapters/node-crypto-adapter.d.ts"
+      "import": "./dist/crypto/symmetric/generic-aes-ctr-streaming-crypto.js",
+      "require": "./dist/crypto/symmetric/generic-aes-ctr-streaming-crypto.js"
     },
     "./types": "./dist/types.js"
   },
@@ -107,7 +99,7 @@
   },
   "devDependencies": {
     "@lit-protocol/types": "^7.0.8",
-    "@playwright/test": "^1.53.2",
+    "@playwright/test": "catalog:",
     "@storacha/eslint-config": "workspace:^",
     "esbuild": "^0.25.1",
     "mkcert": "^3.2.0",

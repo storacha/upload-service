@@ -36,6 +36,9 @@
     }
   },
   "defaultBase": "main",
+  "sync": {
+    "applyChanges": true
+  },
   "release": {
     "projectsRelationship": "independent",
     "versionPlans": true,

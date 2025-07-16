@@ -9,6 +9,8 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
+    "build": "tsc --build --pretty --verbose",
+    "typecheck": "../../../../node_modules/.bin/tsc --build --emitDeclarationOnly --pretty --verbose",
     "dev": "tsc --build --watch --preserveWatchOutput",
     "clean": "rm -rf dist *.tsbuildinfo",
     "lint": "echo 'Linting in @storacha/ui-react is temporarily disabled while we resolve version issues.'",
@@ -34,6 +36,7 @@
     "@ariakit/react": "catalog:",
     "@ariakit/react-core": "catalog:",
     "@storacha/ui-core": "workspace:^",
+    "@storacha/encrypt-upload-client": "workspace:^",
     "ariakit-react-utils": "catalog:"
   },
   "devDependencies": {

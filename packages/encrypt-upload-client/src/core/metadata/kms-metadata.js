@@ -74,17 +74,6 @@ class KMSMetadata {
     return this.#kms
   }
 
-  archive() {
-    /** @type {Types.KMSMetadata} */
-    const input = {
-      encryptedDataCID: this.encryptedDataCID,
-      encryptedSymmetricKey: this.encryptedSymmetricKey,
-      space: this.space,
-      kms: this.kms,
-    }
-    return archive(input)
-  }
-
   archiveBlock() {
     /** @type {Types.KMSMetadata} */
     const input = {

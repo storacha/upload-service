@@ -963,8 +963,8 @@ importers:
         specifier: ^7.0.8
         version: 7.0.8
       '@playwright/test':
-        specifier: ^1.53.2
-        version: 1.53.2
+        specifier: 'catalog:'
+        version: 1.51.1
       '@storacha/eslint-config':
         specifier: workspace:^
         version: link:../eslint-config-w3up
@@ -1521,6 +1521,9 @@ importers:
       '@ariakit/react-core':
         specifier: 'catalog:'
         version: 0.3.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@storacha/encrypt-upload-client':
+        specifier: workspace:^
+        version: link:../../../encrypt-upload-client
       '@storacha/ui-core':
         specifier: workspace:^
         version: link:../core
@@ -4646,11 +4649,6 @@ packages:
 
   '@playwright/test@1.51.1':
     resolution: {integrity: sha512-nM+kEaTSAoVlXmMPH10017vn3FSiFqr/bh4fKg9vmAdMfd9SDqRZNvPSiAHADc/itWak+qPvMPZQOPwCBW7k7Q==}
-    engines: {node: '>=18'}
-    hasBin: true
-
-  '@playwright/test@1.53.2':
-    resolution: {integrity: sha512-tEB2U5z74ebBeyfGNZ3Jfg29AnW+5HlWhvHtb/Mqco9pFdZU1ZLNdVb2UtB5CvmiilNr2ZfVH/qMmAROG/XTzw==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -10998,7 +10996,6 @@ packages:
 
   path-match@1.2.4:
     resolution: {integrity: sha512-UWlehEdqu36jmh4h5CWJ7tARp1OEVKGHKm6+dg9qMq5RKUTV5WJrGgaZ3dN2m7WFAXDbjlHzvJvL/IUpy84Ktw==}
-    deprecated: This package is archived and no longer maintained. For support, visit https://github.com/expressjs/express/discussions
 
   path-parse@1.0.7:
     resolution: {integrity: sha512-LDJzPVEEEPR+y48z93A0Ed0yXb8pAByGWo/k5YYdYgpY2/2EsOsksJrq7lOHxryrVOn1ejG6oAp8ahvOIQD8sw==}
@@ -11138,11 +11135,6 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  playwright-core@1.53.2:
-    resolution: {integrity: sha512-ox/OytMy+2w1jcYEYlOo1Hhp8hZkLCximMTUTMBXjGUA1KoFfiSZ+DU+3a739jsPY0yoKH2TFy9S2fsJas8yAw==}
-    engines: {node: '>=18'}
-    hasBin: true
-
   playwright-test@12.6.1:
     resolution: {integrity: sha512-M3O7VomDk7BsJzvwCc3/9TqhHkJPDIxqPDwN8JzHKrXwVIjL5TMBQLvzcbaV/KJXl8YD6dqQL+U+waU1uu68lA==}
     engines: {node: '>=16.0.0'}
@@ -11150,11 +11142,6 @@ packages:
 
   playwright@1.51.1:
     resolution: {integrity: sha512-kkx+MB2KQRkyxjYPc3a0wLZZoDczmppyGJIvQ43l+aZihkaVvmu/21kiyaHeHjiFxjxNNFnUncKmcGIyOojsaw==}
-    engines: {node: '>=18'}
-    hasBin: true
-
-  playwright@1.53.2:
-    resolution: {integrity: sha512-6K/qQxVFuVQhRQhFsVZ9fGeatxirtrpPgxzBYWyZLEXJzqYwuL4fuNmfOfD5et1tJE4GScKyPNeLhZeRwuTU3A==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -17619,10 +17606,6 @@ snapshots:
   '@playwright/test@1.51.1':
     dependencies:
       playwright: 1.51.1
-
-  '@playwright/test@1.53.2':
-    dependencies:
-      playwright: 1.53.2
 
   '@pnpm/config.env-replace@1.1.0': {}
 
@@ -25734,8 +25717,6 @@ snapshots:
 
   playwright-core@1.51.1: {}
 
-  playwright-core@1.53.2: {}
-
   playwright-test@12.6.1:
     dependencies:
       acorn-loose: 8.4.0
@@ -25776,12 +25757,6 @@ snapshots:
   playwright@1.51.1:
     dependencies:
       playwright-core: 1.51.1
-    optionalDependencies:
-      fsevents: 2.3.2
-
-  playwright@1.53.2:
-    dependencies:
-      playwright-core: 1.53.2
     optionalDependencies:
       fsevents: 2.3.2
 

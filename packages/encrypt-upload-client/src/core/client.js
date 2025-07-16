@@ -39,14 +39,16 @@ export class EncryptedClient {
    *
    * @param {Type.BlobLike} file - The file to upload
    * @param {Type.EncryptionConfig} encryptionConfig - User-provided encryption configuration
+   * @param {Type.UploadOptions} [uploadOptions] - User-provided upload options
    * @returns {Promise<Type.AnyLink>} - The link to the uploaded file
    */
-  async encryptAndUploadFile(file, encryptionConfig) {
+  async encryptAndUploadFile(file, encryptionConfig, uploadOptions = {}) {
     return encryptAndUpload(
       this._storachaClient,
       this._cryptoAdapter,
       file,
-      encryptionConfig
+      encryptionConfig,
+      uploadOptions
     )
   }
 

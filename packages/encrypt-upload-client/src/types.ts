@@ -14,6 +14,7 @@ import type {
   Signer,
   DID,
   SigAlg,
+  UploadOptions,
 } from '@storacha/client/types'
 
 export type { IPLDBlock } from '@ucanto/interface'
@@ -21,6 +22,7 @@ export type { SpaceDID } from '@storacha/capabilities/types'
 export type { UnknownFormat } from '@storacha/capabilities/types'
 export type { Result, UnknownLink }
 export type { BlobLike, AnyLink }
+export type { UploadOptions } from '@storacha/client/types'
 
 // Import SpaceDID for use in interfaces
 import type { SpaceDID } from '@storacha/capabilities/types'
@@ -28,7 +30,8 @@ import type { SpaceDID } from '@storacha/capabilities/types'
 export interface EncryptedClient {
   encryptAndUploadFile(
     file: BlobLike,
-    config: EncryptionConfig
+    config: EncryptionConfig,
+    uploadOptions?: UploadOptions
   ): Promise<AnyLink>
   retrieveAndDecryptFile(
     cid: AnyLink,

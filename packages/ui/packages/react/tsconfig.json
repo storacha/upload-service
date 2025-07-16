@@ -6,13 +6,16 @@
   },
   "references": [
     {
+      "path": "../../../encrypt-upload-client"
+    },
+    {
+      "path": "../core"
+    },
+    {
       "path": "./tsconfig.lib.json"
     },
     {
       "path": "./tsconfig.spec.json"
-    },
-    {
-      "path": "../core"
     }
   ]
 }

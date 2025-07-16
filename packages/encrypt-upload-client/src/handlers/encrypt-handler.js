@@ -11,13 +11,15 @@ import * as Type from '../types.js'
  * encryption and decryption operations.
  * @param {Type.BlobLike} file - The file to upload
  * @param {Type.EncryptionConfig} encryptionConfig - User-provided encryption configuration
+ * @param {Type.UploadOptions} [uploadOptions] - User-provided upload options
  * @returns {Promise<Type.AnyLink>} - The link to the uploaded file
  */
 export const encryptAndUpload = async (
   storachaClient,
   cryptoAdapter,
   file,
-  encryptionConfig
+  encryptionConfig,
+  uploadOptions = {}
 ) => {
   // Step 1: Validate required configuration
   if (!encryptionConfig.spaceDID) throw new Error('No space selected!')
@@ -33,7 +35,8 @@ export const encryptAndUpload = async (
   const rootCid = await buildAndUploadEncryptedMetadata(
     storachaClient,
     encryptedPayload,
-    cryptoAdapter
+    cryptoAdapter,
+    uploadOptions
   )
 
   // Step 4: Return the root CID of the encrypted metadata
@@ -46,17 +49,14 @@ export const encryptAndUpload = async (
  * @param {import('@storacha/client').Client} storachaClient - The Storacha client
  * @param {Type.EncryptionPayload} encryptedPayload - The encrypted payload
  * @param {Type.CryptoAdapter} cryptoAdapter - The crypto adapter for formatting metadata
- * @param {object} [options] - The upload options
- * @param {boolean} [options.publishToFilecoin] - Whether to publish the data to Filecoin
+ * @param {Type.UploadOptions} [uploadOptions] - The upload options
  * @returns {Promise<Type.AnyLink>} - The link to the uploaded metadata
  */
 const buildAndUploadEncryptedMetadata = async (
   storachaClient,
   encryptedPayload,
   cryptoAdapter,
-  options = {
-    publishToFilecoin: false,
-  }
+  uploadOptions
 ) => {
   const { encryptedKey, metadata, encryptedBlobLike } = encryptedPayload
 
@@ -89,10 +89,9 @@ const buildAndUploadEncryptedMetadata = async (
       },
     },
     {
-      // if publishToFilecoin is false, the data won't be published to Filecoin, so we need to set pieceHasher to undefined
-      ...(options.publishToFilecoin === false
-        ? { pieceHasher: undefined }
-        : {}),
+      ...uploadOptions,
+      // the encrypted data won't be published to Filecoin, so we need to set pieceHasher to undefined
+      pieceHasher: undefined,
     }
   )
 }

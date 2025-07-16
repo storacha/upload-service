@@ -3,6 +3,9 @@
   "include": ["src/**/*"],
   "references": [
     {
+      "path": "../../../encrypt-upload-client/tsconfig.lib.json"
+    },
+    {
       "path": "../core/tsconfig.lib.json"
     }
   ]

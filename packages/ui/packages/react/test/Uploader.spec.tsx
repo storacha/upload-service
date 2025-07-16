@@ -18,7 +18,17 @@ test('single file upload', async () => {
   const cid = Link.parse(
     'bafybeibrqc2se2p3k4kfdwg7deigdggamlumemkiggrnqw3edrjosqhvnm'
   )
-  const client = { uploadFile: vi.fn().mockImplementation(() => cid) }
+  const space = {
+    meta: vi.fn().mockImplementation(() => Object.assign({
+      access: {
+        type: 'public'
+      }
+    })),
+  }
+  const client = { 
+    uploadFile: vi.fn().mockImplementation(() => cid),
+    currentSpace: vi.fn().mockImplementation(() => space),
+  }
 
   const contextValue: ContextValue = [
     {
@@ -55,10 +65,18 @@ test('multi file upload', async () => {
   const cid = Link.parse(
     'bafybeibrqc2se2p3k4kfdwg7deigdggamlumemkiggrnqw3edrjosqhvnm'
   )
+  const space = {
+    meta: vi.fn().mockImplementation(() => Object.assign({
+      access: {
+        type: 'public'
+      }
+    })),
+  }
   const client = {
     uploadDirectory: vi.fn().mockImplementation(() => cid),
+    currentSpace: vi.fn().mockImplementation(() => space),
   }
-
+  
   const contextValue: ContextValue = [
     {
       ...ContextDefaultValue[0],
@@ -97,8 +115,16 @@ test('wrapping a file in a directory', async () => {
   const cid = Link.parse(
     'bafybeibrqc2se2p3k4kfdwg7deigdggamlumemkiggrnqw3edrjosqhvnm'
   )
+  const space = {
+    meta: vi.fn().mockImplementation(() => Object.assign({
+      access: {
+        type: 'public'
+      }
+    })),
+  }
   const client = {
     uploadDirectory: vi.fn().mockImplementation(() => cid),
+    currentSpace: vi.fn().mockImplementation(() => space),
   }
 
   const contextValue: ContextValue = [
@@ -136,8 +162,16 @@ test('uploading a CAR directly', async () => {
   const cid = Link.parse(
     'bafybeibrqc2se2p3k4kfdwg7deigdggamlumemkiggrnqw3edrjosqhvnm'
   )
+  const space = {
+    meta: vi.fn().mockImplementation(() => Object.assign({
+      access: {
+        type: 'public'
+      }
+    })),
+  }
   const client = {
     uploadCAR: vi.fn().mockImplementation(() => cid),
+    currentSpace: vi.fn().mockImplementation(() => space),
   }
 
   const contextValue: ContextValue = [
