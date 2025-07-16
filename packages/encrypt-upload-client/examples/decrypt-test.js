@@ -7,7 +7,8 @@ import { StoreMemory } from '@storacha/client/stores/memory'
 
 import { create, Wallet } from '../src/index.js'
 import { serviceConf, receiptsEndpoint } from '../src/config/service.js'
-import { NodeCryptoAdapter } from '../src/crypto-adapters/node-crypto-adapter.js'
+import { createNodeLitAdapter } from '../src/crypto/factories.node.js'
+import { LitNodeClient } from '@lit-protocol/lit-node-client'
 
 dotenv.config()
 
@@ -31,16 +32,22 @@ async function main() {
     receiptsEndpoint,
   })
 
+  // Set up Lit client
+  const litClient = new LitNodeClient({
+    litNetwork: 'datil-dev',
+  })
+  await litClient.connect()
+
   const encryptedClient = await create({
     storachaClient: client,
-    cryptoAdapter: new NodeCryptoAdapter(),
+    cryptoAdapter: createNodeLitAdapter(litClient),
   })
 
-  const signer = { wallet }
+  const decryptionOptions = { wallet }
   const decryptedContent = await encryptedClient.retrieveAndDecryptFile(
-    signer,
     cid,
-    delegationCarBuffer
+    delegationCarBuffer,
+    decryptionOptions
   )
 
   const reader = decryptedContent.getReader()

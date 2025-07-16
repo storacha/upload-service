@@ -1,8 +1,7 @@
 import { Wallet } from 'ethers'
 import { UnknownLink } from 'multiformats'
 import { Client as StorachaClient } from '@storacha/client'
-import { Result, Failure, Block } from '@ucanto/interface'
-import { LitNodeClient } from '@lit-protocol/lit-node-client'
+import { Result, Failure, Block, Proof } from '@ucanto/interface'
 import {
   AccessControlConditions,
   AuthMethod,
@@ -15,37 +14,36 @@ import type {
   Signer,
   DID,
   SigAlg,
+  UploadOptions,
 } from '@storacha/client/types'
 
 export type { IPLDBlock } from '@ucanto/interface'
-export type { SpaceDID } from '@storacha/capabilities/utils'
+export type { SpaceDID } from '@storacha/capabilities/types'
 export type { UnknownFormat } from '@storacha/capabilities/types'
 export type { Result, UnknownLink }
 export type { BlobLike, AnyLink }
+export type { UploadOptions } from '@storacha/client/types'
+
+// Import SpaceDID for use in interfaces
+import type { SpaceDID } from '@storacha/capabilities/types'
 
 export interface EncryptedClient {
-  uploadEncryptedFile(file: BlobLike): Promise<AnyLink>
+  encryptAndUploadFile(
+    file: BlobLike,
+    config: EncryptionConfig,
+    uploadOptions?: UploadOptions
+  ): Promise<AnyLink>
   retrieveAndDecryptFile(
-    signer: LitWalletSigner | LitPkpSigner,
     cid: AnyLink,
-    delegationCAR: Uint8Array
+    delegationCAR: Uint8Array,
+    decryptionOptions: DecryptionOptions
   ): Promise<ReadableStream>
 }
 
 export type EncryptedClientOptions = {
   storachaClient: StorachaClient
   cryptoAdapter: CryptoAdapter
-  litClient?: LitNodeClient
   gatewayURL?: URL
-}
-
-export interface CryptoAdapter {
-  encryptStream(data: BlobLike): Promise<EncryptOutput>
-  decryptStream(
-    encryptedData: ReadableStream,
-    key: Uint8Array,
-    iv: Uint8Array
-  ): Promise<ReadableStream>
 }
 
 export interface EncryptOutput {
@@ -54,33 +52,168 @@ export interface EncryptOutput {
   encryptedStream: ReadableStream
 }
 
-export type EncryptedPayload = {
-  identityBoundCiphertext: string
+export interface SymmetricCrypto {
+  encryptStream(data: BlobLike): Promise<EncryptOutput>
+  decryptStream(
+    encryptedData: ReadableStream,
+    key: Uint8Array,
+    iv: Uint8Array
+  ): Promise<ReadableStream>
+
+  // Algorithm-specific key/IV management
+  combineKeyAndIV(key: Uint8Array, iv: Uint8Array): Uint8Array
+  splitKeyAndIV(combined: Uint8Array): { key: Uint8Array; iv: Uint8Array }
+}
+
+export interface CryptoAdapter {
+  // Symmetric crypto operations (delegated to composed SymmetricCrypto)
+  encryptStream(data: BlobLike): Promise<EncryptOutput>
+  decryptStream(
+    encryptedData: ReadableStream,
+    key: Uint8Array,
+    iv: Uint8Array
+  ): Promise<ReadableStream>
+
+  // Strategy-specific key management
+  encryptSymmetricKey(
+    key: Uint8Array,
+    iv: Uint8Array,
+    encryptionConfig: EncryptionConfig
+  ): Promise<EncryptedKeyResult>
+  decryptSymmetricKey(
+    encryptedKey: string,
+    configs: {
+      decryptionOptions: DecryptionOptions
+      metadata: ExtractedMetadata
+      delegationCAR: Uint8Array
+      resourceCID: AnyLink
+      issuer: Signer<DID, SigAlg>
+      audience: DID
+    }
+  ): Promise<{ key: Uint8Array; iv: Uint8Array }>
+  extractEncryptedMetadata(car: Uint8Array): ExtractedMetadata
+  getEncryptedKey(metadata: ExtractedMetadata): string
+  encodeMetadata(
+    encryptedDataCID: string,
+    encryptedKey: string,
+    metadata: LitKeyMetadata | KMSKeyMetadata
+  ): Promise<{ cid: AnyLink; bytes: Uint8Array }>
+}
+
+// User-provided configuration (required settings)
+export interface EncryptionConfig {
+  /**
+   * The issuer of the encryption request
+   */
+  issuer: Signer<DID, SigAlg>
+
+  /**
+   * The DID of the space to encrypt the file for
+   */
+  spaceDID: SpaceDID
+
+  /**
+   * The location of the KMS key to use for encryption
+   */
+  location?: string
+
+  /**
+   * The keyring of the KMS key to use for encryption
+   */
+  keyring?: string
+}
+
+export interface DecryptionOptions {
+  // User-provided options
+  // Lit-specific (signer information)
+  wallet?: Wallet
+  sessionSigs?: SessionSigsMap
+  // Lit PKP-specific (signer information)
+  pkpPublicKey?: string
+  authMethod?: AuthMethod
+  // KMS-specific
+  spaceDID?: SpaceDID
+  delegationProof?: Proof
+}
+
+export interface EncryptedKeyResult {
+  strategy: EncryptionStrategy
+  encryptedKey: string
+  metadata: LitKeyMetadata | KMSKeyMetadata
+}
+
+export type EncryptionStrategy = 'lit' | 'kms'
+
+export interface LitKeyMetadata {
   plaintextKeyHash: string
+  accessControlConditions: AccessControlConditions
+}
+
+export interface KMSKeyMetadata {
+  space: SpaceDID
+  kms: {
+    provider: string
+    keyId: string
+    algorithm: string
+  }
+}
+
+export type EncryptionPayload = {
+  strategy: EncryptionStrategy
+  encryptedKey: string
+  metadata: LitKeyMetadata | KMSKeyMetadata
   encryptedBlobLike: BlobLike
 }
 
 export type GenericAccessControlCondition = [Record<string, any>] // eslint-disable-line @typescript-eslint/no-explicit-any
 
-export interface EncryptedMetadataInput {
+export interface LitMetadataInput {
   encryptedDataCID: string
   identityBoundCiphertext: string
   plaintextKeyHash: string
-  accessControlConditions: GenericAccessControlCondition
+  accessControlConditions: AccessControlConditions
 }
 
-export interface EncryptedMetadata {
+export interface LitMetadata {
   encryptedDataCID: UnknownLink
   identityBoundCiphertext: Uint8Array
   plaintextKeyHash: Uint8Array
-  accessControlConditions: GenericAccessControlCondition
+  accessControlConditions: AccessControlConditions
 }
 
-export interface EncryptedMetadataView extends EncryptedMetadata {
+export interface LitMetadataView extends LitMetadata {
   /** Encode it to a CAR file. */
-  archive(): Promise<Result<Uint8Array>>
   archiveBlock(): Promise<Block>
-  toJSON(): EncryptedMetadataInput
+  toJSON(): LitMetadataInput
+}
+
+// KMS-specific metadata types
+export interface KMSMetadata {
+  encryptedDataCID: UnknownLink
+  encryptedSymmetricKey: string
+  space: SpaceDID
+  kms: {
+    provider: string
+    keyId: string
+    algorithm: string
+  }
+}
+
+export interface KMSMetadataInput {
+  encryptedDataCID: string
+  encryptedSymmetricKey: string
+  space: string
+  kms: {
+    provider: string
+    keyId: string
+    algorithm: string
+  }
+}
+
+export interface KMSMetadataView extends KMSMetadata {
+  /** Encode it to a CAR file. */
+  archiveBlock(): Promise<Block>
+  toJSON(): KMSMetadataInput
 }
 
 export interface DecodeFailure extends Failure {
@@ -129,4 +262,27 @@ export interface ExecuteUcanValidationOptions {
   plaintextKeyHash: string
   accessControlConditions: AccessControlConditions
   wrappedInvocationJSON: string
+}
+
+// Strategy-specific metadata types
+export type ExtractedMetadata = LitExtractedMetadata | KMSExtractedMetadata
+
+export interface LitExtractedMetadata {
+  strategy: 'lit'
+  encryptedDataCID: string
+  identityBoundCiphertext: string
+  plaintextKeyHash: string
+  accessControlConditions: AccessControlConditions
+}
+
+export interface KMSExtractedMetadata {
+  strategy: 'kms'
+  encryptedDataCID: string
+  encryptedSymmetricKey: string
+  space: SpaceDID
+  kms: {
+    provider: string
+    keyId: string
+    algorithm: string
+  }
 }

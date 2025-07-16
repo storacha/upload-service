@@ -37,21 +37,21 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     },
+    "./factories.node": {
+      "import": "./dist/crypto/factories.node.js",
+      "require": "./dist/crypto/factories.node.js"
+    },
+    "./factories.browser": {
+      "import": "./dist/crypto/factories.browser.js",
+      "require": "./dist/crypto/factories.browser.js"
+    },
     "./node": {
-      "import": "./dist/crypto-adapters/node-crypto-adapter.js",
-      "require": "./dist/crypto-adapters/node-crypto-adapter.js"
+      "import": "./dist/crypto/symmetric/node-aes-cbc-crypto.js",
+      "require": "./dist/crypto/symmetric/node-aes-cbc-crypto.js"
     },
     "./browser": {
-      "import": "./dist/crypto-adapters/browser-crypto-adapter.js",
-      "require": "./dist/crypto-adapters/browser-crypto-adapter.js"
-    },
-    "./crypto-adapters/browser-crypto-adapter": {
-      "import": "./dist/crypto-adapters/browser-crypto-adapter.js",
-      "types": "./dist/crypto-adapters/browser-crypto-adapter.d.ts"
-    },
-    "./crypto-adapters/node-crypto-adapter": {
-      "import": "./dist/crypto-adapters/node-crypto-adapter.js",
-      "types": "./dist/crypto-adapters/node-crypto-adapter.d.ts"
+      "import": "./dist/crypto/symmetric/generic-aes-ctr-streaming-crypto.js",
+      "require": "./dist/crypto/symmetric/generic-aes-ctr-streaming-crypto.js"
     },
     "./types": "./dist/types.js"
   },
@@ -62,8 +62,11 @@
     "lint:fix": "tsc --build && eslint '**/*.{js,ts}' --fix && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "build-actions": "node lit-actions/esbuild.js",
     "attw": "attw --pack .",
+    "prepare-environment": "playwright install",
     "rc": "npm version prerelease --preid rc",
-    "test": "node --test test/*.spec.js"
+    "test": "node --test $(find test -name '*.spec.js' ! -name '*.playwright.spec.js')",
+    "test:setup-certs": "mkdir -p test/mocks/playwright && cd test/mocks/playwright && (test -f cert.key || (npx mkcert create-ca && npx mkcert create-cert --domains localhost 127.0.0.1 ::1))",
+    "test:browser": "npm run test:setup-certs && npx playwright test"
   },
   "dependencies": {
     "@ipld/car": "catalog:",
@@ -96,8 +99,10 @@
   },
   "devDependencies": {
     "@lit-protocol/types": "^7.0.8",
+    "@playwright/test": "catalog:",
     "@storacha/eslint-config": "workspace:^",
     "esbuild": "^0.25.1",
+    "mkcert": "^3.2.0",
     "typescript": "catalog:"
   },
   "eslintConfig": {
@@ -120,7 +125,11 @@
       "coverage",
       "lit-actions",
       "src/types.js",
-      "*.min.js"
+      "*.min.js",
+      "**/*.playwright.spec.js",
+      "test/mocks/playwright/**",
+      "playwright.config.js",
+      "playwright-report/**/*"
     ]
   },
   "depcheck": {

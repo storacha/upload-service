@@ -73,6 +73,8 @@ export const abilitiesAsStrings = [
   Provider.add.can,
   Space.space.can,
   Space.info.can,
+  Space.EncryptionSetup.can,
+  Space.EncryptionKeyDecrypt.can,
   Upload.upload.can,
   Upload.add.can,
   Upload.get.can,

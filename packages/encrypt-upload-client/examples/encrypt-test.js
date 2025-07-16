@@ -8,7 +8,8 @@ import { StoreMemory } from '@storacha/client/stores/memory'
 
 import * as EncryptClient from '../src/index.js'
 import { serviceConf, receiptsEndpoint } from '../src/config/service.js'
-import { NodeCryptoAdapter } from '../src/crypto-adapters/node-crypto-adapter.js'
+import { createNodeLitAdapter } from '../src/crypto/factories.node.js'
+import { LitNodeClient } from '@lit-protocol/lit-node-client'
 
 dotenv.config()
 
@@ -39,14 +40,30 @@ async function main() {
   const space = await client.addSpace(proof)
   await client.setCurrentSpace(space.did())
 
+  // Set up Lit client
+  const litClient = new LitNodeClient({
+    litNetwork: 'datil-dev',
+  })
+  await litClient.connect()
+
   const encryptedClient = await EncryptClient.create({
     storachaClient: client,
-    cryptoAdapter: new NodeCryptoAdapter(),
+    cryptoAdapter: createNodeLitAdapter(litClient),
   })
 
   const fileContent = await fs.promises.readFile('./README.md')
   const blob = new Blob([fileContent])
-  const link = await encryptedClient.uploadEncryptedFile(blob)
+
+  // Create encryption config
+  const encryptionConfig = {
+    issuer: principal,
+    spaceDID: space.did(),
+  }
+
+  const link = await encryptedClient.encryptAndUploadFile(
+    blob,
+    encryptionConfig
+  )
   console.log(link)
 }
 

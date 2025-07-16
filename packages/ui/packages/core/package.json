@@ -9,6 +9,8 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
+    "build": "../../../../node_modules/.bin/tsc --build --emitDeclarationOnly --pretty --verbose",
+    "typecheck": "../../../../node_modules/.bin/tsc --build --emitDeclarationOnly --pretty --verbose",
     "dev": "tsc --build --watch --preserveWatchOutput",
     "clean": "rm -rf dist *.tsbuildinfo",
     "lint": "echo 'Linting in @storacha/ui-core is temporarily disabled while we resolve version issues.'",

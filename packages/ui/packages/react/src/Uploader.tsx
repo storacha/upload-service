@@ -6,7 +6,7 @@ import type {
   HTMLProps,
 } from 'ariakit-react-utils'
 import type { ChangeEvent, FormEventHandler } from 'react'
-import type { AnyLink, CARMetadata, ProgressStatus } from '@storacha/ui-core'
+import type { AnyLink, CARMetadata, ProgressStatus, UploadOptions } from '@storacha/ui-core'
 
 import React, {
   useContext,
@@ -18,6 +18,9 @@ import React, {
 } from 'react'
 import { createComponent, createElement } from 'ariakit-react-utils'
 import { useW3 } from './providers/Provider.js'
+import { create as createEncryptedClient } from '@storacha/encrypt-upload-client'
+import { createGenericKMSAdapter } from '@storacha/encrypt-upload-client/factories.browser'
+import { EncryptionConfig, EncryptionStrategy } from '@storacha/encrypt-upload-client/types'
 
 export type UploadProgress = Record<string, ProgressStatus>
 
@@ -27,7 +30,12 @@ export enum UploadStatus {
   Failed = 'failed',
   Succeeded = 'succeeded',
 }
-
+export interface KMSConfig {
+  keyManagerServiceURL: string
+  keyManagerServiceDID: string
+  location?: string
+  keyring?: string
+}
 export interface UploaderContextState {
   /**
    * A string indicating the status of this component - can be 'uploading', 'done' or ''.
@@ -74,6 +82,14 @@ export interface UploaderContextState {
    * This option is ignored if more than one file is being uploaded.
    */
   uploadAsCAR: boolean
+  /**
+   * The encryption strategy to use ('lit' | 'kms')
+   */
+  encryptionStrategy: EncryptionStrategy
+  /**
+   * KMS configuration (when using KMS strategy)
+   */
+  kmsConfig?: KMSConfig
 }
 
 export interface UploaderContextActions {
@@ -99,6 +115,14 @@ export interface UploaderContextActions {
    * This option is ignored if more than one file is being uploaded.
    */
   setUploadAsCAR: (uploadAsCar: boolean) => void
+  /**
+   * Set the encryption strategy
+   */
+  setEncryptionStrategy: (strategy: EncryptionStrategy) => void
+  /**
+   * Configure Google KMS settings
+   */
+  setKmsConfig: (config: KMSConfig) => void
 }
 
 export type UploaderContextValue = [
@@ -113,6 +137,7 @@ export const UploaderContextDefaultValue: UploaderContextValue = [
     uploadProgress: {},
     wrapInDirectory: false,
     uploadAsCAR: false,
+    encryptionStrategy: 'kms',
   },
   {
     setFile: () => {
@@ -126,6 +151,12 @@ export const UploaderContextDefaultValue: UploaderContextValue = [
     },
     setUploadAsCAR: () => {
       throw new Error('missing set upload as CAR function')
+    },
+    setEncryptionStrategy: () => {
+      throw new Error('missing set encryption strategy function')
+    },
+    setKmsConfig: () => {
+      throw new Error('missing set kms config function')
     },
   },
 ]
@@ -146,6 +177,8 @@ export type UploaderRootOptions<T extends As = typeof Fragment> = Options<T> & {
   onUploadComplete?: OnUploadComplete
   defaultWrapInDirectory?: boolean
   defaultUploadAsCAR?: boolean
+  defaultEncryptionStrategy?: EncryptionStrategy
+  kmsConfig?: KMSConfig
 }
 export type UploaderRootProps<T extends As = typeof Fragment> = Props<
   UploaderRootOptions<T>
@@ -156,13 +189,15 @@ export type UploaderRootProps<T extends As = typeof Fragment> = Props<
  *
  * Designed to be used with Uploader.Form and Uploader.Input
  * to easily create a custom component for uploading files to
- * web3.storage.
+ * web3.storage with optional encryption support.
  */
 export const UploaderRoot: Component<UploaderRootProps> = createComponent(
   ({
     onUploadComplete,
     defaultWrapInDirectory = false,
     defaultUploadAsCAR = false,
+    defaultEncryptionStrategy = 'kms',
+    kmsConfig,
     ...props
   }) => {
     const [{ client }] = useW3()
@@ -175,6 +210,8 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
       defaultWrapInDirectory
     )
     const [uploadAsCAR, setUploadAsCAR] = useState(defaultUploadAsCAR)
+    const [encryptionStrategy, setEncryptionStrategy] = useState<EncryptionStrategy>(defaultEncryptionStrategy)
+    const [kmsConfigState, setKmsConfig] = useState<KMSConfig | undefined>(kmsConfig)
     const [dataCID, setDataCID] = useState<AnyLink>()
     const [status, setStatus] = useState(UploadStatus.Idle)
     const [error, setError] = useState<Error>()
@@ -205,6 +242,53 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
         return
       }
 
+      const doEncryptedUpload = async (
+        uploadOptions: UploadOptions,
+      ): Promise<AnyLink> => {
+        // For encrypted uploads, we only support single file uploads currently
+        if (files.length > 1) {
+          throw new Error('Encrypted uploads currently only support single files')
+        }
+        const space = client.currentSpace()
+        if (!space) {
+          throw new Error('Missing private space for upload encryption')
+        }
+        const spaceAccess = space.meta()?.access
+        if (spaceAccess?.type !== 'private') {
+          throw new Error('Encrypted uploads currently only supported in private spaces')
+        }
+
+        let cryptoAdapter
+        if (spaceAccess.encryption.provider === 'google-kms') {
+          // Use KMS strategy with config from space metadata
+          setEncryptionStrategy('kms')
+          cryptoAdapter = createGenericKMSAdapter(
+            kmsConfigState?.keyManagerServiceURL ?? 'https://kms.storacha.network',
+            kmsConfigState?.keyManagerServiceDID ?? 'did:web:kms.storacha.network'
+          )
+        }
+        // else if - add other providers here...
+
+        if (!cryptoAdapter) {
+          throw new Error('Encryption provider not supported')
+        }
+
+        const encryptedClient = await createEncryptedClient({
+          storachaClient: client,
+          cryptoAdapter,
+        })
+
+        // Prepare encryption config
+        const encryptionConfig: EncryptionConfig = {
+          issuer: client.agent.issuer,
+          spaceDID: space.did(),
+          ...(kmsConfigState?.location && encryptionStrategy === 'kms' && { location: kmsConfigState?.location }),
+          ...(kmsConfigState?.keyring && encryptionStrategy === 'kms' && { keyring: kmsConfigState?.keyring }),
+        }
+
+        return await encryptedClient.encryptAndUploadFile(file, encryptionConfig, uploadOptions)
+      }
+
       const doUpload = async (): Promise<void> => {
         setError(undefined)
         setStatus(UploadStatus.Uploading)
@@ -222,14 +306,29 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
             }))
           },
         }
-        const cid =
-          files.length > 1
-            ? await client.uploadDirectory(files, uploadOptions)
-            : uploadAsCAR
-            ? await client.uploadCAR(file, uploadOptions)
-            : wrapInDirectory
-            ? await client.uploadDirectory(files, uploadOptions)
-            : await client.uploadFile(file, uploadOptions)
+
+        let cid: AnyLink
+
+        const space = client.currentSpace()
+        if (!space) {
+          throw new Error('No space selected for upload')
+        }
+
+        const spaceAccess = space.meta()?.access
+        if (spaceAccess?.type === 'private') {
+          // Private spaces should always use encryption by default
+          cid = await doEncryptedUpload(uploadOptions)
+        } else {
+          // Regular (public) upload path
+          cid =
+            files.length > 1
+              ? await client.uploadDirectory(files, uploadOptions)
+              : uploadAsCAR
+              ? await client.uploadCAR(file, uploadOptions)
+              : wrapInDirectory
+              ? await client.uploadDirectory(files, uploadOptions)
+              : await client.uploadFile(file, uploadOptions)
+        }
 
         setDataCID(cid)
         setStatus(UploadStatus.Succeeded)
@@ -259,6 +358,8 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
           uploadProgress,
           wrapInDirectory,
           uploadAsCAR,
+          encryptionStrategy,
+          kmsConfig: kmsConfigState,
         },
         {
           setFile: (file?: File) => {
@@ -267,9 +368,20 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
           setFiles: setFilesAndReset,
           setWrapInDirectory,
           setUploadAsCAR,
+          setEncryptionStrategy,
+          setKmsConfig,
         },
       ],
-      [file, dataCID, status, error, handleUploadSubmit, setFile]
+      [
+        file, 
+        dataCID, 
+        status, 
+        error, 
+        handleUploadSubmit, 
+        setFile,
+        encryptionStrategy,
+        kmsConfigState,
+      ]
     )
 
     return (

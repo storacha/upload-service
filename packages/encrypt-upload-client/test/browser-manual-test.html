@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GenericAesCtrStreamingCrypto Browser Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .test-result {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+    .success {
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+    }
+
+    .error {
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+    }
+
+    .info {
+      background-color: #e2e3e5;
+      border: 1px solid #d6d8db;
+      color: #383d41;
+    }
+
+    pre {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    button:disabled {
+      background-color: #6c757d;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>🌐 GenericAesCtrStreamingCrypto Browser Test</h1>
+
+  <div class="info">
+    <h3>Instructions:</h3>
+    <ol>
+      <li>Open this file in a modern browser (Chrome 109+, Firefox 102+, Safari 16.4+)</li>
+      <li>Click "Run Tests" to verify the crypto implementation works in your browser</li>
+      <li>Check the console for detailed output</li>
+    </ol>
+  </div>
+
+  <button id="runTests" onclick="runBrowserTests()">Run Tests</button>
+  <button id="clearResults" onclick="clearResults()">Clear Results</button>
+
+  <div id="results"></div>
+
+  <h3>📋 Test Details:</h3>
+  <pre id="consoleOutput"></pre>
+
+  <script type="module">
+    // Import the crypto implementation
+    // Note: This assumes you're serving this HTML file from the project root
+    // You may need to adjust the path based on your setup
+
+    let testResults = [];
+    let consoleOutput = [];
+
+    // Capture console output
+    const originalConsoleLog = console.log;
+    console.log = function (...args) {
+      consoleOutput.push(args.join(' '));
+      originalConsoleLog.apply(console, args);
+      updateConsoleDisplay();
+    };
+
+    function addResult(message, isSuccess) {
+      testResults.push({ message, isSuccess });
+      updateResultsDisplay();
+    }
+
+    function updateResultsDisplay() {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = testResults.map(result =>
+        `<div class="test-result ${result.isSuccess ? 'success' : 'error'}">${result.message}</div>`
+      ).join('');
+    }
+
+    function updateConsoleDisplay() {
+      const consoleDiv = document.getElementById('consoleOutput');
+      consoleDiv.textContent = consoleOutput.join('\n');
+    }
+
+    function clearResults() {
+      testResults = [];
+      consoleOutput = [];
+      updateResultsDisplay();
+      updateConsoleDisplay();
+    }
+
+    // Simple test utility functions (inline to avoid imports)
+    function createTestFile(sizeMB) {
+      const sizeBytes = sizeMB * 1024 * 1024;
+      const data = new Uint8Array(sizeBytes);
+
+      // Fill with predictable pattern for verification
+      for (let i = 0; i < sizeBytes; i++) {
+        data[i] = i % 256;
+      }
+
+      return new Blob([data]);
+    }
+
+    async function streamToUint8Array(stream) {
+      const reader = stream.getReader();
+      const chunks = [];
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+        }
+      } finally {
+        reader.releaseLock();
+      }
+
+      const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+      const result = new Uint8Array(totalLength);
+      let offset = 0;
+      for (const chunk of chunks) {
+        result.set(chunk, offset);
+        offset += chunk.length;
+      }
+
+      return result;
+    }
+
+    // Generic AES-CTR Streaming Crypto implementation
+    class GenericAesCtrStreamingCrypto {
+      constructor() {
+        this.ENCRYPTION_ALGORITHM = 'AES-CTR';
+        this.KEY_LENGTH = 256; // bits
+        this.IV_LENGTH = 16; // bytes
+        this.COUNTER_LENGTH = 64; // bits
+      }
+
+      async generateKey() {
+        return globalThis.crypto.getRandomValues(new Uint8Array(this.KEY_LENGTH / 8));
+      }
+
+      incrementCounter(counter, increment) {
+        const result = new Uint8Array(counter);
+        let carry = increment;
+
+        for (let i = result.length - 1; i >= 0 && carry > 0; i--) {
+          const sum = result[i] + carry;
+          result[i] = sum & 0xff;
+          carry = sum >> 8;
+        }
+
+        if (carry > 0) {
+          throw new Error('Counter overflow: exceeded 128-bit limit.');
+        }
+
+        return result;
+      }
+
+      async encryptStream(data) {
+        const key = await this.generateKey();
+        const iv = globalThis.crypto.getRandomValues(new Uint8Array(this.IV_LENGTH));
+
+        const cryptoKey = await globalThis.crypto.subtle.importKey(
+          'raw',
+          key,
+          { name: this.ENCRYPTION_ALGORITHM },
+          false,
+          ['encrypt', 'decrypt']
+        );
+
+        let counter = new Uint8Array(iv);
+        let chunkIndex = 0;
+
+        const encryptTransform = new TransformStream({
+          transform: async (chunk, controller) => {
+            try {
+              const chunkCounter = this.incrementCounter(counter, chunkIndex);
+              chunkIndex++;
+
+              const encrypted = new Uint8Array(
+                await globalThis.crypto.subtle.encrypt(
+                  {
+                    name: this.ENCRYPTION_ALGORITHM,
+                    counter: chunkCounter,
+                    length: this.COUNTER_LENGTH,
+                  },
+                  cryptoKey,
+                  chunk
+                )
+              );
+
+              controller.enqueue(encrypted);
+            } catch (error) {
+              controller.error(error);
+            }
+          },
+        });
+
+        const encryptedStream = data.stream().pipeThrough(encryptTransform);
+        return { key, iv, encryptedStream };
+      }
+
+      async decryptStream(encryptedData, key, iv) {
+        const cryptoKey = await globalThis.crypto.subtle.importKey(
+          'raw',
+          key,
+          { name: this.ENCRYPTION_ALGORITHM },
+          false,
+          ['encrypt', 'decrypt']
+        );
+
+        let counter = new Uint8Array(iv);
+        let chunkIndex = 0;
+
+        const decryptTransform = new TransformStream({
+          transform: async (chunk, controller) => {
+            try {
+              const chunkCounter = this.incrementCounter(counter, chunkIndex);
+              chunkIndex++;
+
+              const decrypted = new Uint8Array(
+                await globalThis.crypto.subtle.decrypt(
+                  {
+                    name: this.ENCRYPTION_ALGORITHM,
+                    counter: chunkCounter,
+                    length: this.COUNTER_LENGTH,
+                  },
+                  cryptoKey,
+                  chunk
+                )
+              );
+
+              controller.enqueue(decrypted);
+            } catch (error) {
+              controller.error(error);
+            }
+          },
+        });
+
+        return encryptedData.pipeThrough(decryptTransform);
+      }
+    }
+
+    // Main test function
+    window.runBrowserTests = async function () {
+      console.log('🌐 Starting browser environment tests...');
+      document.getElementById('runTests').disabled = true;
+
+      try {
+        // Test 1: Basic API availability
+        console.log('🔍 Checking Web Crypto API availability...');
+        if (typeof globalThis.crypto === 'undefined') {
+          throw new Error('globalThis.crypto not available');
+        }
+        if (typeof globalThis.crypto.subtle === 'undefined') {
+          throw new Error('crypto.subtle not available');
+        }
+        if (typeof TransformStream === 'undefined') {
+          throw new Error('TransformStream not available');
+        }
+        addResult('✅ Web Standards APIs available', true);
+
+        // Test 2: Create crypto instance
+        console.log('🔍 Creating GenericAesCtrStreamingCrypto instance...');
+        const crypto = new GenericAesCtrStreamingCrypto();
+        addResult('✅ GenericAesCtrStreamingCrypto created', true);
+
+        // Test 3: Key generation
+        console.log('🔍 Testing key generation...');
+        const key = await crypto.generateKey();
+        if (key.length !== 32) {
+          throw new Error(`Expected 32-byte key, got ${key.length}`);
+        }
+        addResult('✅ Key generation works', true);
+
+        // Test 4: Small file encryption/decryption
+        console.log('🔍 Testing small file encryption...');
+        const testFile = createTestFile(0.1); // 100KB
+        const { key: encKey, iv, encryptedStream } = await crypto.encryptStream(testFile);
+
+        const encryptedBytes = await streamToUint8Array(encryptedStream);
+        if (encryptedBytes.length !== testFile.size) {
+          throw new Error(`Encrypted size mismatch: ${encryptedBytes.length} vs ${testFile.size}`);
+        }
+        addResult('✅ Small file encryption works', true);
+
+        // Test 5: Decryption
+        console.log('🔍 Testing decryption...');
+        const encryptedForDecrypt = new ReadableStream({
+          start(controller) {
+            controller.enqueue(encryptedBytes);
+            controller.close();
+          }
+        });
+
+        const decryptedStream = await crypto.decryptStream(encryptedForDecrypt, encKey, iv);
+        const decryptedBytes = await streamToUint8Array(decryptedStream);
+
+        const originalBytes = new Uint8Array(await testFile.arrayBuffer());
+        if (decryptedBytes.length !== originalBytes.length) {
+          throw new Error('Decrypted size mismatch');
+        }
+
+        // Check first few bytes for pattern match
+        let matches = true;
+        for (let i = 0; i < Math.min(100, originalBytes.length); i++) {
+          if (decryptedBytes[i] !== originalBytes[i]) {
+            matches = false;
+            break;
+          }
+        }
+
+        if (!matches) {
+          throw new Error('Decrypted data does not match original');
+        }
+        addResult('✅ Decryption works correctly', true);
+
+        // Test 6: Browser-specific features
+        console.log('🔍 Testing File API integration...');
+        const textFile = new Blob(['Hello, browser world!'], { type: 'text/plain' });
+        const textResult = await crypto.encryptStream(textFile);
+        const textEncrypted = await streamToUint8Array(textResult.encryptedStream);
+
+        const textDecryptStream = new ReadableStream({
+          start(controller) {
+            controller.enqueue(textEncrypted);
+            controller.close();
+          }
+        });
+
+        const textDecryptedStream = await crypto.decryptStream(textDecryptStream, textResult.key, textResult.iv);
+        const textDecrypted = await streamToUint8Array(textDecryptedStream);
+        const decryptedText = new TextDecoder().decode(textDecrypted);
+
+        if (decryptedText !== 'Hello, browser world!') {
+          throw new Error(`Text decryption failed: got "${decryptedText}"`);
+        }
+        addResult('✅ File API integration works', true);
+
+        // Test 7: Performance check
+        console.log('🔍 Testing performance...');
+        const perfFile = createTestFile(1); // 1MB
+        const startTime = performance.now();
+        const perfResult = await crypto.encryptStream(perfFile);
+        await streamToUint8Array(perfResult.encryptedStream);
+        const endTime = performance.now();
+
+        const throughput = (perfFile.size / (1024 * 1024)) / ((endTime - startTime) / 1000);
+        console.log(`Performance: ${throughput.toFixed(1)} MB/s`);
+        addResult(`✅ Performance: ${throughput.toFixed(1)} MB/s`, true);
+
+        addResult('🎉 All browser tests passed!', true);
+        console.log('🎉 All browser tests completed successfully!');
+
+      } catch (error) {
+        console.error('❌ Test failed:', error);
+        addResult(`❌ Test failed: ${error.message}`, false);
+      } finally {
+        document.getElementById('runTests').disabled = false;
+      }
+    };
+
+    // Auto-run tests on page load (optional)
+    // window.addEventListener('load', runBrowserTests);
+  </script>
+</body>
+
+</html>
