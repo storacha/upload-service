@@ -270,7 +270,7 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
         // else if - add other providers here...
 
         if (!cryptoAdapter) {
-          throw new Error(`Missing crypto adapter configuration for ${encryptionStrategy}`)
+          throw new Error('Encryption provider not supported')
         }
 
         const encryptedClient = await createEncryptedClient({

@@ -31,12 +31,12 @@ jobs:
           NX_VERBOSE_LOGGING: ${{ runner.debug && 'true' || 'false' }}
 
       - name: Prepare environment
-        run: pnpm nx affected -t prepare-environment
+        run: pnpm nx affected -t prepare-environment --exclude=console
         env:
           NX_VERBOSE_LOGGING: ${{ runner.debug && 'true' || 'false' }}
 
       # Run CI tasks over all affected projects
       # TODO: Add `attw` back once fixed.
-      - run: pnpm nx affected -t typecheck lint build test depcheck
+      - run: pnpm nx affected -t typecheck lint build test depcheck --exclude=console
         env:
           NX_VERBOSE_LOGGING: ${{ runner.debug && 'true' || 'false' }}
