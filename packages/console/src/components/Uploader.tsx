@@ -133,10 +133,15 @@ function uploadPrompt (uploadType: UploadType) {
   }
 }
 
-const UploaderForm = (): JSX.Element => {
+interface UploaderFormProps {
+  space?: any // should be Space, but type not available
+}
+
+const UploaderForm = ({ space }: UploaderFormProps): JSX.Element => {
   const [{ file }, { setUploadAsCAR }] = useUploader()
   const [allowDirectory, setAllowDirectory] = useState(false)
   const [uploadType, setUploadType] = useState(UploadType.File)
+  const isPrivateSpace = space?.access?.type === 'private'
   function changeUploadType (type: UploadType) {
     if (type === UploadType.File) {
       setUploadAsCAR(false)
@@ -154,30 +159,34 @@ const UploaderForm = (): JSX.Element => {
   return (
     <div className='max-w-4xl border border-hot-red bg-white p-5 rounded-2xl'>
       <W3Uploader.Form>
-        <H2>Type</H2>
-        <RadioGroup value={uploadType} onChange={changeUploadType} className='flex flex-row items-center font-epilogue mb-5'>
-          <RadioGroup.Option value={UploadType.File}>
-            {({ checked }) => (
-              <label className='mr-4'>
-                <input type='radio' checked={checked} /> File
-              </label>
-            )}
-          </RadioGroup.Option>
-          <RadioGroup.Option value={UploadType.Directory}>
-            {({ checked }) => (
-              <label className='mr-4'>
-                <input type='radio' checked={checked} /> Directory
-              </label>
-            )}
-          </RadioGroup.Option>
-          <RadioGroup.Option value={UploadType.CAR}>
-            {({ checked }) => (
-              <label className='mr-4'>
-                <input type='radio' checked={checked} /> CAR
-              </label>
-            )}
-          </RadioGroup.Option>
-        </RadioGroup>
+        {!isPrivateSpace && (
+          <>
+            <H2>Type</H2>
+            <RadioGroup value={uploadType} onChange={changeUploadType} className='flex flex-row items-center font-epilogue mb-5'>
+              <RadioGroup.Option value={UploadType.File}>
+                {({ checked }) => (
+                  <label className='mr-4'>
+                    <input type='radio' checked={checked} /> File
+                  </label>
+                )}
+              </RadioGroup.Option>
+              <RadioGroup.Option value={UploadType.Directory}>
+                {({ checked }) => (
+                  <label className='mr-4'>
+                    <input type='radio' checked={checked} /> Directory
+                  </label>
+                )}
+              </RadioGroup.Option>
+              <RadioGroup.Option value={UploadType.CAR}>
+                {({ checked }) => (
+                  <label className='mr-4'>
+                    <input type='radio' checked={checked} /> CAR
+                  </label>
+                )}
+              </RadioGroup.Option>
+            </RadioGroup>
+          </>
+        )}
         <div className={`relative h-80 mb-5 p-8 rounded-md bg-white/5 hover:border-hot-red border-2 border-dashed border-black flex flex-col justify-center items-center text-center`}>
           {hasFile ? '' : <span className='mb-5 text-hot-red'><img src='/icon-tray.svg' /></span>}
           <label className={`${hasFile ? 'hidden' : 'block h-px w-px overflow-hidden absolute whitespace-nowrap'}`}>File:</label>
@@ -185,7 +194,7 @@ const UploaderForm = (): JSX.Element => {
           <UploaderContents />
           {hasFile ? '' : <span className='font-epilogue'>{uploadPrompt(uploadType)}</span>}
         </div>
-        {uploadType === UploadType.File && (
+        {!isPrivateSpace && uploadType === UploadType.File && (
           <>
             <H2>Options</H2>
             <label className='flex flex-row items-center mb-5'>
@@ -196,23 +205,40 @@ const UploaderForm = (): JSX.Element => {
         )}
       </W3Uploader.Form>
       <H2>Explain</H2>
-      <div className='flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4 mt-4 text-center lg:text-left'>
-        <div className='w-1/2'>
-          <h4 className='font-epilogue text-sm mb-2'>🌎&nbsp;&nbsp;Public Data</h4>
-          <p className='text-xs'>
-            All data uploaded here will be available to anyone who requests it using the correct CID.
-            Do not upload any private or sensitive information in an unencrypted form.
-          </p>
+      {isPrivateSpace ? (
+        <div className='flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4 mt-4 text-center lg:text-left'>
+          <div className='w-1/2'>
+            <h4 className='font-epilogue text-sm mb-2'>🔒&nbsp;&nbsp;Private Data</h4>
+            <p className='text-xs'>
+              Files uploaded to this space are encrypted locally and never published to Filecoin.<br/>
+            </p>
+          </div>
+          <div className='w-1/2'>
+            <h4 className='font-epilogue text-sm mb-2'>⚠️&nbsp;&nbsp;Hot Storage Only</h4>
+            <p className='text-xs'>
+              Once removed from hot storage, they are gone forever and cannot be recovered.
+            </p>
+          </div>
         </div>
-        <div className='w-1/2'>
-          <h4 className='font-epilogue text-sm mb-2'>♾️&nbsp;&nbsp;Permanent Data</h4>
-          <p className='text-xs'>
-            Removing files will remove them from the file listing for your account, but that
-            doesn&apos;t prevent nodes on the decentralized storage network from retaining copies of the data
-            indefinitely. Do not use this service for data that may need to be permanently deleted in the future.
-          </p>
+      ) : (
+        <div className='flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4 mt-4 text-center lg:text-left'>
+          <div className='w-1/2'>
+            <h4 className='font-epilogue text-sm mb-2'>🌎&nbsp;&nbsp;Public Data</h4>
+            <p className='text-xs'>
+              All data uploaded here will be available to anyone who requests it using the correct CID.
+              Do not upload any private or sensitive information in an unencrypted form.
+            </p>
+          </div>
+          <div className='w-1/2'>
+            <h4 className='font-epilogue text-sm mb-2'>♾️&nbsp;&nbsp;Permanent Data</h4>
+            <p className='text-xs'>
+              Removing files will remove them from the file listing for your account, but that
+              doesn&apos;t prevent nodes on the decentralized storage network from retaining copies of the data
+              indefinitely. Do not use this service for data that may need to be permanently deleted in the future.
+            </p>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
@@ -296,10 +322,12 @@ const UploaderConsole = (): JSX.Element => {
 
 export interface SimpleUploaderProps {
   onUploadComplete?: OnUploadComplete
+  space?: any // should be Space, but type not available
 }
 
 export const Uploader = ({
-  onUploadComplete
+  onUploadComplete,
+  space
 }: SimpleUploaderProps): JSX.Element => {
   return (
     <W3Uploader
@@ -307,7 +335,7 @@ export const Uploader = ({
       onUploadComplete={onUploadComplete}
       defaultWrapInDirectory={true}
     >
-      <UploaderForm />
+      <UploaderForm space={space} />
     </W3Uploader>
   )
 }
