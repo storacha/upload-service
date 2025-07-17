@@ -1,3 +1,13 @@
+# 1.0.0 (2025-07-17)
+
+### 🚀 Features
+
+- Fix browser compatibility ([#308](https://github.com/storacha/upload-service/pull/308))
+
+### ❤️ Thank You
+
+- Felipe Forbeck @fforbeck
+
 ## 1.0.0-0 (2025-07-16)
 
 ### ⚠️  Breaking Changes
