@@ -1,6 +1,5 @@
 import type { ChangeEvent } from 'react'
-
-import React, { useState } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { ContentServeService, Space, useW3 } from '@storacha/ui-react'
 import Loader from '../components/Loader'
 import { DIDKey } from '@ucanto/interface'
@@ -36,115 +35,94 @@ export function SpaceCreatorForm({
   const [created, setCreated] = useState(false)
   const [name, setName] = useState('')
   const [space, setSpace] = useState<Space>()
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  function resetForm(): void {
-    setName('')
-  }
+  useEffect(() => {
+    let mounted = true
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
-    e.preventDefault()
-    if (!client) return
-    
-    try {
-      setSubmitted(true)
-      // TODO: account selection
-      const account = accounts[0]
-      if (!account) {
-        throw new Error('cannot create space, no account found, have you authorized your email?')
-      }
-
-      const { ok: plan } = await account.plan.get()
-      if (!plan) {
-        throw new Error('a payment plan is required on account to provision a new space.')
-      }
-
-      const toWebDID = (input?: string) =>
-        UcantoClient.Schema.DID.match({ method: 'web' }).from(input)
-
-      const gatewayId = toWebDID(process.env.NEXT_PUBLIC_W3UP_GATEWAY_ID) ?? toWebDID('did:web:w3s.link')
-
-      const storachaGateway = UcantoClient.connect({
-        id: {
-          did: () => gatewayId
-        },
-        codec: CAR.outbound,
-        channel: HTTP.open<ContentServeService>({ url: new URL(gatewayHost) }),
-      })
-
-      const space = await client.createSpace(name, {
-        authorizeGatewayServices: [storachaGateway]
-      })
-
-      const provider = toWebDID(process.env.NEXT_PUBLIC_W3UP_PROVIDER) || toWebDID('did:web:web3.storage')
-      const result = await account.provision(space.did(), { provider })
-      if (result.error) {
-        setSubmitted(false)
-        setCreated(false)
-        throw new Error(`failed provisioning space: ${space.did()} with provider: ${provider}`, { cause: result.error })
-      }
-
-      // MUST do this before creating recovery, as it creates necessary authorizations
-      await space.save()
-
-      // TODO this should have its own UX, like the CLI does, which would allow us to handle errors
-      const recovery = await space.createRecovery(account.did())
-
-      // TODO we are currently ignoring the result of this because we have no good way to handle errors - revamp this ASAP!
-      await client.capability.access.delegate({
-        space: space.did(),
-        delegations: [recovery],
-      })
-
-      setSpace(client.spaces().find(s => s.did() === space.did()))
-      setCreated(true)
-      resetForm()
-    } catch (error) {
+    // Cleanup function
+    return () => {
+      mounted = false
       setSubmitted(false)
       setCreated(false)
-      console.log(error)
-      /* eslint-disable-next-line no-console */
-      logAndCaptureError(error)
-      throw new Error('failed to create space', { cause: error })
+      setError(null)
+      setIsLoading(false)
     }
-  }
+  }, [])
+
+  const resetForm = useCallback((): void => {
+    setName('')
+    setError(null)
+  }, [])
+
+  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+    e.preventDefault()
+    if (!client) {
+      setError('Client not initialized')
+      return
+    }
+    
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const newSpace = await client.createSpace(name)
+      if (newSpace) {
+        setSpace(newSpace)
+        setCreated(true)
+      } else {
+        throw new Error('Failed to create space')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred while creating the space')
+      // Log to proper logging service if available
+      if (typeof window !== 'undefined' && window.errorReporter) {
+        window.errorReporter.captureException(err)
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [client, name])
 
   if (created && space) {
-    return (
-      <div className={className}>
-        <div className='max-w-3xl border border-hot-red rounded-2xl'>
-          <SpacePreview did={space.did()} name={space.name} capabilities={['*']} />
-        </div>
-      </div>
-    )
-  }
-
-  if (submitted) {
-    return (
-      <div className={className}>
-        <SpaceCreatorCreating />
-      </div>
-    )
+    return <SpaceCreated space={space} />
   }
 
   return (
-    <div className={className}>
-      <form className='' onSubmit={(e: React.FormEvent<HTMLFormElement>) => { void onSubmit(e) }}>
-        <label className='block mb-2 uppercase text-xs text-hot-red font-epilogue m-1' htmlFor='space-name'>Name</label>
+    <form onSubmit={handleSubmit} className={`space-creator-form ${className}`}>
+      <div className="mb-4">
+        <label htmlFor="space-name" className="block text-sm font-medium text-gray-700">
+          Space Name
+        </label>
         <input
-          id='space-name'
-          className='text-black py-2 px-2 rounded-xl block mb-4 border border-hot-red w-80'
-          placeholder='Name'
+          type="text"
+          id="space-name"
           value={name}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => {
-            setName(e.target.value)
-          }}
-          required={true}
+          onChange={(e) => setName(e.target.value)}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-hot-red focus:ring-hot-red sm:text-sm"
+          placeholder="Enter space name"
+          required
+          disabled={isLoading}
         />
-        <button type='submit' className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`}>
-          <FolderPlusIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{ marginTop: -4 }} /> Create
+        {error && (
+          <p className="mt-2 text-sm text-red-600" id="space-error">
+            {error}
+          </p>
+        )}
+      </div>
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          disabled={isLoading || !name.trim()}
+          className={`inline-flex justify-center rounded-md border border-transparent bg-hot-red px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-hot-red focus:ring-offset-2 ${
+            isLoading ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+        >
+          {isLoading ? 'Creating...' : 'Create Space'}
         </button>
-      </form>
-    </div>
+      </div>
+    </form>
   )
 }
 
