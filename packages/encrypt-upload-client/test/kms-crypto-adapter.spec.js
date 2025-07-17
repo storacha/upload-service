@@ -1,20 +1,9 @@
+import './setup.js'
 import { test, describe } from 'node:test'
 import assert from 'node:assert'
 import * as Server from '@ucanto/server'
 import { base64 } from 'multiformats/bases/base64'
 import * as Space from '@storacha/capabilities/space'
-
-// Polyfill globalThis.crypto for Node.js <19
-if (typeof globalThis.crypto === 'undefined') {
-  try {
-    // @ts-expect-error
-    globalThis.crypto = (await import('crypto')).webcrypto
-  } catch (e) {
-    throw new Error(
-      'globalThis.crypto is not available. Use Node.js 19+ or polyfill with a package like @peculiar/webcrypto.'
-    )
-  }
-}
 
 import { GenericAesCtrStreamingCrypto } from '../src/crypto/symmetric/generic-aes-ctr-streaming-crypto.js'
 import { KMSCryptoAdapter } from '../src/crypto/adapters/kms-crypto-adapter.js'

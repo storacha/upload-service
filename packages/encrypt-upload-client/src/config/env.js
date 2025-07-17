@@ -1,10 +1,19 @@
-import dotenv from 'dotenv'
 import { Schema } from '@ucanto/core'
 import { LIT_NETWORK } from '@lit-protocol/constants'
 
-// Only load env variables if running in node
-if (typeof window === 'undefined') {
-  dotenv.config()
+// Only conditionally load dotenv in Node.js environments to prevent browser bundling issues
+if (
+  typeof window === 'undefined' &&
+  typeof process !== 'undefined' &&
+  process.versions
+) {
+  try {
+    // Use eval to prevent webpack from bundling dotenv in browser builds
+    const dotenv = eval('require')('dotenv')
+    dotenv.config()
+  } catch (error) {
+    // dotenv not available or we're in a browser-like environment, continue with defaults
+  }
 }
 
 const envSchema = Schema.struct({
@@ -17,9 +26,16 @@ const envSchema = Schema.struct({
   LIT_DEBUG: Schema.boolean().default(false),
 })
 
+// Safe environment variable access
 const processEnv = {
-  LIT_DEBUG: process.env.LIT_DEBUG,
-  LIT_NETWORK: process.env.LIT_NETWORK,
+  LIT_DEBUG:
+    typeof process !== 'undefined' && process.env
+      ? process.env.LIT_DEBUG
+      : undefined,
+  LIT_NETWORK:
+    typeof process !== 'undefined' && process.env
+      ? process.env.LIT_NETWORK
+      : undefined,
 }
 
 const env = envSchema.from(processEnv)

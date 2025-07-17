@@ -1,15 +1,6 @@
+import './setup.js'
 import { test, describe } from 'node:test'
 import assert from 'node:assert'
-
-// Polyfill globalThis.crypto for Node.js <19
-if (typeof globalThis.crypto === 'undefined') {
-  try {
-    // @ts-expect-error
-    globalThis.crypto = (await import('crypto')).webcrypto
-  } catch (e) {
-    throw new Error('globalThis.crypto is not available.')
-  }
-}
 
 import { GenericAesCtrStreamingCrypto } from '../src/crypto/symmetric/generic-aes-ctr-streaming-crypto.js'
 import {
@@ -114,39 +105,46 @@ await describe('Streaming Crypto - Core Functionality', async () => {
   })
 
   await test('should handle medium-sized files without issues', async () => {
-    const crypto = new GenericAesCtrStreamingCrypto()
+    try {
+      const crypto = new GenericAesCtrStreamingCrypto()
 
-    // Test with progressively larger files to show streaming works consistently
-    const testSizes = [1, 2, 5, 10] // MB
+      // Test with progressively larger files to show streaming works consistently
+      const testSizes = [1, 2, 5, 10] // MB
 
-    for (const sizeMB of testSizes) {
-      console.log(`Testing ${sizeMB}MB file...`)
+      for (const sizeMB of testSizes) {
+        console.log(`Testing ${sizeMB}MB file...`)
 
-      const testFile = createTestFile(sizeMB)
-      const { encryptedStream } = await crypto.encryptStream(testFile)
+        const testFile = createTestFile(sizeMB)
+        const { key, iv, encryptedStream } = await crypto.encryptStream(
+          testFile
+        )
 
-      let processedBytes = 0
-      const reader = encryptedStream.getReader()
-      try {
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          processedBytes += value.length
-        }
-      } finally {
-        reader.releaseLock()
+        const decryptedStream = await crypto.decryptStream(
+          encryptedStream,
+          key,
+          iv
+        )
+        const decryptedBytes = await streamToUint8Array(decryptedStream)
+        assert.strictEqual(
+          decryptedBytes.length,
+          sizeMB * 1024 * 1024,
+          `Decrypted file size mismatch for ${sizeMB}MB`
+        )
+        console.log(`✓ ${sizeMB}MB file encrypted and decrypted successfully`)
       }
 
-      assert.strictEqual(
-        processedBytes,
-        testFile.size,
-        `Should process entire ${sizeMB}MB file`
+      console.log('✓ Medium-sized files handled without issues')
+    } catch (err) {
+      console.error(
+        'Test error (type):',
+        typeof err,
+        err && err.constructor && err.constructor.name
       )
-      console.log(`Processed ${sizeMB}MB successfully`)
+      console.error('Test error (keys):', err && Object.keys(err))
+      console.error('Test error (string):', String(err))
+      console.log(err)
+      assert.fail('Unable to test medium-sized files')
     }
-
-    console.log('Streaming works consistently across file sizes')
   })
 
   await test('should use proper counter arithmetic', async () => {

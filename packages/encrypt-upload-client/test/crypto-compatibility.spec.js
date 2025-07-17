@@ -1,15 +1,6 @@
+import './setup.js'
 import { test, describe } from 'node:test'
 import assert from 'node:assert'
-
-// Polyfill globalThis.crypto for Node.js <19
-if (typeof globalThis.crypto === 'undefined') {
-  try {
-    // @ts-expect-error
-    globalThis.crypto = (await import('crypto')).webcrypto
-  } catch (e) {
-    throw new Error('globalThis.crypto is not available.')
-  }
-}
 
 import { GenericAesCtrStreamingCrypto } from '../src/crypto/symmetric/generic-aes-ctr-streaming-crypto.js'
 import { NodeAesCbcCrypto } from '../src/crypto/symmetric/node-aes-cbc-crypto.js'
