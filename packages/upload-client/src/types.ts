@@ -389,6 +389,15 @@ export interface UnixFSEncoderSettingsOptions {
   settings?: EncoderSettings
 }
 
+export interface DeduplicationOptions {
+  /**
+   * Set to `false` to disable deduplication of repeated blocks as they are
+   * uploaded. This can reduce upload size if your dataset contains duplicated
+   * files/data at the cost of an additional memory overhead. Default: `true`.
+   */
+  dedupe?: boolean
+}
+
 export interface ShardingOptions {
   /**
    * The target shard size. Actual size of CAR output may be bigger due to CAR
@@ -410,6 +419,7 @@ export interface ShardStoringOptions
 export interface UploadOptions
   extends RequestOptions,
     ShardingOptions,
+    DeduplicationOptions,
     ShardStoringOptions,
     UploadProgressTrackable {
   onShardStored?: (meta: CARMetadata) => void

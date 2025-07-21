@@ -120,6 +120,7 @@ function uploadDirectory(
     signal?: AbortSignal
     onShardStored?: ShardStoredCallback
     shardSize?: number
+    dedupe?: boolean
   } = {}
 ): Promise<CID>
 ```
@@ -138,11 +139,12 @@ function uploadFile(
     signal?: AbortSignal
     onShardStored?: ShardStoredCallback
     shardSize?: number
+    dedupe?: boolean
   } = {}
 ): Promise<CID>
 ```
 
-Uploads a file to the service and returns the root data CID for the generated DAG.
+Uploads a file to the service and returns the root data CID for the generated DAG. Set `dedupe` to `true` to deduplicate repeated blocks as they are uploaded.
 
 More information: [`ShardStoredCallback`](#shardstoredcallback)
 
@@ -157,6 +159,7 @@ function uploadCAR(
     onShardStored?: ShardStoredCallback
     shardSize?: number
     rootCID?: CID
+    dedupe?: boolean
   } = {}
 ): Promise<CID>
 ```

@@ -11,6 +11,7 @@ import * as Upload from './upload/index.js'
 import * as UploadAdd from './upload/add.js'
 import * as UnixFS from './unixfs.js'
 import * as CAR from './car.js'
+import { BlockDeduplicationStream, dedupe } from './deduplication.js'
 import {
   ShardingStream,
   defaultFileComparator,
@@ -175,6 +176,11 @@ export async function uploadBlockStream(
   const shards = []
   /** @type {import('./types.js').AnyLink?} */
   let root = null
+
+  if (options.dedupe == null || options.dedupe === true) {
+    blocks = blocks.pipeThrough(new BlockDeduplicationStream())
+  }
+
   await blocks
     .pipeThrough(new ShardingStream(options))
     .pipeThrough(
@@ -299,6 +305,10 @@ export async function uploadBlocks(
 ) {
   /** @type {import('./types.js').InvocationConfigurator} */
   const configure = typeof conf === 'function' ? conf : () => conf
+
+  if (options.dedupe == null || options.dedupe === true) {
+    blocks = dedupe(blocks)
+  }
 
   /** @type {import('./types.js').IndexedCARFile} */
   let car

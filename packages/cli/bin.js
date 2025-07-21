@@ -82,6 +82,11 @@ cli
   .option('-H, --hidden', 'Include paths that start with ".".', false)
   .option('-c, --car', 'File is a CAR file.', false)
   .option(
+    '--dedupe',
+    'Deduplicate repeated blocks as they are uploaded. Pass --no-dedupe to disable.',
+    true
+  )
+  .option(
     '--wrap',
     'Wrap single input file in a directory. Has no effect on directory or CAR uploads. Pass --no-wrap to disable.',
     true

@@ -110,6 +110,7 @@ export async function authorize(email, opts = {}) {
  *   verbose?: boolean
  *   wrap?: boolean
  *   'shard-size'?: number
+ *   dedupe?: boolean
  * }} [opts]
  */
 export async function upload(firstPath, opts) {
@@ -203,6 +204,7 @@ export async function upload(firstPath, opts) {
     },
     shardSize: opts?.['shard-size'] && parseInt(String(opts?.['shard-size'])),
     receiptsEndpoint: client._receiptsEndpoint.toString(),
+    dedupe: opts?.dedupe,
   })
   spinner.stopAndPersist({
     symbol: '🐔',

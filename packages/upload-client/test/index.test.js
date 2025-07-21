@@ -11,6 +11,9 @@ import * as UploadCapabilities from '@storacha/capabilities/upload'
 import * as StorefrontCapabilities from '@storacha/capabilities/filecoin/storefront'
 import { Piece } from '@web3-storage/data-segment'
 import { uploadFile, uploadDirectory, uploadCAR } from '../src/index.js'
+import * as UnixFS from '../src/unixfs.js'
+import { encode as encodeCAR } from '../src/car.js'
+import { dedupe } from '../src/deduplication.js'
 import { serviceSigner } from './fixtures.js'
 import { randomBlock, randomBytes } from './helpers/random.js'
 import { toCAR } from './helpers/car.js'
@@ -49,6 +52,32 @@ const toFile = (name, bytes, sizeVariant) => {
   return sizeVariant === 'known' ? file : { name, stream: () => file.stream() }
 }
 
+/**
+ * @param {import('@ucanto/interface').Signer} agent
+ * @param {import('@ucanto/interface').Signer<import('@ucanto/interface').DID<'key'>>} space
+ */
+const getProofs = (agent, space) =>
+  Promise.all([
+    BlobCapabilities.add.delegate({
+      issuer: space,
+      audience: agent,
+      with: space.did(),
+      expiration: Infinity,
+    }),
+    IndexCapabilities.add.delegate({
+      issuer: space,
+      audience: agent,
+      with: space.did(),
+      expiration: Infinity,
+    }),
+    UploadCapabilities.add.delegate({
+      issuer: space,
+      audience: agent,
+      with: space.did(),
+      expiration: Infinity,
+    }),
+  ])
+
 for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
   describe(`uploadFile (${sizeVariant} size)`, () => {
     it('uploads a file to the service', async () => {
@@ -62,27 +91,7 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
       /** @type {import('../src/types.js').CARLink|undefined} */
       let carCID
 
-      const proofs = await Promise.all([
-        BlobCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-        IndexCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-        UploadCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-      ])
-
+      const proofs = await getProofs(agent, space)
       const service = mockService({
         ucan: {
           conclude: provide(UCAN.conclude, () => {
@@ -193,27 +202,7 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
       /** @type {import('../src/types.js').CARLink[]} */
       const carCIDs = []
 
-      const proofs = await Promise.all([
-        BlobCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-        IndexCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-        UploadCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-      ])
-
+      const proofs = await getProofs(agent, space)
       const service = mockService({
         ucan: {
           conclude: provide(UCAN.conclude, () => {
@@ -394,27 +383,7 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
       /** @type {import('../src/types.js').CARLink?} */
       let carCID = null
 
-      const proofs = await Promise.all([
-        BlobCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-        IndexCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-        UploadCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-      ])
-
+      const proofs = await getProofs(agent, space)
       const service = mockService({
         ucan: {
           conclude: provide(UCAN.conclude, () => {
@@ -520,27 +489,7 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
       /** @type {import('../src/types.js').CARLink[]} */
       const carCIDs = []
 
-      const proofs = await Promise.all([
-        BlobCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-        IndexCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-        UploadCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-      ])
-
+      const proofs = await getProofs(agent, space)
       const service = mockService({
         ucan: {
           conclude: provide(UCAN.conclude, () => {
@@ -620,27 +569,8 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
       const agent = await Signer.generate() // The "user" that will ask the service to accept the upload
       const someBytes = await randomBytes(32)
       const piece = Piece.fromPayload(someBytes).link
+      const proofs = await getProofs(agent, space)
 
-      const proofs = await Promise.all([
-        BlobCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-        IndexCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-        UploadCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-      ])
       function createSimpleMockUploadServer() {
         /**
          * @type {Array<Server.ProviderInput<import('@ucanto/interface').InferInvokedCapability<import('@storacha/capabilities').SpaceBlob['add']|import('@storacha/capabilities').Upload['add']>>>}
@@ -803,6 +733,208 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
         shardsForOrdered.toString()
       )
     })
+
+    it('deduplicates repeated files', async () => {
+      const space = await Signer.generate()
+      const agent = await Signer.generate()
+      const bytes = await randomBytes(128)
+      const file0 = toFile('repo0/LICENSE.md', bytes, sizeVariant)
+      const file1 = toFile('repo1/LICENSE.md', bytes, sizeVariant)
+      const { blocks, cid } = await UnixFS.encodeDirectory([file0, file1])
+      const expectedShardFile = await encodeCAR(dedupe(blocks), cid) // dedupe
+      const expectedShardBytes = new Uint8Array(
+        await expectedShardFile.arrayBuffer()
+      )
+      const expectedShard = await CAR.codec.link(expectedShardBytes)
+      const piece = Piece.fromPayload(expectedShardBytes).link
+
+      /** @type {import('../src/types.js').CARLink|undefined} */
+      let shard
+
+      const proofs = await getProofs(agent, space)
+      const service = mockService({
+        ucan: {
+          conclude: provide(UCAN.conclude, () => {
+            return { ok: { time: Date.now() } }
+          }),
+        },
+        space: {
+          blob: {
+            // @ts-ignore Argument of type
+            add: provide(BlobCapabilities.add, ({ invocation }) => {
+              return setupBlobAddSuccessResponse(
+                { issuer: space, audience: agent, with: space, proofs },
+                invocation
+              )
+            }),
+          },
+          index: {
+            add: Server.provideAdvanced({
+              capability: IndexCapabilities.add,
+              handler: async ({ capability }) => {
+                assert(capability.nb.index)
+                return Server.ok({})
+              },
+            }),
+          },
+        },
+        filecoin: {
+          offer: Server.provideAdvanced({
+            capability: StorefrontCapabilities.filecoinOffer,
+            handler: async ({ invocation, context }) => {
+              const invCap = invocation.capabilities[0]
+              if (!invCap.nb) {
+                throw new Error('no params received')
+              }
+              return getFilecoinOfferResponse(context.id, piece, invCap.nb)
+            },
+          }),
+        },
+        upload: {
+          add: provide(UploadCapabilities.add, ({ capability }) => {
+            if (!capability.nb) throw new Error('nb must be present')
+            return { ok: capability.nb }
+          }),
+        },
+      })
+
+      const server = Server.create({
+        id: serviceSigner,
+        service,
+        codec: CAR.inbound,
+        validateAuthorization,
+      })
+      const connection = Client.connect({
+        id: serviceSigner,
+        codec: CAR.outbound,
+        channel: server,
+      })
+      await uploadDirectory(
+        { issuer: agent, with: space.did(), proofs, audience: serviceSigner },
+        [file0, file1],
+        {
+          dedupe: true,
+          connection,
+          onShardStored: (meta) => {
+            shard = meta.cid
+          },
+          receiptsEndpoint,
+        }
+      )
+
+      // expect the deduplicated shard CID
+      assert.equal(shard?.toString(), expectedShard.toString())
+
+      assert(service.space.blob.add.called)
+      assert.equal(service.space.blob.add.callCount, 2)
+      assert(service.filecoin.offer.called)
+      assert.equal(service.filecoin.offer.callCount, 1)
+      assert(service.space.index.add.called)
+      assert.equal(service.space.index.add.callCount, 1)
+      assert(service.upload.add.called)
+      assert.equal(service.upload.add.callCount, 1)
+    })
+
+    it('duplicates repeated files if deduplication is disabled', async () => {
+      const space = await Signer.generate()
+      const agent = await Signer.generate()
+      const bytes = await randomBytes(128)
+      const file0 = toFile('repo0/LICENSE.md', bytes, sizeVariant)
+      const file1 = toFile('repo1/LICENSE.md', bytes, sizeVariant)
+      const { blocks, cid } = await UnixFS.encodeDirectory([file0, file1])
+      const expectedShardFile = await encodeCAR(blocks, cid) // no dedupe
+      const expectedShardBytes = new Uint8Array(
+        await expectedShardFile.arrayBuffer()
+      )
+      const expectedShard = await CAR.codec.link(expectedShardBytes)
+      const piece = Piece.fromPayload(expectedShardBytes).link
+
+      /** @type {import('../src/types.js').CARLink|undefined} */
+      let shard
+
+      const proofs = await getProofs(agent, space)
+      const service = mockService({
+        ucan: {
+          conclude: provide(UCAN.conclude, () => {
+            return { ok: { time: Date.now() } }
+          }),
+        },
+        space: {
+          blob: {
+            // @ts-ignore Argument of type
+            add: provide(BlobCapabilities.add, ({ invocation }) => {
+              return setupBlobAddSuccessResponse(
+                { issuer: space, audience: agent, with: space, proofs },
+                invocation
+              )
+            }),
+          },
+          index: {
+            add: Server.provideAdvanced({
+              capability: IndexCapabilities.add,
+              handler: async ({ capability }) => {
+                assert(capability.nb.index)
+                return Server.ok({})
+              },
+            }),
+          },
+        },
+        filecoin: {
+          offer: Server.provideAdvanced({
+            capability: StorefrontCapabilities.filecoinOffer,
+            handler: async ({ invocation, context }) => {
+              const invCap = invocation.capabilities[0]
+              if (!invCap.nb) {
+                throw new Error('no params received')
+              }
+              return getFilecoinOfferResponse(context.id, piece, invCap.nb)
+            },
+          }),
+        },
+        upload: {
+          add: provide(UploadCapabilities.add, ({ capability }) => {
+            if (!capability.nb) throw new Error('nb must be present')
+            return { ok: capability.nb }
+          }),
+        },
+      })
+
+      const server = Server.create({
+        id: serviceSigner,
+        service,
+        codec: CAR.inbound,
+        validateAuthorization,
+      })
+      const connection = Client.connect({
+        id: serviceSigner,
+        codec: CAR.outbound,
+        channel: server,
+      })
+      await uploadDirectory(
+        { issuer: agent, with: space.did(), proofs, audience: serviceSigner },
+        [file0, file1],
+        {
+          dedupe: false,
+          connection,
+          onShardStored: (meta) => {
+            shard = meta.cid
+          },
+          receiptsEndpoint,
+        }
+      )
+
+      // expect the duplicated shard CID
+      assert.equal(shard?.toString(), expectedShard.toString())
+
+      assert(service.space.blob.add.called)
+      assert.equal(service.space.blob.add.callCount, 2)
+      assert(service.filecoin.offer.called)
+      assert.equal(service.filecoin.offer.callCount, 1)
+      assert(service.space.index.add.called)
+      assert.equal(service.space.index.add.callCount, 1)
+      assert(service.upload.add.called)
+      assert.equal(service.upload.add.callCount, 1)
+    })
   })
 
   describe(`uploadCAR (${sizeVariant} size)`, () => {
@@ -836,27 +968,7 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
       /** @type {import('../src/types.js').CARLink[]} */
       const carCIDs = []
 
-      const proofs = await Promise.all([
-        BlobCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-        IndexCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-        UploadCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-      ])
-
+      const proofs = await getProofs(agent, space)
       const service = mockService({
         ucan: {
           conclude: provide(UCAN.conclude, () => {
@@ -975,27 +1087,7 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
       /** @type {import('../src/types.js').PieceLink[]} */
       const pieceCIDs = []
 
-      const proofs = await Promise.all([
-        BlobCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-        IndexCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-        UploadCapabilities.add.delegate({
-          issuer: space,
-          audience: agent,
-          with: space.did(),
-          expiration: Infinity,
-        }),
-      ])
-
+      const proofs = await getProofs(agent, space)
       const service = mockService({
         ucan: {
           conclude: provide(UCAN.conclude, () => {

@@ -39,6 +39,7 @@
     ".": "./dist/index.js",
     "./blob": "./dist/blob/index.js",
     "./car": "./dist/car.js",
+    "./deduplication": "./dist/deduplication.js",
     "./fetch-with-upload-progress": "./dist/fetch-with-upload-progress.js",
     "./index": "./dist/index/index.js",
     "./sharding": "./dist/sharding.js",
