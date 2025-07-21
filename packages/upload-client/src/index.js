@@ -25,7 +25,8 @@ export { receiptsEndpoint } from './service.js'
 export * as Receipt from './receipts.js'
 
 /** @param {Uint8Array} bytes */
-const isSubArray = bytes => bytes.byteOffset !== 0 || bytes.buffer.byteLength !== bytes.byteLength
+const isSubArray = (bytes) =>
+  bytes.byteOffset !== 0 || bytes.buffer.byteLength !== bytes.byteLength
 
 /**
  * Uploads a file to the service and returns the root data CID for the
