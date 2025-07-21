@@ -144,7 +144,7 @@ function uploadFile(
 ): Promise<CID>
 ```
 
-Uploads a file to the service and returns the root data CID for the generated DAG. Set `dedupe` to `true` to deduplicate repeated blocks as they are uploaded.
+Uploads a file to the service and returns the root data CID for the generated DAG.
 
 More information: [`ShardStoredCallback`](#shardstoredcallback)
 
