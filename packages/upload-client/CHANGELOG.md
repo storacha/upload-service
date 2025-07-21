@@ -1,3 +1,17 @@
+## 1.3.0 (2025-07-21)
+
+### 🚀 Features
+
+- feat: block deduplication ([#311](https://github.com/storacha/upload-service/pull/311))
+
+### 🩹 Fixes
+
+- fix: memory leak ([#312](https://github.com/storacha/upload-service/pull/312))
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.2.5 (2025-07-16)
 
 ### 🧱 Updated Dependencies
