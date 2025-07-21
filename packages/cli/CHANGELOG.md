@@ -1,3 +1,17 @@
+## 1.4.0 (2025-07-21)
+
+### 🚀 Features
+
+- feat: block deduplication ([#311](https://github.com/storacha/upload-service/pull/311))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.6.0
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.3.0 (2025-07-16)
 
 ### 🚀 Features
