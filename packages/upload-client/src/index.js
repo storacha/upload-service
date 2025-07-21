@@ -2,6 +2,7 @@ import * as PieceHasher from '@web3-storage/data-segment/multihash'
 import { Storefront } from '@storacha/filecoin-client'
 import * as Link from 'multiformats/link'
 import * as raw from 'multiformats/codecs/raw'
+import * as Digest from 'multiformats/hashes/digest'
 import { sha256 } from 'multiformats/hashes/sha2'
 import * as Blob from './blob/index.js'
 import * as BlobAdd from './blob/add.js'
@@ -23,6 +24,10 @@ export { Blob, Index, Upload, UnixFS, CAR }
 export * from './sharding.js'
 export { receiptsEndpoint } from './service.js'
 export * as Receipt from './receipts.js'
+
+/** @param {Uint8Array} bytes */
+const isSubArray = (bytes) =>
+  bytes.byteOffset !== 0 || bytes.buffer.byteLength !== bytes.byteLength
 
 /**
  * Uploads a file to the service and returns the root data CID for the
@@ -239,6 +244,16 @@ export async function uploadBlockStream(
         write(meta) {
           root = root || meta.roots[0]
           shards.push(meta.cid)
+
+          // Make copies of digests that are views on bigger byte arrays. This
+          // prevents memory leak where the bytes for the rest of the CAR cannot
+          // be released because the digest is a view over just a small portion
+          // of the chunk.
+          for (const [s, p] of meta.slices) {
+            if (isSubArray(s.bytes)) {
+              meta.slices.set(Digest.decode(s.bytes.slice()), p)
+            }
+          }
 
           // add the CAR shard itself to the slices
           meta.slices.set(meta.cid.multihash, [0, meta.size])
