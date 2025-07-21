@@ -120,6 +120,7 @@ function uploadDirectory(
     signal?: AbortSignal
     onShardStored?: ShardStoredCallback
     shardSize?: number
+    dedupe?: boolean
   } = {}
 ): Promise<CID>
 ```
@@ -138,6 +139,7 @@ function uploadFile(
     signal?: AbortSignal
     onShardStored?: ShardStoredCallback
     shardSize?: number
+    dedupe?: boolean
   } = {}
 ): Promise<CID>
 ```
@@ -157,6 +159,7 @@ function uploadCAR(
     onShardStored?: ShardStoredCallback
     shardSize?: number
     rootCID?: CID
+    dedupe?: boolean
   } = {}
 ): Promise<CID>
 ```
