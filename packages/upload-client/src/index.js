@@ -294,7 +294,7 @@ export async function uploadBlockStream(
 
 /**
  * @param {import('./types.js').InvocationConfig|import('./types.js').InvocationConfigurator} conf
- * @param {import('@ipld/unixfs').Block[]} blocks
+ * @param {Iterable<import('@ipld/unixfs').Block>} blocks
  * @param {import('./types.js').UploadOptions} [options]
  * @returns {Promise<import('./types.js').AnyLink>}
  */

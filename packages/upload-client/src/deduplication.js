@@ -3,6 +3,7 @@
 /** @extends {TransformStream<Block, Block>} */
 export class BlockDeduplicationStream extends TransformStream {
   constructor() {
+    /** @type {Set<string>} */
     const seen = new Set()
     super({
       transform(block, controller) {
@@ -18,15 +19,17 @@ export class BlockDeduplicationStream extends TransformStream {
   }
 }
 
-/** @param {Iterable<Block>} blocks */
-export const dedupe = (blocks) => {
+/**
+ * @param {Iterable<Block>} blocks
+ * @returns {IterableIterator<Block>}
+ */
+export const dedupe = function* (blocks) {
+  /** @type {Set<string>} */
   const seen = new Set()
-  const deduped = []
   for (const b of blocks) {
     const key = b.cid.toString()
     if (seen.has(key)) continue
     seen.add(key)
-    deduped.push(b)
+    yield b
   }
-  return deduped
 }
