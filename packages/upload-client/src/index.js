@@ -239,18 +239,18 @@ export async function uploadBlockStream(
           root = root || meta.roots[0]
           shards.push(meta.cid)
 
+          // Make copies of digests that are views on bigger byte arrays. This
+          // prevents memory leak where the bytes for the rest of the CAR cannot
+          // be released because the digest is a view over just a small portion
+          // of the chunk.
           for (const [s, p] of meta.slices) {
             if (isSubArray(s.bytes)) {
               meta.slices.set(Digest.decode(s.bytes.slice()), p)
             }
           }
 
-          const shardDigest = isSubArray(meta.cid.multihash.bytes)
-            ? Digest.decode(meta.cid.multihash.bytes.slice())
-            : meta.cid.multihash
-
           // add the CAR shard itself to the slices
-          meta.slices.set(shardDigest, [0, meta.size])
+          meta.slices.set(meta.cid.multihash, [0, meta.size])
           shardIndexes.push(meta.slices)
 
           if (options.onShardStored) options.onShardStored(meta)
