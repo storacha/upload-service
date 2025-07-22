@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.0.2](https://github.com/storacha/upload-service/compare/console-v2.0.1...console-v2.0.2) (2025-07-22)
+
+
+### Fixes
+
+* console build and encryption lib ([#308](https://github.com/storacha/upload-service/issues/308)) ([9eccbc8](https://github.com/storacha/upload-service/commit/9eccbc822b6d0ab39d52b576c11faeeeaa05a60a))
+* show an error screen when we encounter an error loading the user's plan ([#314](https://github.com/storacha/upload-service/issues/314)) ([a74e0c2](https://github.com/storacha/upload-service/commit/a74e0c2418442132d5022ab7f4d48ebba5bc453f))
+
+
+### Other Changes
+
+* **release:** publish ([cd783a4](https://github.com/storacha/upload-service/commit/cd783a43505cadcb57a242c9df45e9b30d9fa032))
+* **release:** publish ([8a1ae63](https://github.com/storacha/upload-service/commit/8a1ae630dcd0c6e01f1a1190f7bf4b0cb5d0cbba))
+
 ## [2.0.1](https://github.com/storacha/upload-service/compare/console-v2.0.0...console-v2.0.1) (2025-04-17)
 
 
