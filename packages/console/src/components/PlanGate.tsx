@@ -18,8 +18,7 @@ export function PlanGate ({ children }: { children: ReactNode }): ReactNode {
     return <TopLevelLoader />
   }
   if (error) {
-    console.error("error loading user's plan:")
-    console.error(error)
+    console.error("failed to load user plan", error)
     return (
       <div className="flex flex-col justify-center items-center min-h-screen">
         <div className="my-6">
