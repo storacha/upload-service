@@ -17,6 +17,28 @@ export function PlanGate ({ children }: { children: ReactNode }): ReactNode {
   if (!plan && !error) {
     return <TopLevelLoader />
   }
+  if (error) {
+    console.error("failed to load user plan", error)
+    return (
+      <div className="flex flex-col justify-center items-center min-h-screen">
+        <div className="my-6">
+          <Logo />
+        </div>
+        <div className="max-w-screen-lg font-epilogue text-black text-center bg-white border border-hot-red rounded-2xl overflow-hidden p5 mx-4 mb-4 p-4">
+          <p className="my-4">
+            Sorry! We encountered an error looking up your billing plan.
+          </p>
+          <p className="my-4">Please wait a few moments and reload the page.</p>
+          <p className="my-4">
+            If this error does not go away, please contact{" "}
+            <a href="mailto:support@storacha.network">
+              support@storacha.network.
+            </a>
+          </p>
+        </div>
+      </div>
+    );
+  }
   if (!plan?.product) {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen">
