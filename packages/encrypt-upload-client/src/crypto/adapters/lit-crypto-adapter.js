@@ -91,23 +91,17 @@ export class LitCryptoAdapter {
    *
    * @param {string} encryptedKey - The encrypted key to decrypt
    * @param {object} configs - The decryption configuration
-   * @param {Type.DecryptionOptions} configs.decryptionOptions - The decryption options
+   * @param {Type.DecryptionConfig} configs.decryptionConfig - The decryption config
    * @param {Type.ExtractedMetadata} configs.metadata - The extracted metadata
-   * @param {Uint8Array} configs.delegationCAR - The delegation CAR
+   * @param {import('@ucanto/interface').Proof} configs.decryptDelegation - The delegation that gives permission to decrypt (required for both strategies)
    * @param {Type.AnyLink} configs.resourceCID - The resource CID
    * @param {import('@storacha/client/types').Signer<import('@storacha/client/types').DID, import('@storacha/client/types').SigAlg>} configs.issuer - The issuer
    * @param {import('@storacha/client/types').DID} configs.audience - The audience
    * @returns {Promise<{ key: Uint8Array, iv: Uint8Array }>} - The decrypted key and IV
    */
   async decryptSymmetricKey(encryptedKey, configs) {
-    const {
-      decryptionOptions,
-      metadata,
-      delegationCAR,
-      resourceCID,
-      issuer,
-      audience,
-    } = configs
+    const { decryptionConfig, metadata, resourceCID, issuer, audience } =
+      configs
 
     // Validate Lit metadata
     if (metadata.strategy !== 'lit') {
@@ -122,7 +116,7 @@ export class LitCryptoAdapter {
     )
 
     // Step 2. Create session signatures if not provided
-    let sessionSigs = decryptionOptions.sessionSigs
+    let sessionSigs = decryptionConfig.sessionSigs
     if (!sessionSigs) {
       const acc =
         /** @type import('@lit-protocol/types').AccessControlConditions */ (
@@ -131,19 +125,19 @@ export class LitCryptoAdapter {
       const expiration = new Date(Date.now() + 1000 * 60 * 5).toISOString() // 5 min
 
       // Step 2.1. Create session signatures for the wallet if provided
-      if (decryptionOptions.wallet) {
+      if (decryptionConfig.wallet) {
         sessionSigs = await Lit.getSessionSigs(this.litClient, {
-          wallet: decryptionOptions.wallet,
+          wallet: decryptionConfig.wallet,
           dataToEncryptHash: plaintextKeyHash,
           expiration,
           accessControlConditions: acc,
         })
       }
       // Step 2.2. Otherwise, create session signatures for the PKP if provided
-      else if (decryptionOptions.pkpPublicKey && decryptionOptions.authMethod) {
+      else if (decryptionConfig.pkpPublicKey && decryptionConfig.authMethod) {
         sessionSigs = await Lit.getPkpSessionSigs(this.litClient, {
-          pkpPublicKey: decryptionOptions.pkpPublicKey,
-          authMethod: decryptionOptions.authMethod,
+          pkpPublicKey: decryptionConfig.pkpPublicKey,
+          authMethod: decryptionConfig.authMethod,
           dataToEncryptHash: plaintextKeyHash,
           expiration,
           accessControlConditions: acc,
@@ -157,7 +151,7 @@ export class LitCryptoAdapter {
 
     // Step 3. Create wrapped UCAN invocation
     const wrappedInvocationJSON = await createDecryptWrappedInvocation({
-      delegationCAR,
+      decryptDelegation: decryptionConfig.decryptDelegation,
       spaceDID,
       resourceCID,
       issuer,

@@ -113,23 +113,22 @@ export class KMSCryptoAdapter {
   /**
    * @param {string} encryptedKey
    * @param {object} configs
-   * @param {Type.DecryptionOptions} configs.decryptionOptions
+   * @param {Type.DecryptionConfig} configs.decryptionConfig
    * @param {Type.ExtractedMetadata} configs.metadata
-   * @param {Uint8Array} configs.delegationCAR
    * @param {Type.AnyLink} configs.resourceCID
    * @param {import('@storacha/client/types').Signer<import('@storacha/client/types').DID, import('@storacha/client/types').SigAlg>} configs.issuer
    * @param {import('@storacha/client/types').DID} configs.audience
    */
   async decryptSymmetricKey(encryptedKey, configs) {
     // Step 1: Validate configs
-    const { decryptionOptions, metadata, issuer } = configs
+    const { decryptionConfig, metadata, issuer } = configs
     if (metadata.strategy !== 'kms') {
       throw new Error('KMSCryptoAdapter can only handle KMS metadata')
     }
 
-    const { spaceDID, delegationProof } = decryptionOptions
-    if (!spaceDID || !delegationProof) {
-      throw new Error('SpaceDID and delegationProof are required')
+    const { spaceDID, decryptDelegation } = decryptionConfig
+    if (!spaceDID || !decryptDelegation) {
+      throw new Error('SpaceDID and decryptDelegation are required')
     }
 
     if (!issuer) {
@@ -140,7 +139,8 @@ export class KMSCryptoAdapter {
     const { decryptedSymmetricKey } = await this.getDecryptedSymmetricKey(
       encryptedKey,
       spaceDID,
-      delegationProof,
+      decryptDelegation,
+      configs.decryptionConfig.proofs || [],
       issuer
     )
 
@@ -154,14 +154,16 @@ export class KMSCryptoAdapter {
    *
    * @param {string} encryptedSymmetricKey - The encrypted symmetric key (base64-encoded)
    * @param {Type.SpaceDID} spaceDID - The space DID
-   * @param {import('@ucanto/interface').Proof} delegationProof - The delegation proof
+   * @param {import('@ucanto/interface').Proof} decryptionProof - The decryption delegation proof
+   * @param {import('@ucanto/interface').Proof[]} proofs - The proofs to access the space
    * @param {import('@storacha/client/types').Signer<import('@storacha/client/types').DID, import('@storacha/client/types').SigAlg>} issuer - The issuer
    * @returns {Promise<{decryptedSymmetricKey: string}>} - The decrypted symmetric key (base64-encoded)
    */
   async getDecryptedSymmetricKey(
     encryptedSymmetricKey,
     spaceDID,
-    delegationProof,
+    decryptionProof,
+    proofs,
     issuer
   ) {
     // Step 1: Invoke the KeyDecrypt capability passing the decryption proof
@@ -172,17 +174,20 @@ export class KMSCryptoAdapter {
       nb: {
         key: base64.decode(encryptedSymmetricKey), // Convert base64 string to bytes
       },
-      proofs: [delegationProof],
+      proofs: proofs ? [...proofs, decryptionProof] : [decryptionProof],
     }).execute(this.newKeyManagerServiceConnection())
 
     // Step 2: Handle the result
     if (result.out.error) {
-      throw new Error(
-        `KMS decryption failed: ${JSON.stringify(result.out.error)}`
-      )
+      // Only show the error message, not the full error object with stack trace
+      const errorMessage =
+        result.out.error.message ||
+        result.out.error.name ||
+        'KMS decryption failed'
+      throw new Error(errorMessage)
     }
 
-    // Step 3: Return the base64-encoded decrypted key from the gateway response
+    // Step 3: Return the multibase-encoded decrypted key from the gateway response
     return /** @type {{decryptedSymmetricKey: string}} */ (result.out.ok)
   }
 
@@ -283,13 +288,17 @@ export class KMSCryptoAdapter {
         location: encryptionConfig.location,
         keyring: encryptionConfig.keyring,
       },
+      proofs: encryptionConfig.proofs,
     }).execute(this.newKeyManagerServiceConnection())
 
     // Step 2: Handle the result
     if (setupResult.out.error) {
-      throw new Error(
-        `Failed to get public key: ${JSON.stringify(setupResult.out.error)}`
-      )
+      // Only show the error message, not the full error object with stack trace to avoid leaking information
+      const errorMessage =
+        setupResult.out.error.message ||
+        setupResult.out.error.name ||
+        'Encryption setup failed'
+      throw new Error(errorMessage)
     }
 
     // Step 3: Return the public key and key reference

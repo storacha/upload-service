@@ -27,6 +27,18 @@ export type { UploadOptions } from '@storacha/client/types'
 // Import SpaceDID for use in interfaces
 import type { SpaceDID } from '@storacha/capabilities/types'
 
+export interface FileMetadata {
+  name: string // Full filename with extension
+  type: string // MIME type (e.g., "application/pdf")
+  extension: string // File extension without dot (e.g., "pdf")
+  metadata?: Record<string, unknown> // Optional extensible metadata
+}
+
+export interface DecryptionResult {
+  stream: ReadableStream
+  fileMetadata?: FileMetadata // Extracted metadata
+}
+
 export interface EncryptedClient {
   encryptAndUploadFile(
     file: BlobLike,
@@ -35,9 +47,8 @@ export interface EncryptedClient {
   ): Promise<AnyLink>
   retrieveAndDecryptFile(
     cid: AnyLink,
-    delegationCAR: Uint8Array,
-    decryptionOptions: DecryptionOptions
-  ): Promise<ReadableStream>
+    decryptionConfig: DecryptionConfig
+  ): Promise<DecryptionResult>
 }
 
 export type EncryptedClientOptions = {
@@ -83,9 +94,8 @@ export interface CryptoAdapter {
   decryptSymmetricKey(
     encryptedKey: string,
     configs: {
-      decryptionOptions: DecryptionOptions
+      decryptionConfig: DecryptionConfig
       metadata: ExtractedMetadata
-      delegationCAR: Uint8Array
       resourceCID: AnyLink
       issuer: Signer<DID, SigAlg>
       audience: DID
@@ -113,6 +123,11 @@ export interface EncryptionConfig {
   spaceDID: SpaceDID
 
   /**
+   * Proofs to access the space
+   */
+  proofs?: Proof[]
+
+  /**
    * The location of the KMS key to use for encryption
    */
   location?: string
@@ -121,9 +136,21 @@ export interface EncryptionConfig {
    * The keyring of the KMS key to use for encryption
    */
   keyring?: string
+
+  /**
+   * File metadata to embed in encrypted file
+   */
+  fileMetadata?: FileMetadata
 }
 
-export interface DecryptionOptions {
+export interface DecryptionConfig {
+  // General decryption
+  decryptDelegation: Proof
+  spaceDID: SpaceDID
+  /**
+   * Proofs to access the space
+   */
+  proofs?: Proof[]
   // User-provided options
   // Lit-specific (signer information)
   wallet?: Wallet
@@ -131,9 +158,6 @@ export interface DecryptionOptions {
   // Lit PKP-specific (signer information)
   pkpPublicKey?: string
   authMethod?: AuthMethod
-  // KMS-specific
-  spaceDID?: SpaceDID
-  delegationProof?: Proof
 }
 
 export interface EncryptedKeyResult {
@@ -247,7 +271,7 @@ export interface LitWalletSigner {
 }
 
 export interface CreateDecryptWrappedInvocationOptions {
-  delegationCAR: Uint8Array
+  decryptDelegation: Proof
   issuer: Signer<DID, SigAlg>
   audience: `did:${string}:${string}`
   spaceDID: `did:key:${string}`

@@ -1,8 +1,8 @@
 'use client'
 
-import { MouseEventHandler, useState } from 'react'
+import { useState } from 'react'
 import { Dialog } from '@headlessui/react'
-import { TrashIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { TrashIcon, ExclamationTriangleIcon, LockOpenIcon } from '@heroicons/react/24/outline'
 import { H2 } from '@/components/Text'
 import { useW3, UploadGetSuccess, SpaceDID, CARLink } from '@storacha/ui-react'
 import useSWR, { useSWRConfig } from 'swr'
@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation'
 import { createUploadsListKey } from '@/cache'
 import { logAndCaptureError } from '@/sentry'
 import { ipfsGatewayURL } from '@/components/services'
+import { useFileDecryption } from '@/hooks/useFileDecryption'
 
 interface PageProps {
   params: {
@@ -46,6 +47,9 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
   const [isRemoveConfirmModalOpen, setRemoveConfirmModalOpen] = useState(false)
   const router = useRouter()
   const { mutate } = useSWRConfig()
+  
+  // Add decryption functionality
+  const { decryptAndDownload, canDecrypt, loading: decryptLoading, error: decryptError } = useFileDecryption(space)
 
   if (!space) {
     return <h1>Space not found</h1>
@@ -60,7 +64,18 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
     router.replace(`/space/${spaceDID}`)
   }
 
+  const handleDecrypt = async () => {
+    try {
+      await decryptAndDownload(root, `decrypted-${root.toString().slice(0, 10)}.bin`)
+    } catch (error) {
+      console.error('Decryption failed:', error)
+      // Error is already handled in the hook
+    }
+  }
+
   const url = ipfsGatewayURL(root)
+  const isPrivateSpace = space.access?.type === 'private'
+  
   return (
     <div>
       <Breadcrumbs space={space.did()} root={root} />
@@ -70,11 +85,18 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
           {root.toString()}
           <CopyIcon text={root.toString()} />
         </div>
-        <H2>URL</H2>
+        
+        <H2>{isPrivateSpace ? 'URL (Encryption Metadata)' : 'URL'}</H2>
         <div className="pb-5 overflow-hidden no-wrap text-ellipsis">
           <a href={url} className="font-mono text-sm underline m-0 p-0" target="_blank">{url}</a>
           <CopyIcon text={url} />
+          {isPrivateSpace && (
+            <p className="text-xs text-gray-500 mt-1">
+              This shows the encrypted file metadata, not the actual file content.
+            </p>
+          )}
         </div>
+        
         <H2>Shards</H2>
         <div className='pb-5'>
           {upload.isLoading
@@ -82,9 +104,51 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
             : upload.data?.shards?.map(link => <Shard space={space.did()} root={root} shard={link} key={link.toString()} />)}
         </div>
 
-        <button onClick={e => { e.preventDefault(); setRemoveConfirmModalOpen(true) }} className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`}>
-          <TrashIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Remove
-        </button>
+        <div className="flex items-center gap-2">
+                   
+          <button onClick={e => { e.preventDefault(); setRemoveConfirmModalOpen(true) }} className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`}>
+            <TrashIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Remove
+          </button>
+
+          {isPrivateSpace && (
+            <button
+              onClick={handleDecrypt}
+              disabled={!canDecrypt || decryptLoading}
+              className={`inline-block font-epilogue uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap ${
+                canDecrypt && !decryptLoading
+                  ? 'bg-blue-600 border border-blue-600 hover:bg-white hover:text-blue-600 text-white'
+                  : 'bg-gray-300 border border-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              {decryptLoading ? (
+                <>
+                  <div className="animate-spin inline-block w-4 h-4 border-2 border-solid border-current border-r-transparent rounded-full mr-2" />
+                  Downloading & Decrypting...
+                </>
+              ) : (
+                <>
+                  <LockOpenIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} />
+                  Download & Decrypt
+                </>
+              )}
+            </button>
+          )}
+        </div>
+        
+        {isPrivateSpace && decryptError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-4">
+            <p className="text-sm text-red-800">
+              <ExclamationTriangleIcon className="w-4 h-4 inline mr-1" />
+              Decryption failed: {decryptError}
+            </p>
+          </div>
+        )}
+        
+        {isPrivateSpace && !canDecrypt && (
+          <p className="text-sm text-gray-600 mt-2">
+            Note: Decryption requires KMS configuration
+          </p>
+        )}
         <RemoveConfirmModal
           isOpen={isRemoveConfirmModalOpen}
           root={root}
