@@ -55,7 +55,8 @@ export const delegate = async (
  * @param {API.ProviderDID} [input.provider] - Provider that will receive the invocation.
  * @param {API.DID} [input.audience] - Principal requesting an access.
  * @param {API.Access} [input.access] - Access been requested.
- * @param {API.AppName} [input.appName] - A list of Facts to pass to the access/authorize invocation
+ * @param {API.AppName} [input.appName] - App name for the access request
+ * @param {API.SSORequest} [input.sso] - SSO authentication request (all fields required if provided)
  * @returns {Promise<API.Result<PendingAccessRequest, API.AccessAuthorizeFailure|API.InvocationError>>}
  */
 export const request = async (
@@ -66,8 +67,39 @@ export const request = async (
     audience: audience = agent.did(),
     access = spaceAccess,
     appName,
+    sso,
   }
 ) => {
+  // Build facts array with appName and SSO object
+  const facts = []
+  if (appName) {
+    facts.push({ appName })
+  }
+  if (sso) {
+    if (typeof sso !== 'object') {
+      throw new Error('SSO parameter must be an object')
+    }
+
+    if (!sso.authProvider || typeof sso.authProvider !== 'string') {
+      throw new Error('SSO authProvider must be a non-empty string')
+    }
+    if (!sso.externalUserId || typeof sso.externalUserId !== 'string') {
+      throw new Error('SSO externalUserId must be a non-empty string')
+    }
+    if (
+      !sso.externalSessionToken ||
+      typeof sso.externalSessionToken !== 'string'
+    ) {
+      throw new Error('SSO externalSessionToken must be a non-empty string')
+    }
+
+    facts.push({
+      authProvider: sso.authProvider,
+      externalUserId: sso.externalUserId,
+      externalSessionToken: sso.externalSessionToken,
+    })
+  }
+
   // Request access from the account.
   const { out: result } = await agent.invokeAndExecute(Access.authorize, {
     audience: DID.parse(provider),
@@ -79,7 +111,7 @@ export const request = async (
       // in the meantime we translate new format to legacy format here.
       att: [...toCapabilities(access)],
     },
-    facts: appName ? [{ appName }] : undefined,
+    facts,
   })
 
   return result.error

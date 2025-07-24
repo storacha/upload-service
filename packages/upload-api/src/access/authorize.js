@@ -44,6 +44,16 @@ export const authorize = async ({ capability, invocation }, ctx) => {
     )
   }
 
+  // Check if this is an SSO request
+  const facts = invocation.facts || []
+  const sso = /** @type {API.SSOFact | undefined} */ (
+    facts.find((fact) => fact.sso)
+  )
+  if (sso && ctx.ssoService) {
+    return ssoAuthorization(invocation, accountMailtoDID, sso, ctx)
+  }
+
+  // Standard email flow - create confirmation delegation and send email
   // We allow granting access within the next 15 minutes
   const lifetimeInSeconds = 60 * 15
 
@@ -112,6 +122,61 @@ export const authorize = async ({ capability, invocation }, ctx) => {
   // link to the authorization confirmation so it could be used to lookup
   // the delegation by the authorization request.
   return ok.join(confirmation.cid)
+}
+
+/**
+ *
+ * @param {API.Input<Access.authorize>['invocation']} invocation
+ * @param {import('@storacha/did-mailto/types').DidMailto} accountMailtoDID
+ * @param {API.SSOFact} ssoFact
+ * @param {API.AccessServiceContext} ctx
+ * @returns {Promise<API.Transaction<API.AccessAuthorizeSuccess, API.AccessAuthorizeFailure>>}
+ */
+const ssoAuthorization = async (invocation, accountMailtoDID, ssoFact, ctx) => {
+  try {
+    if (
+      !ssoFact.authProvider ||
+      !ssoFact.externalUserId ||
+      !ssoFact.externalSessionToken
+    ) {
+      return Server.error(
+        new Error(
+          'Missing required SSO credentials: authProvider, externalUserId, externalSessionToken'
+        )
+      )
+    }
+
+    const res = await ctx.ssoService?.authorize(invocation, {
+      email: DidMailto.toEmail(accountMailtoDID),
+      authProvider: ssoFact.authProvider,
+      externalUserId: ssoFact.externalUserId,
+      externalSessionToken: ssoFact.externalSessionToken,
+    })
+    if (!res) {
+      return Server.error(
+        new Error('SSO authorization failed: invalid response from SSO service')
+      )
+    }
+    if (!res.ok) {
+      return res
+    }
+
+    const authConfirmationLink = res.ok
+    // TODO: double check if this is the correct response we need to return to the client to complete the authorization flow
+    return Server.ok({
+      expiration: 0, // The user was already authenticated, so there is no expiration
+      // link to this authorization request
+      request: invocation.cid,
+    }).join(authConfirmationLink)
+  } catch (error) {
+    return Server.error(
+      new Error(
+        `SSO authorization failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      )
+    )
+  }
 }
 
 class AccountBlocked extends Server.Failure {

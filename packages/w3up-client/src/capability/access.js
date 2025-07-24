@@ -89,6 +89,7 @@ export const claim = async ({ agent }, input) =>
  * @param {API.Access} [input.access]
  * @param {API.DID} [input.audience]
  * @param {Agent.AppName} [input.appName]
+ * @param {API.SSORequest} [input.sso] - SSO authentication request (all fields required if provided)
  */
 export const request = async ({ agent }, input) =>
   Agent.Access.request(agent, input)

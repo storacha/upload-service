@@ -388,3 +388,9 @@ export enum AppName {
   TGMiniapp = 'tg-miniapp',
   Console = 'console',
 }
+
+export type SSORequest = {
+  authProvider: string
+  externalUserId: string
+  externalSessionToken: string
+}
