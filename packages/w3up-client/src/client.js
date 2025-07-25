@@ -91,6 +91,10 @@ export class Client extends Base {
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
    * @param {import('@storacha/client/types').AppName} [options.appName]
+   * @param {object} [options.sso] - SSO authentication
+   * @param {string} [options.sso.authProvider] - SSO provider (e.g., 'dmail')
+   * @param {string} [options.sso.externalUserId] - External user ID from SSO provider
+   * @param {string} [options.sso.externalSessionToken] - External session token from SSO provider
    */
   async login(email, options = {}) {
     const account = Result.unwrap(await Account.login(this, email, options))

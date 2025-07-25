@@ -6,6 +6,8 @@ import {
 } from '@storacha/ui-react'
 import { Logo } from '../brand'
 import { TopLevelLoader } from './Loader'
+import { useIframe } from '@/contexts/IframeContext'
+import IframeAuthenticator from './IframeAuthenticator'
 
 import { useRecordRefcode } from '@/lib/referrals/hooks'
 
@@ -71,7 +73,25 @@ export function AuthenticationEnsurer ({
   children: JSX.Element | JSX.Element[]
 }): JSX.Element {
   const [{ submitted, accounts, client }] = useAuthenticator()
+  const { isIframe } = useIframe()
+  
   const authenticated = !!accounts.length
+  
+  // If in iframe, use iframe-specific SSO authentication flow
+  if (isIframe) {
+    return (
+      <IframeAuthenticator>
+        {/* Standard authentication ensurer for iframe context */}
+        {authenticated ? (
+          <>{children}</>
+        ) : (
+          <div /> // IframeAuthenticator will handle the UI
+        )}
+      </IframeAuthenticator>
+    )
+  }
+  
+  // Standard authentication flow for non-iframe context
   if (authenticated) {
     return <>{children}</>
   }

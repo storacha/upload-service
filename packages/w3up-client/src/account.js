@@ -81,6 +81,10 @@ export const list = ({ agent }, { account } = {}) => {
  * @param {object} [options]
  * @param {AbortSignal} [options.signal]
  * @param {API.AppName} [options.appName]
+ * @param {object} [options.sso] - SSO authentication
+ * @param {string} [options.sso.authProvider] - SSO provider (e.g., 'dmail')
+ * @param {string} [options.sso.externalUserId] - External user ID from SSO provider
+ * @param {string} [options.sso.externalSessionToken] - External session token from SSO provider
  * @returns {Promise<API.Result<Account, Error>>}
  */
 export const login = async ({ agent }, email, options = {}) => {
@@ -107,6 +111,7 @@ export const login = async ({ agent }, email, options = {}) => {
       account,
       access: Access.accountAccess,
       appName: options.appName,
+      sso: options.sso,
     }
   )
 

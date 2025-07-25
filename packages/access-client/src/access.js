@@ -55,7 +55,11 @@ export const delegate = async (
  * @param {API.ProviderDID} [input.provider] - Provider that will receive the invocation.
  * @param {API.DID} [input.audience] - Principal requesting an access.
  * @param {API.Access} [input.access] - Access been requested.
- * @param {API.AppName} [input.appName] - A list of Facts to pass to the access/authorize invocation
+ * @param {API.AppName} [input.appName] - App name for the access request
+ * @param {object} [input.sso] - SSO authentication parameters
+ * @param {string} [input.sso.authProvider] - SSO provider (e.g., 'dmail')
+ * @param {string} [input.sso.externalUserId] - External user ID from SSO provider
+ * @param {string} [input.sso.externalSessionToken] - External session token from SSO provider
  * @returns {Promise<API.Result<PendingAccessRequest, API.AccessAuthorizeFailure|API.InvocationError>>}
  */
 export const request = async (
@@ -66,8 +70,18 @@ export const request = async (
     audience: audience = agent.did(),
     access = spaceAccess,
     appName,
+    sso,
   }
 ) => {
+  // Build facts array with appName and SSO object
+  const facts = []
+  if (appName) {
+    facts.push({ appName })
+  }
+  if (sso) {
+    facts.push(sso)
+  }
+
   // Request access from the account.
   const { out: result } = await agent.invokeAndExecute(Access.authorize, {
     audience: DID.parse(provider),
@@ -79,7 +93,7 @@ export const request = async (
       // in the meantime we translate new format to legacy format here.
       att: [...toCapabilities(access)],
     },
-    facts: appName ? [{ appName }] : undefined,
+    facts: facts.length > 0 ? facts : undefined,
   })
 
   return result.error

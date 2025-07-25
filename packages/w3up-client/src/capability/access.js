@@ -89,6 +89,10 @@ export const claim = async ({ agent }, input) =>
  * @param {API.Access} [input.access]
  * @param {API.DID} [input.audience]
  * @param {Agent.AppName} [input.appName]
+ * @param {object} [input.sso] - SSO authentication
+ * @param {string} [input.sso.authProvider] - SSO provider (e.g., 'dmail')
+ * @param {string} [input.sso.externalUserId] - External user ID from SSO provider
+ * @param {string} [input.sso.externalSessionToken] - External session token from SSO provider
  */
 export const request = async ({ agent }, input) =>
   Agent.Access.request(agent, input)

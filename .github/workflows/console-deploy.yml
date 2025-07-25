@@ -75,6 +75,7 @@ jobs:
           echo "NEXT_PUBLIC_PRIVATE_SPACES_DOMAINS=dmail.ai,storacha.network" >> .env
           echo "NEXT_PUBLIC_UCAN_KMS_URL=https://ucan-kms-staging.protocol-labs.workers.dev" >> .env
           echo "NEXT_PUBLIC_UCAN_KMS_DID=did:web:staging.kms.storacha.network" >> .env
+          echo "NEXT_PUBLIC_ENABLE_TEST_IFRAME=true" >> .env
       # as long as this uses https://github.com/cloudflare/next-on-pages/blob/dc529d7efa8f8568ea8f71b5cdcf78df89be6c12/packages/next-on-pages/bin/index.js,
       # env vars won't get passed through to wrangler, so if wrangler will need them, write them to .env like the previous step
       - run: pnpm pages:build
@@ -187,6 +188,7 @@ jobs:
           echo "NEXT_PUBLIC_PRIVATE_SPACES_DOMAINS=dmail.ai,storacha.network" >> .env
           echo "NEXT_PUBLIC_UCAN_KMS_URL=https://kms.storacha.network" >> .env
           echo "NEXT_PUBLIC_UCAN_KMS_DID=did:web:kms.storacha.network" >> .env
+          echo "NEXT_PUBLIC_ENABLE_TEST_IFRAME=true" >> .env
       - run: pnpm pages:build
         # as long as this uses https://github.com/cloudflare/next-on-pages/blob/dc529d7efa8f8568ea8f71b5cdcf78df89be6c12/packages/next-on-pages/bin/index.js,
         # env vars won't get passed through to wrangler, so if wrangler will need them, write them to .env like the previous step

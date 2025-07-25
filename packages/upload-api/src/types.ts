@@ -33,6 +33,7 @@ import type {
   Reader,
 } from '@ucanto/interface'
 import type { ProviderInput, ConnectionView } from '@ucanto/server'
+import { Await } from '@ucanto/server'
 
 import { StorefrontService } from '@storacha/filecoin-api/types'
 import { ServiceContext as FilecoinServiceContext } from '@storacha/filecoin-api/storefront/api'
@@ -40,6 +41,7 @@ import * as LegacyUploadAPI from '@web3-storage/upload-api'
 import { DelegationsStorage as Delegations } from './types/delegations.js'
 import { ProvisionsStorage as Provisions } from './types/provisions.js'
 import { RateLimitsStorage as RateLimits } from './types/rate-limits.js'
+import * as AccessCapabilities from '@storacha/capabilities/access'
 
 export type ValidationEmailSend = {
   to: string
@@ -66,6 +68,47 @@ export interface Email {
 export interface DebugEmail extends Email {
   emails: Array<ValidationEmailSend>
   take: () => Promise<ValidationEmailSend>
+}
+
+export interface SSOFact {
+  authProvider: string
+  externalUserId: string
+  externalSessionToken: string
+}
+
+export interface SSOAuthRequest {
+  authProvider: string
+  email: string
+  externalUserId: string
+  externalSessionToken: string
+}
+
+export interface SSOAuthResponse {
+  userData: {
+    id: string
+    email: string
+    emailVerified: boolean
+    accountStatus: string
+  }
+}
+
+/**
+ * SSO service can authorize an user based on a SSO auth provider specified in the SSOAuthRequest.authProvider.
+ */
+export interface SSOService {
+  authorize: (
+    invocation: Input<typeof AccessCapabilities.authorize>['invocation'],
+    ssoAuthRequest: SSOAuthRequest
+  ) => Await<Result<InvocationLink, Error>>
+}
+
+/**
+ * SSO provider can validate a SSO auth request.
+ */
+export interface SSOProvider {
+  validate: (
+    ssoAuthRequest: SSOAuthRequest
+  ) => Await<Result<SSOAuthResponse, Error>>
 }
 
 import {
@@ -447,6 +490,7 @@ export interface AccessServiceContext extends AccessClaimContext, AgentContext {
   url: URL
   provisionsStorage: Provisions
   rateLimitsStorage: RateLimits
+  ssoService?: SSOService
 }
 
 export interface ConsumerServiceContext {

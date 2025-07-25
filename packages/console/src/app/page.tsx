@@ -20,7 +20,7 @@ export default function HomePage() {
   )
 }
 
-function SpacePage() {
+export function SpacePage() {
   const [activeTab, setActiveTab] = useState<'public' | 'private'>('public')
   const [{ spaces }] = useW3()
   const { canAccessPrivateSpaces, shouldShowUpgradePrompt, planLoading } = usePrivateSpacesAccess()
