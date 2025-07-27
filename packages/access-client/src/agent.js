@@ -6,6 +6,7 @@ import * as Capabilities from '@storacha/capabilities/space'
 import { attest } from '@storacha/capabilities/ucan'
 import * as Access from './access.js'
 import * as Space from './space.js'
+import { validateAuthorization } from '@storacha/upload-api/utils/revocation'
 
 import {
   invoke,
@@ -106,6 +107,7 @@ export class Agent {
         url: this.url,
       })
     this.#data = data
+    this.revocationsStorage = options.revocationsStorage
     agentToData.set(this, this.#data)
   }
 
@@ -621,82 +623,55 @@ export class Agent {
 
     return /** @type {import('./types.js').SpaceInfoResult} */ (inv.out.ok)
   }
-}
 
 /**
- * Given a list of delegations, add to agent data spaces list.
+ * Fetch revocations for specific UCANs.
  *
- * @deprecated - trying to remove explicit space tracking from Agent/AgentData
- * in favor of functions that derive the space set from access.delegations
- *
- * @template {Record<string, any>} [S=Service]
- * @param {Agent<S>} agent
- * @param {API.Delegation[]} delegations
+ * @param {API.UCANLink[]} ucanCIDs - Array of UCAN CIDs to check for revocations
+ * @param {object} [options]
+ * @param {API.Delegation[]} [options.proofs] - Additional proofs that might be needed for validation
+ * @returns {Promise<API.Result<API.MatchingRevocations, API.Failure>>}
  */
-export async function addSpacesFromDelegations(agent, delegations) {
-  const data = agentToData.get(agent)
-  if (!data) {
-    throw Object.assign(new Error(`cannot determine AgentData for Agent`), {
-      agent: agent,
-    })
+async getRevocations(ucanCIDs, options = {}) {
+  if (!this.revocationsStorage) {
+    return { error: new Error('No revocations storage configured') }
   }
 
-  // spaces we find along the way.
-  const spaces = new Map()
-  // only consider ucans with this agent as the audience
-  const ours = delegations.filter((x) => x.audience.did() === agent.did())
-  // space names are stored as facts in proofs in the special `ucan:*` delegation from email to agent.
-  const ucanStars = ours.filter(
-    (x) => x.capabilities[0].can === '*' && x.capabilities[0].with === 'ucan:*'
-  )
-  for (const delegation of ucanStars) {
-    for (const proof of delegation.proofs) {
-      if (
-        !isDelegation(proof) ||
-        !proof.capabilities[0].with.startsWith('did:key')
-      ) {
-        continue
-      }
-      const space = Space.fromDelegation(proof)
-      spaces.set(space.did(), space.meta)
-    }
+  const query = {}
+  for (const cid of ucanCIDs) {
+    query[cid.toString()] = {}
   }
 
-  // Find any other spaces the user may have access to
-  for (const delegation of ours) {
-    // TODO: we need a more robust way to determine which spaces a user has access to
-    // it may or may not involve look at delegations
-    const allows = ucanto.Delegation.allows(delegation)
-    for (const [resource, value] of Object.entries(allows)) {
-      // If we discovered a delegation to any DID, we add it to the spaces list.
-      if (resource.startsWith('did:key') && Object.keys(value).length > 0) {
-        if (!spaces.has(resource)) {
-          spaces.set(resource, {})
-        }
+  // Get revocations from the storage
+  const result = await this.revocationsStorage.query(query)
+  if (result.error) {
+    return result
+  }
+
+  // If we have proofs, validate them against the revocations
+  if (options.proofs?.length) {
+    for (const proof of options.proofs) {
+      const auth = { delegation: proof }
+      const validationResult = await validateAuthorization({ revocationsStorage: this.revocationsStorage }, auth)
+      if (validationResult.error) {
+        return { error: validationResult.error }
       }
     }
   }
 
-  for (const [did, meta] of spaces) {
-    await data.addSpace(did, meta)
-  }
+  return result
 }
 
 /**
- * Stores given delegations in the agent's data store and adds discovered spaces
- * to the agent's space list.
- *
- * @param {Agent} agent
- * @param {object} authorization
- * @param {API.Delegation[]} authorization.proofs
- * @returns {Promise<API.Result<API.Unit, Error>>}
+ * Validate that a delegation has not been revoked.
+ * 
+ * @param {API.Delegation} delegation - The delegation to validate
+ * @returns {Promise<API.Result<{}, API.Failure>>}
  */
-export const importAuthorization = async (agent, { proofs }) => {
-  try {
-    await agent.addProofs(proofs)
-    await addSpacesFromDelegations(agent, proofs)
-    return { ok: {} }
-  } catch (error) {
-    return /** @type {{error:Error}} */ ({ error })
+async validateDelegation(delegation) {
+  if (!this.revocationsStorage) {
+    return { error: new Error('No revocations storage configured') }
   }
+
+  return await validateAuthorization({ revocationsStorage: this.revocationsStorage }, { delegation })
 }

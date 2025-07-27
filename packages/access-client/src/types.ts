@@ -21,7 +21,11 @@ import type {
   SigAlg,
   Caveats,
   Unit,
+  Result,
+  UCANLink,
 } from '@ucanto/interface'
+
+import type { CIDString } from '@ucanto/core'
 
 export type { UTCUnixTimestamp } from '@ipld/dag-ucan'
 
@@ -173,6 +177,58 @@ export interface AgentDataModel {
   /** @deprecated */
   spaces: Map<DID, SpaceMeta>
   delegations: Map<CIDString, { meta: DelegationMeta; delegation: Delegation }>
+  /** Storage for UCAN revocations */
+  revocationsStorage?: RevocationsStorage
+}
+
+export interface RevocationsStorage {
+  /**
+   * Given a map of delegations (keyed by delegation CID), return a
+   * corresponding map of principals (keyed by DID) that revoked them.
+   */
+  query(
+    query: RevocationQuery
+  ): Promise<Result<MatchingRevocations, Failure>>
+
+  /**
+   * Add the given revocations to the revocation store. If there is a revocation
+   * for given `revoke` with a different `scope` revocation with the given scope
+   * will be added. If there is a revocation for given `revoke` and `scope` no
+   * revocation will be added or updated.
+   */
+  add: (
+    revocation: Revocation
+  ) => Promise<Result<Unit, Failure>>
+
+  /**
+   * Creates or updates revocation for given `revoke` by setting `scope` to
+   * the one passed in the argument. This is intended to compact revocation
+   * store by dropping all existing revocations for given `revoke` in favor of
+   * given one. It is supposed to be called when the revocation authority is the
+   * same as the UCAN issuer, as such a revocation will apply to all possible
+   * invocations.
+   */
+  reset: (
+    revocation: Revocation
+  ) => Promise<Result<Unit, Failure>>
+}
+
+export interface RevocationQuery {
+  [key: string]: Record<string, unknown>
+}
+
+export interface MatchingRevocations {
+  [key: string]: {
+    [key: string]: {
+      cause: UCANLink
+    }
+  }
+}
+
+export interface Revocation {
+  revoke: UCANLink
+  scope: DID
+  cause: UCANLink
 }
 
 /**
@@ -271,10 +327,15 @@ export interface SpaceMeta {
  */
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface AgentOptions<S extends Record<string, any>> {
-  url?: URL
+export interface AgentOptions<S extends Record<string, any> = Service> {
+  /** Service connection to use */
   connection?: ConnectionView<S>
-  servicePrincipal?: Principal
+  /** Service principal to use */
+  servicePrincipal?: Principal<DID<'web'>>
+  /** Service URL to use */
+  url?: URL
+  /** Storage for UCAN revocations */
+  revocationsStorage?: RevocationsStorage
 }
 
 export interface AgentDataOptions {
