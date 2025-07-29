@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.0](https://github.com/storacha/upload-service/compare/console-v2.0.3...console-v2.1.0) (2025-07-29)
+
+
+### Features
+
+* **console:** private spaces  ([#310](https://github.com/storacha/upload-service/issues/310)) ([bd4a0da](https://github.com/storacha/upload-service/commit/bd4a0da0b85e696a1aa293bfe6ca49c60c546b0b))
+* SSO authentication flow + Iframe support for Console ([#317](https://github.com/storacha/upload-service/issues/317)) ([408ac17](https://github.com/storacha/upload-service/commit/408ac17cbfb4105321229bdca39d8ad8e9a0a053))
+
 ## [2.0.3](https://github.com/storacha/upload-service/compare/console-v2.0.2...console-v2.0.3) (2025-07-29)
 
 
