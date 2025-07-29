@@ -91,6 +91,7 @@ export class Client extends Base {
    * @param {object} [options]
    * @param {AbortSignal} [options.signal]
    * @param {import('@storacha/client/types').AppName} [options.appName]
+   * @param {import('@storacha/client/types').SSORequestParams} [options.sso] - SSO authentication request (all fields required if provided)
    */
   async login(email, options = {}) {
     const account = Result.unwrap(await Account.login(this, email, options))

@@ -388,3 +388,21 @@ export enum AppName {
   TGMiniapp = 'tg-miniapp',
   Console = 'console',
 }
+
+/**
+ * SSO auth parameters that are used to trigger the SSO authorization flow.
+ */
+export type SSORequestParams = {
+  /**
+   * The SSO auth provider.
+   */
+  authProvider: string
+  /**
+   * The external user ID of the user that is requesting access.
+   */
+  externalUserId: string
+  /**
+   * The external session token of the user that is requesting access.
+   */
+  externalSessionToken: string
+}

@@ -129,3 +129,56 @@ export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.
     </Authenticator>
   )
 }
+
+// Iframe-specific version that uses IframeAuthenticator
+export function IframeSidebarLayout ({ children }: LayoutComponentProps): JSX.Element {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  return (
+    <div className='flex min-h-screen w-full text-white'>
+      {/* dialog sidebar for narrow browsers */}
+      <Transition.Root show={sidebarOpen} >
+        <Dialog onClose={() => setSidebarOpen(false)} as='div' className='relative z-50'>
+          <Transition.Child
+            as={Fragment}
+            enter="transition-opacity duration-200"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="transition-opacity duration-400"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0">
+            <div className="fixed inset-0 bg-black/70" aria-hidden="true" />
+          </Transition.Child>
+          <div className="fixed inset-0 flex justify-left">
+            <Transition.Child
+              as={Fragment}
+              enter="transition duration-200"
+              enterFrom="-translate-x-full"
+              enterTo="translate-x-0"
+              leave="transition duration-400"
+              leaveFrom="translate-x-0"
+              leaveTo="-translate-x-full">
+              <Dialog.Panel>
+                <XMarkIcon className='text-white w-6 h-6 fixed top-2 -right-8' onClick={() => setSidebarOpen(false)} />
+                <Sidebar />
+              </Dialog.Panel>
+            </Transition.Child>
+          </div>
+        </Dialog>
+      </Transition.Root>
+      {/* static sidebar for wide browsers */}
+      <div className='hidden lg:block'>
+        <Sidebar />
+      </div>
+      <div className='bg-racha-fire/50 w-full'>
+        {/* top nav bar for narrow browsers, mainly to have a place to put the hamburger */}
+        <div className='lg:hidden flex justify-between pt-4 px-4'>
+          <Bars3Icon className='text-hot-red w-6 h-6' onClick={() => setSidebarOpen(true)} />
+          <Logo className='w-full' />
+        </div>
+        <main className='grow text-black p-12'>
+          {children}
+        </main>
+      </div>
+    </div>
+  )
+}

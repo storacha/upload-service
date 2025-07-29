@@ -21,6 +21,7 @@ import { StorefrontService } from '@storacha/filecoin-client/storefront'
 export * from '@ucanto/interface'
 export * from '@storacha/did-mailto'
 export { AppName } from '@storacha/access/types'
+export type { SSORequestParams } from '@storacha/access/types'
 export type { Agent, CapabilityQuery } from '@storacha/access/agent'
 export type {
   Access,

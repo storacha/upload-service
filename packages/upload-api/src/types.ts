@@ -33,6 +33,7 @@ import type {
   Reader,
 } from '@ucanto/interface'
 import type { ProviderInput, ConnectionView } from '@ucanto/server'
+import { Await } from '@ucanto/server'
 
 import { StorefrontService } from '@storacha/filecoin-api/types'
 import { ServiceContext as FilecoinServiceContext } from '@storacha/filecoin-api/storefront/api'
@@ -40,6 +41,7 @@ import * as LegacyUploadAPI from '@web3-storage/upload-api'
 import { DelegationsStorage as Delegations } from './types/delegations.js'
 import { ProvisionsStorage as Provisions } from './types/provisions.js'
 import { RateLimitsStorage as RateLimits } from './types/rate-limits.js'
+import * as AccessCapabilities from '@storacha/capabilities/access'
 
 export type ValidationEmailSend = {
   to: string
@@ -66,6 +68,72 @@ export interface Email {
 export interface DebugEmail extends Email {
   emails: Array<ValidationEmailSend>
   take: () => Promise<ValidationEmailSend>
+}
+
+export interface SSOFact {
+  authProvider: string
+  externalUserId: string
+  externalSessionToken: string
+}
+
+/**
+ * SSO auth parameters that are used to authorize an user based on a SSO auth provider.
+ */
+export interface SSOAuthParams {
+  /**
+   * The SSO auth provider.
+   */
+  authProvider: string
+  /**
+   * The email of the user that is requesting access.
+   */
+  email: string
+  /**
+   * The external user ID of the user that is requesting access.
+   */
+  externalUserId: string
+  /**
+   * The external session token of the user that is requesting access.
+   */
+  externalSessionToken: string
+
+  /**
+   * The Access.authorize invocation that triggered the SSO authorization flow.
+   */
+  invocation: Input<typeof AccessCapabilities.authorize>['invocation']
+}
+
+export interface SSOAuthResponse {
+  userData: {
+    id: string
+    email: string
+    accountStatus: string
+  }
+}
+
+/**
+ * SSO service can authorize an user based on a SSO auth provider specified in the SSOAuthParams.authProvider.
+ */
+export interface SSOService {
+  /**
+   * Authorize access to and user based on a SSO auth provider specified in the SSOAuthParams.authProvider.
+   *
+   * @param {Input<typeof AccessCapabilities.authorize>} input - The input of the authorization invocation.
+   * @param {SSOAuthParams} ssoAuthParams - The SSO auth request that contains the SSO auth provider and the user email.
+   * @returns {Await<Result<InvocationLink, Error>>} - The link to the Access/confirm invocation which confirms that authorization request is valid and authorized.
+   */
+  authorize: (
+    ssoAuthParams: SSOAuthParams
+  ) => Await<Result<InvocationLink, Error>>
+}
+
+/**
+ * SSO provider can validate a SSO auth request.
+ */
+export interface SSOProvider {
+  validate: (
+    ssoAuthParams: SSOAuthParams
+  ) => Await<Result<SSOAuthResponse, Error>>
 }
 
 import {
@@ -447,6 +515,7 @@ export interface AccessServiceContext extends AccessClaimContext, AgentContext {
   url: URL
   provisionsStorage: Provisions
   rateLimitsStorage: RateLimits
+  ssoService?: SSOService
 }
 
 export interface ConsumerServiceContext {
