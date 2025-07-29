@@ -1,3 +1,18 @@
+## 1.1.0 (2025-07-29)
+
+### 🚀 Features
+
+- feat: private spaces with encryption & decryption support ([#310](https://github.com/storacha/upload-service/pull/310))
+- SSO authentication flow and iframe support ([#317](https://github.com/storacha/upload-service/pull/317))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.7.0
+
+### ❤️ Thank You
+
+- Felipe Forbeck @fforbeck
+
 ## 1.0.2 (2025-07-29)
 
 ### 🧱 Updated Dependencies
