@@ -82,7 +82,10 @@ export const filecoinServiceConnection = (options = {}) =>
     }),
   })
 
-export const gatewayServiceURL = new URL('https://w3s.link')
+// Note: we use a UCAN service domain that is different to the public access
+// domain so that if public access is blocked it does not effect authorization
+// invocations.
+export const gatewayServiceURL = new URL('https://gateway.storacha.network')
 export const gatewayServicePrincipal = DID.parse('did:web:w3s.link')
 
 /**
