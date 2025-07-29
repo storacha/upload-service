@@ -1,3 +1,13 @@
+## 1.5.0 (2025-07-29)
+
+### 🚀 Features
+
+- SSO authentication flow and iframe support ([#317](https://github.com/storacha/upload-service/pull/317))
+
+### ❤️ Thank You
+
+- Felipe Forbeck @fforbeck
+
 ## 1.4.0 (2025-07-16)
 
 ### 🚀 Features

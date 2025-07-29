@@ -1,3 +1,19 @@
+## 2.8.0 (2025-07-29)
+
+### 🚀 Features
+
+- feat: private spaces with encryption & decryption support ([#310](https://github.com/storacha/upload-service/pull/310))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/encrypt-upload-client to 1.1.0
+- Updated @storacha/encrypt-upload-client to 1.1.0
+- Updated @storacha/ui-core to 2.4.84
+
+### ❤️ Thank You
+
+- Felipe Forbeck @fforbeck
+
 ## 2.7.33 (2025-07-29)
 
 ### 🧱 Updated Dependencies
