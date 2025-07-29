@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.3](https://github.com/storacha/upload-service/compare/console-v2.0.2...console-v2.0.3) (2025-07-29)
+
+
+### Fixes
+
+* gateway host in console ([#321](https://github.com/storacha/upload-service/issues/321)) ([68fa445](https://github.com/storacha/upload-service/commit/68fa445d0b6fdfd2b9870d6ac28e0ae1e4c1bdd1))
+
 ## [2.0.2](https://github.com/storacha/upload-service/compare/console-v2.0.1...console-v2.0.2) (2025-07-22)
 
 
