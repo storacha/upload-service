@@ -49,8 +49,11 @@ export const authorize = async ({ capability, invocation }, ctx) => {
   const sso = /** @type {API.SSOFact | undefined} */ (
     facts.find((fact) => fact.sso)
   )
-  if (sso && ctx.ssoService) {
-    return ssoAuthorization(invocation, accountMailtoDID, sso, ctx)
+  if (sso) {
+    if (!ctx.ssoService) {
+      return Server.error(new Error('SSO service is not configured'))
+    }
+    return ssoAuthorization(invocation, accountMailtoDID, sso, ctx.ssoService)
   }
 
   // Standard email flow - create confirmation delegation and send email
@@ -129,54 +132,45 @@ export const authorize = async ({ capability, invocation }, ctx) => {
  * @param {API.Input<Access.authorize>['invocation']} invocation
  * @param {import('@storacha/did-mailto/types').DidMailto} accountMailtoDID
  * @param {API.SSOFact} ssoFact
- * @param {API.AccessServiceContext} ctx
+ * @param {API.SSOService} ssoService
  * @returns {Promise<API.Transaction<API.AccessAuthorizeSuccess, API.AccessAuthorizeFailure>>}
  */
-const ssoAuthorization = async (invocation, accountMailtoDID, ssoFact, ctx) => {
-  try {
-    if (
-      !ssoFact.authProvider ||
-      !ssoFact.externalUserId ||
-      !ssoFact.externalSessionToken
-    ) {
-      return Server.error(
-        new Error(
-          'Missing required SSO credentials: authProvider, externalUserId, externalSessionToken'
-        )
-      )
-    }
-
-    const res = await ctx.ssoService?.authorize(invocation, {
-      email: DidMailto.toEmail(accountMailtoDID),
-      authProvider: ssoFact.authProvider,
-      externalUserId: ssoFact.externalUserId,
-      externalSessionToken: ssoFact.externalSessionToken,
-    })
-    if (!res) {
-      return Server.error(
-        new Error('SSO authorization failed: invalid response from SSO service')
-      )
-    }
-    if (!res.ok) {
-      return res
-    }
-
-    const authConfirmationLink = res.ok
-    // TODO: double check if this is the correct response we need to return to the client to complete the authorization flow
-    return Server.ok({
-      expiration: 0, // The user was already authenticated, so there is no expiration
-      // link to this authorization request
-      request: invocation.cid,
-    }).join(authConfirmationLink)
-  } catch (error) {
-    return Server.error(
-      new Error(
-        `SSO authorization failed: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      )
-    )
+const ssoAuthorization = async (
+  invocation,
+  accountMailtoDID,
+  ssoFact,
+  ssoService
+) => {
+  if (!ssoFact.authProvider) {
+    return Server.error(new Error('Missing SSO authorization provider'))
   }
+
+  if (!ssoFact.externalUserId) {
+    return Server.error(new Error('Missing SSO external user identifier'))
+  }
+
+  if (!ssoFact.externalSessionToken) {
+    return Server.error(new Error('Missing SSO external session token'))
+  }
+
+  const res = await ssoService.authorize({
+    email: DidMailto.toEmail(accountMailtoDID),
+    authProvider: ssoFact.authProvider,
+    externalUserId: ssoFact.externalUserId,
+    externalSessionToken: ssoFact.externalSessionToken,
+    invocation,
+  })
+
+  if (!res.ok) {
+    return res
+  }
+
+  const authConfirmationLink = res.ok
+  return Server.ok({
+    expiration: Math.floor(Date.now() / 1000), // The user was already authenticated, so it expires now
+    // link to this authorization request
+    request: invocation.cid,
+  }).join(authConfirmationLink)
 }
 
 class AccountBlocked extends Server.Failure {

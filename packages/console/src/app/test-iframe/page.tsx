@@ -98,8 +98,8 @@ export default function TestIframePage() {
           if (isInitializedRef.current) {
             // If this is an authenticated status update, process it
             if (data.authenticated === true) {
-              addMessage(`Authentication completed - user logged in as: ${data.email || 'unknown user'}`, 'IFRAME→PARENT')
-              setSSOStatus(`Authentication successful: ${data.email || 'user'}`)
+              addMessage(`Authentication completed - user logged in.`, 'IFRAME→PARENT')
+              setSSOStatus('Authentication successful')
               setSSOInProgress(false)
               setSSOComplete(true)
               return
@@ -120,8 +120,8 @@ export default function TestIframePage() {
           
           // Check if console indicates user is already authenticated
           if (data.authenticated === true) {
-            addMessage(`Console reports user already authenticated: ${data.email || 'unknown user'}`, 'IFRAME→PARENT')
-            setSSOStatus(`Already authenticated as ${data.email || 'user'}`)
+            addMessage('Console reports user already authenticated', 'IFRAME→PARENT')
+            setSSOStatus('Already authenticated')
             setSSOInProgress(false)
             setSSOComplete(true)
             return
@@ -165,13 +165,13 @@ export default function TestIframePage() {
           break
           
         case 'LOGIN_STATUS':
-          const status = `Auth status: ${data.status} ${data.email ? `for ${data.email}` : ''}`
+          const status = `Auth status: ${data.status}`
           addMessage(status, 'IFRAME→PARENT')
           setSSOStatus(status)
           break
           
         case 'LOGIN_COMPLETED':
-          const completedMessage = `Authentication ${data.status}: ${data.email || ''} ${data.error ? `- ${data.error}` : ''}`
+          const completedMessage = `Authentication ${data.status}: ${data.error ? `- ${data.error}` : ''}`
           addMessage(completedMessage, 'IFRAME→PARENT')
           setSSOStatus(completedMessage)
           setSSOInProgress(false)

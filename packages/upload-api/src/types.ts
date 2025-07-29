@@ -76,11 +76,31 @@ export interface SSOFact {
   externalSessionToken: string
 }
 
-export interface SSOAuthRequest {
+/**
+ * SSO auth parameters that are used to authorize an user based on a SSO auth provider.
+ */
+export interface SSOAuthParams {
+  /**
+   * The SSO auth provider.
+   */
   authProvider: string
+  /**
+   * The email of the user that is requesting access.
+   */
   email: string
+  /**
+   * The external user ID of the user that is requesting access.
+   */
   externalUserId: string
+  /**
+   * The external session token of the user that is requesting access.
+   */
   externalSessionToken: string
+
+  /**
+   * The Access.authorize invocation that triggered the SSO authorization flow.
+   */
+  invocation: Input<typeof AccessCapabilities.authorize>['invocation']
 }
 
 export interface SSOAuthResponse {
@@ -92,12 +112,18 @@ export interface SSOAuthResponse {
 }
 
 /**
- * SSO service can authorize an user based on a SSO auth provider specified in the SSOAuthRequest.authProvider.
+ * SSO service can authorize an user based on a SSO auth provider specified in the SSOAuthParams.authProvider.
  */
 export interface SSOService {
+  /**
+   * Authorize access to and user based on a SSO auth provider specified in the SSOAuthParams.authProvider.
+   *
+   * @param {Input<typeof AccessCapabilities.authorize>} input - The input of the authorization invocation.
+   * @param {SSOAuthParams} ssoAuthParams - The SSO auth request that contains the SSO auth provider and the user email.
+   * @returns {Await<Result<InvocationLink, Error>>} - The link to the Access/confirm invocation which confirms that authorization request is valid and authorized.
+   */
   authorize: (
-    invocation: Input<typeof AccessCapabilities.authorize>['invocation'],
-    ssoAuthRequest: SSOAuthRequest
+    ssoAuthParams: SSOAuthParams
   ) => Await<Result<InvocationLink, Error>>
 }
 
@@ -106,7 +132,7 @@ export interface SSOService {
  */
 export interface SSOProvider {
   validate: (
-    ssoAuthRequest: SSOAuthRequest
+    ssoAuthParams: SSOAuthParams
   ) => Await<Result<SSOAuthResponse, Error>>
 }
 

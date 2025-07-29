@@ -56,7 +56,7 @@ export const delegate = async (
  * @param {API.DID} [input.audience] - Principal requesting an access.
  * @param {API.Access} [input.access] - Access been requested.
  * @param {API.AppName} [input.appName] - App name for the access request
- * @param {API.SSORequest} [input.sso] - SSO authentication request (all fields required if provided)
+ * @param {API.SSORequestParams} [input.sso] - SSO authentication request (all fields required if provided)
  * @returns {Promise<API.Result<PendingAccessRequest, API.AccessAuthorizeFailure|API.InvocationError>>}
  */
 export const request = async (
@@ -94,9 +94,11 @@ export const request = async (
     }
 
     facts.push({
-      authProvider: sso.authProvider,
-      externalUserId: sso.externalUserId,
-      externalSessionToken: sso.externalSessionToken,
+      sso: {
+        authProvider: sso.authProvider,
+        externalUserId: sso.externalUserId,
+        externalSessionToken: sso.externalSessionToken,
+      },
     })
   }
 
