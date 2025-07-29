@@ -1,3 +1,13 @@
+## 1.6.1 (2025-07-29)
+
+### 🩹 Fixes
+
+- fix: use alternate domain for gateway authorization invocations ([af2db390](https://github.com/storacha/upload-service/commit/af2db390))
+
+### ❤️ Thank You
+
+- Alan Shaw
+
 ## 1.6.0 (2025-07-21)
 
 ### 🚀 Features
