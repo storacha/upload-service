@@ -56,18 +56,16 @@ export class EncryptedClient {
    * Retrieve and decrypt a file from the Storacha network
    *
    * @param {Type.AnyLink} cid - The link to the file to retrieve
-   * @param {Uint8Array} delegationCAR - The delegation that gives permission to decrypt (required for both strategies)
-   * @param {Type.DecryptionOptions} decryptionOptions - User-provided decryption options
-   * @returns {Promise<ReadableStream>} - The decrypted file
+   * @param {Type.DecryptionConfig} decryptionConfig - User-provided decryption config
+   * @returns {Promise<Type.DecryptionResult>} - The decrypted file with metadata
    */
-  async retrieveAndDecryptFile(cid, delegationCAR, decryptionOptions) {
+  async retrieveAndDecryptFile(cid, decryptionConfig) {
     return retrieveAndDecrypt(
       this._storachaClient,
       this._cryptoAdapter,
       this._gatewayURL,
       cid,
-      delegationCAR,
-      decryptionOptions
+      decryptionConfig
     )
   }
 }

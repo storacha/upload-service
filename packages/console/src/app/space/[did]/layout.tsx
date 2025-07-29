@@ -39,9 +39,14 @@ export default function Layout ({children, params}: LayoutProps): JSX.Element {
         <div className='flex flex-row items-start gap-4'>
           <DidIcon did={space.did()} width={10} />
           <div className='grow overflow-hidden whitespace-nowrap text-ellipsis text-black'>
-            <h1 className='text-2xl leading-5 text-hot-red'>
-              {space.name || 'Untitled'}
-            </h1>
+            <div className='flex items-center gap-2'>
+              <h1 className='text-2xl leading-5 text-hot-red'>
+                {space.name || 'Untitled'}
+              </h1>
+              <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${space.access?.type === 'private' ? 'bg-hot-red text-white' : 'bg-blue-500 text-white'}`}>
+                {space.access?.type === 'private' ? 'Private' : 'Public'}
+              </span>
+            </div>
             <label className='font-mono text-xs'>
               {space.did()}
             </label>

@@ -1,8 +1,6 @@
 import { DID } from '@ucanto/server'
 import * as dagJSON from '@ipld/dag-json'
-import { extract } from '@ucanto/core/delegation'
 import * as Space from '@storacha/capabilities/space'
-
 import * as Type from './types.js'
 
 /**
@@ -10,16 +8,15 @@ import * as Type from './types.js'
  * @param {Type.CreateDecryptWrappedInvocationOptions} param0
  */
 export const createDecryptWrappedInvocation = async ({
-  delegationCAR,
+  decryptDelegation,
   issuer,
   spaceDID,
   resourceCID,
   audience,
   expiration,
 }) => {
-  const delegation = await extract(delegationCAR)
-  if (delegation.error) {
-    throw delegation.error
+  if (!decryptDelegation) {
+    throw new Error('Decrypt delegation is required')
   }
 
   const invocationOptions = {
@@ -30,7 +27,7 @@ export const createDecryptWrappedInvocation = async ({
       resource: resourceCID,
     },
     expiration: expiration,
-    proofs: [delegation.ok],
+    proofs: [decryptDelegation],
   }
 
   const decryptWrappedInvocation = await Space.decrypt
