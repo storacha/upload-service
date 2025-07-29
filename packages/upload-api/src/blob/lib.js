@@ -5,7 +5,7 @@ import { base58btc } from 'multiformats/bases/base58'
 import * as HTTP from '@storacha/capabilities/http'
 import * as API from '../types.js'
 
-/** @import { AssertLocation } from '@web3-storage/content-claims/capability/api' */
+/** @import { AssertLocation } from '@storacha/capabilities/types' */
 
 export const AwaitErrorName = 'AwaitError'
 
