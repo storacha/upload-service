@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.1](https://github.com/storacha/upload-service/compare/console-v2.1.0...console-v2.1.1) (2025-07-30)
+
+
+### Fixes
+
+* **console:** origin verification for msg channels ([#325](https://github.com/storacha/upload-service/issues/325)) ([d7bb1b4](https://github.com/storacha/upload-service/commit/d7bb1b44f35c5b036327ebbf173742f4950cd404))
+
 ## [2.1.0](https://github.com/storacha/upload-service/compare/console-v2.0.3...console-v2.1.0) (2025-07-29)
 
 
