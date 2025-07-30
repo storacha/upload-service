@@ -124,12 +124,10 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
   }, [isClient, isIframe, ssoProvider, isAuthenticated])
 
   const handleParentMessage = (event: MessageEvent) => {
-    // Validate origin of incoming messages
-    if (!parentOrigin || !isOriginAllowed(event.origin, allowedOrigins)) {
-      console.error(`Rejected message from unauthorized origin: ${event.origin}`)
-      return
-    }
-
+    // Note: MessagePort events don't have an 'origin' property
+    // Origin validation was already done during MessageChannel setup
+    // so we can trust messages coming through the established channel
+    
     switch (event.data.type) {
       case 'AUTH_DATA':
         authenticateWithSSO(event.data)
