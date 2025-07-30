@@ -27,7 +27,13 @@ export { AgentData, Access, Space, Delegation, Schema }
 export * from './agent-use-cases.js'
 
 const HOST = 'https://up.storacha.network'
-const PRINCIPAL = DID.parse('did:web:storacha.network')
+const PRINCIPAL = DID.parse('did:web:up.storacha.network')
+/**
+ * Default identities for the service, including the primary identity.
+ *
+ * @type {API.DID[]}
+ */
+const IDENTITIES = [PRINCIPAL.did(), 'did:web:web3.storage']
 
 /**
  * Keeps track of AgentData for all Agents constructed.
@@ -92,6 +98,15 @@ export class Agent {
   #data
 
   /**
+   * DIDs the service is known by, including the primary. They are used by
+   * `invoke` and `invokeAndExecute` to scope session proofs to just the service
+   * DID or it's aliases.
+   *
+   * @type {Set<API.DID>}
+   */
+  #serviceIdentities
+
+  /**
    * @param {import('./agent-data.js').AgentData} data - Agent data
    * @param {import('./types.js').AgentOptions<S>} [options]
    */
@@ -107,6 +122,22 @@ export class Agent {
       })
     this.#data = data
     agentToData.set(this, this.#data)
+
+    const primary = this.connection.id
+    const serviceIdentities = new Set(options.serviceIdentities)
+
+    // If the default identities includes the configured primary identity then
+    // add them to the service identities list.
+    if (IDENTITIES.includes(primary.did())) {
+      for (const id of IDENTITIES) {
+        serviceIdentities.add(id)
+      }
+    }
+    // Add the primary identity if not already in service identities.
+    if (!serviceIdentities.has(primary.did())) {
+      serviceIdentities.add(primary.did())
+    }
+    this.#serviceIdentities = serviceIdentities
   }
 
   /**
@@ -262,7 +293,7 @@ export class Agent {
    *
    * @param {API.CapabilityQuery[]} [caps] - Capabilities to filter by. Empty or undefined caps with return all the proofs.
    * @param {object} [options]
-   * @param {API.DID} [options.sessionProofIssuer] - only include session proofs for this issuer
+   * @param {API.DID|API.DID[]} [options.sessionProofIssuer] - only include session proofs for these issuer(s)
    */
   proofs(caps, options) {
     /** @type {Map<string, API.Delegation<API.Capabilities>>} */
@@ -273,13 +304,32 @@ export class Agent {
       }
     }
 
+    /** @type {Set<API.DID>} */
+    const sessionProofIssuers = new Set()
+    if (options?.sessionProofIssuer) {
+      const ids = Array.isArray(options.sessionProofIssuer)
+        ? options.sessionProofIssuer
+        : [options.sessionProofIssuer]
+      for (const id of ids) {
+        sessionProofIssuers.add(id)
+      }
+    }
+
     // now let's add any session proofs that refer to those authorizations
     const sessions = getSessionProofs(this.#data)
     for (const proof of [...authorizations.values()]) {
       const proofsByIssuer = sessions[proof.asCID.toString()] ?? {}
-      const sessionProofs = options?.sessionProofIssuer
-        ? proofsByIssuer[options.sessionProofIssuer] ?? []
-        : Object.values(proofsByIssuer).flat()
+
+      const sessionProofs = []
+      if (sessionProofIssuers.size) {
+        for (const id of sessionProofIssuers) {
+          const proofs = proofsByIssuer[id]
+          if (proofs) sessionProofs.push(...proofs)
+        }
+      } else {
+        sessionProofs.push(...Object.values(proofsByIssuer).flat())
+      }
+
       for (const sessionProof of sessionProofs) {
         authorizations.set(sessionProof.cid.toString(), sessionProof)
       }
@@ -571,7 +621,11 @@ export class Agent {
             can: cap.can,
           },
         ],
-        { sessionProofIssuer: audience.did() }
+        {
+          sessionProofIssuer: this.#serviceIdentities.has(audience.did())
+            ? [...this.#serviceIdentities]
+            : audience.did()
+        }
       ),
     ]
 
