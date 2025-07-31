@@ -321,7 +321,7 @@ export class Agent {
       const proofsByIssuer = sessions[proof.asCID.toString()] ?? {}
 
       const sessionProofs = []
-      if (sessionProofIssuers.size) {
+      if (sessionProofIssuers.size > 0) {
         for (const id of sessionProofIssuers) {
           const proofs = proofsByIssuer[id]
           if (proofs) sessionProofs.push(...proofs)
