@@ -1,3 +1,13 @@
+## 2.1.2 (2025-07-31)
+
+### 🩹 Fixes
+
+- fix: register blob in legacy space when it exists in a different space ([#327](https://github.com/storacha/upload-service/pull/327))
+
+### ❤️ Thank You
+
+- ash
+
 ## 2.1.1 (2025-07-31)
 
 ### 🧱 Updated Dependencies
