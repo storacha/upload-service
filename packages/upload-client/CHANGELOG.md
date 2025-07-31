@@ -1,3 +1,13 @@
+## 1.3.1 (2025-07-31)
+
+### 🩹 Fixes
+
+- fix: receipts types import ([aec1012c](https://github.com/storacha/upload-service/commit/aec1012c))
+
+### ❤️ Thank You
+
+- Alan Shaw
+
 ## 1.3.0 (2025-07-21)
 
 ### 🚀 Features
