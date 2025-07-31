@@ -2,6 +2,7 @@ import * as Server from '@ucanto/server'
 import { Receipt } from '@ucanto/core'
 import * as W3sBlob from '@storacha/capabilities/web3.storage/blob'
 import * as HTTP from '@storacha/capabilities/http'
+import * as Digest from 'multiformats/hashes/digest'
 import * as API from '../../types.js'
 import { createConcludeInvocation } from '../../ucan/conclude.js'
 import { AwaitError, deriveDID } from '../../blob/lib.js'
@@ -40,24 +41,28 @@ export const w3sBlobAddHandler = (context) => {
       context,
       blob,
       space,
+      cause: invocation.link(),
       delivery,
     })
+    if (acceptance.error) {
+      return acceptance
+    }
 
     // Create a result describing the this invocation workflow
     let result = Server.ok(
       /** @type {API.SpaceBlobAddSuccess} */ ({
         site: {
-          'ucan/await': ['.out.ok.site', acceptance.task.link()],
+          'ucan/await': ['.out.ok.site', acceptance.ok.task.link()],
         },
       })
     )
       .fork(allocation.task)
       .fork(delivery.task)
-      .fork(acceptance.task)
+      .fork(acceptance.ok.task)
 
     // As a temporary solution we fork all add effects that add inline
     // receipts so they can be delivered to the client.
-    const fx = [...allocation.fx, ...delivery.fx, ...acceptance.fx]
+    const fx = [...allocation.fx, ...delivery.fx, ...acceptance.ok.fx]
     for (const task of fx) {
       result = result.fork(task)
     }
@@ -196,11 +201,12 @@ async function put({ blob, allocation }) {
  * @param {API.LegacyBlobServiceContext} input.context
  * @param {API.BlobModel} input.blob
  * @param {API.DIDKey} input.space
+ * @param {API.Link} input.cause Original `space/blob/add` invocation.
  * @param {object} input.delivery
  * @param {API.Invocation<API.HTTPPut>} input.delivery.task
  * @param {API.Receipt|null} input.delivery.receipt
  */
-async function accept({ context, blob, space, delivery }) {
+async function accept({ context, blob, space, cause, delivery }) {
   // 1. Create web3.storage/blob/accept invocation and task
   const accept = W3sBlob.accept.invoke({
     issuer: context.id,
@@ -234,11 +240,31 @@ async function accept({ context, blob, space, delivery }) {
   // If put has already succeeded, we can execute `blob/accept` right away.
   else if (delivery.receipt?.out.ok) {
     receipt = await accept.execute(context.getServiceConnection())
+    // if accept task was not successful do not register the blob in the space
+    if (receipt.out.error) {
+      return receipt.out
+    }
+
+    // We don't need to record the invocation and the receipt in agent message
+    // store per non-web3.storage `blob/accept` since this is an invocation to
+    // our own service (and we record all of these by default).
+
+    const register = await context.registry.register({
+      space,
+      cause,
+      blob: { digest: Digest.decode(blob.digest), size: blob.size },
+    })
+    if (register.error) {
+      // it's ok if there's already a registration of this blob in this space
+      if (register.error.name !== 'EntryExists') {
+        return register
+      }
+    }
   }
 
-  return {
+  return Server.ok({
     task,
     receipt,
     fx: receipt ? [await conclude(receipt, context.id)] : [],
-  }
+  })
 }
