@@ -31,3 +31,9 @@ NEXT_PUBLIC_SENTRY_ENV=development
 NEXT_PUBLIC_HUMANODE_AUTH_URL=https://auth.demo-storacha-2025-03-31.oauth2.humanode.io/oauth2/auth
 NEXT_PUBLIC_HUMANODE_CLIENT_ID=e9756297-b2d1-4bbe-a139-a9ad1cdc43ee
 NEXT_PUBLIC_HUMANODE_OAUTH_CALLBACK_URL=https://staging.up.storacha.network/oauth/humanode/callback
+
+# SSO
+NEXT_PUBLIC_PRIVATE_SPACES_DOMAINS=storacha.network
+NEXT_PUBLIC_UCAN_KMS_URL=https://staging.kms.storacha.network
+NEXT_PUBLIC_UCAN_KMS_DID=did:web:staging.kms.storacha.network
+NEXT_PUBLIC_SSO_ALLOWED_ORIGINS=
