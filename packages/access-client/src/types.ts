@@ -275,6 +275,12 @@ export interface AgentOptions<S extends Record<string, any>> {
   url?: URL
   connection?: ConnectionView<S>
   servicePrincipal?: Principal
+  /**
+   * DIDs the service is known by, including the primary. They are used by
+   * `invoke` and `invokeAndExecute` to scope session proofs to just the service
+   * DID or it's aliases.
+   */
+  serviceIdentities?: DID[]
 }
 
 export interface AgentDataOptions {
