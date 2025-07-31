@@ -4,7 +4,7 @@ import { isDelegation, Receipt } from '@ucanto/core'
 import { receiptsEndpoint } from './service.js'
 import { REQUEST_RETRIES } from './constants.js'
 
-/** @import * as API from '../src/types.js' */
+/** @import * as API from './types.js' */
 
 /** @implements {API.ReceiptNotFound} */
 export class ReceiptNotFound extends Error {
