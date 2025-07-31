@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { usePlan } from '@/hooks'
 import { SettingsNav } from './layout'
 import { H1, H2, H3 } from '@/components/Text'
-import { GB, TB, filesize } from '@/lib'
+import { GB, MB, TB, filesize } from '@/lib'
 import DefaultLoader from '@/components/Loader'
 import { RefcodeLink, ReferralsList, RefcodeCreator } from '../referrals/page'
 import { useReferrals } from '@/lib/referrals/hooks'
@@ -17,6 +17,7 @@ const Plans: Record<`did:${string}`, { name: string, limit: number }> = {
   'did:web:lite.web3.storage': { name: 'Lite', limit: 100 * GB },
   'did:web:business.web3.storage': { name: 'Business', limit: 2 * TB },
   'did:web:free.web3.storage': { name: 'Free', limit: Infinity },
+  'did:web:trial.storacha.network': { name: 'Trial', limit: 100 * MB },
 }
 
 const MAX_REFERRALS = 11
