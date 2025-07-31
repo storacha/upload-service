@@ -76,6 +76,7 @@
     "@storacha/capabilities": "workspace:^",
     "@storacha/did-mailto": "workspace:^",
     "@storacha/one-webcrypto": "catalog:",
+    "@storacha/upload-api": "workspace:^",
     "@ucanto/client": "catalog:",
     "@ucanto/core": "catalog:",
     "@ucanto/interface": "catalog:",
