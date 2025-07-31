@@ -4,13 +4,11 @@ import { URI } from '@ucanto/validator'
 import { Delegation, provide } from '@ucanto/server'
 import { Agent, Access, AgentData, connection } from '../src/agent.js'
 import * as Space from '@storacha/capabilities/space'
-import { createServer } from './helpers/utils.js'
+import { createServer, randomAccount } from './helpers/utils.js'
 import * as fixtures from './helpers/fixtures.js'
 import * as ed25519 from '@ucanto/principal/ed25519'
 import { UCAN, Provider } from '@storacha/capabilities'
 import { Absentee } from '@ucanto/principal'
-import * as DidMailto from '@storacha/did-mailto'
-import * as API from '../src/types.js'
 import { SpaceAccess } from '../src/space-access.js'
 
 describe('Agent', function () {
@@ -669,9 +667,7 @@ describe('Agent', function () {
    * When one of the proofs is a session proof issued by w3upA or w3upB, the Agent#proofs result should contain proofs appropriate for the session host.
    */
   it('can filter proofs based on sessionProofIssuer', async () => {
-    const account = DidMailto.fromEmail(
-      `test-${Math.random().toString().slice(2)}@dag.house`
-    )
+    const account = randomAccount()
     const serviceA = await ed25519.Signer.generate()
     const serviceAWeb = serviceA.withDID('did:web:a.up.storacha.network')
     const serviceB = await ed25519.Signer.generate()
@@ -723,9 +719,7 @@ describe('Agent', function () {
 
   it('invoke() chooses proofs appropriate for invocation audience', async () => {
     const space = await ed25519.Signer.generate()
-    const account = DidMailto.fromEmail(
-      `test-${Math.random().toString().slice(2)}@dag.house`
-    )
+    const account = randomAccount()
     const serviceA = await ed25519.Signer.generate()
     const serviceAWeb = serviceA.withDID('did:web:a.up.storacha.network')
     const serviceB = await ed25519.Signer.generate()
@@ -793,7 +787,7 @@ describe('Agent', function () {
       Provider.add,
       {
         audience: serviceBWeb,
-        with: /** @type {API.AccountDID} */ (account),
+        with: account,
         nb: {
           provider: serviceBWeb.did(),
           consumer: space.did(),
@@ -828,6 +822,52 @@ describe('Agent', function () {
       !proofIssuedByServiceA,
       'invocation for serviceBWeb does not have sessionProof from serviceAWeb'
     )
+  })
+
+  // for when attestation was issued by an old service identity (the alias)
+  it('invoke() chooses session proofs by alternate service identity', async () => {
+    const space = await ed25519.generate()
+    const account = randomAccount()
+    const serviceSigner = fixtures.service
+    const servicePrimary = serviceSigner.withDID('did:web:up.storacha.network')
+    const serviceAlias = serviceSigner.withDID('did:web:web3.storage')
+
+    const server = createServer()
+    const agentData = await AgentData.create()
+    const agent = new Agent(agentData, {
+      connection: connection({ principal: servicePrimary, channel: server }),
+      serviceIdentities: [servicePrimary.did(), serviceAlias.did()],
+    })
+
+    const delegation = await ucanto.delegate({
+      issuer: Absentee.from({ id: account }),
+      audience: agent,
+      capabilities: [{ can: 'provider/add', with: 'ucan:*' }],
+    })
+    const session = await UCAN.attest.delegate({
+      issuer: serviceAlias,
+      audience: agent,
+      with: serviceAlias.did(),
+      nb: { proof: delegation.cid },
+    })
+    await agent.addProof(delegation)
+    await agent.addProof(session)
+
+    const invocation = await agent.invoke(Provider.add, {
+      audience: servicePrimary,
+      with: account,
+      nb: {
+        provider: servicePrimary.did(),
+        consumer: space.did(),
+      },
+    })
+
+    const sessionProof = invocation.proofs
+      .filter((p) => ucanto.isDelegation(p))
+      .find((p) => matchSessionProof(p, serviceAlias.did()))
+
+    assert(sessionProof)
+    assert.equal(sessionProof.cid.toString(), session.cid.toString())
   })
 
   it('should dedupe proofs', async function () {

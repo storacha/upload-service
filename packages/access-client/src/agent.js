@@ -624,7 +624,7 @@ export class Agent {
         {
           sessionProofIssuer: this.#serviceIdentities.has(audience.did())
             ? [...this.#serviceIdentities]
-            : audience.did()
+            : audience.did(),
         }
       ),
     ]

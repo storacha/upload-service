@@ -1,10 +1,13 @@
-// eslint-disable-next-line no-unused-vars
-import * as Ucanto from '@ucanto/interface'
+/**
+ * @import * as Ucanto from '@ucanto/interface'
+ * @import * as API from '../../src/types.js'
+ */
 import { parseLink } from '@ucanto/core'
 import * as Server from '@ucanto/server'
 import * as Space from '@storacha/capabilities/space'
 import * as CAR from '@ucanto/transport/car'
 import * as CBOR from '@ucanto/core/cbor'
+import * as DidMailto from '@storacha/did-mailto'
 import { service } from './fixtures.js'
 
 /**
@@ -64,3 +67,7 @@ export function createServer(handlers = {}) {
 }
 
 export const validateAuthorization = () => ({ ok: {} })
+
+/** @returns {API.AccountDID} */
+export const randomAccount = () =>
+  DidMailto.fromEmail(`test-${String(Math.random()).slice(2)}@storacha.network`)
