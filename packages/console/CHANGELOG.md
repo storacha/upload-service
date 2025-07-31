@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.2](https://github.com/storacha/upload-service/compare/console-v2.1.1...console-v2.1.2) (2025-07-31)
+
+
+### Fixes
+
+* **access:** include session proofs issued by service aliases in invocations ([#328](https://github.com/storacha/upload-service/issues/328)) ([9de1d95](https://github.com/storacha/upload-service/commit/9de1d95dd1e618f648d6823574767da04b8d671b))
+* **console:** add SSO environment vars to template ([#329](https://github.com/storacha/upload-service/issues/329)) ([20ceba2](https://github.com/storacha/upload-service/commit/20ceba239f85afbdd66d9a674b533ecb4ce4237e))
+
 ## [2.1.1](https://github.com/storacha/upload-service/compare/console-v2.1.0...console-v2.1.1) (2025-07-30)
 
 
