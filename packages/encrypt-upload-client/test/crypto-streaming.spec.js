@@ -8,6 +8,7 @@ import {
   streamToUint8Array,
 } from './helpers/test-file-utils.js'
 
+// FIXME (fforbeck) - Remove this skip when ready to run streaming crypto tests. It is failing on CI.
 await describe.skip('Streaming Crypto - Core Functionality', async () => {
   await test('should encrypt and decrypt small files correctly', async () => {
     const crypto = new GenericAesCtrStreamingCrypto()
