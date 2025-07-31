@@ -413,7 +413,10 @@ export const test = {
     )
     const ucanConclude = await httpPutConcludeInvocation.execute(connection)
     assert.ok(ucanConclude.out.error)
-    assert.equal(ucanConclude.out.error?.name, 'AllocatedMemoryHadNotBeenWrittenTo')
+    assert.equal(
+      ucanConclude.out.error?.name,
+      'AllocatedMemoryHadNotBeenWrittenTo'
+    )
 
     const accept = await context.agentStore.receipts.get(
       workflow.accept.task.link()
