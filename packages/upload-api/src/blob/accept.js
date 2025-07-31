@@ -120,6 +120,11 @@ export const poll = async (context, receipt, putTask) => {
     return messageWrite
   }
 
+  // if the accept task was not successful do not register the blob in the space
+  if (acceptReceipt.out.error) {
+    return acceptReceipt.out
+  }
+
   const register = await context.registry.register({
     space: /** @type {API.SpaceDID} */ (DID.decode(allocate.nb.space).did()),
     cause: allocate.nb.cause,
