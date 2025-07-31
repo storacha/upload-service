@@ -120,7 +120,7 @@ export const poll = async (context, receipt, putTask) => {
     return messageWrite
   }
 
-  // if the accept task was not successful do not register the blob in the space
+  // if accept task was not successful do not register the blob in the space
   if (acceptReceipt.out.error) {
     return acceptReceipt.out
   }

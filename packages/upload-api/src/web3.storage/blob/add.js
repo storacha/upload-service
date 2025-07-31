@@ -240,6 +240,10 @@ async function accept({ context, blob, space, cause, delivery }) {
   // If put has already succeeded, we can execute `blob/accept` right away.
   else if (delivery.receipt?.out.ok) {
     receipt = await accept.execute(context.getServiceConnection())
+    // if accept task was not successful do not register the blob in the space
+    if (receipt.out.error) {
+      return receipt.out
+    }
 
     // We don't need to record the invocation and the receipt in agent message
     // store per non-web3.storage `blob/accept` since this is an invocation to

@@ -399,6 +399,11 @@ async function accept({
       return messageWrite
     }
 
+    // if accept task was not successful do not register the blob in the space
+    if (receipt.out.error) {
+      return receipt.out
+    }
+
     const register = await context.registry.register({
       space,
       cause,
