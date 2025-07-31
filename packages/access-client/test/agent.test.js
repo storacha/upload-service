@@ -825,12 +825,12 @@ describe('Agent', function () {
   })
 
   // for when attestation was issued by an old service identity (the alias)
-  it('invoke() chooses session proofs by alternate service identity', async () => {
+  it('invoke() chooses session proof issued by alternate service identity', async () => {
     const space = await ed25519.generate()
     const account = randomAccount()
-    const serviceSigner = fixtures.service
-    const servicePrimary = serviceSigner.withDID('did:web:up.storacha.network')
-    const serviceAlias = serviceSigner.withDID('did:web:web3.storage')
+    const { service } = fixtures
+    const servicePrimary = service.withDID('did:web:test.storacha.network')
+    const serviceAlias = service.withDID('did:web:test.web3.storage')
 
     const server = createServer()
     const agentData = await AgentData.create()
