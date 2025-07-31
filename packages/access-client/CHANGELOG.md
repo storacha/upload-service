@@ -1,3 +1,13 @@
+## 1.5.1 (2025-07-31)
+
+### 🩹 Fixes
+
+- fix(access): include session proofs issued by service aliases in invocations ([100ae706](https://github.com/storacha/upload-service/commit/100ae706))
+
+### ❤️ Thank You
+
+- Alan Shaw
+
 ## 1.5.0 (2025-07-29)
 
 ### 🚀 Features
