@@ -55,7 +55,7 @@ export default function TestIframePage() {
       // Reset initialization flag for fresh start
       isInitializedRef.current = false
       addMessage(`Loading iframe with SSO provider: ${provider.toUpperCase()}`, 'SYSTEM')
-      addMessage('Iframe URL: /?sso=' + provider, 'SYSTEM')
+      addMessage('Iframe URL: /iframe/?sso=' + provider, 'SYSTEM')
       setSSOStatus('Loading console and checking if user is already authenticated...')
       setSSOInProgress(true)
       setShowSSOPopup(false)
@@ -65,10 +65,10 @@ export default function TestIframePage() {
     if (communicationPort) {
       const authData = {
         type: 'AUTH_DATA',
-        provider: provider,
+        authProvider: provider,
         email: userEmail,
-        userId: userId,
-        sessionToken: sessionToken || 'test_session_token'
+        externalUserId: userId,
+        externalSessionToken: sessionToken ? sessionToken : 'unused'
       }
       
       addMessage(`Starting SSO with ${provider.toUpperCase()}: ${JSON.stringify(authData)}`, 'PARENT→IFRAME')
@@ -151,10 +151,10 @@ export default function TestIframePage() {
           if (responsePort) {
             const authData = {
               type: 'AUTH_DATA',
-              provider: provider,
+              authProvider: provider,
               email: userEmail,
-              userId: userId,
-              sessionToken: sessionToken || 'test_session_token'
+              externalUserId: userId,
+              externalSessionToken: sessionToken ? sessionToken : 'unused'
             }
             
             addMessage(`Sending auth data: ${JSON.stringify(authData)}`, 'PARENT→IFRAME')
@@ -351,11 +351,13 @@ export default function TestIframePage() {
             <div className="border border-gray-300 rounded-md overflow-hidden mx-auto" style={{ width: iframeWidth, height: iframeHeight }}>
               <iframe
                 ref={setIframeRef}
-                src={`/?sso=${provider}`}
+                src={`/iframe/?sso=${provider}`}
                 width="100%"
                 height="100%"
                 className="border-0"
                 title="Storacha Console"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
+                allow="payment"
               />
             </div>
           </div>

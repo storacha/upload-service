@@ -15,7 +15,7 @@
  * 
  * 3. AUTH_DATA (Parent -> Iframe)
  *    - Parent sends SSO auth data for validation/authentication
- *    - Data: {provider: string, email: string, userId: string, sessionToken: string}
+ *    - Data: {authProvider: string, email: string, externalUserId: string, externalSessionToken: string}
  *    - If email matches current session, validation succeeds without re-auth
  *    - If email differs, performs account switching
  * 
@@ -33,9 +33,20 @@
 
 import { useIframe } from '@/contexts/IframeContext'
 import { useW3, Authenticator } from '@storacha/ui-react'
-import { useEffect, useState, useMemo, ReactNode } from 'react'
+import { useEffect, useState, useMemo, ReactNode, useRef, useCallback } from 'react'
 import { Logo } from '@/brand'
 import { getAllowedOrigins, isOriginAllowed } from '@/lib/sso-origins'
+
+// Global flag to prevent duplicate MessageChannel setup across React StrictMode cycles
+let globalChannelSetup = false
+let globalChannel: MessageChannel | null = null
+
+// Helper function to log only in development
+const devLog = (...args: any[]) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(...args)
+  }
+}
 
 interface IframeAuthenticatorProps {
   children: ReactNode
@@ -44,22 +55,56 @@ interface IframeAuthenticatorProps {
 export default function IframeAuthenticator({ children }: IframeAuthenticatorProps) {
   const { isIframe, isClient, ssoProvider } = useIframe()
   const [{ client, accounts }, { logout }] = useW3()
+  
+  // Use ref to track latest client for retry logic
+  const clientRef = useRef(client)
+  clientRef.current = client
+  
+  // Log client availability changes
   const [authState, setAuthState] = useState<'pending' | 'authenticating' | 'authenticated' | 'failed'>('pending')
   const [error, setError] = useState<string | null>(null)
   const [channel, setChannel] = useState<MessageChannel | null>(null)
-  const [parentOrigin, setParentOrigin] = useState<string | null>(null)
+
+  const [expectedSSOEmail, setExpectedSSOEmail] = useState<string | null>(null)
+  const isChannelSetupRef = useRef(false)
+  const channelRef = useRef<MessageChannel | null>(null)
+  const emailMismatchLoggedRef = useRef<boolean>(false)
   
   const isAuthenticated = accounts.length > 0
 
   // Get allowed origins from shared utility (cached per process)
   const allowedOrigins = useMemo(() => {
     const origins = getAllowedOrigins()
-    console.log(`SSO Allowed Origins: ${origins}`)
+    devLog(`SSO Allowed Origins: ${origins}`)
     return origins
   }, [])
 
+  // Check for email mismatch during SSO
+  const currentEmail = accounts.length > 0 ? accounts[0]?.toEmail() : null
+  const hasEmailMismatch = isAuthenticated && expectedSSOEmail && currentEmail !== expectedSSOEmail
+
+  // Log email mismatch only once when it changes
+  useEffect(() => {
+    if (hasEmailMismatch && !emailMismatchLoggedRef.current) {
+      devLog('IFRAME: Preventing authenticated content load, waiting for SSO authentication...')
+      emailMismatchLoggedRef.current = true
+    } else if (!hasEmailMismatch && emailMismatchLoggedRef.current) {
+      // Reset the flag when mismatch is resolved
+      emailMismatchLoggedRef.current = false
+    }
+  }, [hasEmailMismatch, currentEmail, expectedSSOEmail])
+
   useEffect(() => {
     if (!isClient || !isIframe || !ssoProvider) return
+    
+    // Prevent multiple setups using global flag (React Strict Mode protection)
+    if (globalChannelSetup && globalChannel) {
+      devLog('IFRAME: Reusing existing MessageChannel (React StrictMode)')
+      setChannel(globalChannel)
+      channelRef.current = globalChannel
+      isChannelSetupRef.current = true
+      return
+    }
 
     const setupMessageChannel = () => {
       // Detect parent origin for security validation
@@ -86,14 +131,21 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
         return
       }
 
-      setParentOrigin(detectedOrigin)
-
       // Create MessageChannel for secure communication
       const messageChannel = new MessageChannel()
+      devLog('IFRAME: Created new MessageChannel')
+      
+      // Store globally to prevent React Strict Mode duplication
+      globalChannel = messageChannel
+      globalChannelSetup = true
+      
       setChannel(messageChannel)
+      channelRef.current = messageChannel
+      isChannelSetupRef.current = true
 
       // Listen for messages from parent
       messageChannel.port1.onmessage = handleParentMessage
+      devLog('IFRAME: Assigned message handler to port1')
 
       // Send port to parent with CONSOLE_READY including current auth status
       window.parent.postMessage(
@@ -115,25 +167,34 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
 
     setupMessageChannel()
     
-    // Cleanup function to prevent duplicate listeners
+    // Cleanup function - only clean up if this is the last instance
     return () => {
-      if (channel) {
+      // Don't close global channel in cleanup - let it persist for React StrictMode
+      // Only clean up local references
+      if (channel && channel !== globalChannel) {
         channel.port1.close()
       }
+      channelRef.current = null
+      isChannelSetupRef.current = false
     }
-  }, [isClient, isIframe, ssoProvider, isAuthenticated])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleParentMessage = (event: MessageEvent) => {
     // Note: MessagePort events don't have an 'origin' property
     // Origin validation was already done during MessageChannel setup
     // so we can trust messages coming through the established channel
     
+    devLog('IFRAME: Received message from parent:', event.data.type, event.data)
+    
     switch (event.data.type) {
       case 'AUTH_DATA':
+        devLog('IFRAME: Processing AUTH_DATA for email:', event.data.email)
+        setExpectedSSOEmail(event.data.email)
         authenticateWithSSO(event.data)
         break
       default:
-        console.log('Unknown message type:', event.data.type)
+        devLog('IFRAME: Unknown message type:', event.data.type)
     }
   }
 
@@ -144,38 +205,51 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
     })
   }
 
-  const sendLoginStatus = (status: string) => {
-    if (!channel) {
+  const sendLoginStatus = useCallback((status: string, channelOverride?: MessageChannel) => {
+    // Use provided channel, state channel, or ref channel
+    const currentChannel = channelOverride || channel || channelRef.current
+    if (!currentChannel) {
       console.error('Cannot send LOGIN_STATUS: channel is null')
       return
     }
     
-    channel.port1.postMessage({
-      type: 'LOGIN_STATUS',
-      status,
-    })
-  }
+    try {
+      currentChannel.port1.postMessage({
+        type: 'LOGIN_STATUS',
+        status,
+      })
+    } catch (error) {
+      console.error('Failed to send LOGIN_STATUS:', error)
+    }
+  }, [channel])
 
-  const sendLoginCompleted = (status: 'success' | 'error', error?: string) => {
-    if (!channel) {
+  const sendLoginCompleted = (status: 'success' | 'error', error?: string, channelOverride?: MessageChannel) => {
+    // Use provided channel, state channel, or ref channel
+    const currentChannel = channelOverride || channel || channelRef.current
+    if (!currentChannel) {
       console.error('Cannot send LOGIN_COMPLETED: channel is null')
       return
     }
 
-    channel.port1.postMessage({
-      type: 'LOGIN_COMPLETED',
-      status,
-      error
-    })
+    try {
+      currentChannel.port1.postMessage({
+        type: 'LOGIN_COMPLETED',
+        status,
+        error
+      })
+    } catch (error) {
+      console.error('Failed to send LOGIN_COMPLETED:', error)
+    }
   }
 
   // SSO Authentication function with session validation
   const authenticateWithSSO = async (authData: any) => {
-    const { provider, email, userId, sessionToken } = authData
+    devLog('IFRAME: authenticateWithSSO called with:', authData)
+    const { authProvider, email, externalUserId, externalSessionToken } = authData
     
-    if (!provider || !email || !userId || !sessionToken) {
-      const errorMsg = `Missing required SSO credentials for provider ${provider}`
-      console.error(errorMsg)
+    if (!authProvider || !email || !externalUserId || !externalSessionToken) {
+      const errorMsg = `Missing required SSO credentials for provider ${authProvider}`
+      console.error('IFRAME: Missing SSO credentials:', errorMsg)
       setError(errorMsg)
       setAuthState('failed')
       sendLoginCompleted('error', errorMsg)
@@ -183,8 +257,38 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
     }
 
     try {
-      if (!client) {
-        throw new Error('Client not initialized')
+      // Check if client is properly initialized with required methods
+      const currentClient = clientRef.current
+      const isClientReady = currentClient && typeof currentClient.login === 'function'
+      
+      if (!isClientReady) {
+        // Client not ready yet - wait and retry
+        setAuthState('pending')
+        sendLoginStatus('waiting for client initialization...')
+        
+        // Retry with reasonable interval for 5 minutes
+        const retryAttempts = 15 // 15 attempts × 5 seconds
+        let attempts = 0
+        
+        const retryInterval = setInterval(() => {
+          attempts++
+          const currentClient = clientRef.current // Get fresh client reference from ref
+          const isCurrentClientReady = currentClient && typeof currentClient.login === 'function'
+          
+          if (isCurrentClientReady) {
+            clearInterval(retryInterval)
+            authenticateWithSSO(authData)
+          } else if (attempts >= retryAttempts) {
+            console.error('IFRAME: Client initialization timeout after', attempts, 'attempts (5 minutes)')
+            clearInterval(retryInterval)
+            const errorMsg = 'Client initialization timeout after 5 minutes - please refresh the page'
+            setError(errorMsg)
+            setAuthState('failed')
+            sendLoginCompleted('error', errorMsg)
+          }
+        }, 5000) // Check every 5 seconds for 5 minutes total
+        
+        return
       }
 
       // Check if we're already authenticated with the same email
@@ -201,7 +305,7 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
 
       // Different email or not authenticated - proceed with authentication
       if (isAuthenticated && currentEmail !== email) {
-        console.log(`Account switching detected: ${currentEmail} -> ${email}`)
+        devLog(`Account switching detected: ${currentEmail} -> ${email}`)
         if (logout) {
           await logout()
         }
@@ -212,11 +316,11 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
 
       // Use w3up client login with SSO parameters
       // The client will handle multiple accounts internally
-      const loginResult = await client.login(email, {
+      const loginResult = await currentClient.login(email, {
         sso: {
-          authProvider: provider,
-          externalUserId: userId,
-          externalSessionToken: sessionToken
+          authProvider,
+          externalUserId,
+          externalSessionToken: externalSessionToken  || 'unused'
         }
       })
 
@@ -224,8 +328,11 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
         const errorMessage = typeof loginResult.error === 'string' 
           ? loginResult.error 
           : 'SSO authentication failed'
+        console.error('IFRAME: client.login() failed with error:', JSON.stringify(loginResult, null, 2))
         throw new Error(errorMessage)
       }
+
+      await currentClient.capability.access.claim()
 
       setAuthState('authenticated')
       sendLoginStatus('authenticated')
@@ -241,12 +348,13 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
   }
 
   // Monitor authentication state and notify parent
+  // BUT NOT during SSO email mismatch scenarios
   useEffect(() => {
-    if (isAuthenticated && authState !== 'authenticated') {
+    if (isAuthenticated && authState !== 'authenticated' && !hasEmailMismatch) {
       setAuthState('authenticated')
       sendLoginStatus('authenticated')
     }
-  }, [isAuthenticated, authState])
+  }, [isAuthenticated, authState, sendLoginStatus, hasEmailMismatch])
 
   // Don't render until client-side
   if (!isClient) {
@@ -296,8 +404,8 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
             onClick={() => {
               setAuthState('pending')
               setError(null)
-              if (channel) {
-                requestAuthentication(channel.port1)
+              if (window && window.parent) {
+                window.parent.location.reload()
               }
             }}
             className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors"
@@ -318,17 +426,39 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
             <div className="w-16 h-16 bg-blue-200 rounded-full mx-auto mb-4"></div>
           </div>
           <h3 className="text-lg font-semibold text-gray-700 mb-2">
-            Waiting for Authentication
+            Authentication
           </h3>
           <p className="text-gray-500">
-            Waiting for user credentials from {ssoProvider}...
+            Waiting for user authentication in {ssoProvider}...
           </p>
         </div>
       </div>
     )
   }
 
-  // If user is authenticated, show the console
+  // Check for email mismatch during SSO and render appropriate UI
+  if (hasEmailMismatch) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="text-center p-8">
+          <div className="animate-pulse mb-4">
+            <div className="w-16 h-16 bg-orange-200 rounded-full mx-auto mb-4"></div>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">
+            Account Switching Required
+          </h3>
+          <p className="text-gray-500 mb-2">
+            Current account: {currentEmail}
+          </p>
+          <p className="text-gray-500">
+            Switching to: {expectedSSOEmail}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // If user is authenticated and no email mismatch, show the console
   if (isAuthenticated || authState === 'authenticated') {
     return <Authenticator>{children}</Authenticator>
   }
@@ -347,4 +477,4 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
       </div>
     </div>
   )
-} 
+}

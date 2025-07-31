@@ -29,6 +29,7 @@ export const Context = createContext<ContextValue>(ContextDefaultValue)
 export interface ProviderProps extends ServiceConfig {
   children?: ReactNode
   receiptsEndpoint?: URL
+  skipInitialClaim?: boolean
 }
 
 /**
@@ -39,11 +40,13 @@ export function Provider({
   servicePrincipal,
   connection,
   receiptsEndpoint,
+  skipInitialClaim,
 }: ProviderProps): ReactNode {
   const { client, accounts, spaces, logout } = useDatamodel({
     servicePrincipal,
     connection,
     receiptsEndpoint,
+    skipInitialClaim,
   })
   return (
     <Context.Provider value={[{ client, accounts, spaces }, { logout }]}>
