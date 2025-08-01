@@ -11,18 +11,18 @@ import * as DID from '@ipld/dag-ucan/did'
 export const services = {
   STOREFRONT: {
     url: new URL('https://up.storacha.network'),
-    principal: DID.parse('did:web:storacha.network'),
+    principal: DID.parse('did:web:up.storacha.network'),
   },
   AGGREGATOR: {
-    url: new URL('https://aggregator.storacha.network'),
-    principal: DID.parse('did:web:storacha.network'),
+    url: new URL('https://aggregator.web3.storage'),
+    principal: DID.parse('did:web:web3.storage'),
   },
   DEALER: {
-    url: new URL('https://dealer.storacha.network'),
-    principal: DID.parse('did:web:storacha.network'),
+    url: new URL('https://dealer.web3.storage'),
+    principal: DID.parse('did:web:web3.storage'),
   },
   DEAL_TRACKER: {
-    url: new URL('https://tracker.storacha.network'),
-    principal: DID.parse('did:web:storacha.network'),
+    url: new URL('https://tracker.web3.storage'),
+    principal: DID.parse('did:web:web3.storage'),
   },
 }

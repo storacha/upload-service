@@ -121,7 +121,7 @@ import * as DID from '@ipld/dag-ucan/did'
 import * as ed25519 from '@ucanto/principal/ed25519'
 
 const issuer = await ed25519.generate()
-const audience = DID.parse('did:web:storacha.network')
+const audience = DID.parse('did:web:up.storacha.network')
 
 const invocation = Store.add.invoke({
   issuer,
