@@ -1,3 +1,9 @@
+## 2.1.4 (2025-08-01)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-api to 1.1.12
+
 ## 2.1.2 (2025-07-31)
 
 ### 🩹 Fixes
