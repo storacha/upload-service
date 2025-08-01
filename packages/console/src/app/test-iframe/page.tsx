@@ -9,8 +9,15 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import SSOIntegrationGuide from '@/components/SSOIntegrationGuide'
 
 export default function TestIframePage() {
+  const [activeTab, setActiveTab] = useState('testing')
+
+  const tabs = [
+    { id: 'testing', label: 'Testing' },
+    { id: 'integration', label: 'Integration Guide' }
+  ]
   const [iframeRef, setIframeRef] = useState<HTMLIFrameElement | null>(null)
   const [messages, setMessages] = useState<string[]>([])
   const [userEmail, setUserEmail] = useState('test@partner.example')
@@ -215,7 +222,29 @@ export default function TestIframePage() {
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Storacha Iframe Integration Test</h1>
+        <h1 className="text-3xl font-bold mb-8">Storacha Iframe Integration</h1>
+        
+        {/* Tab Navigation */}
+        <div className="flex border-b border-gray-200 mb-6">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 font-medium text-sm border-b-2 ${
+                activeTab === tab.id
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'testing' && (
+          <div>
+            <h2 className="text-2xl font-bold mb-6">Testing Interface</h2>
 
         {/* Instructions */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
@@ -520,6 +549,15 @@ export default function TestIframePage() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+          </div>
+        )}
+
+        {/* Integration Guide Tab */}
+        {activeTab === 'integration' && (
+          <div>
+            <SSOIntegrationGuide />
           </div>
         )}
       </div>
