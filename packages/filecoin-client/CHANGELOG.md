@@ -1,3 +1,13 @@
+## 1.0.11 (2025-08-01)
+
+### 🩹 Fixes
+
+- fix: default filecoin service configurations ([#339](https://github.com/storacha/upload-service/pull/339))
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.0.10 (2025-07-16)
 
 ### 🧱 Updated Dependencies
