@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.3](https://github.com/storacha/upload-service/compare/console-v2.1.2...console-v2.1.3) (2025-08-01)
+
+
+### Fixes
+
+* detect "plan not found" errors correctly ([#337](https://github.com/storacha/upload-service/issues/337)) ([81eeff4](https://github.com/storacha/upload-service/commit/81eeff4adef6081a883770aa09015f746ee1aea7))
+
 ## [2.1.2](https://github.com/storacha/upload-service/compare/console-v2.1.1...console-v2.1.2) (2025-07-31)
 
 
