@@ -1,5 +1,4 @@
 import fs from 'node:fs'
-import { pipeline } from 'node:stream/promises'
 import { Readable } from 'node:stream'
 import ora from 'ora'
 import { CID } from 'multiformats/cid'
@@ -8,7 +7,6 @@ import { identity } from 'multiformats/hashes/identity'
 import * as Digest from 'multiformats/hashes/digest'
 import * as DID from '@ipld/dag-ucan/did'
 import * as dagJSON from '@ipld/dag-json'
-import { CarWriter } from '@ipld/car'
 import { filesFromPaths } from 'files-from-path'
 import * as PieceHasher from 'fr32-sha2-256-trunc254-padded-binary-tree-multihash'
 import * as Account from './account.js'
@@ -414,33 +412,32 @@ export async function createDelegation(audienceDID, opts) {
     audienceMeta,
   })
 
-  const { writer, out } = CarWriter.create()
-  const dest = opts.output ? fs.createWriteStream(opts.output) : process.stdout
-
-  void pipeline(
-    out,
-    async function* maybeBaseEncode(src) {
-      const chunks = []
-      for await (const chunk of src) {
-        if (!opts.base64) {
-          yield chunk
-        } else {
-          chunks.push(chunk)
-        }
-      }
-      if (!opts.base64) return
-      const blob = new Blob(chunks)
-      const bytes = new Uint8Array(await blob.arrayBuffer())
-      const idCid = CID.createV1(ucanto.CAR.code, identity.digest(bytes))
-      yield idCid.toString(base64)
-    },
-    dest
-  )
-
-  for (const block of delegation.export()) {
-    await writer.put(block)
+  const archiveRes = await delegation.archive()
+  if (archiveRes.error) {
+    console.error(`Error: archiving delegation: ${archiveRes.error.message}`)
+    process.exit(1)
   }
-  await writer.close()
+
+  if (opts.base64) {
+    const idCid = CID.createV1(ucanto.CAR.code, identity.digest(archiveRes.ok))
+    if (opts.output) {
+      await fs.promises.writeFile(opts.output, idCid.toString(base64))
+    } else {
+      // add a newline when writing string to the console
+      console.log(idCid.toString(base64))
+    }
+  } else {
+    if (opts.output) {
+      await fs.promises.writeFile(opts.output, archiveRes.ok)
+    } else {
+      await new Promise((resolve, reject) => {
+        process.stdout.write(archiveRes.ok, err => {
+          if (err) return reject(err)
+          resolve({})
+        })
+      })
+    }
+  }
 }
 
 /**
