@@ -1,7 +1,7 @@
 {
   "name": "@storacha/ui-example-react-uploads-list",
   "private": true,
-  "version": "0.0.69",
+  "version": "0.0.73",
   "type": "module",
   "scripts": {
     "dev": "vite",
