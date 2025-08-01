@@ -12,15 +12,19 @@ type UsePlanResult = SWRResponse<PlanGetSuccess | undefined> & {
 }
 
 export const usePlan = (account: Account) => {
-  const result = useSWR<PlanGetSuccess | undefined>(planKey(account), {
+  const result = useSWR(planKey(account), {
     fetcher: async () => {
-      if (!account) return
+      console.log(`Loading plan for account ${account.toEmail()}...`)
       const result = await account.plan.get()
-      if (result.error) throw new Error('getting plan', { cause: result.error })
+      if (result && result.error) {
+        console.log(`Failed to get plan: ${result.error.toString()}`)
+        return result.error
+      }
       return result.ok
     },
     onError: logAndCaptureError
   })
+  
   // @ts-ignore it's important to assign this into the existing object
   // to avoid calling the getters in SWRResponse when copying values over -
   // I can't think of a cleaner way to do this but open to refactoring

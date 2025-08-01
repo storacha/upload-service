@@ -21,33 +21,23 @@ export default function IframeLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin='anonymous' />
-        <link href="https://fonts.googleapis.com/css2?family=Epilogue:ital@0;1&display=swap" rel="stylesheet" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-      </head>
-      <body className='bg-hot-red-light min-h-screen overflow-hidden font-epilogue' style={{backgroundColor: 'var(--hot-red-light) !important'}}>
-        <IframeProvider>
-          <Provider>
-            <MigrationsProvider>
-              <IframeAuthenticator>
-                <AuthenticationEnsurer>
-                  <MaybePlanGate>
-                    <SpaceEnsurer>
-                      <IframeSidebarLayout>
-                        {children}
-                      </IframeSidebarLayout>
-                    </SpaceEnsurer>
-                  </MaybePlanGate>
-                </AuthenticationEnsurer>
-              </IframeAuthenticator>
-            </MigrationsProvider>
-          </Provider>
-          <Toaster />
-        </IframeProvider>
-      </body>
-    </html>
+      <IframeProvider>
+        <Provider>
+          <MigrationsProvider>
+            <IframeAuthenticator>
+              <AuthenticationEnsurer>
+                <MaybePlanGate>
+                  <SpaceEnsurer>
+                    <IframeSidebarLayout>
+                      {children}
+                    </IframeSidebarLayout>
+                  </SpaceEnsurer>
+                </MaybePlanGate>
+              </AuthenticationEnsurer>
+            </IframeAuthenticator>
+          </MigrationsProvider>
+        </Provider>
+        <Toaster />
+      </IframeProvider>
   )
 } 

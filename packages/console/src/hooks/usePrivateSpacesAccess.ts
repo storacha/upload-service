@@ -21,7 +21,7 @@ export const usePrivateSpacesAccess = () => {
       setIsPaidUser(true) 
     } else if (plan) {
       // Check user's plan to determine if they are a paid or not
-      const isPaid = plan.product !== 'did:web:starter.web3.storage' && plan.product !== 'did:web:free.web3.storage'
+      const isPaid = plan.product !== 'did:web:starter.web3.storage' && plan.product !== 'did:web:free.web3.storage' && plan.product !== 'did:web:trial.storacha.network'
       setIsPaidUser(isPaid)
     } else {
        // Set as free plan by default

@@ -37,3 +37,7 @@ NEXT_PUBLIC_PRIVATE_SPACES_DOMAINS=storacha.network
 NEXT_PUBLIC_UCAN_KMS_URL=https://staging.kms.storacha.network
 NEXT_PUBLIC_UCAN_KMS_DID=did:web:staging.kms.storacha.network
 NEXT_PUBLIC_SSO_ALLOWED_ORIGINS=
+
+# SSO Iframe Stripe settings (for iframe-based SSO checkout)
+NEXT_PUBLIC_SSO_IFRAME_STRIPE_PRICING_TABLE_ID=prctbl_1RrNd0F6A5ufQX5vpB0sYPHm
+NEXT_PUBLIC_SSO_IFRAME_STRIPE_PRICING_TABLE_PUB_KEY=pk_test_51LO87hF6A5ufQX5viNsPTbuErzfavdrEFoBuaJJPfoIhzQXdOUdefwL70YewaXA32ZrSRbK4U4fqebC7SVtyeNcz00qmgNgueC

@@ -9,8 +9,15 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import SSOIntegrationGuide from '@/components/SSOIntegrationGuide'
 
 export default function TestIframePage() {
+  const [activeTab, setActiveTab] = useState('testing')
+
+  const tabs = [
+    { id: 'testing', label: 'Testing' },
+    { id: 'integration', label: 'Integration Guide' }
+  ]
   const [iframeRef, setIframeRef] = useState<HTMLIFrameElement | null>(null)
   const [messages, setMessages] = useState<string[]>([])
   const [userEmail, setUserEmail] = useState('test@partner.example')
@@ -55,7 +62,7 @@ export default function TestIframePage() {
       // Reset initialization flag for fresh start
       isInitializedRef.current = false
       addMessage(`Loading iframe with SSO provider: ${provider.toUpperCase()}`, 'SYSTEM')
-      addMessage('Iframe URL: /?sso=' + provider, 'SYSTEM')
+      addMessage('Iframe URL: /iframe/?sso=' + provider, 'SYSTEM')
       setSSOStatus('Loading console and checking if user is already authenticated...')
       setSSOInProgress(true)
       setShowSSOPopup(false)
@@ -65,10 +72,10 @@ export default function TestIframePage() {
     if (communicationPort) {
       const authData = {
         type: 'AUTH_DATA',
-        provider: provider,
+        authProvider: provider,
         email: userEmail,
-        userId: userId,
-        sessionToken: sessionToken || 'test_session_token'
+        externalUserId: userId,
+        externalSessionToken: sessionToken ? sessionToken : 'unused'
       }
       
       addMessage(`Starting SSO with ${provider.toUpperCase()}: ${JSON.stringify(authData)}`, 'PARENT→IFRAME')
@@ -151,10 +158,10 @@ export default function TestIframePage() {
           if (responsePort) {
             const authData = {
               type: 'AUTH_DATA',
-              provider: provider,
+              authProvider: provider,
               email: userEmail,
-              userId: userId,
-              sessionToken: sessionToken || 'test_session_token'
+              externalUserId: userId,
+              externalSessionToken: sessionToken ? sessionToken : 'unused'
             }
             
             addMessage(`Sending auth data: ${JSON.stringify(authData)}`, 'PARENT→IFRAME')
@@ -215,7 +222,29 @@ export default function TestIframePage() {
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Storacha Iframe Integration Test</h1>
+        <h1 className="text-3xl font-bold mb-8">Storacha Iframe Integration</h1>
+        
+        {/* Tab Navigation */}
+        <div className="flex border-b border-gray-200 mb-6">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 font-medium text-sm border-b-2 ${
+                activeTab === tab.id
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'testing' && (
+          <div>
+            <h2 className="text-2xl font-bold mb-6">Testing Interface</h2>
 
         {/* Instructions */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
@@ -351,11 +380,13 @@ export default function TestIframePage() {
             <div className="border border-gray-300 rounded-md overflow-hidden mx-auto" style={{ width: iframeWidth, height: iframeHeight }}>
               <iframe
                 ref={setIframeRef}
-                src={`/?sso=${provider}`}
+                src={`/iframe/?sso=${provider}`}
                 width="100%"
                 height="100%"
                 className="border-0"
                 title="Storacha Console"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
+                allow="payment"
               />
             </div>
           </div>
@@ -518,6 +549,15 @@ export default function TestIframePage() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+          </div>
+        )}
+
+        {/* Integration Guide Tab */}
+        {activeTab === 'integration' && (
+          <div>
+            <SSOIntegrationGuide />
           </div>
         )}
       </div>

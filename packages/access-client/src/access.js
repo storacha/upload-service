@@ -77,20 +77,20 @@ export const request = async (
   }
   if (sso) {
     if (typeof sso !== 'object') {
-      throw new Error('SSO parameter must be an object')
+      return fail('SSO parameter must be an object')
     }
 
     if (!sso.authProvider || typeof sso.authProvider !== 'string') {
-      throw new Error('SSO authProvider must be a non-empty string')
+      return fail('SSO authProvider must be a non-empty string')
     }
     if (!sso.externalUserId || typeof sso.externalUserId !== 'string') {
-      throw new Error('SSO externalUserId must be a non-empty string')
+      return fail('SSO externalUserId must be a non-empty string')
     }
     if (
       !sso.externalSessionToken ||
       typeof sso.externalSessionToken !== 'string'
     ) {
-      throw new Error('SSO externalSessionToken must be a non-empty string')
+      return fail('SSO externalSessionToken must be a non-empty string')
     }
 
     facts.push({
