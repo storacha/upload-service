@@ -2,7 +2,7 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import * as Signer from '@ucanto/principal/ed25519'
-import { importDAG } from '@ucanto/core/delegation'
+import { extract } from '@ucanto/core/delegation'
 import { parseLink } from '@ucanto/server'
 import * as DID from '@ipld/dag-ucan/did'
 import * as dagJSON from '@ipld/dag-json'
@@ -463,7 +463,7 @@ export const testSpace = {
     assert.ok(!listNone.output.includes(spaceDID))
 
     const add = await storacha
-      .args(['space', 'add', res.output])
+      .args(['space', 'add', res.output.trim()])
       .env(env.bob)
       .join()
     assert.equal(add.output.trim(), spaceDID)
@@ -932,18 +932,13 @@ export const testDelegation = {
         .env(env)
         .join()
 
-      const reader = await CarReader.fromIterable(
-        fs.createReadStream(proofPath)
-      )
-      const blocks = []
-      for await (const block of reader.blocks()) {
-        blocks.push(block)
-      }
+      const extractRes = await extract(await fs.promises.readFile(proofPath))
+      assert.equal(extractRes.error, undefined)
 
-      const delegation = importDAG(blocks)
-      assert.equal(delegation.audience.did(), bob.did())
-      assert.equal(delegation.capabilities[0].can, 'store/*')
-      assert.equal(delegation.capabilities[0].with, spaceDID)
+      const delegation = extractRes.ok
+      assert.equal(delegation?.audience.did(), bob.did())
+      assert.equal(delegation?.capabilities[0].can, 'store/*')
+      assert.equal(delegation?.capabilities[0].with, spaceDID)
     }
   ),
 
@@ -982,19 +977,16 @@ export const testDelegation = {
 
       assert.equal(res.status.success(), true)
 
-      const identityCid = parseLink(res.output, base64)
-      const reader = await CarReader.fromBytes(identityCid.multihash.digest)
-      const blocks = []
-      for await (const block of reader.blocks()) {
-        blocks.push(block)
-      }
+      const identityCid = parseLink(res.output.trim(), base64)
+      const extractRes = await extract(identityCid.multihash.digest)
+      assert.equal(extractRes.error, undefined)
 
-      const delegation = importDAG(blocks)
-      assert.equal(delegation.audience.did(), bob.did())
-      assert.equal(delegation.capabilities[0].can, 'store/add')
-      assert.equal(delegation.capabilities[0].with, spaceDID)
-      assert.equal(delegation.capabilities[1].can, 'upload/add')
-      assert.equal(delegation.capabilities[1].with, spaceDID)
+      const delegation = extractRes.ok
+      assert.equal(delegation?.audience.did(), bob.did())
+      assert.equal(delegation?.capabilities[0].can, 'store/add')
+      assert.equal(delegation?.capabilities[0].with, spaceDID)
+      assert.equal(delegation?.capabilities[1].can, 'upload/add')
+      assert.equal(delegation?.capabilities[1].with, spaceDID)
     }
   ),
 

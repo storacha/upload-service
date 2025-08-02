@@ -12,6 +12,7 @@ import * as PieceHasher from 'fr32-sha2-256-trunc254-padded-binary-tree-multihas
 import * as Account from './account.js'
 
 import { spaceAccess } from '@storacha/client/capability/access'
+import { parse as parseProof } from '@storacha/client/proof'
 import { AgentData } from '@storacha/access'
 import * as Space from './space.js'
 import {
@@ -431,7 +432,7 @@ export async function createDelegation(audienceDID, opts) {
       await fs.promises.writeFile(opts.output, archiveRes.ok)
     } else {
       await new Promise((resolve, reject) => {
-        process.stdout.write(archiveRes.ok, err => {
+        process.stdout.write(archiveRes.ok, (err) => {
           if (err) return reject(err)
           resolve({})
         })
