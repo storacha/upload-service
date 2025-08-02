@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 // @ts-expect-error no typings :(
 import tree from 'pretty-tree'
-import { importDAG } from '@ucanto/core/delegation'
+import { importDAG, extract } from '@ucanto/core/delegation'
 import * as CAR from '@ucanto/transport/car'
 import * as Signer from '@ucanto/principal/ed25519'
 import * as Link from 'multiformats/link'
@@ -135,6 +135,12 @@ export async function readProof(path) {
  * @param {Uint8Array} bytes Path to the proof file.
  */
 export async function readProofFromBytes(bytes) {
+  const extractRes = await extract(bytes)
+  if (extractRes.ok) {
+    return extractRes.ok
+  }
+
+  // try legacy extract
   const blocks = []
   try {
     const reader = await CarReader.fromBytes(bytes)
