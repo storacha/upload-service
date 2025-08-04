@@ -22,6 +22,11 @@ export default function SSOIntegrationGuide() {
     }))
   }
 
+  const navigateToTab = (tabId: string) => {
+    setActiveTab(tabId)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   return (
     <div className="max-w-5xl mx-auto">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -136,7 +141,7 @@ export default function SSOIntegrationGuide() {
             {/* Next Step Navigation */}
             <div className="text-center">
               <button
-                onClick={() => setActiveTab('implementation')}
+                onClick={() => navigateToTab('implementation')}
                 className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Next: Implementation Steps
@@ -202,8 +207,26 @@ export default function SSOIntegrationGuide() {
 iframe.src = 'https://console.storacha.network/iframe?sso=your-provider'
 iframe.style.width = '400px'
 iframe.style.height = '600px'
+iframe.title = 'Storacha Console'
+iframe.sandbox = 'allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation'
+iframe.allow = 'payment'
 document.body.appendChild(iframe)`}
             </pre>
+            
+            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <h4 className="font-semibold text-gray-900 mb-2 flex items-center">
+                <span className="text-yellow-600 mr-2">⚠️</span>
+                Important Security Properties
+              </h4>
+              <ul className="space-y-2 text-sm text-gray-700">
+                <li>
+                  <span className="font-medium">sandbox:</span> Restricts iframe capabilities for security while allowing necessary operations
+                </li>
+                <li>
+                  <span className="font-medium">allow=&quot;payment&quot;:</span> Required for Stripe checkout functionality in the Storacha console
+                </li>
+              </ul>
+            </div>
             </div>
 
             {/* Step 2 */}
@@ -307,7 +330,7 @@ function handleAuthError(error) {
             {/* Next Step Navigation */}
             <div className="text-center">
               <button
-                onClick={() => setActiveTab('examples')}
+                onClick={() => navigateToTab('examples')}
                 className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Next: Code Examples
@@ -433,6 +456,9 @@ export function StorachaSSOLogin({
     // Create iframe
     const iframe = document.createElement('iframe')
     iframe.src = \`https://console.storacha.network/iframe?sso=\${provider}\`
+    iframe.title = 'Storacha Console'
+    iframe.sandbox = 'allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation'
+    iframe.allow = 'payment'
     iframe.style.cssText = \`
       width: 400px;
       height: 600px;
@@ -475,7 +501,7 @@ export function StorachaSSOLogin({
             {/* Next Step Navigation */}
             <div className="text-center">
               <button
-                onClick={() => setActiveTab('testing')}
+                onClick={() => navigateToTab('testing')}
                 className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Next: Testing Guide
