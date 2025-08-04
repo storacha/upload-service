@@ -1,3 +1,19 @@
+## 2.9.0 (2025-08-04)
+
+### 🚀 Features
+
+- Fix: SSO Auth flow and iframe integration ([#336](https://github.com/storacha/upload-service/pull/336))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/encrypt-upload-client to 1.1.13
+- Updated @storacha/encrypt-upload-client to 1.1.13
+- Updated @storacha/ui-core to 2.4.96
+
+### ❤️ Thank You
+
+- Felipe Forbeck @fforbeck
+
 ## 2.8.21 (2025-08-01)
 
 ### 🧱 Updated Dependencies

@@ -1,3 +1,17 @@
+## 2.2.0 (2025-08-04)
+
+### 🚀 Features
+
+- Fix: SSO Auth flow and iframe integration ([#336](https://github.com/storacha/upload-service/pull/336))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.6.0
+
+### ❤️ Thank You
+
+- Felipe Forbeck @fforbeck
+
 ## 2.1.4 (2025-08-01)
 
 ### 🧱 Updated Dependencies
