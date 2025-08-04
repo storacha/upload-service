@@ -2,6 +2,9 @@
 
 import { useState } from 'react'
 
+/**
+ * Single Sign-on Integration Guide
+ */
 export default function SSOIntegrationGuide() {
   const [activeTab, setActiveTab] = useState('overview')
   const [openExamples, setOpenExamples] = useState<Record<string, boolean>>({
