@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/storacha/upload-service/compare/console-v2.1.3...console-v2.2.0) (2025-08-04)
+
+
+### Features
+
+* sso integration guide ([#343](https://github.com/storacha/upload-service/issues/343)) ([2be4dbb](https://github.com/storacha/upload-service/commit/2be4dbbc8dbc3d6369cf1126a6b6159368dac732))
+
 ## [2.1.3](https://github.com/storacha/upload-service/compare/console-v2.1.2...console-v2.1.3) (2025-08-01)
 
 
