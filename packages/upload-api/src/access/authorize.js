@@ -46,8 +46,8 @@ export const authorize = async ({ capability, invocation }, ctx) => {
 
   // Check if this is an SSO request
   const facts = invocation.facts || []
-  const sso = /** @type {API.SSOFact | undefined} */ (
-    facts.find((fact) => fact.sso)
+  const { sso } = /** @type {{ sso?: API.SSOFact }} */ (
+    facts.find((fact) => fact.sso) || {}
   )
   if (sso) {
     if (!ctx.ssoService) {
@@ -141,33 +141,36 @@ const ssoAuthorization = async (
   ssoFact,
   ssoService
 ) => {
-  if (!ssoFact.authProvider) {
+  const { authProvider, externalUserId, externalSessionToken } = ssoFact
+  if (!authProvider) {
     return Server.error(new Error('Missing SSO authorization provider'))
   }
 
-  if (!ssoFact.externalUserId) {
+  if (!externalUserId) {
     return Server.error(new Error('Missing SSO external user identifier'))
   }
 
-  if (!ssoFact.externalSessionToken) {
+  if (!externalSessionToken) {
     return Server.error(new Error('Missing SSO external session token'))
   }
 
-  const res = await ssoService.authorize({
+  const ssoParams = {
     email: DidMailto.toEmail(accountMailtoDID),
-    authProvider: ssoFact.authProvider,
-    externalUserId: ssoFact.externalUserId,
-    externalSessionToken: ssoFact.externalSessionToken,
+    authProvider,
+    externalUserId,
+    externalSessionToken,
     invocation,
-  })
+  }
 
+  const res = await ssoService.authorize(ssoParams)
   if (!res.ok) {
+    console.error('SSO authorization failed:', res.error)
     return res
   }
 
   const authConfirmationLink = res.ok
   return Server.ok({
-    expiration: Math.floor(Date.now() / 1000), // The user was already authenticated, so it expires now
+    expiration: Math.floor(Date.now() / 1000) + 60 * 15, // Give 15 minutes like OAuth flow
     // link to this authorization request
     request: invocation.cid,
   }).join(authConfirmationLink)

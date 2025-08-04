@@ -33,5 +33,16 @@ An example `.env.local` file can be found in `.env.tpl`.
 
 If you are using `w3infra`, the service URL will be displayed as the `UploadApiStack`'s `ApiEndpoint` output once `npm start` has successfully set up your development environment.
 
+### SSO Iframe Integration
+
+The console supports SSO (Single Sign-On) integration via iframe embedding. For SSO iframe checkout, you can configure custom Stripe pricing tables:
+
+```
+NEXT_PUBLIC_SSO_IFRAME_STRIPE_PRICING_TABLE_ID=your-sso-pricing-table-id
+NEXT_PUBLIC_SSO_IFRAME_STRIPE_PRICING_TABLE_PUB_KEY=your-sso-stripe-publishable-key
+```
+
+These pricing tables will be used automatically when the console detects it's running within an iframe context (SSO flow).
+
 <p style="text-align:center;padding-top:2rem">⁂</p>
 

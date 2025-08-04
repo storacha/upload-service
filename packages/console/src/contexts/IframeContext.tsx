@@ -6,6 +6,7 @@ interface IframeContextType {
   isIframe: boolean
   isClient: boolean
   ssoProvider: string | null
+  isDetectionComplete: boolean
 }
 
 const IframeContext = createContext<IframeContextType | undefined>(undefined)
@@ -14,6 +15,7 @@ export function IframeProvider({ children }: { children: ReactNode }) {
   const [isIframe, setIsIframe] = useState(false)
   const [ssoProvider, setSsoProvider] = useState<string | null>(null)
   const [isClient, setIsClient] = useState(false)
+  const [isDetectionComplete, setIsDetectionComplete] = useState(false)
 
   useEffect(() => {
     // Mark as client-side rendered
@@ -29,16 +31,18 @@ export function IframeProvider({ children }: { children: ReactNode }) {
     if (inIframe && provider) {
       setIsIframe(true)
       setSsoProvider(provider)
-    } else if (provider) {
-      console.log(`SSO provider '${provider}' detected but not in iframe context`)
     }
+    
+    // Mark detection as complete
+    setIsDetectionComplete(true)
   }, [])
 
   return (
     <IframeContext.Provider value={{
       isIframe,
       isClient,
-      ssoProvider
+      ssoProvider,
+      isDetectionComplete
     }}>
       {children}
     </IframeContext.Provider>

@@ -20,6 +20,7 @@ const startTransition =
 
 export type DatamodelProps = ServiceConfig & {
   receiptsEndpoint?: URL
+  skipInitialClaim?: boolean
 }
 
 export interface Datamodel {
@@ -99,6 +100,7 @@ export function useDatamodel({
   servicePrincipal,
   connection,
   receiptsEndpoint,
+  skipInitialClaim,
 }: DatamodelProps): Datamodel {
   const [client, setClient] = useState<Client>()
   const [events, setEvents] = useState<EventTarget>()
@@ -112,14 +114,18 @@ export function useDatamodel({
       connection,
       receiptsEndpoint,
     })
+    
     startTransition(() => {
       setClient(client)
       setEvents(events)
       setAccounts(Object.values(client.accounts()))
       setSpaces(client.spaces())
     })
-    await client.capability.access.claim()
-  }, [servicePrincipal, connection])
+    
+    if (!skipInitialClaim) {
+      await client.capability.access.claim()
+    }
+  }, [servicePrincipal, connection, skipInitialClaim])
 
   // run setupClient once each time it changes
   useEffect(() => {
