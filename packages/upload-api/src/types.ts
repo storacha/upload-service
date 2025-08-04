@@ -131,6 +131,13 @@ export interface SSOService {
  * SSO provider can validate a SSO auth request.
  */
 export interface SSOProvider {
+  /**
+   * The name of the SSO provider.
+   */
+  name: string
+  /**
+   * Validate a SSO auth request.
+   */
   validate: (
     ssoAuthParams: SSOAuthParams
   ) => Await<Result<SSOAuthResponse, Error>>
