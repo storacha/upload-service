@@ -4,6 +4,7 @@ import { UploadsList } from '@/components/UploadsList'
 import { useW3, UnknownLink, UploadListSuccess } from '@storacha/ui-react'
 import useSWR from 'swr'
 import { useRouter, usePathname } from 'next/navigation'
+import { PrivateSpaceGuard } from '@/components/PrivateSpaceGuard'
 import { createUploadsListKey } from '@/cache'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { logAndCaptureError } from '@/sentry'
@@ -44,11 +45,47 @@ export default function Page ({ params, searchParams }: PageProps): JSX.Element 
     keepPreviousData: true
   })
 
-  const router = useRouter()
   const pathname = usePathname()
 
   if (!space) return <div />
+  
+  // If space is private and user doesn't have access, the PrivateSpaceGuard will handle redirection
+  return (
+    <PrivateSpaceGuard spaceDID={spaceDID}>
+      <SpaceContent 
+        space={space} 
+        uploads={uploads} 
+        isLoading={isLoading} 
+        isValidating={isValidating}
+        onRefresh={mutate}
+        pathname={pathname}
+        searchParams={searchParams}
+      />
+    </PrivateSpaceGuard>
+  )
+}
 
+interface SpaceContentProps {
+  space: any // Replace with your Space type
+  uploads: UploadListSuccess | undefined
+  isLoading: boolean
+  isValidating: boolean
+  onRefresh: () => void
+  pathname: string
+  searchParams: { cursor?: string; pre?: string }
+}
+
+function SpaceContent({ 
+  space, 
+  uploads, 
+  isLoading, 
+  isValidating, 
+  onRefresh, 
+  pathname, 
+  searchParams 
+}: SpaceContentProps) {
+  const router = useRouter()
+  
   const handleSelect = (root: UnknownLink) => router.push(`${pathname}/root/${root}`)
   const handleNext = uploads?.after && (uploads.results.length === pageSize)
     ? () => router.push(`${pathname}?cursor=${uploads.after}`)
@@ -56,7 +93,6 @@ export default function Page ({ params, searchParams }: PageProps): JSX.Element 
   const handlePrev = searchParams.cursor && uploads?.before
     ? () => router.push(`${pathname}?cursor=${uploads.before ?? ''}&pre=true`)
     : undefined
-  const handleRefresh = () => mutate()
 
   return (
     <>
@@ -69,7 +105,7 @@ export default function Page ({ params, searchParams }: PageProps): JSX.Element 
         onSelect={handleSelect}
         onNext={handleNext}
         onPrev={handlePrev}
-        onRefresh={handleRefresh}
+        onRefresh={onRefresh}
       />
     </>
   )
