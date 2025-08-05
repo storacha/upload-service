@@ -1,3 +1,13 @@
+## 1.4.12 (2025-08-05)
+
+### 🩹 Fixes
+
+- feat: use delegation archive function ([#341](https://github.com/storacha/upload-service/pull/341))
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.4.11 (2025-08-04)
 
 ### 🧱 Updated Dependencies
