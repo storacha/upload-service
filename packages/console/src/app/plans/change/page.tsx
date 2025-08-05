@@ -61,30 +61,34 @@ function PlanSection ({ account, planID, planName, planLabel, flatFee, flatFeeAl
     }
   }
   return (
-    <div className={`rounded-2xl font-epilogue text-hot-red border border-hot-red w-[21rem] bg-white`}>
-      <div className='uppercase text-md px-5 py-2 flex flex-row justify-between w-full border-b border-hot-red'>
+    <div className={`rounded-2xl font-epilogue text-hot-red border border-hot-red w-full max-w-sm mx-auto lg:max-w-none lg:w-[21rem] bg-white`}>
+      <div className='uppercase text-sm sm:text-md px-4 sm:px-5 py-2 flex flex-row justify-between w-full border-b border-hot-red'>
         <div>{planName}</div>
-        <div>{planLabel}</div>
+        <div className='text-xs sm:text-md'>{planLabel}</div>
       </div>
-      <div className='px-5 py-6'>
-        <p className='text-5xl mt-2 mb-5'>${flatFee}/mo</p>
-        <p className='text-2xl uppercase'>{flatFeeAllotment.toLocaleString()}GB storage</p>
-        <p className='text-xs mb-5'>Additional at ${perGbFee}/GB per month</p>
-        <p className='text-2xl uppercase'>{flatFeeAllotment.toLocaleString()}GB egress</p>
+      <div className='px-4 sm:px-5 py-4 sm:py-6'>
+        <p className='text-3xl sm:text-4xl lg:text-5xl mt-2 mb-4 sm:mb-5'>${flatFee}/mo</p>
+        <p className='text-lg sm:text-xl lg:text-2xl uppercase'>{flatFeeAllotment.toLocaleString()}GB storage</p>
+        <p className='text-xs mb-4 sm:mb-5'>Additional at ${perGbFee}/GB per month</p>
+        <p className='text-lg sm:text-xl lg:text-2xl uppercase'>{flatFeeAllotment.toLocaleString()}GB egress</p>
         <p className='text-sm uppercase'>per month</p>
-        <p className='text-xs mb-5'>Additional at ${perGbFee}/GB per month</p>
+        <p className='text-xs mb-4 sm:mb-5'>Additional at ${perGbFee}/GB per month</p>
         <div className='text-center'>
           {
             (isLoading || isUpdatingPlan || !currentPlanID) ? (
               <DefaultLoader className='h-6 w-6' />
             ) : (
               isCurrentPlan ? (
-                <button className={`inline-block border border-hot-red bg-white text-hot-red font-epilogue uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`} disabled={true}>
-                  <CheckIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Current Plan
+                <button className={`inline-block border border-hot-red bg-white text-hot-red font-epilogue uppercase text-xs sm:text-sm px-4 sm:px-6 py-2 rounded-full whitespace-nowrap cursor-not-allowed opacity-75`} disabled={true}>
+                  <CheckIcon className='h-4 w-4 sm:h-5 sm:w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Current Plan
                 </button>
               ) : (
-                <button onClick={() => selectPlan(planID)} className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`} disabled={isCurrentPlan || isLoading}>
-                  <RocketLaunchIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> {currentPlanID && buttonText(currentPlanID, planID)}
+                <button 
+                  onClick={() => selectPlan(planID)} 
+                  className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-xs sm:text-sm px-4 sm:px-6 py-2 rounded-full whitespace-nowrap ${isCurrentPlan ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`} 
+                  disabled={isCurrentPlan || isLoading || isUpdatingPlan}
+                >
+                  <RocketLaunchIcon className='h-4 w-4 sm:h-5 sm:w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> {currentPlanID && buttonText(currentPlanID, planID)}
                 </button>
               )
             )
@@ -174,8 +178,10 @@ function DelegatePlanCreateAdminSessionForm ({ className = '', account }: { clas
   return (
     <form onSubmit={handleSubmit(onSubmit)} className={className}>
       <label className='block mb-4'>
-        <p className='text-black mb-4'>Delegate access to {DidMailto.toEmail(account.did())}&apos;s billing admin portal:</p>
-        <input className='text-black py-2 px-2 rounded-xl block mb-4 border border-hot-red w-80'
+        <p className='text-black mb-4 break-words max-w-full overflow-hidden'>
+          Delegate access to <span className='break-all'>{DidMailto.toEmail(account.did())}</span>&apos;s billing admin portal:
+        </p>
+        <input className='text-black py-2 px-2 rounded-xl block mb-4 border border-hot-red w-full max-w-md'
           placeholder='To Email' type='email'
           {...register('email')} />
       </label>
@@ -189,11 +195,11 @@ function CustomerPortalLink ({ did }: { did: AccountDID }) {
   return (
     <>
       {customerPortalLink ? (
-        <div className='flex flex-row'>
-          <button className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm mr-2 px-6 py-2 rounded-full whitespace-nowrap' onClick={() => generateCustomerPortalLink(did)} disabled={generatingCustomerPortalLink}>
+        <div className='flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2'>
+          <button className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap' onClick={() => generateCustomerPortalLink(did)} disabled={generatingCustomerPortalLink}>
             <ArrowPathIcon className={`h-5 w-5 inline-block align-middle ${generatingCustomerPortalLink ? 'animate-spin' : ''}`} />
           </button>
-          <a className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm mr-2 px-6 py-2 rounded-full whitespace-nowrap' href={customerPortalLink} target="_blank" rel="noopener noreferrer">
+          <a className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap text-center' href={customerPortalLink} target="_blank" rel="noopener noreferrer">
             Open Billing Portal
             <ArrowTopRightOnSquareIcon className='relative inline h-5 w-4 ml-1 -mt-1' />
           </a>
@@ -243,18 +249,18 @@ function AccountAdmin ({ account, accountNamePrefix = '' }: AccountAdminProps) {
   const canDelegate = account.agent.proofs([{ can: AccessCaps.delegate.can, with: account.did() }]).length > 0
   return (
     <div className='mb-8'>
-      <div className='mb-6 bg-opacity-80 bg-white text-hot-red py-2 px-5 rounded-full break-words max-w-4xl shadow-inner'>
-        <H2>{accountNamePrefix}{DidMailto.toEmail(account.did())}</H2>
+      <div className='mb-6 bg-opacity-80 bg-white text-hot-red py-2 px-4 sm:px-5 rounded-full break-words max-w-full sm:max-w-4xl shadow-inner'>
+        <H2 className='text-sm sm:text-base lg:text-lg'>{accountNamePrefix}{DidMailto.toEmail(account.did())}</H2>
       </div>
-      <div className='max-w-4xl'>
-        <div className='flex flex-row xl:space-x-4 mb-4'>
+      <div className='max-w-full sm:max-w-4xl'>
+        <div className='flex flex-col lg:flex-row lg:space-x-4 space-y-4 lg:space-y-0 mb-4'>
           <PlanSection account={account} planID={PLANS['starter']} planName='Starter' planLabel='🌶️' flatFee={0} flatFeeAllotment={5} perGbFee={0.15} />
           <PlanSection account={account} planID={PLANS['lite']} planName='Lite' planLabel='🌶️🌶️' flatFee={10} flatFeeAllotment={100} perGbFee={0.05} />
           <PlanSection account={account} planID={PLANS['business']} planName='Business' planLabel='🔥 Best Value 🔥' flatFee={100} flatFeeAllotment={2000} perGbFee={0.03} />
         </div>
-        <div className='rounded-2xl font-epilogue text-hot-red border border-hot-red bg-white p-5'>
-          <H1 className='mt-0 mb-4'>Billing Administration</H1>
-          <p className='text-black mb-4'>Access Billing Admin Portal</p>
+        <div className='rounded-2xl font-epilogue text-hot-red border border-hot-red bg-white p-4 sm:p-5'>
+          <H1 className='mt-0 mb-4 text-lg sm:text-xl lg:text-2xl'>Billing Administration</H1>
+          <p className='text-black mb-4 text-sm sm:text-base'>Access Billing Admin Portal</p>
           <CustomerPortalLink did={account.did()} />
           {canDelegate && <DelegatePlanCreateAdminSessionForm account={account} className='mt-6' />}
         </div>
