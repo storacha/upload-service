@@ -1,42 +1,63 @@
 import { useW3 } from '@storacha/ui-react'
-import { useState, useEffect } from 'react'
+import { useCallback, useMemo } from 'react'
 import { usePlan } from '@/hooks'
+import { PLANS } from '@/app/plans/change/page'
 
 export const usePrivateSpacesAccess = () => {
   const [{ accounts }] = useW3()
   const account = accounts[0]
   
-  const { data: plan, error: planError } = usePlan(account)
+  const { data: plan, isLoading } = usePlan(account)
   const email = account?.toEmail()
-  const [isPaidUser, setIsPaidUser] = useState<boolean>(false)
   
   // Get allowed domains from environment variable
-  const allowedDomains = process.env.NEXT_PUBLIC_PRIVATE_SPACES_DOMAINS?.split(',') 
-  || ['dmail.ai', 'storacha.network']
+  const allowedDomains = useMemo(() => 
+    process.env.NEXT_PUBLIC_PRIVATE_SPACES_DOMAINS?.split(',') || 
+    ['dmail.ai', 'storacha.network']
+  , [])
   
-  useEffect(() => {
-    const isStorachaUser = email?.endsWith('@storacha.network')
-    if (isStorachaUser) {
-      // Assume paid user for testing private spaces
-      setIsPaidUser(true) 
-    } else if (plan) {
-      // Check user's plan to determine if they are a paid or not
-      const isPaid = plan.product !== 'did:web:starter.web3.storage' && plan.product !== 'did:web:free.web3.storage' && plan.product !== 'did:web:trial.storacha.network'
-      setIsPaidUser(isPaid)
-    } else {
-       // Set as free plan by default
-      setIsPaidUser(false)
-    }
-  }, [plan, planError, email])
+  // Check if user is a Storacha user (always has access)
+  const isStorachaUser = useMemo(() => 
+    email?.endsWith('@storacha.network') ?? false
+  , [email])
+  
+  // Check if user has a paid plan
+  const isPaidUser = useMemo(() => {
+    if (isStorachaUser) return true
+    if (!plan?.product) return false
+    return plan.product === PLANS.lite || 
+           plan.product === PLANS.business
+  }, [plan, isStorachaUser])
   
   // Check if user's email domain is in the allowed domains list
-  const isEligibleDomain = allowedDomains.some(domain => email?.endsWith(`@${domain}`))
+  const isEligibleDomain = useMemo(() => 
+    email ? allowedDomains.some(domain => email.endsWith(`@${domain}`)) : false
+  , [email, allowedDomains])
+  
+  // Debug logging
+  const debugInfo = useCallback(() => ({
+    email,
+    isStorachaUser,
+    isPaidUser,
+    isEligibleDomain,
+    plan: plan?.product,
+    planLoading: isLoading
+  }), [email, isStorachaUser, isPaidUser, isEligibleDomain, plan, isLoading])
+  
+  if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useMemo(() => {
+      console.debug('Private spaces access debug:', debugInfo())
+    }, [debugInfo])
+  }
+  
   return {
     canAccessPrivateSpaces: isEligibleDomain && isPaidUser,
-    shouldShowUpgradePrompt: isEligibleDomain && !isPaidUser,
+    shouldShowUpgradePrompt: isEligibleDomain && !isPaidUser && !isStorachaUser,
     shouldShowPrivateSpacesTab: isEligibleDomain,
     email,
     plan,
-    planLoading: !plan && !planError // Loading if we don't have plan data and no error
+    planLoading: isLoading,
+    debugInfo // Export for debugging
   }
 }

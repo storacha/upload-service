@@ -29,7 +29,7 @@ interface PlanSectionProps {
   perGbFee: number
 }
 
-const PLANS: Record<string, DID<'web'>> = {
+export const PLANS: Record<string, DID<'web'>> = {
   starter: 'did:web:starter.web3.storage',
   lite: 'did:web:lite.web3.storage',
   business: 'did:web:business.web3.storage',

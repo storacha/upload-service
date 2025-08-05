@@ -38,9 +38,13 @@ export function SpaceCreatorForm({
   const [name, setName] = useState('')
   const [space, setSpace] = useState<Space>()
   const [accessType, setAccessType] = useState<'public' | 'private'>('public')
-
-  const { canAccessPrivateSpaces, shouldShowUpgradePrompt } = usePrivateSpacesAccess()
-  const { shouldShowPrivateSpacesTab } = usePrivateSpacesAccess()
+  
+  const { 
+    canAccessPrivateSpaces, 
+    shouldShowUpgradePrompt, 
+    shouldShowPrivateSpacesTab,
+    planLoading
+  } = usePrivateSpacesAccess()
 
   function resetForm(): void {
     setName('')
@@ -138,6 +142,14 @@ export function SpaceCreatorForm({
     )
   }
 
+  if (planLoading) {
+    return (
+      <div className={`${className} flex justify-center items-center p-8`}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-hot-red"></div>
+      </div>
+    )
+  }
+
   if (submitted) {
     return (
       <div className={className}>
@@ -183,11 +195,18 @@ export function SpaceCreatorForm({
                   </p>
                 </div>
               </label>
-              <label className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer ${
-                canAccessPrivateSpaces 
-                  ? accessType === 'private' ? 'border-hot-red' : 'border-gray-200 hover:border-hot-red' 
-                  : 'border-gray-100 bg-gray-50 cursor-not-allowed'
-              }`}>
+              <label 
+                className={`flex items-start gap-3 p-3 border rounded-lg ${
+                  canAccessPrivateSpaces 
+                    ? 'cursor-pointer hover:border-hot-red' 
+                    : 'cursor-not-allowed bg-gray-50'
+                } ${accessType === 'private' ? 'border-hot-red' : 'border-gray-200'}`}
+                onClick={(e) => {
+                  if (!canAccessPrivateSpaces) {
+                    e.preventDefault()
+                  }
+                }}
+              >
                 <input
                   type='radio'
                   name='accessType'
