@@ -150,16 +150,18 @@ export function SpaceCreatorForm({
     <div className={className}>
       <form className='' onSubmit={(e: React.FormEvent<HTMLFormElement>) => { void onSubmit(e) }}>
         <label className='block mb-2 uppercase text-xs text-hot-red font-epilogue m-1' htmlFor='space-name'>Name</label>
-        <input
-          id='space-name'
-          className='text-black py-2 px-2 rounded-xl block mb-4 border border-hot-red w-80'
-          placeholder='Name'
-          value={name}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => {
-            setName(e.target.value)
-          }}
-          required={true}
-        />
+        <div className='w-full max-w-md py-2'>
+          <input
+            id='space-name'
+            className='text-black py-2 px-4 rounded-xl block w-full border border-hot-red focus:ring-1 focus:ring-hot-red focus:border-hot-red outline-none transition-all'
+            placeholder='Name'
+            value={name}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => {
+              setName(e.target.value)
+            }}
+            required={true}
+          />
+        </div>
         {shouldShowPrivateSpacesTab && (
           <div className='mb-4'>
             <div className='flex flex-col gap-2'>
