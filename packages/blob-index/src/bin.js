@@ -100,12 +100,11 @@ cli
     if (path) {
       bytes = await fs.promises.readFile(path)
     } else {
-      const src = /** @type {ReadableStream<Uint8Array>} */ (Readable.toWeb(process.stdin))
-      const chunks = /** @type {Uint8Array[]} */ ([])
-      await src.pipeTo(new WritableStream({
-        write (chunk) { chunks.push(chunk) }
-      }))
-      bytes = new Uint8Array(await new Blob(chunks).arrayBuffer())
+      const chunks = []
+      for await (const chunk of process.stdin) {
+        chunks.push(chunk)
+      }
+      bytes = await new Blob(chunks).bytes()
     }
     const result = ShardedDAGIndex.extract(bytes)
     if (result.error) {
