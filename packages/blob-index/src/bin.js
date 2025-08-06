@@ -96,7 +96,17 @@ cli
   .example('inspect path/to/index.car.idx')
   .describe('Inspect a sharded DAG index.')
   .action(async (path) => {
-    const bytes = await fs.promises.readFile(path)
+    let bytes
+    if (path) {
+      bytes = await fs.promises.readFile(path)
+    } else {
+      const src = /** @type {ReadableStream<Uint8Array>} */ (Readable.toWeb(process.stdin))
+      const chunks = /** @type {Uint8Array[]} */ ([])
+      await src.pipeTo(new WritableStream({
+        write (chunk) { chunks.push(chunk) }
+      }))
+      bytes = new Uint8Array(await new Blob(chunks).arrayBuffer())
+    }
     const result = ShardedDAGIndex.extract(bytes)
     if (result.error) {
       throw new Error('extracting sharded DAG index', { cause: result.error })
