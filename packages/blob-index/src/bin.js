@@ -96,7 +96,16 @@ cli
   .example('inspect path/to/index.car.idx')
   .describe('Inspect a sharded DAG index.')
   .action(async (path) => {
-    const bytes = await fs.promises.readFile(path)
+    let bytes
+    if (path) {
+      bytes = await fs.promises.readFile(path)
+    } else {
+      const chunks = []
+      for await (const chunk of process.stdin) {
+        chunks.push(chunk)
+      }
+      bytes = await new Blob(chunks).bytes()
+    }
     const result = ShardedDAGIndex.extract(bytes)
     if (result.error) {
       throw new Error('extracting sharded DAG index', { cause: result.error })
