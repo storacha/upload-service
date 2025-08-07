@@ -2,7 +2,7 @@ import type { ChangeEvent } from 'react'
 
 import React, { useState } from 'react'
 import { ContentServeService, Space, useW3 } from '@storacha/ui-react'
-import Loader from '../components/Loader'
+import Loader, { TopLevelLoader } from '../components/Loader'
 import { DIDKey } from '@ucanto/interface'
 import { DidIcon } from './DidIcon'
 import Link from 'next/link'
@@ -144,9 +144,7 @@ export function SpaceCreatorForm({
 
   if (planLoading) {
     return (
-      <div className={`${className} flex justify-center items-center p-8`}>
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-hot-red"></div>
-      </div>
+      <TopLevelLoader />
     )
   }
 
