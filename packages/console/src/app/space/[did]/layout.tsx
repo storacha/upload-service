@@ -24,10 +24,10 @@ export default function Layout ({children, params}: LayoutProps): JSX.Element {
   const space = spaces.find(s => s.did() === spaceDID)
   if (!space) {
     console.warn(`not a known space to this agent: ${spaceDID}`)
-    return <h1 className='text-center text-2xl text-hot-red flex flex-col gap-4'>
+    return <div className='text-center text-2xl text-hot-red flex flex-col gap-4'>
       <h1>Space not found: {spaceDID}</h1>
       <Link href='/' className="underline">Back to spaces</Link>
-    </h1>
+    </div>
   }
 
   return (
