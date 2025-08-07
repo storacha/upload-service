@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.2.1](https://github.com/storacha/upload-service/compare/console-v2.2.0...console-v2.2.1) (2025-08-07)
+
+
+### Fixes
+
+* **console:** several fixes for mobile/smaller dimensions windows ([#345](https://github.com/storacha/upload-service/issues/345)) ([b0b12b3](https://github.com/storacha/upload-service/commit/b0b12b3f9d0dab66135679a0b21e084f1578cce9))
+* upgrade to enable private spaces ([#348](https://github.com/storacha/upload-service/issues/348)) ([b2b90b1](https://github.com/storacha/upload-service/commit/b2b90b15d6bcd9badfd6c09e52add420b316621e))
+
 ## [2.2.0](https://github.com/storacha/upload-service/compare/console-v2.1.3...console-v2.2.0) (2025-08-04)
 
 
