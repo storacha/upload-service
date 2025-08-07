@@ -2,7 +2,7 @@ import type { ChangeEvent } from 'react'
 
 import React, { useState } from 'react'
 import { ContentServeService, Space, useW3 } from '@storacha/ui-react'
-import Loader from '../components/Loader'
+import Loader, { TopLevelLoader } from '../components/Loader'
 import { DIDKey } from '@ucanto/interface'
 import { DidIcon } from './DidIcon'
 import Link from 'next/link'
@@ -38,9 +38,13 @@ export function SpaceCreatorForm({
   const [name, setName] = useState('')
   const [space, setSpace] = useState<Space>()
   const [accessType, setAccessType] = useState<'public' | 'private'>('public')
-
-  const { canAccessPrivateSpaces, shouldShowUpgradePrompt } = usePrivateSpacesAccess()
-  const { shouldShowPrivateSpacesTab } = usePrivateSpacesAccess()
+  
+  const { 
+    canAccessPrivateSpaces, 
+    shouldShowUpgradePrompt, 
+    shouldShowPrivateSpacesTab,
+    planLoading
+  } = usePrivateSpacesAccess()
 
   function resetForm(): void {
     setName('')
@@ -138,6 +142,12 @@ export function SpaceCreatorForm({
     )
   }
 
+  if (planLoading) {
+    return (
+      <TopLevelLoader />
+    )
+  }
+
   if (submitted) {
     return (
       <div className={className}>
@@ -183,11 +193,18 @@ export function SpaceCreatorForm({
                   </p>
                 </div>
               </label>
-              <label className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer ${
-                canAccessPrivateSpaces 
-                  ? accessType === 'private' ? 'border-hot-red' : 'border-gray-200 hover:border-hot-red' 
-                  : 'border-gray-100 bg-gray-50 cursor-not-allowed'
-              }`}>
+              <label 
+                className={`flex items-start gap-3 p-3 border rounded-lg ${
+                  canAccessPrivateSpaces 
+                    ? 'cursor-pointer hover:border-hot-red' 
+                    : 'cursor-not-allowed bg-gray-50'
+                } ${accessType === 'private' ? 'border-hot-red' : 'border-gray-200'}`}
+                onClick={(e) => {
+                  if (!canAccessPrivateSpaces) {
+                    e.preventDefault()
+                  }
+                }}
+              >
                 <input
                   type='radio'
                   name='accessType'
