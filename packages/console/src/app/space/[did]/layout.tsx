@@ -5,6 +5,7 @@ import { useW3 } from '@storacha/ui-react'
 import { DidIcon } from '@/components/DidIcon'
 import { Nav, NavLink } from '@/components/Nav'
 import { QueueListIcon, ShareIcon, CloudArrowUpIcon } from '@heroicons/react/24/outline'
+import Link from 'next/link'
 
 interface LayoutProps extends PropsWithChildren {
   params: {
@@ -23,7 +24,10 @@ export default function Layout ({children, params}: LayoutProps): JSX.Element {
   const space = spaces.find(s => s.did() === spaceDID)
   if (!space) {
     console.warn(`not a known space to this agent: ${spaceDID}`)
-    return <div />
+    return <h1 className='text-center text-2xl text-hot-red flex flex-col gap-4'>
+      <h1>Space not found: {spaceDID}</h1>
+      <Link href='/' className="underline">Back to spaces</Link>
+    </h1>
   }
 
   return (
