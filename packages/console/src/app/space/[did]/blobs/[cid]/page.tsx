@@ -9,24 +9,22 @@ interface PageProps {
   params: {
     did: string
     cid: string
-    shard: string
   }
 }
 
-export default function ItemPage ({ params }: PageProps): JSX.Element {
+export default function BlobPage({ params }: PageProps): JSX.Element {
   const [{ client, spaces }] = useW3()
   const spaceDID = decodeURIComponent(params.did)
-  const space = spaces.find(s => s.did() === spaceDID)
-  const root = parseLink(params.cid)
-  const shard = parseLink(params.shard).toV1()
+  const space = spaces.find((s) => s.did() === spaceDID)
+  const blob = parseLink(params.cid).toV1()
 
   if (!space) {
     return <h1>Space not found</h1>
   }
   return (
     <div>
-      <Breadcrumbs space={space.did()} root={root} shard={shard} />
-      <ShardDetail client={client} space={space} shard={shard}/>
+      <Breadcrumbs space={space.did()} blob={blob} />
+      <ShardDetail client={client} space={space} shard={blob} />
     </div>
   )
 }

@@ -3,7 +3,7 @@ import { ChevronRightIcon } from '@heroicons/react/24/outline'
 import { SpaceDID, UnknownLink } from '@storacha/ui-react'
 import { shortenCID, shortenDID } from '@/lib'
 
-export function Breadcrumbs ({ space, root, shard }: { space: SpaceDID, root?: UnknownLink, shard?: UnknownLink }) {
+export function Breadcrumbs ({ space, root, shard, blob }: { space: SpaceDID, root?: UnknownLink, shard?: UnknownLink, blob?: UnknownLink }) {
   const crumbs = []
   crumbs.push(
     <Link key='spaces' title='Spaces' href='/' className='underline font-mono text-sm'>Spaces</Link>,
@@ -25,6 +25,12 @@ export function Breadcrumbs ({ space, root, shard }: { space: SpaceDID, root?: U
         <span key={root.toString()} title={`Upload: ${root}`} className='font-mono text-sm'>{shortenCID(root)}</span>
       )
     }
+  } else if (blob) {
+    crumbs.push(
+      <Link key={space} title={`Space: ${space}`} href={`/space/${space}`} className="underline font-mono text-sm">{shortenDID(space)}</Link>,
+      <ChevronRightIcon key=">1" className="w-8 inline-block align-middle mb-1 px-2 py-0" />,
+      <Link key={blob.toString()} title={`Blob: ${blob}`} href={`/space/${space}/blobs/${blob}`} className="underline font-mono text-sm">{shortenCID(blob)}</Link>
+    )
   } else {
     crumbs.push(
       <span key={space} title={`Space: ${space}`} className='font-mono text-sm'>{shortenDID(space)}</span>
