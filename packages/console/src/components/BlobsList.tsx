@@ -4,8 +4,7 @@ import {
   ChevronRightIcon,
   ArrowPathIcon,
 } from '@heroicons/react/20/solid'
-import { Space, SpaceBlobListSuccess, UnknownLink } from '@storacha/ui-react'
-import * as raw from 'multiformats/codecs/raw'
+import { Space, SpaceBlobListSuccess } from '@storacha/ui-react'
 import * as Digest from 'multiformats/hashes/digest'
 import * as MFLink from 'multiformats/link'
 import { codec as CAR } from '@ucanto/transport/car'
