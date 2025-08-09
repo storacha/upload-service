@@ -12,6 +12,7 @@ import { SpaceFinder } from './SpaceFinder'
 import { usePathname, useRouter } from 'next/navigation'
 import { H2 } from './Text'
 import { SidebarMigrations } from './SidebarMigrations'
+import Link from 'next/link'
 
 const navLinks = [
   { name: 'Terms', href: 'https://docs.storacha.network/terms/' },
@@ -43,8 +44,16 @@ function Sidebar ({ sidebar = <div></div> }: SidebarComponentProps): JSX.Element
             <Logo className='pr-4 block' />
           </header>
           <div className='my-6'>
-            <H2 className='text-white'>Spaces</H2>
-            <SpaceFinder spaces={spaces} selected={space} setSelected={goToSpace} />
+            <H2 className='text-hot-red font-bold'>Spaces</H2>
+            <div className='bg-white rounded-2xl p-3 shadow-sm overflow-hidden transition-all duration-200 ease-out max-h-32 focus-within:max-h-96 focus-within:shadow-lg border border-hot-red'>
+              <SpaceFinder spaces={spaces} selected={space} setSelected={goToSpace} />
+              <Link
+                href='/space/create'
+                className='mt-3 block w-full text-center bg-hot-red text-white rounded-full py-3  text-sm font-bold'
+              >
+                + Create New Space
+              </Link>
+            </div>
           </div>
           <div className='my-6'>
             <SidebarMigrations />
