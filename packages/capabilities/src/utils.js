@@ -3,12 +3,25 @@ import { DID, Schema, fail, ok } from '@ucanto/validator'
 import { equals } from 'multiformats/bytes'
 import { base58btc } from 'multiformats/bases/base58'
 
-// e.g. did:web:storacha.network or did:web:staging.storacha.network
+/**
+ * Example: did:plc:ewvi7nxzyoun6zhxrhs64oiz
+ */
+export const PlcDID = DID.match({ method: 'plc' })
+
+/**
+ * Example: did:web:storacha.network or did:web:staging.storacha.network
+ */
 export const ProviderDID = DID.match({ method: 'web' })
 
+/**
+ * Example: did:key:z6MkiBeiHFA6kbA2mchg1F9juxCuHuLgymzJpanKswpBZmQT
+ */
 export const SpaceDID = DID.match({ method: 'key' })
 
-export const AccountDID = DID.match({ method: 'mailto' })
+/**
+ * Example: did:mailto:storacha.network:alice or did:plc:ewvi7nxzyoun6zhxrhs64oiz
+ */
+export const AccountDID = DID.match({ method: 'mailto' }).or(PlcDID)
 
 export const Await = Schema.struct({
   'ucan/await': Schema.tuple([Schema.string(), Schema.link()]),

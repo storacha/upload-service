@@ -1,7 +1,7 @@
 import * as Ucanto from '@ucanto/interface'
 
 interface ByAudience {
-  audience: Ucanto.DID<'key' | 'mailto'>
+  audience: Ucanto.DID<'key' | 'mailto' | 'plc'>
 }
 export type Query = ByAudience
 
