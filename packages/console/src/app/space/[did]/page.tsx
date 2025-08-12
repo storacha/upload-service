@@ -8,6 +8,7 @@ import { PrivateSpaceGuard } from '@/components/PrivateSpaceGuard'
 import { createUploadsListKey } from '@/cache'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { logAndCaptureError } from '@/sentry'
+import BlobsOrUploads from '@/components/BlobsOrUploads'
 
 const pageSize = 15
 
@@ -97,6 +98,7 @@ function SpaceContent({
   return (
     <>
       <Breadcrumbs space={space.did()} />
+      <BlobsOrUploads space={space.did()} selected="uploads"/>
       <UploadsList
         space={space}
         uploads={uploads?.results ?? []}
