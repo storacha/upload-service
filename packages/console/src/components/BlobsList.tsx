@@ -5,13 +5,12 @@ import {
   ArrowPathIcon,
 } from '@heroicons/react/20/solid'
 import { Space, SpaceBlobListSuccess } from '@storacha/ui-react'
-import * as Digest from 'multiformats/hashes/digest'
-import * as MFLink from 'multiformats/link'
-import { codec as CAR } from '@ucanto/transport/car'
+import { base58btc } from 'multiformats/bases/base58'
 
 import Link from 'next/link'
 import { BlobItem } from '@storacha/access'
 import { usePathname } from 'next/navigation'
+import { filesize } from '@/lib'
 
 interface BlobsProps {
   space: Space
@@ -69,11 +68,12 @@ function Blobs({
         >
           <thead className="bg-white text-xs font-bold text-left text-hot-red">
             <tr>
-              <th className="p-4 w-full font-epilogue uppercase text-sm">
-                CID
+              <th className="p-4 w-96 font-epilogue uppercase text-sm">CID</th>
+              <th className="p-4 pl-2 w-48 font-epilogue uppercase text-sm">
+                Timestamp
               </th>
               <th className="p-4 pl-2 w-40 font-epilogue uppercase text-sm">
-                Timestamp
+                Size
               </th>
             </tr>
           </thead>
@@ -134,32 +134,26 @@ function Blobs({
   )
 }
 
-function BlobRow({
-  blob,
-}: {
-  blob: BlobItem
-}) {
-  const cid = MFLink.create(CAR.code, Digest.decode(blob.blob.digest)).toV1()
-  const pathname = usePathname()
+function BlobRow({ blob }: { blob: BlobItem }) {
+  const digestStr = base58btc.encode(blob.blob.digest)
   return (
     <tr
       className={`cursor-pointer border-t border-hot-red hover:bg-hot-yellow-light bg-white`}
     >
       <td className="w-full">
-        <a
-          href={`${pathname}/${cid.toString()}`}
-          className="block px-4 py-2 font-mono text-xs overflow-hidden no-wrap text-ellipsis"
-        >
-          {cid.toString()}
-        </a>
+        <div className="block px-4 py-2 font-mono text-xs overflow-hidden no-wrap text-ellipsis">
+          {digestStr}
+        </div>
       </td>
       <td title={blob.insertedAt}>
-        <a
-          href={`${pathname}/${cid.toString()}`}
-          className="block p-2 text-xs text-left tabular-nums overflow-hidden no-wrap text-ellipsis"
-        >
+        <div className="block px-2 py-2 font-mono text-xs overflow-hidden no-wrap text-ellipsis w-48">
           {new Date(blob.insertedAt).toLocaleString()}
-        </a>
+        </div>
+      </td>
+      <td title={`${blob.blob.size} bytes`}>
+        <div className="block px-2 py-2 font-mono text-xs overflow-hidden no-wrap text-ellipsis">
+          {filesize(blob.blob.size)}
+        </div>
       </td>
     </tr>
   )
