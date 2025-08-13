@@ -283,11 +283,10 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
         if (spaceAccess.encryption.provider === 'google-kms') {
           // Use KMS strategy with config from shared hook
           setEncryptionStrategy('kms')
-          const adapter = await createKMSAdapter()
-          if (!adapter) {
+          const cryptoAdapter = await createKMSAdapter()
+          if (!cryptoAdapter) {
             throw new Error('KMS configuration required for encrypted uploads')
           }
-          cryptoAdapter = adapter
         }
         // else if - add other providers here...
 
