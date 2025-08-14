@@ -4,7 +4,9 @@ import type { Space, UnknownLink } from '@storacha/ui-react'
 import { parse as parseLink } from 'multiformats/link'
 import { create as createEncryptedClient } from '@storacha/encrypt-upload-client'
 import { useKMSConfig } from '@storacha/ui-react'
-import { decrypt } from '@storacha/capabilities/space'
+import * as PlanCapabilities from '@storacha/capabilities/plan'
+import * as SpaceCapabilities from '@storacha/capabilities/space'
+import { delegate } from '@ucanto/core'
 import type { FileMetadata } from '@storacha/encrypt-upload-client/types'
 
 interface DecryptionState {
@@ -14,14 +16,14 @@ interface DecryptionState {
 }
 
 export const useFileDecryption = (space?: Space) => {
-  const [{ client }] = useW3()
+  const [{ client, accounts }] = useW3()
   const [state, setState] = useState<DecryptionState>({
     loading: false,
     error: null,
     fileMetadata: undefined
   })
 
-  const { createKMSAdapter, isConfigured } = useKMSConfig()
+  const { createKMSAdapter, isConfigured, kmsConfig } = useKMSConfig()
 
   const downloadBlob = (blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob)
@@ -62,7 +64,7 @@ export const useFileDecryption = (space?: Space) => {
     try {
       // Create crypto adapter using shared KMS config
       const cryptoAdapter = await createKMSAdapter()
-      if (!cryptoAdapter) {
+      if (!cryptoAdapter || !kmsConfig) {
         throw new Error('KMS configuration required for decryption')
       }
 
@@ -74,9 +76,26 @@ export const useFileDecryption = (space?: Space) => {
 
       // Parse CID if it's a string
       const encryptionMetadataCID = typeof cid === 'string' ? parseLink(cid) : cid
+
+      // Get account for plan delegation
+      const [account] = accounts ?? []
+      if (!account) {
+        throw new Error('No account available for plan/get delegation')
+      }
+
+      // Authorize the UCAN KMS server to check user's plan
+      const getPlanDelegation = await delegate({
+        issuer: client.agent.issuer,
+        audience: { did: () => kmsConfig.keyManagerServiceDID as `did:${string}:${string}` },
+        capabilities: [
+          { can: PlanCapabilities.get.can, with: account.did() },
+        ],
+        proofs: client.proofs(),
+        expiration: Math.floor((Date.now() + 60 * 15 * 1000) / 1000) // 15 minutes
+      })
       const proofs = client.proofs([
         {
-          can: 'space/content/decrypt',
+          can: SpaceCapabilities.decrypt.can,
           with: space.did()
         }
       ])
@@ -85,7 +104,7 @@ export const useFileDecryption = (space?: Space) => {
           cap.can === 'ucan/attest' ||
           cap.with === 'ucan:*'))
       
-      const decryptDelegation = await decrypt.delegate({
+      const decryptDelegation = await SpaceCapabilities.decrypt.delegate({
         issuer: client.agent.issuer,
         audience: client.agent.issuer,
         with: space.did(),
@@ -102,7 +121,7 @@ export const useFileDecryption = (space?: Space) => {
         {
           spaceDID: space.did(),
           decryptDelegation, 
-          proofs,
+          proofs: [...proofs, getPlanDelegation],
         }
       )
 

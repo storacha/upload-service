@@ -12,6 +12,9 @@
       "path": "../core"
     },
     {
+      "path": "../../../capabilities"
+    },
+    {
       "path": "./tsconfig.lib.json"
     },
     {

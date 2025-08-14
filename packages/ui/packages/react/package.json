@@ -42,9 +42,11 @@
   "devDependencies": {
     "@ipld/dag-ucan": "^3.2.0",
     "@storacha/eslint-config-ui": "workspace:^",
+    "@storacha/capabilities": "workspace:^",
     "@testing-library/react": "catalog:",
     "@testing-library/user-event": "catalog:",
     "@types/react": "catalog:",
+    "@ucanto/core": "catalog:",
     "@ucanto/client": "catalog:",
     "@ucanto/interface": "catalog:",
     "@ucanto/principal": "catalog:",
