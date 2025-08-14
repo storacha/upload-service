@@ -291,18 +291,21 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
         })
 
         // Authorize the UCAN KMS server to check user's plan
+        const getPlanProofs = await client.agent.proofs([
+          { can: PlanCapabilities.get.can, with: account.did() },
+        ])
         const getPlanDelegation = await delegate({
           issuer: client.agent.issuer,
           audience: { did: () => kmsConfigState.keyManagerServiceDID as `did:${string}:${string}` },
           capabilities: [
             { can: PlanCapabilities.get.can, with: account.did() },
           ],
-          proofs: client.proofs(),
+          proofs: getPlanProofs,
           expiration: Math.floor((Date.now() + 60 * 15 * 1000) / 1000) // 15 minutes
         })
 
         // Agent needs to have access to the space
-        const proofs = await client.agent.proofs([
+        const encryptionSetupProofs = await client.agent.proofs([
           { can: SpaceCapabilities.EncryptionSetup.can, with: space.did() },
         ]) 
 
@@ -310,7 +313,7 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
         const encryptionConfig: EncryptionConfig = {
           issuer: client.agent.issuer,
           spaceDID: space.did(),
-          proofs: [...proofs, getPlanDelegation],
+          proofs: [...encryptionSetupProofs, getPlanDelegation],
           fileMetadata: extractFileMetadata(file),
           ...(kmsConfigState?.location && encryptionStrategy === 'kms' && { location: kmsConfigState?.location }),
           ...(kmsConfigState?.keyring && encryptionStrategy === 'kms' && { keyring: kmsConfigState?.keyring }),
