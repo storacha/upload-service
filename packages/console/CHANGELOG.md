@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.3.0](https://github.com/storacha/upload-service/compare/console-v2.2.1...console-v2.3.0) (2025-08-14)
+
+
+### Features
+
+* add blob listing to space detail page ([#351](https://github.com/storacha/upload-service/issues/351)) ([d14484e](https://github.com/storacha/upload-service/commit/d14484ed3cb4db3f4cc45c269faae7ab6bcbad34))
+* **console:** plan verification before encryption/decryption operations ([#354](https://github.com/storacha/upload-service/issues/354)) ([fe77ef0](https://github.com/storacha/upload-service/commit/fe77ef0fe993652f3c8ae8c3fa89b4ea4c6b3a6f))
+
+
+### Fixes
+
+* **console:** trigger console app release ([5deb02b](https://github.com/storacha/upload-service/commit/5deb02b59aa46d75575f992ddc70a14f2c1bc555))
+
 ## [2.2.1](https://github.com/storacha/upload-service/compare/console-v2.2.0...console-v2.2.1) (2025-08-07)
 
 
