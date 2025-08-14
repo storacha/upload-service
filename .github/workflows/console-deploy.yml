@@ -75,7 +75,7 @@ jobs:
           echo "NEXT_PUBLIC_UCAN_KMS_URL=https://ucan-kms-staging.protocol-labs.workers.dev" >> .env
           echo "NEXT_PUBLIC_UCAN_KMS_DID=did:key:z6MkmRf149D6oc9wq9ioXCsT5fgTn6esd7JjB9S5JnM4Y9qj" >> .env
           echo "NEXT_PUBLIC_ENABLE_TEST_IFRAME=true" >> .env
-          echo "NEXT_PUBLIC_SSO_ALLOWED_ORIGINS=https://*.dmail.ai" >> .env
+          echo "NEXT_PUBLIC_SSO_ALLOWED_ORIGINS=https://mail.dmail.ai,https://testmailhu9fg9h.dmail.ai" >> .env
           echo "NEXT_PUBLIC_SSO_IFRAME_STRIPE_PRICING_TABLE_ID=prctbl_1RrNd0F6A5ufQX5vpB0sYPHm" >> .env
           echo "NEXT_PUBLIC_SSO_IFRAME_STRIPE_PRICING_TABLE_PUB_KEY=pk_test_51LO87hF6A5ufQX5viNsPTbuErzfavdrEFoBuaJJPfoIhzQXdOUdefwL70YewaXA32ZrSRbK4U4fqebC7SVtyeNcz00qmgNgueC" >> .env
       # as long as this uses https://github.com/cloudflare/next-on-pages/blob/dc529d7efa8f8568ea8f71b5cdcf78df89be6c12/packages/next-on-pages/bin/index.js,
@@ -190,7 +190,7 @@ jobs:
           echo "NEXT_PUBLIC_UCAN_KMS_URL=https://ucan-kms-production.protocol-labs.workers.dev" >> .env
           echo "NEXT_PUBLIC_UCAN_KMS_DID=did:key:z6MksQJobJmBfPhjHWgFXVppqM6Fcjc1k7xu4z6xvusVrtKv" >> .env
           echo "NEXT_PUBLIC_ENABLE_TEST_IFRAME=true" >> .env
-          echo "NEXT_PUBLIC_SSO_ALLOWED_ORIGINS=https://mail.dmail.ai" >> .env
+          echo "NEXT_PUBLIC_SSO_ALLOWED_ORIGINS=https://mail.dmail.ai,https://testmailhu9fg9h.dmail.ai" >> .env
           echo "NEXT_PUBLIC_SSO_IFRAME_STRIPE_PRICING_TABLE_ID=prctbl_1RrNZSF6A5ufQX5vryBeKnFe" >> .env
           echo "NEXT_PUBLIC_SSO_IFRAME_STRIPE_PRICING_TABLE_PUB_KEY=pk_live_51LO87hF6A5ufQX5vQTO5BHyz8y9ybJp4kg1GsBjYuqwluuwtQTkbeZzkoQweFQDlv7JaGjuIdUWAyuwXp3tmCfsM005lJK9aS8" >> .env
       - run: pnpm pages:build
