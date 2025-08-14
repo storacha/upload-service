@@ -33,7 +33,11 @@ export const defaultHeaders = {
  */
 export const accessServiceConnection = (options = {}) =>
   client.connect({
-    id: options.id ?? accessServicePrincipal,
+    id:
+      options.id ??
+      (options.url
+        ? DID.parse(`did:web:${options.url.hostname}`)
+        : accessServicePrincipal),
     codec: CAR.outbound,
     channel: HTTP.open({
       url: options.url ?? accessServiceURL,
@@ -53,7 +57,11 @@ export const uploadServicePrincipal = DID.parse('did:web:up.storacha.network')
  */
 export const uploadServiceConnection = (options = {}) =>
   client.connect({
-    id: options.id ?? uploadServicePrincipal,
+    id:
+      options.id ??
+      (options.url
+        ? DID.parse(`did:web:${options.url.hostname}`)
+        : uploadServicePrincipal),
     codec: CAR.outbound,
     channel: HTTP.open({
       url: options.url ?? uploadServiceURL,
@@ -73,7 +81,11 @@ export const filecoinServicePrincipal = DID.parse('did:web:up.storacha.network')
  */
 export const filecoinServiceConnection = (options = {}) =>
   client.connect({
-    id: options.id ?? filecoinServicePrincipal,
+    id:
+      options.id ??
+      (options.url
+        ? DID.parse(`did:web:${options.url.hostname}`)
+        : filecoinServicePrincipal),
     codec: CAR.outbound,
     channel: HTTP.open({
       url: options.url ?? filecoinServiceURL,
@@ -97,7 +109,9 @@ export const gatewayServicePrincipal = DID.parse('did:web:w3s.link')
  */
 export const gatewayServiceConnection = ({ id, url } = {}) =>
   client.connect({
-    id: id ?? gatewayServicePrincipal,
+    id:
+      id ??
+      (url ? DID.parse(`did:web:${url.hostname}`) : gatewayServicePrincipal),
     codec: CAR.outbound,
     channel: HTTP.open({
       url: url ?? gatewayServiceURL,
@@ -105,12 +119,24 @@ export const gatewayServiceConnection = ({ id, url } = {}) =>
     }),
   })
 
-/** @type {() => import('./types.js').ServiceConf} */
-export const serviceConf = () => ({
-  access: accessServiceConnection(),
-  upload: uploadServiceConnection(),
-  filecoin: filecoinServiceConnection(),
-  gateway: gatewayServiceConnection(),
+/** @type {(options: Partial<import('./types.js').ServiceConfOptions>) => import('./types.js').ServiceConf} */
+export const serviceConf = (options = {}) => ({
+  access:
+    options.access && 'channel' in options.access
+      ? options.access
+      : accessServiceConnection(options.access),
+  upload:
+    options.upload && 'channel' in options.upload
+      ? options.upload
+      : uploadServiceConnection(options.upload),
+  filecoin:
+    options.filecoin && 'channel' in options.filecoin
+      ? options.filecoin
+      : filecoinServiceConnection(options.filecoin),
+  gateway:
+    options.gateway && 'channel' in options.gateway
+      ? options.gateway
+      : gatewayServiceConnection(options.gateway),
 })
 
 export { receiptsEndpoint }
