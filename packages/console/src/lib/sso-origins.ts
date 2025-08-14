@@ -45,7 +45,7 @@ export function isOriginAllowed(origin: string, allowedOrigins?: string[]): bool
     if (allowedOrigin === origin) return true
     if (allowedOrigin.startsWith('*.')) {
       const domain = allowedOrigin.slice(2)
-      return origin.endsWith('.' + domain) || origin === domain
+      return origin.endsWith('.' + domain) || origin.endsWith('://' + domain)
     }
     return false
   })
