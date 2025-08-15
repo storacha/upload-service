@@ -21,6 +21,7 @@ import { useW3 } from './providers/Provider.js'
 import { create as createEncryptedClient } from '@storacha/encrypt-upload-client'
 import { EncryptionConfig, EncryptionStrategy, FileMetadata } from '@storacha/encrypt-upload-client/types'
 import { useKMSConfig, type KMSConfig } from './hooks.js'
+import { delegate } from '@ucanto/core'
 
 export type UploadProgress = Record<string, ProgressStatus>
 
@@ -195,7 +196,8 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
     kmsConfig,
     ...props
   }) => {
-    const [{ client }] = useW3()
+    const [{ client, accounts }] = useW3()
+    const [account] = accounts ?? []
     const [files, setFiles] = useState<File[]>()
     const file = files?.[0]
     const setFile = (file: File | undefined): void => {
@@ -254,6 +256,9 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
         if (files.length > 1) {
           throw new Error('Encrypted uploads currently only support single files')
         }
+        if (!account) {
+          throw new Error('No account selected for upload encryption')
+        }
         const space = client.currentSpace()
         if (!space) {
           throw new Error('Missing private space for upload encryption')
@@ -274,7 +279,7 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
         }
         // else if - add other providers here...
 
-        if (!cryptoAdapter) {
+        if (!cryptoAdapter || !kmsConfigState) {
           throw new Error('Encryption provider not supported')
         }
 
@@ -283,16 +288,27 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
           cryptoAdapter,
         })
 
-        // Extract file metadata
-        const fileMetadata = extractFileMetadata(file)
+        // Authorize the UCAN KMS server to check user's plan
+        const getPlanProofs = client.agent.proofs([
+          { can: "plan/get", with: account.did() },
+        ])
+        const getPlanDelegation = await delegate({
+          issuer: client.agent.issuer,
+          audience: { did: () => kmsConfigState.keyManagerServiceDID as `did:${string}:${string}` },
+          capabilities: [
+            { can: "plan/get", with: account.did() },
+          ],
+          proofs: getPlanProofs,
+          expiration: Math.floor((Date.now() + 60 * 15 * 1000) / 1000) // 15 minutes
+        })
 
         // Prepare encryption config
         const proofs = await client.agent.proofs([{ can: "space/encryption/setup", with: space.did() }]) // Agent needs to have access to the space
         const encryptionConfig: EncryptionConfig = {
           issuer: client.agent.issuer,
           spaceDID: space.did(),
-          proofs,
-          fileMetadata,
+          proofs: [...proofs, getPlanDelegation],
+          fileMetadata: extractFileMetadata(file),
           ...(kmsConfigState?.location && encryptionStrategy === 'kms' && { location: kmsConfigState?.location }),
           ...(kmsConfigState?.keyring && encryptionStrategy === 'kms' && { keyring: kmsConfigState?.keyring }),
         }
