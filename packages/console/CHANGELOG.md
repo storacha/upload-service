@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.3.1](https://github.com/storacha/upload-service/compare/console-v2.3.0...console-v2.3.1) (2025-08-18)
+
+
+### Fixes
+
+* **console:** trigger console staging deploy ([3db6cc4](https://github.com/storacha/upload-service/commit/3db6cc45c84271dd4b579d6b8a078f5d21ed0832))
+
+
+### Other Changes
+
+* trigger console staging release ([69c1264](https://github.com/storacha/upload-service/commit/69c126438e380cd219a803c2cfc75c6ca91e7a8d))
+
 ## [2.3.0](https://github.com/storacha/upload-service/compare/console-v2.2.1...console-v2.3.0) (2025-08-14)
 
 
