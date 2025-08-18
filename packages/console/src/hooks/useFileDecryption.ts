@@ -14,7 +14,8 @@ interface DecryptionState {
 }
 
 export const useFileDecryption = (space?: Space) => {
-  const [{ client }] = useW3()
+  const [{ client, accounts }] = useW3()
+  const [account] = accounts ?? []
   const [state, setState] = useState<DecryptionState>({
     loading: false,
     error: null,
@@ -53,8 +54,8 @@ export const useFileDecryption = (space?: Space) => {
   };
 
   const decryptAndDownload = async (cid: UnknownLink | string, filename?: string) => {
-    if (!client || !space || space.access?.type !== 'private') {
-      throw new Error('Invalid state: client, space, or private space access required')
+    if (!client || !space || space.access?.type !== 'private' || !account) {
+      throw new Error('Invalid state: client, space, account, or private space access required')
     }
 
     setState({ loading: true, error: null, fileMetadata: undefined })
@@ -78,12 +79,14 @@ export const useFileDecryption = (space?: Space) => {
         {
           can: 'space/content/decrypt',
           with: space.did()
+        },
+        {
+          can: 'plan/get',
+          with: account.did()
         }
       ])
       .map(proof => /* @type {import('@ucanto/interface').Delegation} */ (proof))
-      .filter(delegation => !delegation.capabilities.some(cap => cap.can === '*' || 
-          cap.can === 'ucan/attest' ||
-          cap.with === 'ucan:*'))
+      .filter(delegation => !delegation.capabilities.some(cap => cap.can === 'ucan/attest' || cap.with === 'ucan:*'))
       
       const decryptDelegation = await decrypt.delegate({
         issuer: client.agent.issuer,
