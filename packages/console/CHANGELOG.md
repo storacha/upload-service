@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.2](https://github.com/storacha/upload-service/compare/console-v2.3.1...console-v2.3.2) (2025-08-18)
+
+
+### Fixes
+
+* include plan/get proofs in decrypt op ([#365](https://github.com/storacha/upload-service/issues/365)) ([4f88159](https://github.com/storacha/upload-service/commit/4f881590551e7026102adb8bc60cf8751c0fc072))
+
 ## [2.3.1](https://github.com/storacha/upload-service/compare/console-v2.3.0...console-v2.3.1) (2025-08-18)
 
 
