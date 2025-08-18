@@ -45,4 +45,3 @@ NEXT_PUBLIC_SSO_IFRAME_STRIPE_PRICING_TABLE_PUB_KEY=your-sso-stripe-publishable-
 These pricing tables will be used automatically when the console detects it's running within an iframe context (SSO flow).
 
 <p style="text-align:center;padding-top:2rem">⁂</p>
-
