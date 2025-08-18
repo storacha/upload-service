@@ -37,6 +37,7 @@
     "@ariakit/react-core": "catalog:",
     "@storacha/ui-core": "workspace:^",
     "@storacha/encrypt-upload-client": "workspace:^",
+    "@ucanto/core": "catalog:",
     "ariakit-react-utils": "catalog:"
   },
   "devDependencies": {
