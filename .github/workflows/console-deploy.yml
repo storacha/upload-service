@@ -73,7 +73,7 @@ jobs:
           echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" >> .env
           echo "NEXT_PUBLIC_PRIVATE_SPACES_DOMAINS=dmail.ai,storacha.network" >> .env
           echo "NEXT_PUBLIC_UCAN_KMS_URL=https://ucan-kms-staging.protocol-labs.workers.dev" >> .env
-          echo "NEXT_PUBLIC_UCAN_KMS_DID=did:web:staging.kms.storacha.network" >> .env
+          echo "NEXT_PUBLIC_UCAN_KMS_DID=did:key:z6MkmRf149D6oc9wq9ioXCsT5fgTn6esd7JjB9S5JnM4Y9qj" >> .env
           echo "NEXT_PUBLIC_ENABLE_TEST_IFRAME=true" >> .env
           echo "NEXT_PUBLIC_SSO_ALLOWED_ORIGINS=https://mail.dmail.ai,https://testmailhu9fg9h.dmail.ai" >> .env
           echo "NEXT_PUBLIC_SSO_IFRAME_STRIPE_PRICING_TABLE_ID=prctbl_1RrNd0F6A5ufQX5vpB0sYPHm" >> .env
@@ -188,7 +188,7 @@ jobs:
           echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" >> .env
           echo "NEXT_PUBLIC_PRIVATE_SPACES_DOMAINS=dmail.ai,storacha.network" >> .env
           echo "NEXT_PUBLIC_UCAN_KMS_URL=https://ucan-kms-production.protocol-labs.workers.dev" >> .env
-          echo "NEXT_PUBLIC_UCAN_KMS_DID=did:web:kms.storacha.network" >> .env
+          echo "NEXT_PUBLIC_UCAN_KMS_DID=did:key:z6MksQJobJmBfPhjHWgFXVppqM6Fcjc1k7xu4z6xvusVrtKv" >> .env
           echo "NEXT_PUBLIC_ENABLE_TEST_IFRAME=true" >> .env
           echo "NEXT_PUBLIC_SSO_ALLOWED_ORIGINS=https://mail.dmail.ai,https://testmailhu9fg9h.dmail.ai" >> .env
           echo "NEXT_PUBLIC_SSO_IFRAME_STRIPE_PRICING_TABLE_ID=prctbl_1RrNZSF6A5ufQX5vryBeKnFe" >> .env
