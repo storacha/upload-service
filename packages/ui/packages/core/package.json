@@ -7,6 +7,7 @@
   },
   "type": "module",
   "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "../../../../node_modules/.bin/tsc --build --emitDeclarationOnly --pretty --verbose",
