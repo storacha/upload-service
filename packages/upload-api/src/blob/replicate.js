@@ -159,6 +159,20 @@ export const blobReplicateProvider = (context) => {
           return selectRes
         }
 
+        // if the claim consists of more than one block, add the other
+        // blocks to facts so that they can be attached.
+        const claimBlocks = [...claim.export()]
+        const allocFacts = /** @type {API.Fact[]} */ ([])
+        if (claimBlocks.length > 1) {
+          allocFacts.push(
+            Object.fromEntries(
+              claimBlocks
+                .filter(b => b.cid.toString() !== claim.cid.toString())
+                .map((b, i) => [i, b.cid])
+            )
+          )
+        }
+
         const allocRes = await Promise.all(
           selectRes.ok.map(async (candidate) => {
             const candidateDID = candidate.did()
@@ -171,12 +185,18 @@ export const blobReplicateProvider = (context) => {
                 site: nb.site,
                 cause: invocation.cid,
               },
+              facts: allocFacts
             })
             if (confRes.error) {
               return confRes
             }
 
             const { connection, invocation: allocInv } = confRes.ok
+
+            // attach the location commitment to the allocation invocation
+            for (const b of claimBlocks) {
+              allocInv.attach(b)
+            }
 
             const receipt = await allocInv.execute(connection)
             const task = receipt.ran
@@ -212,9 +232,20 @@ export const blobReplicateProvider = (context) => {
           })
         )
 
-        for (const receipt of allocRes) {
+        for (let i = 0; i < allocRes.length; i++) {
+          const receipt = allocRes[i]
           if ('error' in receipt) {
             return receipt
+          }
+
+          // if allocate invocation was executed but resulted in an error...
+          if (receipt.out.error != null) {
+            const candidate = selectRes.ok[i]
+            return Server.error({
+              name: 'AllocationFailure',
+              message: `failed to allocate on candidate: ${candidate.did()}`,
+              cause: receipt.out.error,
+            })
           }
 
           const transfer = receipt.fx.fork.find(isBlobReplicaTransfer)

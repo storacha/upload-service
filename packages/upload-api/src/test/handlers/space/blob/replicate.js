@@ -102,6 +102,7 @@ export const test = {
         })
         .execute(context.connection)
 
+      assert.equal(replicateRcpt.out.error, undefined)
       const { site: replicationSite } = Result.unwrap(replicateRcpt.out)
 
       const replicateRcptBlocks = new Map()
