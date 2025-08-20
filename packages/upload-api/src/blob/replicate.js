@@ -8,6 +8,7 @@ import * as Assert from '@web3-storage/content-claims/capability/assert'
 import * as Digest from 'multiformats/hashes/digest'
 import { base58btc } from 'multiformats/bases/base58'
 import { equals } from 'multiformats/bytes'
+import { now } from '@ipld/dag-ucan'
 import * as DID from '@ipld/dag-ucan/did'
 import * as API from '../types.js'
 import { AgentMessage } from '../lib.js'
@@ -186,6 +187,9 @@ export const blobReplicateProvider = (context) => {
                 cause: invocation.cid,
               },
               facts: allocFacts,
+              // set the expiration now so that we get the same CID for the task
+              // when we call delegate/execute.
+              expiration: now() + 30
             })
             if (confRes.error) {
               return confRes
@@ -198,17 +202,22 @@ export const blobReplicateProvider = (context) => {
               allocInv.attach(b)
             }
 
-            const receipt = await allocInv.execute(connection)
-            const task = receipt.ran
-            if (!Delegation.isDelegation(task)) {
-              throw new Error('expected receipt ran to be a delegation')
+            let receipt, execError
+            try {
+              receipt = await allocInv.execute(connection)
+            } catch (/** @type {any} */ err) {
+              // allow continuation so failure can be recorded and a retry will
+              // not select the same node
+              console.warn(`allocating ${candidateDID}`, err)
+              execError = err
             }
+            const task = await allocInv.delegate()
 
             // record the invocation and the receipt, so we can retrieve it later
             // when we get a blob/replica/transfer receipt in ucan/conclude
             const message = await Message.build({
               invocations: [task],
-              receipts: [receipt],
+              receipts: receipt ? [receipt] : undefined,
             })
             const messageWriteRes = await agentStore.messages.write({
               source: await Transport.outbound.encode(message),
@@ -223,12 +232,24 @@ export const blobReplicateProvider = (context) => {
               space,
               digest,
               provider: candidateDID,
-              status: receipt.out.error ? 'failed' : 'allocated',
+              status: !receipt || receipt.out.error ? 'failed' : 'allocated',
               cause:
                 /** @type {API.UCANLink<[API.BlobReplicaAllocate]>} */
                 (task.cid),
             })
-            return addRes.error ? addRes : receipt
+            if (addRes.error) {
+              return addRes
+            }
+
+            // if there no receipt, then an execution error occurred
+            if (!receipt) {
+              return Server.error({
+                name: 'AllocationExecutionFailure',
+                message: `failed allocation invocation execution to ${candidateDID}: ${execError}`,
+              })
+            }
+
+            return receipt
           })
         )
 
