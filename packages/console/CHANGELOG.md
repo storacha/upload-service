@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.3](https://github.com/storacha/upload-service/compare/console-v2.3.2...console-v2.3.3) (2025-08-20)
+
+
+### Fixes
+
+* add plan-get delegation to the decryption request ([#372](https://github.com/storacha/upload-service/issues/372)) ([4456801](https://github.com/storacha/upload-service/commit/445680135ca3827c64a7ed5a43cc4e5c59b0f030))
+
 ## [2.3.2](https://github.com/storacha/upload-service/compare/console-v2.3.1...console-v2.3.2) (2025-08-18)
 
 
