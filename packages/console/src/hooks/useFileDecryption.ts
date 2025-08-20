@@ -6,6 +6,7 @@ import { create as createEncryptedClient } from '@storacha/encrypt-upload-client
 import { useKMSConfig } from '@storacha/ui-react'
 import { decrypt } from '@storacha/capabilities/space'
 import type { FileMetadata } from '@storacha/encrypt-upload-client/types'
+import { delegate } from '@ucanto/core'
 
 interface DecryptionState {
   loading: boolean
@@ -22,7 +23,7 @@ export const useFileDecryption = (space?: Space) => {
     fileMetadata: undefined
   })
 
-  const { createKMSAdapter, isConfigured } = useKMSConfig()
+  const { createKMSAdapter, isConfigured, kmsConfig } = useKMSConfig()
 
   const downloadBlob = (blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob)
@@ -63,7 +64,7 @@ export const useFileDecryption = (space?: Space) => {
     try {
       // Create crypto adapter using shared KMS config
       const cryptoAdapter = await createKMSAdapter()
-      if (!cryptoAdapter) {
+      if (!cryptoAdapter || !kmsConfig) {
         throw new Error('KMS configuration required for decryption')
       }
 
@@ -73,6 +74,19 @@ export const useFileDecryption = (space?: Space) => {
         cryptoAdapter
       })
 
+      const getPlanProofs = client.agent.proofs([
+        { can: "plan/get", with: account.did() },
+      ])
+      const getPlanDelegation = await delegate({
+        issuer: client.agent.issuer,
+        audience: { did: () => kmsConfig.keyManagerServiceDID as `did:${string}:${string}` },
+        capabilities: [
+          { can: "plan/get", with: account.did() },
+        ],
+        proofs: getPlanProofs,
+        expiration: Math.floor((Date.now() + 60 * 15 * 1000) / 1000) // 15 minutes
+      })
+
       // Parse CID if it's a string
       const encryptionMetadataCID = typeof cid === 'string' ? parseLink(cid) : cid
       const proofs = client.proofs([
@@ -80,13 +94,7 @@ export const useFileDecryption = (space?: Space) => {
           can: 'space/content/decrypt',
           with: space.did()
         },
-        {
-          can: 'plan/get',
-          with: account.did()
-        }
       ])
-      .map(proof => /* @type {import('@ucanto/interface').Delegation} */ (proof))
-      .filter(delegation => !delegation.capabilities.some(cap => cap.can === 'ucan/attest' || cap.with === 'ucan:*'))
       
       const decryptDelegation = await decrypt.delegate({
         issuer: client.agent.issuer,
@@ -96,7 +104,7 @@ export const useFileDecryption = (space?: Space) => {
           resource: encryptionMetadataCID,
         },
         expiration: Math.floor(Date.now() / 1000) + 60 * 15, // 15 minutes
-        proofs,
+        proofs: [...proofs, getPlanDelegation],
       })
 
       // Downloads the encrypted file, and decrypts it locally

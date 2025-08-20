@@ -7,6 +7,7 @@
   },
   "type": "module",
   "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "../../../../node_modules/.bin/tsc --build --emitDeclarationOnly --pretty --verbose",
@@ -17,6 +18,12 @@
     "lint:fix": "echo 'Linting in @storacha/ui-core is temporarily disabled while we resolve version issues.'",
     "test": "vitest run",
     "test:watch": "vitest watch"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "files": [
     "dist",

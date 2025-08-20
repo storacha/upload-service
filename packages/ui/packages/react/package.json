@@ -35,13 +35,14 @@
   "dependencies": {
     "@ariakit/react": "catalog:",
     "@ariakit/react-core": "catalog:",
-    "@storacha/ui-core": "workspace:^",
     "@storacha/encrypt-upload-client": "workspace:^",
+    "@storacha/ui-core": "workspace:^",
     "@ucanto/core": "catalog:",
     "ariakit-react-utils": "catalog:"
   },
   "devDependencies": {
     "@ipld/dag-ucan": "^3.2.0",
+    "@nx/vite": "^20.3.2",
     "@storacha/eslint-config-ui": "workspace:^",
     "@testing-library/react": "catalog:",
     "@testing-library/user-event": "catalog:",

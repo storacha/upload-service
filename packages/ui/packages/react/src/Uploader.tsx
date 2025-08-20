@@ -303,7 +303,9 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
         })
 
         // Prepare encryption config
-        const proofs = await client.agent.proofs([{ can: "space/encryption/setup", with: space.did() }]) // Agent needs to have access to the space
+        const proofs = client.agent.proofs([
+          { can: "space/encryption/setup", with: space.did() }
+        ])
         const encryptionConfig: EncryptionConfig = {
           issuer: client.agent.issuer,
           spaceDID: space.did(),
