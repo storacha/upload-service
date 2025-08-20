@@ -206,7 +206,7 @@ const createService = ({
           }
 
           const blocks = [...invocation.iterateIPLDBlocks()]
-          if (!blocks.some(b => b.cid.toString() === site.toString())) {
+          if (!blocks.some((b) => b.cid.toString() === site.toString())) {
             return Server.error({
               name: 'MissingLocationCommitment',
               message: `root block not found: ${site}`,

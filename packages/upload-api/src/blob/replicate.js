@@ -167,7 +167,7 @@ export const blobReplicateProvider = (context) => {
           allocFacts.push(
             Object.fromEntries(
               claimBlocks
-                .filter(b => b.cid.toString() !== claim.cid.toString())
+                .filter((b) => b.cid.toString() !== claim.cid.toString())
                 .map((b, i) => [i, b.cid])
             )
           )
@@ -185,7 +185,7 @@ export const blobReplicateProvider = (context) => {
                 site: nb.site,
                 cause: invocation.cid,
               },
-              facts: allocFacts
+              facts: allocFacts,
             })
             if (confRes.error) {
               return confRes
