@@ -1,3 +1,13 @@
+## 2.2.1 (2025-08-20)
+
+### 🩹 Fixes
+
+- fix: attach location commitment to replica allocate invocation ([#370](https://github.com/storacha/upload-service/pull/370))
+
+### ❤️ Thank You
+
+- ash
+
 ## 2.2.0 (2025-08-04)
 
 ### 🚀 Features
