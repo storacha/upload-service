@@ -110,8 +110,8 @@ export const blobReplicateProvider = (context) => {
 
       // lets allocate some replicas!
       if (newReplicasCount > 0) {
-        const claim = toLocationCommitment(nb.site, invocation.export())
-        const authRes = await Validator.claim(Assert.location, [claim], {
+        const locClaim = toLocationCommitment(nb.site, invocation.export())
+        const authRes = await Validator.claim(Assert.location, [locClaim], {
           authority: context.id,
           ...invContext,
         })
@@ -125,16 +125,16 @@ export const blobReplicateProvider = (context) => {
         }
 
         // validate location commitment is for the digest we want to replicate
-        const claimDigest =
-          'multihash' in claim.capabilities[0].nb.content
-            ? claim.capabilities[0].nb.content.multihash
-            : Digest.decode(claim.capabilities[0].nb.content.digest)
-        if (!equals(claimDigest.bytes, digest.bytes)) {
+        const locClaimDigest =
+          'multihash' in locClaim.capabilities[0].nb.content
+            ? locClaim.capabilities[0].nb.content.multihash
+            : Digest.decode(locClaim.capabilities[0].nb.content.digest)
+        if (!equals(locClaimDigest.bytes, digest.bytes)) {
           return Server.error(
             /** @type {API.InvalidReplicationSite} */ ({
               name: 'InvalidReplicationSite',
               message: `location commitment blob (${base58btc.encode(
-                claimDigest.bytes
+                locClaimDigest.bytes
               )}) does not reference replication blob: ${base58btc.encode(
                 digest.bytes
               )}`,
@@ -143,7 +143,7 @@ export const blobReplicateProvider = (context) => {
         }
 
         const selectRes = await router.selectReplicationProviders(
-          claim.issuer,
+          locClaim.issuer,
           newReplicasCount,
           digest,
           nb.blob.size,
@@ -161,13 +161,13 @@ export const blobReplicateProvider = (context) => {
 
         // if the claim consists of more than one block, add the other
         // blocks to facts so that they can be attached.
-        const claimBlocks = [...claim.export()]
+        const locClaimBlocks = [...locClaim.export()]
         const allocFacts = /** @type {API.Fact[]} */ ([])
-        if (claimBlocks.length > 1) {
+        if (locClaimBlocks.length > 1) {
           allocFacts.push(
             Object.fromEntries(
-              claimBlocks
-                .filter((b) => b.cid.toString() !== claim.cid.toString())
+              locClaimBlocks
+                .filter((b) => b.cid.toString() !== locClaim.cid.toString())
                 .map((b, i) => [i, b.cid])
             )
           )
@@ -194,7 +194,7 @@ export const blobReplicateProvider = (context) => {
             const { connection, invocation: allocInv } = confRes.ok
 
             // attach the location commitment to the allocation invocation
-            for (const b of claimBlocks) {
+            for (const b of locClaimBlocks) {
               allocInv.attach(b)
             }
 
