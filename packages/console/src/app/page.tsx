@@ -42,16 +42,15 @@ export function SpacePage() {
 
   return (
     <>
-      {/* Banner at the top of main content - only show if enabled */}
-      {noticeConfig.enabled && (
-        <NoticeBanner 
-          text={noticeConfig.text}
-          href={noticeConfig.href}
-          displayUntil={noticeConfig.displayUntil}
-          dismissible={noticeConfig.dismissible}
-        />
-      )}
-      
+      {/* Banner at the top of main content - only shown if enabled */}
+      <NoticeBanner
+        show={noticeConfig.enabled}
+        text={noticeConfig.text}
+        href={noticeConfig.href}
+        displayUntil={noticeConfig.displayUntil}
+        dismissible={noticeConfig.dismissible}
+      />
+
       <SpacesNav />
       <H1>Spaces</H1>
       <SpacesTabNavigation

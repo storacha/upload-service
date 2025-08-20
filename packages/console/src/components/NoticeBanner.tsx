@@ -9,26 +9,28 @@ interface NoticeBannerProps {
   href: string
   displayUntil: string
   dismissible?: boolean
+  show?: boolean
 }
 
-export function NoticeBanner({ 
-  text, 
-  href, 
+export function NoticeBanner({
+  text,
+  href,
   displayUntil,
-  dismissible = true 
+  dismissible = true,
+  show = false,
 }: NoticeBannerProps) {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
     // Check if banner should be visible based on date
     const shouldShow = new Date(displayUntil).getTime() > Date.now()
-    
+
     // Check if user has dismissed this banner (using displayUntil as unique key)
     const dismissedKey = `notice-dismissed-${displayUntil}`
     const wasDismissed = localStorage.getItem(dismissedKey) === 'true'
-    
-    setIsVisible(shouldShow && !wasDismissed)
-  }, [displayUntil])
+
+    setIsVisible(show && shouldShow && !wasDismissed)
+  }, [displayUntil, show])
 
   const handleDismiss = () => {
     if (dismissible) {
@@ -39,7 +41,7 @@ export function NoticeBanner({
     }
   }
 
-  // Don't show if past expiration date
+  // Don't show if not enabled, past expiration date, or dismissed
   if (!isVisible || new Date(displayUntil).getTime() <= Date.now()) {
     return null
   }
@@ -52,13 +54,13 @@ export function NoticeBanner({
         <div className="flex items-center justify-between flex-wrap">
           <div className="w-0 flex-1 flex items-center justify-center">
             {hasValidHref ? (
-              <Link 
+              <Link
                 href={href}
                 className="font-epilogue text-sm font-medium text-center uppercase tracking-wide text-white no-underline"
                 dangerouslySetInnerHTML={{ __html: text }}
               />
             ) : (
-              <p 
+              <p
                 className="font-epilogue text-sm font-medium text-center uppercase tracking-wide text-white cursor-default"
                 dangerouslySetInnerHTML={{ __html: text }}
               />
