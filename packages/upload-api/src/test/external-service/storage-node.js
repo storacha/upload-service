@@ -141,18 +141,14 @@ const createService = ({
       allocate: Server.provideAdvanced({
         capability: BlobReplicaCapabilities.allocate,
         handler: async ({ capability, invocation }) => {
-          const digest = Digest.decode(capability.nb.blob.digest)
+          const { blob, space, site } = capability.nb
+          const digest = Digest.decode(blob.digest)
           const hasDigest = await allocationStore.has(digest)
           const transferTask = await BlobReplicaCapabilities.transfer.delegate({
             issuer: id,
             audience: id,
             with: id.did(),
-            nb: {
-              blob: capability.nb.blob,
-              space: capability.nb.space,
-              site: capability.nb.site,
-              cause: invocation.cid,
-            },
+            nb: { blob, space, site, cause: invocation.cid },
           })
 
           // if we already have the digest, we can issue a transfer receipt
@@ -160,12 +156,12 @@ const createService = ({
             const claim = await createLocationCommitment({
               issuer: id,
               with: id.did(),
-              audience: capability.nb.space,
+              audience: space,
               digest,
               location:
                 /** @type {API.URI} */
                 (new URL(contentKey(digest), baseURL()).toString()),
-              space: capability.nb.space,
+              space,
             }).delegate()
 
             const claimRcpt = await ClaimCapabilities.cache
@@ -207,6 +203,14 @@ const createService = ({
               .fork(
                 await createConcludeInvocation(id, id, transferRcpt).delegate()
               )
+          }
+
+          const blocks = [...invocation.iterateIPLDBlocks()]
+          if (!blocks.some((b) => b.cid.toString() === site.toString())) {
+            return Server.error({
+              name: 'MissingLocationCommitment',
+              message: `root block not found: ${site}`,
+            })
           }
 
           await allocationStore.add(digest)
