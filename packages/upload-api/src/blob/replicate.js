@@ -184,7 +184,7 @@ export const blobReplicateProvider = (context) => {
                 space: DID.parse(space),
                 site: nb.site,
                 cause: invocation.cid,
-              }
+              },
             })
             const confRes = await router.configureInvocation(candidate, cap, {
               facts: allocFacts,
