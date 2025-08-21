@@ -1,3 +1,13 @@
+## 2.2.3 (2025-08-21)
+
+### 🩹 Fixes
+
+- fix: configure replica allocation facts and expiration in options ([#378](https://github.com/storacha/upload-service/pull/378))
+
+### ❤️ Thank You
+
+- ash
+
 ## 2.2.2 (2025-08-21)
 
 ### 🩹 Fixes
