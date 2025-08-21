@@ -189,7 +189,7 @@ export const blobReplicateProvider = (context) => {
               facts: allocFacts,
               // set the expiration now so that we get the same CID for the task
               // when we call delegate/execute.
-              expiration: now() + 30
+              expiration: now() + 30,
             })
             if (confRes.error) {
               return confRes
