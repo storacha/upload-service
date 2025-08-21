@@ -1,7 +1,7 @@
 {
   "name": "@storacha/cli",
   "type": "module",
-  "version": "1.4.14",
+  "version": "1.4.15",
   "license": "Apache-2.0 OR MIT",
   "description": "Command Line Interface to the Storacha Network",
   "publishConfig": {
