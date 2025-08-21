@@ -1,6 +1,6 @@
 {
   "name": "@storacha/ui-core",
-  "version": "2.4.98",
+  "version": "2.4.100",
   "description": "w3ui core.",
   "publishConfig": {
     "access": "public"

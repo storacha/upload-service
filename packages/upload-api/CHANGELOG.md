@@ -1,3 +1,13 @@
+## 2.2.2 (2025-08-21)
+
+### 🩹 Fixes
+
+- fix: better error handling for replica allocate ([#373](https://github.com/storacha/upload-service/pull/373))
+
+### ❤️ Thank You
+
+- ash
+
 ## 2.2.1 (2025-08-20)
 
 ### 🩹 Fixes
