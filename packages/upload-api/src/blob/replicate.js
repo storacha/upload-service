@@ -177,8 +177,7 @@ export const blobReplicateProvider = (context) => {
         const allocRes = await Promise.all(
           selectRes.ok.map(async (candidate) => {
             const candidateDID = candidate.did()
-            const confRes = await router.configureInvocation(candidate, {
-              can: BlobReplica.allocate.can,
+            const cap = BlobReplica.allocate.create({
               with: candidateDID,
               nb: {
                 blob: nb.blob,
@@ -186,6 +185,8 @@ export const blobReplicateProvider = (context) => {
                 site: nb.site,
                 cause: invocation.cid,
               },
+            })
+            const confRes = await router.configureInvocation(candidate, cap, {
               facts: allocFacts,
               // set the expiration now so that we get the same CID for the task
               // when we call delegate/execute.
