@@ -17,7 +17,7 @@ test('should create a new client instance if and only if servicePrincipal or con
     },
   }
 
-  let servicePrincipal: Principal = DID.parse('did:web:web3.storage')
+  let servicePrincipal: Principal = DID.parse('did:web:up.storacha.network')
   let connection = connect({
     id: servicePrincipal,
     codec: CAR.outbound,

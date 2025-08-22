@@ -17,7 +17,7 @@ export function createServiceConf({
   const id =
     servicePrincipal != null
       ? servicePrincipal
-      : DID.parse('did:web:web3.storage')
+      : DID.parse('did:web:up.storacha.network')
   const serviceConnection =
     connection != null
       ? connection
@@ -25,7 +25,7 @@ export function createServiceConf({
           id,
           codec: CAR.outbound,
           channel: HTTP.open<Service>({
-            url: new URL('https://up.web3.storage'),
+            url: new URL('https://up.storacha.network'),
             method: 'POST',
           }),
         })
@@ -33,6 +33,6 @@ export function createServiceConf({
     access: serviceConnection,
     upload: serviceConnection,
     filecoin: serviceConnection,
-    gateway: gatewayServiceConnection()
+    gateway: gatewayServiceConnection(),
   }
 }
