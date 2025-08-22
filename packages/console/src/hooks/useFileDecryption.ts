@@ -104,7 +104,7 @@ export const useFileDecryption = (space?: Space) => {
           resource: encryptionMetadataCID,
         },
         expiration: Math.floor(Date.now() / 1000) + 60 * 15, // 15 minutes
-        proofs: [...proofs, getPlanDelegation],
+        proofs,
       })
 
       // Downloads the encrypted file, and decrypts it locally
@@ -113,7 +113,7 @@ export const useFileDecryption = (space?: Space) => {
         {
           spaceDID: space.did(),
           decryptDelegation, 
-          proofs,
+          proofs: [...proofs, getPlanDelegation],
         }
       )
 
