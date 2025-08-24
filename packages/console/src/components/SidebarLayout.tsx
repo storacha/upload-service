@@ -36,7 +36,7 @@ function Sidebar ({ sidebar = <div></div> }: SidebarComponentProps): JSX.Element
     router.push(`/space/${s.did()}`)
   }
   return (
-    <nav className='flex-none w-64 bg-hot-yellow text-hot-red px-5 pb-5 border-r border-hot-red min-h-screen'>
+    <nav className='flex-none w-64 bg-hot-yellow text-hot-red px-5 pb-5 border-r border-hot-red min-h-full'>
       <div className='flex flex-col justify-between h-full'>
         <div>
           <header className='opacity-0 lg:opacity-100 my-8'>
