@@ -36,7 +36,7 @@ function Sidebar ({ sidebar = <div></div> }: SidebarComponentProps): JSX.Element
     router.push(`/space/${s.did()}`)
   }
   return (
-    <nav className='flex-none w-64 bg-hot-yellow text-hot-red px-5 pb-5 border-r border-hot-red min-h-screen'>
+    <nav className='flex-none w-64 bg-hot-yellow text-hot-red px-5 pb-5 border-r border-hot-red h-full'>
       <div className='flex flex-col justify-between h-full'>
         <div>
           <header className='opacity-0 lg:opacity-100 my-8'>
@@ -77,7 +77,7 @@ export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.
       <AuthenticationEnsurer>
         <MaybePlanGate>
           <SpaceEnsurer>
-            <div className='flex min-h-screen w-full text-white'>
+            <div className='flex h-screen w-full text-white'>
               {/* dialog sidebar for narrow browsers */}
               <Transition.Root show={sidebarOpen} >
                 <Dialog onClose={() => setSidebarOpen(false)} as='div' className='relative z-50'>
@@ -134,7 +134,7 @@ export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.
 export function IframeSidebarLayout ({ children }: LayoutComponentProps): JSX.Element {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   return (
-    <div className='flex min-h-screen w-full text-white'>
+    <div className='flex h-screen w-full text-white'>
       {/* dialog sidebar for narrow browsers */}
       <Transition.Root show={sidebarOpen} >
         <Dialog onClose={() => setSidebarOpen(false)} as='div' className='relative z-50'>
