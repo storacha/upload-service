@@ -8,6 +8,7 @@ import * as Link from 'multiformats/link'
 import path from 'path'
 import { encodeFile, encodeDirectory } from '../src/unixfs.js'
 import { File } from './helpers/shims.js'
+import * as CAR from '../src/car.js'
 
 /** @param {import('ipfs-unixfs-exporter').UnixFSDirectory} dir */
 async function collectDir(dir) {
@@ -90,6 +91,96 @@ describe('UnixFS', () => {
     const node = decode(bytes)
     assert.equal(node.type, NodeType.HAMTShard)
   })
+  
+  it('handles large number of files without stack overflow', async function() {
+    this.timeout(120_000 * 10);
+    
+    const files = [];
+    const fileCount = 100_000; // Match the original issue file count
+    const fileSize = 1200; // ~1.2KB per file to match original total size
+    
+    console.log('Creating test files...');
+    for (let i = 0; i < fileCount; i++) {
+      // Create file with realistic size
+      const content = new Array(fileSize).fill('x').join('');
+      files.push(new File([content], `file${i}.txt`));
+    }
+    
+    console.log(`Created ${files.length} files (${(fileSize * fileCount / 1024 / 1024).toFixed(2)}MB total)`);
+    
+    try {
+      console.log('Starting large directory encoding...');
+      const { cid, blocks } = await encodeDirectory(files);
+      console.log('Successfully encoded directory');
+      
+      // Verify a few random files to ensure the directory is correct
+      const blockstore = await blocksToBlockstore(blocks);
+      const dirEntry = await exporter(cid.toString(), blockstore);
+      assert.equal(dirEntry.type, 'directory');
+      
+      console.log('Verifying file samples...');
+      // Sample a few files to verify they exist (checking all would be too slow)
+      const sampleFiles = [0, 100, 1000, 10000, 50000, fileCount-1].filter(i => i < fileCount);
+      const entries = await collectDir(dirEntry);
+      const actualPaths = entries.map(e => e.path);
+      
+      for (const i of sampleFiles) {
+        const expectedPath = path.join(cid.toString(), `file${i}.txt`);
+        assert(actualPaths.includes(expectedPath), `Missing file: ${expectedPath}`);
+      }
+      
+      console.log('Successfully processed large directory structure');
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('Maximum call stack size exceeded')) {
+        console.log('Got expected stack overflow error - this is what we need to fix');
+        throw err;
+      } else {
+        console.error('Unexpected error:', err);
+        throw err;
+      }
+    }
+  });
+
+  it('handles large directory via CAR file approach', async function() {
+    this.timeout(120_000 * 10);
+    
+    const files = [];
+    const fileCount = 100_000; // Match the original issue file count
+    const fileSize = 1200; // ~1.2KB per file to match original total size
+    
+    console.log('Creating test files for CAR approach...');
+    for (let i = 0; i < fileCount; i++) {
+      const content = new Array(fileSize).fill('x').join('');
+      files.push(new File([content], `file${i}.txt`));
+    }
+    
+    console.log(`Created ${files.length} files (${(fileSize * fileCount / 1024 / 1024).toFixed(2)}MB total)`);
+    
+    try {
+      console.log('Starting CAR file encoding...');
+      // First create the UnixFS DAG
+      const { cid, blocks } = await encodeDirectory(files);
+      
+      // Then create a CAR file from the blocks
+      const car = await CAR.encode(blocks, cid);
+      console.log('Successfully created CAR file');
+      
+      // Verify the CAR file by reading it back
+      const carReader = new CAR.BlockStream(car);
+      const roots = await carReader.getRoots();
+      assert.equal(roots[0].toString(), cid.toString(), 'CAR root CID matches directory CID');
+      
+      console.log('Successfully verified CAR file');
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('Maximum call stack size exceeded')) {
+        console.log('Got expected stack overflow error in CAR approach - this is what we need to fix');
+        throw err;
+      } else {
+        console.error('Unexpected error in CAR approach:', err);
+        throw err;
+      }
+    }
+  });
 
   it('throws then treating a file as a directory', () =>
     assert.rejects(
