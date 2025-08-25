@@ -211,7 +211,8 @@ iframe.src = 'https://console.storacha.network/iframe?sso=your-provider'
 iframe.style.width = '400px'
 iframe.style.height = '600px'
 iframe.title = 'Storacha Console'
-iframe.sandbox = 'allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation'
+iframe.referrerPolicy = 'origin'
+iframe.sandbox = 'allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation allow-downloads'
 iframe.allow = 'payment'
 document.body.appendChild(iframe)`}
             </pre>
@@ -227,6 +228,12 @@ document.body.appendChild(iframe)`}
                 </li>
                 <li>
                   <span className="font-medium">allow=&quot;payment&quot;:</span> Required for Stripe checkout functionality in the Storacha console
+                </li>
+                <li>
+                  <span className="font-medium">referrerPolicy=&quot;origin&quot;:</span> Required to validate the parent origin of the iframe and initialize the MessageChannel
+                </li>
+                <li>
+                  <span className="font-medium">allow-downloads:</span> Required for file downloads in the Storacha console
                 </li>
               </ul>
             </div>
@@ -460,8 +467,9 @@ export function StorachaSSOLogin({
     const iframe = document.createElement('iframe')
     iframe.src = \`https://console.storacha.network/iframe?sso=\${provider}\`
     iframe.title = 'Storacha Console'
-    iframe.sandbox = 'allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation'
+    iframe.sandbox = 'allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation allow-downloads'
     iframe.allow = 'payment'
+    iframe.referrerPolicy = 'origin'
     iframe.style.cssText = \`
       width: 400px;
       height: 600px;
