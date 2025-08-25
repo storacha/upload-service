@@ -385,7 +385,8 @@ export default function TestIframePage() {
                 height="100%"
                 className="border-0"
                 title="Storacha Console"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
+                referrerPolicy="origin"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation allow-downloads"
                 allow="payment"
               />
             </div>
