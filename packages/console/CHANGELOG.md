@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.5](https://github.com/storacha/upload-service/compare/console-v2.3.4...console-v2.3.5) (2025-08-25)
+
+
+### Fixes
+
+* integration docs and iframe download config ([#383](https://github.com/storacha/upload-service/issues/383)) ([5ca0615](https://github.com/storacha/upload-service/commit/5ca06151461cf286bf9b8d29b9b70ab22c9922e3))
+
 ## [2.3.4](https://github.com/storacha/upload-service/compare/console-v2.3.3...console-v2.3.4) (2025-08-22)
 
 
