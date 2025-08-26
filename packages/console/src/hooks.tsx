@@ -1,5 +1,5 @@
 import { Account, DID, PlanGetSuccess, PlanSetSuccess, PlanSetFailure, Result } from '@storacha/ui-react'
-import useSWR, { SWRResponse } from 'swr'
+import useSWR, { SWRResponse, SWRConfiguration } from 'swr'
 import { logAndCaptureError } from './sentry'
 
 /**
@@ -11,7 +11,7 @@ type UsePlanResult = SWRResponse<PlanGetSuccess | undefined> & {
   setPlan: (plan: DID) => Promise<Result<PlanSetSuccess, PlanSetFailure>>
 }
 
-export const usePlan = (account: Account) => {
+export const usePlan = (account: Account, options?: SWRConfiguration) => {
   const result = useSWR<PlanGetSuccess | undefined>(planKey(account), {
     fetcher: async () => {
       if (!account) return
@@ -19,7 +19,8 @@ export const usePlan = (account: Account) => {
       if (result.error) throw new Error('getting plan', { cause: result.error })
       return result.ok
     },
-    onError: logAndCaptureError
+    onError: logAndCaptureError,
+    ...options
   })
   // @ts-ignore it's important to assign this into the existing object
   // to avoid calling the getters in SWRResponse when copying values over -

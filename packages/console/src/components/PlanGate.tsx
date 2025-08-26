@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode } from 'react'
+import { ReactNode, useMemo } from 'react'
 import { useW3 } from '@storacha/ui-react'
 import StripePricingTable, { StripeTrialPricingTable, SSOIframeStripePricingTable } from './PricingTable'
 import { TopLevelLoader } from './Loader'
@@ -69,9 +69,29 @@ const PricingTable = ({
 
 export function PlanGate({ children }: { children: ReactNode }): ReactNode {
   const [{ accounts }] = useW3()
-  const email = accounts[0]?.toEmail()
-  const { data: plan, error, isLoading } = usePlan(accounts[0])
-  const { referredBy } = useRecordRefcode()
+  const account = accounts[0]
+  const { isIframe, isDetectionComplete } = useIframe()
+  
+  // Memoize email to prevent unnecessary re-renders
+  const email = useMemo(() => account.toEmail(), [account])
+  
+  // Use stable options for SWR to prevent refresh loops in iframe
+  const planOptions = useMemo(() => ({
+    revalidateOnFocus: !isIframe, // Disable focus revalidation in iframe
+    revalidateOnReconnect: !isIframe, // Disable reconnect revalidation in iframe
+    refreshInterval: isIframe ? 0 : undefined, // Disable auto-refresh in iframe
+  }), [isIframe])
+  
+  const { data: plan, error, isLoading } = usePlan(account, planOptions)
+  
+  // Only call referral hook after iframe detection is complete to prevent URL param issues
+  const referralResult = useRecordRefcode()
+  const referredBy = isDetectionComplete ? referralResult.referredBy : undefined
+
+  // Wait for iframe detection to complete before rendering
+  if (!isDetectionComplete) {
+    return <TopLevelLoader />
+  }
 
   if (isLoading) {
     return <TopLevelLoader />
