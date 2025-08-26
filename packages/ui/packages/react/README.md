@@ -15,3 +15,4 @@ Feel free to join in. All welcome. Please read our [contributing guidelines](htt
 ## License
 
 Dual-licensed under [MIT + Apache 2.0](https://github.com/storacha/upload-service/blob/main/license.md)
+
