@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.6](https://github.com/storacha/upload-service/compare/console-v2.3.5...console-v2.3.6) (2025-08-26)
+
+
+### Fixes
+
+* prevent iframe auto-refresh and auth loops + fix ci build issue ([#385](https://github.com/storacha/upload-service/issues/385)) ([53b77be](https://github.com/storacha/upload-service/commit/53b77bece0d8bd96ffd8b26e5cb38b3e93ed5ef4))
+
 ## [2.3.5](https://github.com/storacha/upload-service/compare/console-v2.3.4...console-v2.3.5) (2025-08-25)
 
 
