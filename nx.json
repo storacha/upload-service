@@ -44,7 +44,7 @@
     "versionPlans": true,
     "version": {
       "generatorOptions": {
-        "preserveLocalDependencyProtocols": true
+        "preserveLocalDependencyProtocols": false
       }
     },
     "changelog": {

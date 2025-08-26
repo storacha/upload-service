@@ -2,12 +2,21 @@ import { useW3 } from '@storacha/ui-react'
 import { useCallback, useMemo } from 'react'
 import { usePlan } from '@/hooks'
 import { PLANS } from '@/app/plans/change/page'
+import { useIframe } from '@/contexts/IframeContext'
 
 export const usePrivateSpacesAccess = () => {
   const [{ accounts }] = useW3()
   const account = accounts[0]
+  const { isIframe } = useIframe()
   
-  const { data: plan, isLoading } = usePlan(account)
+  // Use iframe-aware SWR options to prevent authentication restarts
+  const planOptions = useMemo(() => ({
+    revalidateOnFocus: !isIframe,
+    revalidateOnReconnect: !isIframe,
+    refreshInterval: isIframe ? 0 : undefined,
+  }), [isIframe])
+  
+  const { data: plan, isLoading } = usePlan(account, planOptions)
   const email = account?.toEmail()
   
   // Get allowed domains from environment variable
