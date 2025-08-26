@@ -40,7 +40,7 @@ export function blobAddProvider(context) {
       // we return `InsufficientStorage` error as storage capacity is considered
       // to be 0.
       const provisioned = await spaceAllocate(
-        { capability: { with: space } },
+        { capability: { with: space, nb: { size: blob.size } } },
         context
       )
       if (provisioned.error) {

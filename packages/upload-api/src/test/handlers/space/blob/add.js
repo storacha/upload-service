@@ -8,6 +8,8 @@ import { alice, registerSpace } from '../../../util.js'
 import { createConcludeInvocation } from '../../../../ucan/conclude.js'
 import { parseBlobAddReceiptNext } from '../../../helpers/blob.js'
 import { BlobSizeLimitExceededError } from '../../../../blob.js'
+import { MAX_UPLOAD_SIZE } from '../../../../web3.storage/blob/constants.js'
+import { ProvisionsStorage } from '../../../storage/provisions-storage.js'
 
 /**
  * @type {API.Tests}
@@ -22,7 +24,6 @@ export const test = {
       const multihash = await sha256.digest(data)
       const digest = multihash.bytes
       const size = data.byteLength
-
       // create service connection
       const connection = connect({
         id: context.id,
@@ -455,7 +456,7 @@ export const test = {
         nb: {
           blob: {
             digest,
-            size: Number.MAX_SAFE_INTEGER,
+            size: MAX_UPLOAD_SIZE + 1,
           },
         },
         proofs: [proof],
@@ -480,6 +481,48 @@ export const test = {
         String(work.put.receipt?.out.error?.message).match(
           /Awaited bafy.* at .out.ok.address.url/
         )
+      )
+    },
+  'space/blob/add fails when there is not enough space left unallocated on a limited plan':
+    async (assert, context) => {
+      const { proof, spaceDid } = await registerSpace(alice, context)
+
+      const provisionsStorage = /** @type {ProvisionsStorage} */ (
+        context.provisionsStorage
+      )
+      provisionsStorage.spaceLimits[spaceDid] = { allocated: 900, limit: 1000 }
+      // prepare data
+      const data = new Uint8Array([11, 22, 34, 44, 55])
+      const multihash = await sha256.digest(data)
+      const digest = multihash.bytes
+
+      // create service connection
+      const connection = connect({
+        id: context.id,
+        channel: createServer(context),
+      })
+
+      // invoke `blob/add`
+      const invocation = SpaceBlobCapabilities.add.invoke({
+        issuer: alice,
+        audience: context.id,
+        with: spaceDid,
+        nb: {
+          blob: {
+            digest,
+            size: 101,
+          },
+        },
+        proofs: [proof],
+      })
+      const blobAdd = await invocation.execute(connection)
+      if (blobAdd.out.ok) {
+        throw new Error('invocation should have failed')
+      }
+      assert.equal(
+        blobAdd.out.error?.name,
+        'InsufficientStorage',
+        'invocation failed with InsufficientStorage error'
       )
     },
 }
