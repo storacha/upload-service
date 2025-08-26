@@ -39,26 +39,41 @@ export function SpacePage() {
   }
 
   return (
-    <>
+    <div className="max-w-7xl mx-auto">
       <SpacesNav />
-      <H1>Spaces</H1>
-      <SpacesTabNavigation
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        showPrivateTab={shouldShowPrivateSpacesTab}
-        privateTabLocked={!canAccessPrivateSpaces}
-      />
-      {activeTab === 'public' && (
-        <SpacesList spaces={publicSpaces} type="public" />
-      )}
-      {activeTab === 'private' && (
-        canAccessPrivateSpaces ? (
-          <SpacesList spaces={privateSpaces} type="private" />
-        ) : (
-          <UpgradePrompt hasHiddenSpaces={hasHiddenPrivateSpaces} />
-        )
-      )}
-    </>
+      
+      {/* Professional Header */}
+      <div className="mb-6">
+        <H1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">Your Spaces</H1>
+        <p className="text-sm md:text-lg text-slate-800 font-medium">
+          Manage your storage spaces and organize your files with ease.
+        </p>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="mb-8">
+        <SpacesTabNavigation
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          showPrivateTab={shouldShowPrivateSpacesTab}
+          privateTabLocked={!canAccessPrivateSpaces}
+        />
+      </div>
+
+      {/* Content Area */}
+      <div className="min-h-[400px]">
+        {activeTab === 'public' && (
+          <SpacesList spaces={publicSpaces} type="public" />
+        )}
+        {activeTab === 'private' && (
+          canAccessPrivateSpaces ? (
+            <SpacesList spaces={privateSpaces} type="private" />
+          ) : (
+            <UpgradePrompt hasHiddenSpaces={hasHiddenPrivateSpaces} />
+          )
+        )}
+      </div>
+    </div>
   )
 }
 
