@@ -5,10 +5,10 @@ import { useW3 } from '@storacha/ui-react'
 import StripePricingTable, { StripeTrialPricingTable, SSOIframeStripePricingTable } from './PricingTable'
 import { TopLevelLoader } from './Loader'
 import { Logo } from '@/brand'
-import { usePlan } from '@/hooks'
-import { useRecordRefcode } from '@/lib/referrals/hooks'
+import { usePlanGate } from '@/hooks'
 import { useSearchParams } from 'next/navigation'
 import { useIframe } from '@/contexts/IframeContext'
+import { useRecordRefcode } from '@/lib/referrals/hooks'
 
 const PricingTable = ({
   email,
@@ -70,37 +70,29 @@ const PricingTable = ({
 export function PlanGate({ children }: { children: ReactNode }): ReactNode {
   const [{ accounts }] = useW3()
   const account = accounts[0]
-  const { isIframe, isDetectionComplete } = useIframe()
+  const { isDetectionComplete } = useIframe()
   
   // Memoize email to prevent unnecessary re-renders
   const email = useMemo(() => account.toEmail(), [account])
-  
-  // Use stable options for SWR to prevent refresh loops in iframe
-  const planOptions = useMemo(() => ({
-    revalidateOnFocus: !isIframe, // Disable focus revalidation in iframe
-    revalidateOnReconnect: !isIframe, // Disable reconnect revalidation in iframe
-    refreshInterval: isIframe ? 0 : undefined, // Disable auto-refresh in iframe
-  }), [isIframe])
-  
-  const { data: plan, error, isLoading } = usePlan(account, planOptions)
+
+  const { plan, error, isLoading } = usePlanGate(account, isDetectionComplete)
   
   // Only call referral hook after iframe detection is complete to prevent URL param issues
   const referralResult = useRecordRefcode()
   const referredBy = isDetectionComplete ? referralResult.referredBy : undefined
 
-  // Wait for iframe detection to complete before rendering
-  if (!isDetectionComplete) {
+  // Wait for iframe detection and initial plan fetch to complete before rendering
+  if (!isDetectionComplete || isLoading) {
     return <TopLevelLoader />
   }
 
-  if (isLoading) {
-    return <TopLevelLoader />
+  // Show pricing table if no plan exists
+  if (!plan) {
+    return <PricingTable email={email} referredBy={referredBy} />
   }
 
+  // Handle any actual errors from the hook
   if (error) {
-    if (error.cause?.name === 'PlanNotFound') {
-      return <PricingTable email={email} referredBy={referredBy} />
-    } else {
       return (
         <div className="flex flex-col justify-center items-center min-h-screen">
           <div className="my-6">
@@ -123,11 +115,6 @@ export function PlanGate({ children }: { children: ReactNode }): ReactNode {
         </div>
       )
     }
-  }
-
-  if (plan && !plan.product) {
-    return <PricingTable email={email} referredBy={referredBy} />
-  }
 
   return children
 }
