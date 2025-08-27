@@ -22,8 +22,7 @@ export default function HomePage() {
 export function SpacePage() {
   const [activeTab, setActiveTab] = useState<'public' | 'private'>('public')
   const [{ spaces }] = useW3()
-  const { canAccessPrivateSpaces, planLoading } = usePrivateSpacesAccess()
-  const { shouldShowPrivateSpacesTab } = usePrivateSpacesAccess()
+  const { canAccessPrivateSpaces, planLoading, shouldShowPrivateSpacesTab } = usePrivateSpacesAccess()
   const { publicSpaces, privateSpaces, hasHiddenPrivateSpaces } = useFilteredSpaces()
 
   if (spaces.length === 0) {
