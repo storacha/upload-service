@@ -10,7 +10,7 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "../../../../node_modules/.bin/tsc --build --emitDeclarationOnly --pretty --verbose",
+    "build": "../../../../node_modules/.bin/tsc --build --pretty --verbose",
     "typecheck": "../../../../node_modules/.bin/tsc --build --emitDeclarationOnly --pretty --verbose",
     "dev": "tsc --build --watch --preserveWatchOutput",
     "clean": "rm -rf dist *.tsbuildinfo",
