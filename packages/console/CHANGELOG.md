@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.8](https://github.com/storacha/upload-service/compare/console-v2.3.7...console-v2.3.8) (2025-08-28)
+
+
+### Other Changes
+
+* **release:** publish ([27a2dc5](https://github.com/storacha/upload-service/commit/27a2dc568ffec5d7cf79dab7e0b0c3d081169398))
+
 ## [2.3.7](https://github.com/storacha/upload-service/compare/console-v2.3.6...console-v2.3.7) (2025-08-28)
 
 
