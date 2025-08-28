@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.7](https://github.com/storacha/upload-service/compare/console-v2.3.6...console-v2.3.7) (2025-08-28)
+
+
+### Fixes
+
+* auto refresh pricing table in iframe context ([#390](https://github.com/storacha/upload-service/issues/390)) ([b96485b](https://github.com/storacha/upload-service/commit/b96485b647aad87f9f87f847405e43a1f6808a85))
+
 ## [2.3.6](https://github.com/storacha/upload-service/compare/console-v2.3.5...console-v2.3.6) (2025-08-26)
 
 
