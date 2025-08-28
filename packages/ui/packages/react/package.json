@@ -9,9 +9,9 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsc --build --pretty --verbose",
+    "build": "tsup src/index.ts --format esm,cjs --dts --external react,react-dom --tsconfig tsconfig.build.json --minify",
     "typecheck": "../../../../node_modules/.bin/tsc --build --emitDeclarationOnly --pretty --verbose",
-    "dev": "tsc --build --watch --preserveWatchOutput",
+    "dev": "tsup src/index.ts --format esm,cjs --dts --watch --external react,react-dom",
     "clean": "rm -rf dist *.tsbuildinfo",
     "lint": "echo 'Linting in @storacha/ui-react is temporarily disabled while we resolve version issues.'",
     "lint:fix": "echo 'Linting in @storacha/ui-react is temporarily disabled while we resolve version issues.'",
@@ -57,11 +57,12 @@
     "jsdom": "catalog:",
     "multiformats": "catalog:",
     "react": "catalog:",
+    "tsup": "^8.5.0",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
   "peerDependencies": {
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0"
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
   },
   "eslintConfig": {
     "extends": [

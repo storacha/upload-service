@@ -150,6 +150,7 @@ export const activate = async ({ http } = {}) => {
 class ClaimStorage {
   constructor() {
     /** @type {Map<API.MultihashDigest, IndexingServiceAPI.Claim[]>} */
+    // @ts-expect-error DigestMap works like a Map in runtime but TS doesn't recognize it. putting this here so the build passes with tsup
     this.data = new DigestMap()
   }
 

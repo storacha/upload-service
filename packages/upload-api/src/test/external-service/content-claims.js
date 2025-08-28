@@ -120,6 +120,7 @@ export const activate = async ({ http } = {}) => {
 class ClaimStorage {
   constructor() {
     /** @type {Map<API.MultihashDigest, import('@web3-storage/content-claims/server/api').Claim[]>} */
+    // @ts-expect-error see indexing-service.js L153
     this.data = new DigestMap()
   }
 
