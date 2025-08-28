@@ -34,8 +34,8 @@
 import { useIframe } from '@/contexts/IframeContext'
 import { useW3, Authenticator } from '@storacha/ui-react'
 import { useEffect, useState, useMemo, ReactNode, useRef, useCallback } from 'react'
-import { Logo } from '@/brand'
 import { getAllowedOrigins, isOriginAllowed } from '@/lib/sso-origins'
+import { Logo } from '@/brand'
 
 // Global flag to prevent duplicate MessageChannel setup across React StrictMode cycles
 let globalChannelSetup = false
@@ -56,16 +56,45 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
   const { isIframe, isClient, ssoProvider } = useIframe()
   const [{ client, accounts }, { logout }] = useW3()
   
+  // State declarations first
+  const [authState, setAuthState] = useState<'pending' | 'authenticating' | 'finalizing' | 'authenticated' | 'failed'>('pending')
+  const [error, setError] = useState<string | null>(null)
+  const [channel, setChannel] = useState<MessageChannel | null>(null)
+  const [expectedSSOEmail, setExpectedSSOEmail] = useState<string | null>(null)
+  // Persist authentication across remounts using sessionStorage
+  const authStorageKey = `iframe-auth-${ssoProvider || 'default'}`
+
+  // Only restore from sessionStorage on initial mount if user is already authenticated
+  // and no active authentication flow is happening
+  useEffect(() => {
+    if (accounts.length > 0 && authState === 'pending') {
+      const wasAuthenticated = sessionStorage.getItem(authStorageKey) === 'true'
+      if (wasAuthenticated) {
+        devLog('IFRAME: Restoring authenticated state from sessionStorage')
+        setAuthState('authenticated')
+      }
+    }
+  }, []) // Only run on mount
+  
+  // Log authState changes
+  useEffect(() => {
+    devLog('IFRAME: authState changed to:', authState)
+  }, [authState])
+  
+  // Log accounts changes
+  useEffect(() => {
+    devLog('IFRAME: Accounts changed:', { 
+      accounts, 
+      isAuthenticated: accounts.length > 0,
+      authState 
+    })
+  }, [accounts, authState])
+  
   // Use ref to track latest client for retry logic
   const clientRef = useRef(client)
   clientRef.current = client
   
   // Log client availability changes
-  const [authState, setAuthState] = useState<'pending' | 'authenticating' | 'authenticated' | 'failed'>('pending')
-  const [error, setError] = useState<string | null>(null)
-  const [channel, setChannel] = useState<MessageChannel | null>(null)
-
-  const [expectedSSOEmail, setExpectedSSOEmail] = useState<string | null>(null)
   const isChannelSetupRef = useRef(false)
   const channelRef = useRef<MessageChannel | null>(null)
   const emailMismatchLoggedRef = useRef<boolean>(false)
@@ -93,6 +122,35 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
       emailMismatchLoggedRef.current = false
     }
   }, [hasEmailMismatch, currentEmail, expectedSSOEmail])
+
+  // Effect to handle the final state transition after a delay
+  useEffect(() => {
+    devLog('IFRAME: Auth state changed to:', authState, { hasAccounts: accounts.length > 0 })
+    
+    if (authState === 'finalizing') {
+      devLog('IFRAME: Starting finalizing timeout')
+      // This delay allows the parent window to process the success message before rendering children
+      const timer = setTimeout(() => {
+        devLog('IFRAME: Finalizing complete, setting to authenticated', {
+          currentAuthState: authState,
+          hasAccounts: accounts.length > 0,
+          currentEmail: accounts[0]?.toEmail()
+        })
+        setAuthState('authenticated')
+        sessionStorage.setItem(authStorageKey, 'true')
+      }, 150) // A short buffer
+
+      return () => {
+        devLog('IFRAME: Cleaning up finalizing timeout', { currentAuthState: authState })
+        clearTimeout(timer)
+      }
+    }
+  }, [authState, accounts, authStorageKey])
+  
+  // Log when the component mounts
+  useEffect(() => {
+    devLog('IFRAME: Component mounted, current authState:', authState)
+  }, [])
 
   useEffect(() => {
     if (!isClient || !isIframe || !ssoProvider) return
@@ -297,9 +355,10 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
       
       if (isAuthenticated && currentEmail === email) {
         // Session validation: same email, assume session is still valid
-        setAuthState('authenticated')
-        sendLoginStatus('authenticated')
+        devLog('IFRAME: Existing session found with matching email, finalizing...')
         sendLoginCompleted('success')
+        setAuthState('finalizing')
+        sessionStorage.removeItem(authStorageKey)
         return
       }
 
@@ -312,7 +371,6 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
       }
 
       setAuthState('authenticating')
-      sendLoginStatus('authenticating')
 
       // Use w3up client login with SSO parameters
       // The client will handle multiple accounts internally
@@ -334,9 +392,9 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
 
       await currentClient.capability.access.claim()
 
-      setAuthState('authenticated')
-      sendLoginStatus('authenticated')
+      devLog('IFRAME: Authentication successful, finalizing...')
       sendLoginCompleted('success')
+      setAuthState('finalizing')
 
     } catch (err) {
       console.error('SSO authentication failed:', err)
@@ -347,14 +405,6 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
     }
   }
 
-  // Monitor authentication state and notify parent
-  // BUT NOT during SSO email mismatch scenarios
-  useEffect(() => {
-    if (isAuthenticated && authState !== 'authenticated' && !hasEmailMismatch) {
-      setAuthState('authenticated')
-      sendLoginStatus('authenticated')
-    }
-  }, [isAuthenticated, authState, sendLoginStatus, hasEmailMismatch])
 
   // Don't render until client-side
   if (!isClient) {
@@ -458,21 +508,21 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
     )
   }
 
-  // If user is authenticated and no email mismatch, show the console
-  if (isAuthenticated || authState === 'authenticated') {
+  // If user is authenticated, show the console
+  if (authState === 'authenticated') {
     return <Authenticator>{children}</Authenticator>
   }
 
-  // Default: show preparation state
+  // Default: show a loader for pending, authenticating, or finalizing states
   return (
     <div className="flex items-center justify-center h-screen bg-gray-50">
       <div className="text-center p-8">
         <Logo className="w-16 h-16 mx-auto mb-4 text-blue-600" />
-        <h3 className="text-lg font-semibold text-gray-700 mb-2">
-          Preparing Workspace
+        <h3 className="text-lg font-semibold text-gray-700 mb-2 mt-10">
+          Preparing Console
         </h3>
         <p className="text-gray-500">
-          Setting up your Storacha workspace...
+          Setting up...
         </p>
       </div>
     </div>

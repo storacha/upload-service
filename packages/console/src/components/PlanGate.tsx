@@ -5,10 +5,10 @@ import { useW3 } from '@storacha/ui-react'
 import StripePricingTable, { StripeTrialPricingTable, SSOIframeStripePricingTable } from './PricingTable'
 import { TopLevelLoader } from './Loader'
 import { Logo } from '@/brand'
-import { usePlan } from '@/hooks'
-import { useRecordRefcode } from '@/lib/referrals/hooks'
+import { useConditionalPlan } from '@/hooks'
 import { useSearchParams } from 'next/navigation'
 import { useIframe } from '@/contexts/IframeContext'
+import { useRecordRefcode } from '@/lib/referrals/hooks'
 
 const PricingTable = ({
   email,
@@ -70,33 +70,26 @@ const PricingTable = ({
 export function PlanGate({ children }: { children: ReactNode }): ReactNode {
   const [{ accounts }] = useW3()
   const account = accounts[0]
-  const { isIframe, isDetectionComplete } = useIframe()
-  
-  // Memoize email to prevent unnecessary re-renders
-  const email = useMemo(() => account.toEmail(), [account])
-  
-  // Use stable options for SWR to prevent refresh loops in iframe
-  const planOptions = useMemo(() => ({
-    revalidateOnFocus: !isIframe, // Disable focus revalidation in iframe
-    revalidateOnReconnect: !isIframe, // Disable reconnect revalidation in iframe
-    refreshInterval: isIframe ? 0 : undefined, // Disable auto-refresh in iframe
-  }), [isIframe])
-  
-  const { data: plan, error, isLoading } = usePlan(account, planOptions)
-  
-  // Only call referral hook after iframe detection is complete to prevent URL param issues
+  const { isDetectionComplete } = useIframe()
+
+  // Always call hooks at the top level
+  const email = useMemo(() => account?.toEmail() || '', [account])
+  const { plan, error, isLoading } = useConditionalPlan(account)
   const referralResult = useRecordRefcode()
   const referredBy = isDetectionComplete ? referralResult.referredBy : undefined
 
-  // Wait for iframe detection to complete before rendering
-  if (!isDetectionComplete) {
+  // An account is required to check for a plan or show the pricing table.
+  // If there's no account, we're still in the loading phase.
+  if (!account) {
     return <TopLevelLoader />
   }
 
+  // Show loader while waiting for plan, regardless of iframe context
   if (isLoading) {
     return <TopLevelLoader />
   }
 
+  // Handle errors from the hook
   if (error) {
     if (error.cause?.name === 'PlanNotFound') {
       return <PricingTable email={email} referredBy={referredBy} />
@@ -125,7 +118,8 @@ export function PlanGate({ children }: { children: ReactNode }): ReactNode {
     }
   }
 
-  if (plan && !plan.product) {
+  // Show pricing table if plan doesn't exist or no product is selected
+  if (!plan || !plan.product) {
     return <PricingTable email={email} referredBy={referredBy} />
   }
 
