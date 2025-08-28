@@ -1,3 +1,13 @@
+## 2.4.103 (2025-08-28)
+
+### 🩹 Fixes
+
+- fix build on @storacha/ui-core ([#392](https://github.com/storacha/upload-service/pull/392))
+
+### ❤️ Thank You
+
+- Hannah Howard
+
 ## 2.4.102 (2025-08-21)
 
 ### 🧱 Updated Dependencies
