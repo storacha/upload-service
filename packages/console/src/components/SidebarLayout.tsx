@@ -23,7 +23,6 @@ interface SidebarComponentProps {
   sidebar?: React.ReactNode
 }
 
-const footerLinkClasses = 'text-xs block text-center mt-2 px-1'
 
 function Sidebar ({ sidebar = <div></div> }: SidebarComponentProps): JSX.Element {
   const [{ spaces }] = useW3()
@@ -36,27 +35,27 @@ function Sidebar ({ sidebar = <div></div> }: SidebarComponentProps): JSX.Element
     router.push(`/space/${s.did()}`)
   }
   return (
-    <nav className='flex-none w-64 bg-hot-yellow text-hot-red px-5 pb-5 border-r border-hot-red min-h-screen'>
+    <nav className='flex-none w-64 sidebar-professional text-white px-6 pb-6 border-r border-slate-300 min-h-screen'>
       <div className='flex flex-col justify-between h-full'>
         <div>
           <header className='opacity-0 lg:opacity-100 my-8'>
             <Logo className='pr-4 block' />
           </header>
-          <div className='my-6'>
-            <H2 className='text-white'>Spaces</H2>
+          <div className='my-8'>
+            <H2 className='text-slate-200 text-sm font-semibold uppercase tracking-wider mb-4'>Spaces</H2>
             <SpaceFinder spaces={spaces} selected={space} setSelected={goToSpace} />
           </div>
-          <div className='my-6'>
+          <div className='my-8'>
             <SidebarMigrations />
           </div>
         </div>
         {sidebar}
-        <div className='flex flex-col items-center'>
-          <div className='flex flex-row space-x-2'>
+        <div className='flex flex-col items-center border-t border-slate-600 pt-6'>
+          <div className='flex flex-row flex-wrap justify-center gap-4'>
             {navLinks.map((link, i) => (
-              <a key={i} className={footerLinkClasses} href={link.href}>{link.name}</a>
+              <a key={i} className='text-xs text-slate-300 hover:text-white transition-colors' href={link.href}>{link.name}</a>
             ))}
-            <a className={footerLinkClasses} href="/logout">
+            <a className='text-xs text-slate-300 hover:text-white transition-colors' href="/logout">
               Log Out
             </a>
           </div>
@@ -112,13 +111,13 @@ export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.
               <div className='hidden lg:block'>
                 <Sidebar />
               </div>
-              <div className='bg-racha-fire/50 w-full'>
+              <div className='bg-professional-branded w-full'>
                 {/* top nav bar for narrow browsers, mainly to have a place to put the hamburger */}
-                <div className='lg:hidden flex justify-between pt-4 px-4'>
-                  <Bars3Icon className='text-hot-red w-6 h-6' onClick={() => setSidebarOpen(true)} />
+                <div className='lg:hidden flex justify-between pt-6 px-6 bg-white card-shadow-lg'>
+                  <Bars3Icon className='text-slate-600 w-6 h-6 hover:text-hot-red transition-colors cursor-pointer' onClick={() => setSidebarOpen(true)} />
                   <Logo className='w-full' />
                 </div>
-                <main className='grow text-black p-12'>
+                <main className='grow text-slate-900 p-4 md:p-8 lg:p-12'>
                   {children}
                 </main>
               </div>
@@ -169,7 +168,7 @@ export function IframeSidebarLayout ({ children }: LayoutComponentProps): JSX.El
       <div className='hidden lg:block'>
         <Sidebar />
       </div>
-      <div className='bg-racha-fire/50 w-full'>
+      <div className='bg-professional-branded w-full'>
         {/* top nav bar for narrow browsers, mainly to have a place to put the hamburger */}
         <div className='lg:hidden flex justify-between pt-4 px-4'>
           <Bars3Icon className='text-hot-red w-6 h-6' onClick={() => setSidebarOpen(true)} />

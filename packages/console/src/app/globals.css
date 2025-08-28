@@ -86,4 +86,30 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
+  
+  /* Professional UI utilities */
+  .card-shadow {
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  }
+  .card-shadow-lg {
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  }
+  .card-shadow-hover {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  }
+  .transition-all-smooth {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .bg-professional {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  }
+  .bg-professional-branded {
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.9) 0%, rgba(241, 245, 249, 0.9) 100%), url("/racha-fire.png") bottom left;
+    background-size: 100% auto, 100% auto;
+    background-position: center, bottom;
+    background-repeat: no-repeat, no-repeat;
+  }
+  .sidebar-professional {
+    background: linear-gradient(180deg, #1e293b 0%, #334155 100%);
+  }
 }
