@@ -56,13 +56,23 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
   const { isIframe, isClient, ssoProvider } = useIframe()
   const [{ client, accounts }, { logout }] = useW3()
   
-  // State declarations first
-  const [authState, setAuthState] = useState<'pending' | 'authenticating' | 'finalizing' | 'authenticated' | 'failed'>('pending')
+  // Persist authentication across remounts using sessionStorage
+  const authStorageKey = `iframe-auth-${ssoProvider || 'default'}`
+  
+  // Use lazy initialization to ensure accounts are available
+  const [authState, setAuthState] = useState<'pending' | 'authenticating' | 'finalizing' | 'authenticated' | 'failed'>(() => {
+    // Check if we have stored authentication state
+    const wasAuthenticated = sessionStorage.getItem(authStorageKey) === 'true'
+    if (wasAuthenticated) {
+      devLog('IFRAME: Lazy initializing with authenticated state from sessionStorage')
+      return 'authenticated'
+    }
+    return 'pending'
+  })
   const [error, setError] = useState<string | null>(null)
   const [channel, setChannel] = useState<MessageChannel | null>(null)
   const [expectedSSOEmail, setExpectedSSOEmail] = useState<string | null>(null)
-  // Persist authentication across remounts using sessionStorage
-  const authStorageKey = `iframe-auth-${ssoProvider || 'default'}`
+  const [isCleaningUp, setIsCleaningUp] = useState(false)
 
   // Only restore from sessionStorage on initial mount if user is already authenticated
   // and no active authentication flow is happening
@@ -146,6 +156,76 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
       }
     }
   }, [authState, accounts, authStorageKey])
+
+  // Handle email mismatch by cleaning up existing session and proceeding with new login
+  useEffect(() => {
+    if (hasEmailMismatch && !isCleaningUp) {
+      devLog('IFRAME: Email mismatch detected, cleaning up existing session and proceeding with new login')
+      setIsCleaningUp(true)
+      
+      // Clear all browser storage silently
+      const clearAllStorage = async () => {
+        try {
+          devLog('IFRAME: Starting storage cleanup for account switch')
+          
+          // Logout current user first to prevent authentication conflicts
+          await logout()
+          
+          // Clear localStorage
+          localStorage.clear()
+          
+          // Clear sessionStorage
+          sessionStorage.clear()
+          
+          // Clear IndexedDB
+          if ('indexedDB' in window) {
+            const databases = await indexedDB.databases()
+            await Promise.all(
+              databases.map(db => {
+                return new Promise<void>((resolve, reject) => {
+                  const deleteReq = indexedDB.deleteDatabase(db.name!)
+                  deleteReq.onsuccess = () => resolve()
+                  deleteReq.onerror = () => reject(deleteReq.error)
+                })
+              })
+            )
+          }
+          
+          // Clear cache storage
+          if ('caches' in window) {
+            const cacheNames = await caches.keys()
+            await Promise.all(cacheNames.map(name => caches.delete(name)))
+          }
+          
+          // Clear cookies by setting them to expire
+          document.cookie.split(";").forEach(cookie => {
+            const eqPos = cookie.indexOf("=")
+            const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim()
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`
+          })
+          
+          devLog('IFRAME: Storage cleanup completed, ready for new authentication')
+          
+          // Reset authentication state to allow new login
+          setAuthState('pending')
+          setError(null)
+          setExpectedSSOEmail(null) // Clear the expected email to reset mismatch detection
+          setIsCleaningUp(false)
+          
+          devLog('IFRAME: Ready for new SSO authentication')
+          
+        } catch (error) {
+          devLog('IFRAME: Error during storage cleanup:', error)
+          setError('Failed to switch accounts. Please refresh the page.')
+          setAuthState('failed')
+          setIsCleaningUp(false)
+        }
+      }
+      
+      clearAllStorage()
+    }
+  }, [hasEmailMismatch, isCleaningUp, logout])
   
   // Log when the component mounts
   useEffect(() => {
@@ -303,6 +383,13 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
   // SSO Authentication function with session validation
   const authenticateWithSSO = async (authData: any) => {
     devLog('IFRAME: authenticateWithSSO called with:', authData)
+    
+    // Prevent authentication during cleanup to avoid conflicts
+    if (isCleaningUp) {
+      devLog('IFRAME: Skipping authentication - cleanup in progress')
+      return
+    }
+    
     const { authProvider, email, externalUserId, externalSessionToken } = authData
     
     if (!authProvider || !email || !externalUserId || !externalSessionToken) {
@@ -486,27 +573,6 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
     )
   }
 
-  // Check for email mismatch during SSO and render appropriate UI
-  if (hasEmailMismatch) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-center p-8">
-          <div className="animate-pulse mb-4">
-            <div className="w-16 h-16 bg-orange-200 rounded-full mx-auto mb-4"></div>
-          </div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">
-            Account Switching Required
-          </h3>
-          <p className="text-gray-500 mb-2">
-            Current account: {currentEmail}
-          </p>
-          <p className="text-gray-500">
-            Switching to: {expectedSSOEmail}
-          </p>
-        </div>
-      </div>
-    )
-  }
 
   // If user is authenticated, show the console
   if (authState === 'authenticated') {
