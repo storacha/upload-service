@@ -1,7 +1,7 @@
 import { PropsWithChildren, ReactNode } from 'react'
 import { Nav, NavLink } from '@/components/Nav'
 import SidebarLayout from '@/components/SidebarLayout'
-import { ArrowDownOnSquareStackIcon, QueueListIcon, FolderPlusIcon } from '@heroicons/react/24/outline'
+import { ArrowDownOnSquareStackIcon, QueueListIcon, FolderPlusIcon, Cog8ToothIcon } from '@heroicons/react/24/outline'
 
 export const runtime = 'edge'
 
@@ -25,9 +25,10 @@ export function SpacesNav () {
   return (
     <div className='lg:float-right'>
       <Nav>
-        <NavLink href='/' title='List Spaces'><QueueListIcon className='w-5 inline-block' /> Spaces</NavLink>
-        <NavLink href='/space/import' title='Import an existing Space'><ArrowDownOnSquareStackIcon className='w-5 inline-block' /> Import</NavLink>
-        <NavLink href='/space/create' title='Create a new Space'><FolderPlusIcon className='w-5 inline-block' /> Create</NavLink>
+        <NavLink href='/'><QueueListIcon className='w-4 h-4 md:w-5 md:h-5' /> Spaces</NavLink>
+        <NavLink href='/space/import'><ArrowDownOnSquareStackIcon className='w-4 h-4 md:w-5 md:h-5' /> Import</NavLink>
+        <NavLink href='/space/create'><FolderPlusIcon className='w-4 h-4 md:w-5 md:h-5' /> Create</NavLink>
+        <NavLink href='/settings'><Cog8ToothIcon className='w-4 h-4 md:w-5 md:h-5' /> Settings</NavLink>
       </Nav>
     </div>
   )
