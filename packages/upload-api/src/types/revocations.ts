@@ -1,8 +1,14 @@
 import * as Ucanto from '@ucanto/interface'
 
 export interface Revocation {
+  /** The revoked delegation. */
   revoke: Ucanto.UCANLink
+  /**
+   * The DID of the authority that issued the revocation - either the issuer or
+   * audience of the revoked delegation or one of it's proofs.
+   */
   scope: Ucanto.DID
+  /** The `ucan/revoke` invocation that authorized the revocation. */
   cause: Ucanto.UCANLink
 }
 
