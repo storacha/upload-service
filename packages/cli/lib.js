@@ -171,9 +171,9 @@ export async function readProofFromBytes(bytes) {
 export function uploadListResponseToString(res, opts = {}) {
   if (opts.json) {
     return res.results
-      .map(({ root, shards, insertedAt, updatedAt }) => (
+      .map(({ root, shards, insertedAt, updatedAt }) =>
         dagJSON.stringify({ root, shards, insertedAt, updatedAt })
-      ))
+      )
       .join('\n')
   } else if (opts.shards) {
     return res.results
