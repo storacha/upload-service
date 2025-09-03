@@ -14,9 +14,9 @@ import * as UnixFS from './unixfs.js'
 import * as CAR from './car.js'
 import { BlockDeduplicationStream, dedupe } from './deduplication.js'
 import {
-  ShardingStream,
   defaultFileComparator,
   SHARD_SIZE,
+  FilepackShardingStream,
 } from './sharding.js'
 import { ShardedDAGIndex, indexShardedDAG } from '@storacha/blob-index'
 
@@ -177,7 +177,7 @@ export async function uploadBlockStream(
   const configure = typeof conf === 'function' ? conf : () => conf
   /** @type {Array<Map<import('./types.js').SliceDigest, import('./types.js').Position>>} */
   const shardIndexes = []
-  /** @type {import('./types.js').CARLink[]} */
+  /** @type {import('./types.js').ShardLink[]} */
   const shards = []
   /** @type {import('./types.js').AnyLink?} */
   let root = null
@@ -187,13 +187,13 @@ export async function uploadBlockStream(
   }
 
   await blocks
-    .pipeThrough(new ShardingStream(options))
+    .pipeThrough(new FilepackShardingStream(options))
     .pipeThrough(
-      /** @type {TransformStream<import('./types.js').IndexedCARFile, import('./types.js').CARMetadata>} */
+      /** @type {TransformStream<import('./types.js').IndexedSerializedDAGShard, import('./types.js').ShardMetadata>} */
       (
         new TransformStream({
-          async transform(car, controller) {
-            const bytes = new Uint8Array(await car.arrayBuffer())
+          async transform(shard, controller) {
+            const bytes = new Uint8Array(await shard.arrayBuffer())
             const digest = await sha256.digest(bytes)
             const conf = await configure([
               {
@@ -203,7 +203,7 @@ export async function uploadBlockStream(
             ])
             // Invoke blob/add and write bytes to write target
             await Blob.add(conf, digest, bytes, options)
-            const cid = Link.create(CAR.code, digest)
+            const cid = Link.create(raw.code, digest)
 
             let piece
             if (pieceHasher) {
@@ -233,8 +233,9 @@ export async function uploadBlockStream(
                 )
               }
             }
-            const { version, roots, size, slices } = car
-            controller.enqueue({ version, roots, size, cid, piece, slices })
+            const { size, slices } = shard
+            root = root ?? shard.root ?? null
+            controller.enqueue({ size, cid, piece, slices })
           },
         })
       )
@@ -242,7 +243,6 @@ export async function uploadBlockStream(
     .pipeTo(
       new WritableStream({
         write(meta) {
-          root = root || meta.roots[0]
           shards.push(meta.cid)
 
           // Make copies of digests that are views on bigger byte arrays. This
@@ -255,7 +255,7 @@ export async function uploadBlockStream(
             }
           }
 
-          // add the CAR shard itself to the slices
+          // add the shard itself to the slices
           meta.slices.set(meta.cid.multihash, [0, meta.size])
           shardIndexes.push(meta.slices)
 
@@ -325,8 +325,8 @@ export async function uploadBlocks(
     blocks = dedupe(blocks)
   }
 
-  /** @type {import('./types.js').IndexedCARFile} */
-  let car
+  /** @type {import('./types.js').IndexedSerializedDAGShard} */
+  let shard
   const blockStream = new ReadableStream({
     pull(controller) {
       for (const b of blocks) {
@@ -336,23 +336,25 @@ export async function uploadBlocks(
     },
   })
 
-  // encode indexed CAR
+  // encode indexed shard
   await blockStream
-    .pipeThrough(new ShardingStream({ ...options, shardSize: Infinity }))
+    .pipeThrough(new FilepackShardingStream({ ...options, shardSize: Infinity }))
     .pipeTo(
       new WritableStream({
         write: (c) => {
-          car = c
+          shard = c
         },
       })
     )
 
   /* c8 ignore next 2 */
   // @ts-expect-error no used before defined
-  if (!car) throw new Error('missing CAR output')
+  if (!shard) throw new Error('missing shard')
 
-  const root = car.roots[0]
-  const bytes = new Uint8Array(await car.arrayBuffer())
+  const root = shard.root
+  if (!root) throw new Error('missing shard root')
+
+  const bytes = new Uint8Array(await shard.arrayBuffer())
   const digest = await sha256.digest(bytes)
 
   const [shardLink, indexLink] = await Promise.all([
@@ -366,13 +368,13 @@ export async function uploadBlocks(
 
       // Invoke blob/add and write bytes to write target
       await Blob.add(conf, digest, bytes, options)
-      const cid = Link.create(CAR.code, digest)
+      const cid = Link.create(raw.code, digest)
 
       let piece
       if (pieceHasher) {
-        const multihashDigest = await pieceHasher.digest(bytes)
+        const pieceDigest = await pieceHasher.digest(bytes)
         /** @type {import('@storacha/capabilities/types').PieceLink} */
-        piece = Link.create(raw.code, multihashDigest)
+        piece = Link.create(raw.code, pieceDigest)
 
         // Invoke filecoin/offer for data
         const result = await Storefront.filecoinOffer(
@@ -383,7 +385,7 @@ export async function uploadBlocks(
             with: conf.issuer.did(),
             proofs: conf.proofs,
           },
-          Link.create(raw.code, digest),
+          cid,
           piece,
           options
         )
@@ -395,17 +397,17 @@ export async function uploadBlocks(
           )
         }
       }
-      const { version, roots, size, slices } = car
-      options.onShardStored?.({ version, roots, size, piece, cid, slices })
+      const { size, slices } = shard
+      options.onShardStored?.({ size, piece, cid, slices })
       return cid
     })(),
     (async () => {
       const index = ShardedDAGIndex.create(root)
-      for (const [slice, pos] of car.slices) {
+      for (const [slice, pos] of shard.slices) {
         index.setSlice(digest, slice, pos)
       }
       // add the CAR shard itself to the slices
-      index.setSlice(digest, digest, [0, car.size])
+      index.setSlice(digest, digest, [0, shard.size])
 
       const indexBytes = await index.archive()
       /* c8 ignore next 5 */

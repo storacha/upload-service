@@ -18,9 +18,9 @@ export const SHARD_SIZE = 133_169_152
  * received is assumed to be the DAG root and becomes the CAR root CID for the
  * last CAR output. Set the `rootCID` option to override.
  *
- * @extends {TransformStream<import('@ipld/unixfs').Block, import('./types.js').IndexedCARFile>}
+ * @extends {TransformStream<import('@ipld/unixfs').Block, import('./types.js').IndexedSerializedDAGShard>}
  */
-export class ShardingStream extends TransformStream {
+export class CARShardingStream extends TransformStream {
   /**
    * @param {import('./types.js').ShardingOptions} [options]
    */
@@ -130,6 +130,73 @@ export class ShardingStream extends TransformStream {
   }
 }
 
+/** @deprecated Use `CARShardingStream` */
+export const ShardingStream = CARShardingStream
+
+/**
+ * Shard a set of blocks into a set of Filepack data archives. By default the
+ * last block received is assumed to be the DAG root and becomes the root CID
+ * for the last archive output. Set the `rootCID` option to override.
+ *
+ * @extends {TransformStream<import('@ipld/unixfs').Block, import('./types.js').IndexedSerializedDAGShard>}
+ */
+export class FilepackShardingStream extends TransformStream {
+  /**
+   * @param {import('./types.js').ShardingOptions} [options]
+   */
+  constructor(options = {}) {
+    const shardSize = options.shardSize ?? SHARD_SIZE
+    const maxBlockLength = shardSize
+    /** @type {Uint8Array[]} */
+    let chunks = []
+    /** @type {Uint8Array[] | null} */
+    let readyChunks = null
+    /** @type {Map<import('./types.js').SliceDigest, import('./types.js').Position>} */
+    let slices = new DigestMap()
+    /** @type {Map<import('./types.js').SliceDigest, import('./types.js').Position> | null} */
+    let readySlices = null
+    let offset = 0
+    /** @type {import('@ipld/unixfs').Block | null} */
+    let last = null
+
+    super({
+      async transform(block, controller) {
+        last = block
+
+        if (readyChunks != null && readySlices != null) {
+          controller.enqueue(encodeFilepackData(readyChunks, readySlices))
+          readyChunks = null
+          readySlices = null
+        }
+
+        if (block.bytes.length > maxBlockLength) {
+          throw new Error(
+            `block will cause blob to exceed shard size: ${block.cid}`
+          )
+        }
+
+        if (chunks.length && offset + block.bytes.length > shardSize) {
+          readyChunks = chunks
+          readySlices = slices
+          chunks = []
+          slices = new DigestMap()
+          offset = 0
+        }
+        chunks.push(block.bytes)
+        slices.set(block.cid.multihash, [offset, block.bytes.length])
+        offset += block.bytes.length
+      },
+
+      async flush(controller) {
+        if (last != null) {
+          const root = options.rootCID ?? last.cid
+          controller.enqueue(encodeFilepackData(chunks, slices, root))
+        }
+      },
+    })
+  }
+}
+
 /**
  * Default comparator for FileLikes. Sorts by file name in ascending order.
  *
@@ -168,4 +235,13 @@ function ascending(a, b, getComparedValue) {
  * @returns {Promise<import('./types.js').IndexedCARFile>}
  */
 const encodeCAR = async (blocks, slices, root) =>
-  Object.assign(await encode(blocks, root), { slices })
+  Object.assign(await encode(blocks, root), { root, slices })
+
+/**
+ * @param {Uint8Array[]} chunks
+ * @param {Map<import('./types.js').SliceDigest, import('./types.js').Position>} slices
+ * @param {import('./types.js').AnyLink} [root]
+ * @returns {import('./types.js').IndexedSerializedDAGShard}
+ */
+const encodeFilepackData = (chunks, slices, root) =>
+  Object.assign(new Blob(chunks), { root, slices })

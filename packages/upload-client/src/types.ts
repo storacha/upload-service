@@ -66,6 +66,7 @@ import {
   EgressRecordSuccess,
   EgressRecordFailure,
   ServiceAbility,
+  ShardLink,
 } from '@storacha/capabilities/types'
 import { StorefrontService } from '@storacha/filecoin-client/storefront'
 import { code as pieceHashCode } from '@web3-storage/data-segment/multihash'
@@ -128,6 +129,7 @@ export type {
   EgressRecordFailure,
   ListResponse,
   CARLink,
+  ShardLink,
   PieceLink,
   ShardedDAGIndex,
   ShardDigest,
@@ -293,9 +295,17 @@ export interface BlobIndex {
 }
 
 /**
+ * A serialized DAG with added index information.
+ */
+export interface IndexedSerializedDAGShard extends Blob, BlobIndex {
+  /** Root of the DAG (if known) */
+  root?: UnknownLink
+}
+
+/**
  * A DAG encoded as a CAR with added index information.
  */
-export interface IndexedCARFile extends CARFile, BlobIndex {}
+export interface IndexedCARFile extends IndexedSerializedDAGShard, CARFile {}
 
 /**
  * Any IPLD link.
@@ -305,11 +315,11 @@ export type AnyLink = Link<unknown, number, number, Version>
 /**
  * Metadata pertaining to a CAR file.
  */
-export interface CARMetadata extends CARHeaderInfo, BlobIndex {
+export interface ShardMetadata extends BlobIndex {
   /**
-   * CID of the CAR file (not the data it contains).
+   * CID of the shard (not the root CID of the DAG it contains).
    */
-  cid: CARLink
+  cid: ShardLink
   /**
    * Piece CID of the CAR file. Note: represents Piece link V2.
    *
@@ -317,7 +327,7 @@ export interface CARMetadata extends CARHeaderInfo, BlobIndex {
    */
   piece?: PieceLink
   /**
-   * Size of the CAR file in bytes.
+   * Size of the shard in bytes.
    */
   size: number
 }
@@ -422,7 +432,7 @@ export interface UploadOptions
     DeduplicationOptions,
     ShardStoringOptions,
     UploadProgressTrackable {
-  onShardStored?: (meta: CARMetadata) => void
+  onShardStored?: (meta: ShardMetadata) => void
   pieceHasher?: MultihashHasher<typeof pieceHashCode>
 }
 

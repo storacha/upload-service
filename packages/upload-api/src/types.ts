@@ -210,7 +210,6 @@ import {
   UploadGetSuccess,
   UploadGetFailure,
   ListResponse,
-  CARLink,
   UCANConclude,
   UCANConcludeSuccess,
   UCANConcludeFailure,
@@ -236,6 +235,7 @@ import {
   SpaceBlobReplicate,
   SpaceBlobReplicateSuccess,
   SpaceBlobReplicateFailure,
+  ShardLink,
 } from '@storacha/capabilities/types'
 import * as Capabilities from '@storacha/capabilities'
 import { RevocationsStorage } from './types/revocations.js'
@@ -833,7 +833,7 @@ export type AdminUploadInspectResult = Result<
 export interface UploadAddInput {
   space: DID
   root: UnknownLink
-  shards?: CARLink[]
+  shards?: ShardLink[]
   issuer: DID
   cause: UCANLink
 }
