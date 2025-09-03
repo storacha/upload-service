@@ -2,6 +2,7 @@ import { Space } from '@storacha/ui-react'
 import { DidIcon } from './DidIcon'
 import { GlobeAltIcon, LockClosedIcon, FolderPlusIcon, ClipboardDocumentIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
+import { truncateDid } from '@/app/space/[did]/layout'
 
 interface SpaceListProps {
   spaces: Space[]
@@ -42,17 +43,6 @@ export function SpacesList({ spaces, type }: SpaceListProps) {
 interface SpaceItemProps {
   space: Space
   type: 'public' | 'private'
-}
-
-function truncateDid(did: string): string {
-  // For mobile: show did:key:first7...last7
-  if (did.startsWith('did:key:')) {
-    const keyPart = did.substring(8) // Remove 'did:key:'
-    if (keyPart.length > 14) {
-      return `did:key:${keyPart.substring(0, 7)}...${keyPart.substring(keyPart.length - 7)}`
-    }
-  }
-  return did
 }
 
 function SpaceItem({ space, type }: SpaceItemProps) {

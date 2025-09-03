@@ -20,7 +20,7 @@ function Uploads ({ space, uploads, loading, validating, onSelect, onNext, onPre
       <div className='max-w-4xl'>
         {loading ? null : <div className='text-hot-red text-center mb-5'>No uploads. <Link href={`/space/${space.did()}/upload`} className='underline'>Upload a file.</Link></div>}
         <nav className='flex flex-row justify-center'>
-          <button onClick={e => { e.preventDefault(); onRefresh() }} className='inline-block bg-white border border-hot-red hover:outline hover:bg-hot-red hover:text-white font-epilogue text-hot-red uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap'>
+          <button onClick={e => { e.preventDefault(); onRefresh() }} className='inline-block bg-white border border-hot-red hover:outline hover:bg-hot-red hover:text-white font-epilogue text-hot-red uppercase text-sm px-6 py-2 rounded-lg whitespace-nowrap'>
             <ArrowPathIcon className={`h-5 w-5  ${loading ? 'animate-spin' : ''} inline-block mr-1 align-middle`}/> {loading ? 'Loading' : 'Reload'}
           </button>
         </nav>
@@ -55,13 +55,13 @@ function Uploads ({ space, uploads, loading, validating, onSelect, onNext, onPre
           </table>
         </div>
         <nav className='flex flex-row justify-between my-4'>
-          <button onClick={e => { e.preventDefault(); onPrev && onPrev() }} className={`inline-block bg-white border border-hot-red font-epilogue text-hot-red uppercase text-sm pl-3 pr-6 py-2 rounded-full whitespace-nowrap ${onPrev ? 'hover:outline hover:bg-hot-red hover:text-white' : 'opacity-30'}`} disabled={!onPrev || loading}>
+          <button onClick={e => { e.preventDefault(); onPrev && onPrev() }} className={`inline-block bg-white border border-hot-red font-epilogue text-hot-red uppercase text-sm pl-3 pr-6 py-2 rounded-lg whitespace-nowrap ${onPrev ? 'hover:outline hover:bg-hot-red hover:text-white' : 'opacity-30'}`} disabled={!onPrev || loading}>
             <ChevronLeftIcon className='h-5 w-5 inline-block mr-1 align-middle'/> Previous
           </button>
-          <button onClick={e => { e.preventDefault(); onRefresh() }} className='inline-block bg-white border border-hot-red hover:outline hover:bg-hot-red hover:text-white font-epilogue text-hot-red uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap'>
+          <button onClick={e => { e.preventDefault(); onRefresh() }} className='inline-block bg-white border border-hot-red hover:outline hover:bg-hot-red hover:text-white font-epilogue text-hot-red uppercase text-sm px-6 py-2 rounded-lg whitespace-nowrap'>
             <ArrowPathIcon className={`h-5 w-5  ${loading || validating ? 'animate-spin' : ''} inline-block mr-1 align-middle`}/> {loading || validating ? 'Loading' : 'Reload'}
           </button>
-          <button onClick={e => { e.preventDefault(); onNext && onNext() }} className={`inline-block bg-white border border-hot-red font-epilogue text-hot-red uppercase text-sm pl-6 pr-3 py-2 rounded-full whitespace-nowrap ${onNext ? 'hover:outline hover:bg-hot-red hover:text-white' : 'opacity-30'}`} disabled={!onNext || loading}>
+          <button onClick={e => { e.preventDefault(); onNext && onNext() }} className={`inline-block bg-white border border-hot-red font-epilogue text-hot-red uppercase text-sm pl-6 pr-3 py-2 rounded-lg whitespace-nowrap ${onNext ? 'hover:outline hover:bg-hot-red hover:text-white' : 'opacity-30'}`} disabled={!onNext || loading}>
             Next <ChevronRightIcon className='h-5 w-5 inline-block ml-1 align-middle'/>
           </button>
         </nav>

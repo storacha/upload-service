@@ -105,18 +105,13 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
         </div>
 
         <div className="flex items-center gap-2">
-                   
-          <button onClick={e => { e.preventDefault(); setRemoveConfirmModalOpen(true) }} className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`}>
-            <TrashIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Remove
-          </button>
-
           {isPrivateSpace && (
             <button
               onClick={handleDecrypt}
               disabled={!canDecrypt || decryptLoading}
-              className={`inline-block font-epilogue uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap ${
+              className={`inline-block font-epilogue uppercase text-sm px-6 py-2 rounded-lg whitespace-nowrap ${
                 canDecrypt && !decryptLoading
-                  ? 'bg-blue-600 border border-blue-600 hover:bg-white hover:text-blue-600 text-white'
+                  ? 'bg-white border border-blue-600 hover:bg-blue-600 hover:text-white text-blue-600'
                   : 'bg-gray-300 border border-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >
@@ -133,6 +128,10 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
               )}
             </button>
           )}
+                   
+          <button onClick={e => { e.preventDefault(); setRemoveConfirmModalOpen(true) }} className={`inline-block bg-white border border-hot-red hover:bg-hot-red hover:text-white font-epilogue text-hot-red uppercase text-sm px-6 py-2 rounded-lg whitespace-nowrap`}>
+            <TrashIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Remove
+          </button>
         </div>
         
         {isPrivateSpace && decryptError && (
@@ -206,10 +205,10 @@ function RemoveConfirmModal ({ isOpen, root, shards, onConfirm, onCancel }: Remo
           </p>
 
           <div className='py-2 text-center'>
-            <button onClick={e => { e.preventDefault(); setConfirmed(true); onConfirm() }} className={`inline-block bg-hot-red-light border border-white hover:bg-white hover:text-hot-red font-epilogue text-hot-red uppercase text-sm px-6 py-2 mr-3 rounded-full whitespace-nowrap ${confirmed ? 'opacity-50' : 'hover:outline'}`} disabled={confirmed}>
+            <button onClick={e => { e.preventDefault(); setConfirmed(true); onConfirm() }} className={`inline-block bg-hot-red-light border border-white hover:bg-white hover:text-hot-red font-epilogue text-hot-red uppercase text-sm px-6 py-2 mr-3 rounded-lg whitespace-nowrap ${confirmed ? 'opacity-50' : 'hover:outline'}`} disabled={confirmed}>
               <TrashIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> {confirmed ? 'Removing...' : 'Remove'}
             </button>
-            <button onClick={e => { e.preventDefault(); setConfirmed(false); onCancel() }} className={`inline-block bg-hot-red border border-white hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 mr-3 rounded-full whitespace-nowrap ${confirmed ? 'opacity-50' : 'hover:outline'}`} disabled={confirmed}>
+            <button onClick={e => { e.preventDefault(); setConfirmed(false); onCancel() }} className={`inline-block bg-hot-red border border-white hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 mr-3 rounded-lg whitespace-nowrap ${confirmed ? 'opacity-50' : 'hover:outline'}`} disabled={confirmed}>
               Cancel
             </button>
           </div>

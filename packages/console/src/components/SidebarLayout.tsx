@@ -38,8 +38,8 @@ function Sidebar ({ sidebar = <div></div> }: SidebarComponentProps): JSX.Element
     <nav className='flex-none w-64 sidebar-professional text-white px-6 pb-6 border-r border-slate-300 min-h-screen'>
       <div className='flex flex-col justify-between h-full'>
         <div>
-          <header className='opacity-0 lg:opacity-100 my-8'>
-            <Logo className='pr-4 block' />
+          <header className='my-8'>
+            <Logo className='pr-4 block' darkBackground={true} />
           </header>
           <div className='my-8'>
             <H2 className='text-slate-200 text-sm font-semibold uppercase tracking-wider mb-4'>Spaces</H2>
@@ -113,9 +113,12 @@ export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.
               </div>
               <div className='bg-professional-branded w-full'>
                 {/* top nav bar for narrow browsers, mainly to have a place to put the hamburger */}
-                <div className='lg:hidden flex justify-between pt-6 px-6 bg-white card-shadow-lg'>
-                  <Bars3Icon className='text-slate-600 w-6 h-6 hover:text-hot-red transition-colors cursor-pointer' onClick={() => setSidebarOpen(true)} />
-                  <Logo className='w-full' />
+                <div className='lg:hidden flex items-center justify-between pt-4 pb-3 px-4 bg-white card-shadow-lg'>
+                  <Bars3Icon className='text-slate-600 w-6 h-6 hover:text-hot-red transition-colors cursor-pointer flex-shrink-0' onClick={() => setSidebarOpen(true)} />
+                  <div className='flex-1 flex justify-center px-5'>
+                    <Logo className='h-8' />
+                  </div>
+                  <div className='w-6 h-6 flex-shrink-0'></div>
                 </div>
                 <main className='grow text-slate-900 p-4 md:p-8 lg:p-12'>
                   {children}
@@ -170,9 +173,12 @@ export function IframeSidebarLayout ({ children }: LayoutComponentProps): JSX.El
       </div>
       <div className='bg-professional-branded w-full'>
         {/* top nav bar for narrow browsers, mainly to have a place to put the hamburger */}
-        <div className='lg:hidden flex justify-between pt-4 px-4'>
-          <Bars3Icon className='text-hot-red w-6 h-6' onClick={() => setSidebarOpen(true)} />
-          <Logo className='w-full' />
+        <div className='lg:hidden flex items-center justify-between pt-4 pb-3 px-4 bg-white card-shadow-lg'>
+          <Bars3Icon className='text-slate-600 w-6 h-6 hover:text-hot-red transition-colors cursor-pointer flex-shrink-0' onClick={() => setSidebarOpen(true)} />
+          <div className='flex-1 flex justify-center px-4'>
+            <Logo className='h-8' />
+          </div>
+          <div className='w-6 h-6 flex-shrink-0'></div>
         </div>
         <main className='grow text-black p-12'>
           {children}

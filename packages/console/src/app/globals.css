@@ -2,6 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom loader animations */
+@keyframes spin-dash {
+  0% {
+    stroke-dasharray: 1, 200;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90, 200;
+    stroke-dashoffset: -35px;
+  }
+  100% {
+    stroke-dasharray: 90, 200;
+    stroke-dashoffset: -124px;
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-scale {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
+}
+
 @import 'react-tooltip/dist/react-tooltip.css';
 
 :root {
@@ -110,6 +148,6 @@
     background-repeat: no-repeat, no-repeat;
   }
   .sidebar-professional {
-    background: linear-gradient(180deg, #1e293b 0%, #334155 100%);
+    background: linear-gradient(180deg, #374151 0%, #1f2937 100%);
   }
 }

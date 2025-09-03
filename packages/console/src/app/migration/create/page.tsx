@@ -67,7 +67,7 @@ function ChooseSource ({ config, onNext }: WizardProps) {
             </button>
           ))}
         </div>
-        <button onClick={handleNextClick} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap ${source ? 'hover:bg-white hover:text-hot-red' : 'opacity-10'}`} disabled={!source}>
+        <button onClick={handleNextClick} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-lg whitespace-nowrap ${source ? 'hover:bg-white hover:text-hot-red' : 'opacity-10'}`} disabled={!source}>
           Next <ChevronRightIcon className='h-5 w-5 inline-block ml-1 align-middle' style={{marginTop: -4}} />
         </button>
       </div>
@@ -116,10 +116,10 @@ function AddSourceToken ({ config, onNext, onPrev }: WizardProps) {
           />
           <p className='text-xs text-red-700'>{error}</p>
         </div>
-        <button onClick={e => { e.preventDefault(); onPrev() }} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm mr-2 px-6 py-2 rounded-full whitespace-nowrap hover:bg-white hover:text-hot-red`}>
+        <button onClick={e => { e.preventDefault(); onPrev() }} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm mr-2 px-6 py-2 rounded-lg whitespace-nowrap hover:bg-white hover:text-hot-red`}>
           <ChevronLeftIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}}/> Previous
         </button>
-        <button onClick={handleNextClick} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap ${token ? 'hover:bg-white hover:text-hot-red' : 'opacity-10'}`} disabled={!token || checking}>
+        <button onClick={handleNextClick} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-lg whitespace-nowrap ${token ? 'hover:bg-white hover:text-hot-red' : 'opacity-10'}`} disabled={!token || checking}>
           {checking
             ? <><ArrowPathIcon className={`h-5 w-5 animate-spin inline-block mr-1 align-middle`}/>Checking...</>
             : <>Next <ChevronRightIcon className='h-5 w-5 inline-block ml-1 align-middle' style={{marginTop: -4}}/></>}
@@ -162,10 +162,10 @@ function ChooseTargetSpace ({ config, onNext, onPrev }: WizardProps) {
           </button>
         ))}
       </div>
-      <button onClick={e => { e.preventDefault(); onPrev() }} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm mr-2 px-6 py-2 rounded-full whitespace-nowrap hover:bg-white hover:text-hot-red`}>
+      <button onClick={e => { e.preventDefault(); onPrev() }} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm mr-2 px-6 py-2 rounded-lg whitespace-nowrap hover:bg-white hover:text-hot-red`}>
         <ChevronLeftIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}}/> Previous
       </button>
-      <button onClick={handleNextClick} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap ${space ? 'hover:bg-white hover:text-hot-red' : 'opacity-10'}`} disabled={!space}>
+      <button onClick={handleNextClick} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-lg whitespace-nowrap ${space ? 'hover:bg-white hover:text-hot-red' : 'opacity-10'}`} disabled={!space}>
         Next <ChevronRightIcon className='h-5 w-5 inline-block ml-1 align-middle' style={{marginTop: -4}}/>
       </button>
     </div>
@@ -208,10 +208,10 @@ function Confirmation ({ config, onNext, onPrev }: WizardProps) {
           </div>
         </div>
 
-        <button onClick={e => { e.preventDefault(); onPrev() }} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm mr-2 px-6 py-2 rounded-full whitespace-nowrap hover:bg-white hover:text-hot-red`}>
+        <button onClick={e => { e.preventDefault(); onPrev() }} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm mr-2 px-6 py-2 rounded-lg whitespace-nowrap hover:bg-white hover:text-hot-red`}>
           <ChevronLeftIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}}/> Previous
         </button>
-        <button onClick={handleNextClick} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap hover:bg-white hover:text-hot-red`}>
+        <button onClick={handleNextClick} className={`inline-block bg-hot-red border border-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-lg whitespace-nowrap hover:bg-white hover:text-hot-red`}>
           Start <ChevronRightIcon className='h-5 w-5 inline-block ml-1 align-middle' style={{marginTop: -4}}/>
         </button>
       </div>

@@ -47,7 +47,7 @@ function Blobs({
             e.preventDefault()
             onRefresh()
           }}
-          className="inline-block bg-white border border-hot-red hover:outline hover:bg-hot-red hover:text-white font-epilogue text-hot-red uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap"
+          className="inline-block bg-white border border-hot-red hover:outline hover:bg-hot-red hover:text-white font-epilogue text-hot-red uppercase text-sm px-6 py-2 rounded-lg whitespace-nowrap"
         >
           <ArrowPathIcon
             className={`h-5 w-5  ${
@@ -90,7 +90,7 @@ function Blobs({
             e.preventDefault()
             onPrev && onPrev()
           }}
-          className={`inline-block bg-white border border-hot-red font-epilogue text-hot-red uppercase text-sm pl-3 pr-6 py-2 rounded-full whitespace-nowrap ${
+          className={`inline-block bg-white border border-hot-red font-epilogue text-hot-red uppercase text-sm pl-3 pr-6 py-2 rounded-lg whitespace-nowrap ${
             onPrev
               ? 'hover:outline hover:bg-hot-red hover:text-white'
               : 'opacity-30'
@@ -105,7 +105,7 @@ function Blobs({
             e.preventDefault()
             onRefresh()
           }}
-          className="inline-block bg-white border border-hot-red hover:outline hover:bg-hot-red hover:text-white font-epilogue text-hot-red uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap"
+          className="inline-block bg-white border border-hot-red hover:outline hover:bg-hot-red hover:text-white font-epilogue text-hot-red uppercase text-sm px-6 py-2 rounded-lg whitespace-nowrap"
         >
           <ArrowPathIcon
             className={`h-5 w-5  ${
@@ -119,7 +119,7 @@ function Blobs({
             e.preventDefault()
             onNext && onNext()
           }}
-          className={`inline-block bg-white border border-hot-red font-epilogue text-hot-red uppercase text-sm pl-6 pr-3 py-2 rounded-full whitespace-nowrap ${
+          className={`inline-block bg-white border border-hot-red font-epilogue text-hot-red uppercase text-sm pl-6 pr-3 py-2 rounded-lg whitespace-nowrap ${
             onNext
               ? 'hover:outline hover:bg-hot-red hover:text-white'
               : 'opacity-30'

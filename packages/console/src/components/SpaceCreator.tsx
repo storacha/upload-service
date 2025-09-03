@@ -9,18 +9,19 @@ import Link from 'next/link'
 import { FolderPlusIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
 import Tooltip from './Tooltip'
 import { H3 } from './Text'
+
 import * as UcantoClient from '@ucanto/client'
 import { HTTP } from '@ucanto/transport'
 import * as CAR from '@ucanto/transport/car'
 import { gatewayHost } from './services'
 import { logAndCaptureError } from '@/sentry'
 import { usePrivateSpacesAccess } from '@/hooks/usePrivateSpacesAccess'
+import { truncateDid } from '@/app/space/[did]/layout'
 
 export function SpaceCreatorCreating(): JSX.Element {
   return (
     <div className='flex flex-col items-center space-y-4'>
-      <h5 className='font-epilogue'>Creating Space...</h5>
-      <Loader className='w-6' />
+      <Loader size='lg' message='Creating space...' />
     </div>
   )
 }
@@ -239,7 +240,7 @@ export function SpaceCreatorForm({
             </div>
           </div>
         )}
-        <button type='submit' className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`}>
+        <button type='submit' className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-lg whitespace-nowrap`}>
           <FolderPlusIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{ marginTop: -4 }} /> Create {accessType === 'private' ? 'Private' : 'Public'} Space
         </button>
       </form>
@@ -300,8 +301,9 @@ export function SpacePreview({ did, name, capabilities }: SpacePreviewProps) {
               ))}
             </Tooltip>
           </span>
-          <span className='block font-mono text-xs truncate'>
-            {did}
+          <span className='block font-mono text-xs md:truncate'>
+            <span className='md:hidden'>{truncateDid(did)}</span>
+            <span className='hidden md:inline'>{did}</span>
           </span>
         </Link>
       </figcaption>

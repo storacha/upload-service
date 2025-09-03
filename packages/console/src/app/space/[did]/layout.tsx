@@ -4,7 +4,18 @@ import { PropsWithChildren } from 'react'
 import { useW3 } from '@storacha/ui-react'
 import { DidIcon } from '@/components/DidIcon'
 import { Nav, NavLink } from '@/components/Nav'
-import { QueueListIcon, ShareIcon, CloudArrowUpIcon } from '@heroicons/react/24/outline'
+import { QueueListIcon, ShareIcon, CloudArrowUpIcon, ClipboardIcon } from '@heroicons/react/24/outline'
+
+export function truncateDid(did: string): string {
+  // For mobile: show did:key:first7...last7
+  if (did.startsWith('did:key:')) {
+    const keyPart = did.substring(8) // Remove 'did:key:'
+    if (keyPart.length > 14) {
+      return `did:key:${keyPart.substring(0, 7)}...${keyPart.substring(keyPart.length - 7)}`
+    }
+  }
+  return did
+}
 
 interface LayoutProps extends PropsWithChildren {
   params: {
@@ -47,9 +58,22 @@ export default function Layout ({children, params}: LayoutProps): JSX.Element {
                 {space.access?.type === 'private' ? 'Private' : 'Public'}
               </span>
             </div>
-            <label className='font-mono text-xs'>
-              {space.did()}
-            </label>
+            <div className='flex items-center gap-2 min-w-0'>
+              <label className='font-mono text-xs flex-1'>
+                <span className="md:hidden">{truncateDid(space.did())}</span>
+                <span className="hidden md:inline truncate">{space.did()}</span>
+              </label>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  navigator.clipboard.writeText(space.did())
+                }}
+                className='p-1 hover:bg-slate-100 rounded transition-colors'
+                title='Copy DID'
+              >
+                <ClipboardIcon className='w-4 h-4 text-slate-500 hover:text-slate-700' />
+              </button>
+            </div>
           </div>
         </div>
       </header>

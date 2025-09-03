@@ -79,13 +79,13 @@ function PlanSection ({ account, planID, planName, planLabel, flatFee, flatFeeAl
               <DefaultLoader className='h-6 w-6' />
             ) : (
               isCurrentPlan ? (
-                <button className={`inline-block border border-hot-red bg-white text-hot-red font-epilogue uppercase text-xs sm:text-sm px-4 sm:px-6 py-2 rounded-full whitespace-nowrap cursor-not-allowed opacity-75`} disabled={true}>
+                <button className={`inline-block border border-hot-red bg-white text-hot-red font-epilogue uppercase text-xs sm:text-sm px-4 sm:px-6 py-2 rounded-lg whitespace-nowrap cursor-not-allowed opacity-75`} disabled={true}>
                   <CheckIcon className='h-4 w-4 sm:h-5 sm:w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> Current Plan
                 </button>
               ) : (
                 <button 
                   onClick={() => selectPlan(planID)} 
-                  className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-xs sm:text-sm px-4 sm:px-6 py-2 rounded-full whitespace-nowrap ${isCurrentPlan ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`} 
+                  className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-xs sm:text-sm px-4 sm:px-6 py-2 rounded-lg whitespace-nowrap ${isCurrentPlan ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`} 
                   disabled={isCurrentPlan || isLoading || isUpdatingPlan}
                 >
                   <RocketLaunchIcon className='h-4 w-4 sm:h-5 sm:w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} /> {currentPlanID && buttonText(currentPlanID, planID)}
@@ -185,7 +185,7 @@ function DelegatePlanCreateAdminSessionForm ({ className = '', account }: { clas
           placeholder='To Email' type='email'
           {...register('email')} />
       </label>
-      <input className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm mr-2 px-6 py-2 rounded-full whitespace-nowrap cursor-pointer' type='submit' value='Delegate' />
+      <input className='inline-block bg-white border border-hot-red hover:bg-hot-red hover:text-white font-epilogue text-hot-red uppercase text-sm mr-2 px-6 py-2 rounded-lg whitespace-nowrap cursor-pointer' type='submit' value='Delegate' />
     </form>
   )
 }
@@ -196,16 +196,16 @@ function CustomerPortalLink ({ did }: { did: AccountDID }) {
     <>
       {customerPortalLink ? (
         <div className='flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2'>
-          <button className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap' onClick={() => generateCustomerPortalLink(did)} disabled={generatingCustomerPortalLink}>
+          <button className='inline-block bg-white border border-hot-red hover:bg-hot-red hover:text-white font-epilogue text-hot-red uppercase text-sm px-6 py-2 rounded-lg whitespace-nowrap' onClick={() => generateCustomerPortalLink(did)} disabled={generatingCustomerPortalLink}>
             <ArrowPathIcon className={`h-5 w-5 inline-block align-middle ${generatingCustomerPortalLink ? 'animate-spin' : ''}`} />
           </button>
-          <a className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap text-center' href={customerPortalLink} target="_blank" rel="noopener noreferrer">
+          <a className='inline-block bg-white border border-hot-red hover:bg-hot-red hover:text-white font-epilogue text-hot-red uppercase text-sm px-6 py-2 rounded-lg whitespace-nowrap text-center' href={customerPortalLink} target="_blank" rel="noopener noreferrer">
             Open Billing Portal
             <ArrowTopRightOnSquareIcon className='relative inline h-5 w-4 ml-1 -mt-1' />
           </a>
         </div>
       ) : (
-        <button onClick={() => generateCustomerPortalLink(did)} disabled={generatingCustomerPortalLink} className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap'>
+        <button onClick={() => generateCustomerPortalLink(did)} disabled={generatingCustomerPortalLink} className='inline-block bg-white border border-hot-red hover:bg-hot-red hover:text-white font-epilogue text-hot-red uppercase text-sm px-6 py-2 rounded-lg whitespace-nowrap'>
           {generatingCustomerPortalLink ? <ArrowPathIcon className='h-5 w-5 inline-block mr-1 align-middle animate-spin' style={{marginTop: -4}} /> : <LinkIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{marginTop: -4}} />} Generate Link
         </button>
       )}

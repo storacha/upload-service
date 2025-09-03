@@ -89,7 +89,6 @@ export function ShareSpace({ spaceDID }: { spaceDID: SpaceDID }): JSX.Element {
         'upload/*',
         'access/*',
         'usage/*',
-        // @ts-expect-error (FIXME: https://github.com/storacha/w3up/issues/1554)
         'filecoin/*',
       ], {
         expiration: Infinity,
@@ -160,7 +159,7 @@ export function ShareSpace({ spaceDID }: { spaceDID: SpaceDID }): JSX.Element {
           />
           <button
             type='submit'
-            className={`inline-block bg-hot-red border border-hot-red ${isEmail(value) || isDID(value) ? 'hover:bg-white hover:text-hot-red' : 'opacity-20'} font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`}
+            className={`inline-block bg-hot-red border border-hot-red ${isEmail(value) || isDID(value) ? 'hover:bg-white hover:text-hot-red' : 'opacity-20'} font-epilogue text-white uppercase text-sm px-6 py-2 rounded-lg whitespace-nowrap`}
             onClick={async (e) => {
               e.preventDefault()
               if (isEmail(value)) {
@@ -248,7 +247,7 @@ export function ImportSpace() {
             {client?.did()}
           </div>
           <CopyButton text={client?.did() ?? ''}>Copy DID</CopyButton>
-          <a href={`mailto:?subject=Space%20Access%20Request&body=${body}`} className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm ml-2 px-6 py-2 rounded-full whitespace-nowrap`}>
+          <a href={`mailto:?subject=Space%20Access%20Request&body=${body}`} className={`inline-block bg-white border border-hot-red hover:bg-hot-red hover:text-white font-epilogue text-hot-red uppercase text-xs md:text-sm ml-1 md:ml-2 px-3 md:px-6 py-2 rounded-lg whitespace-nowrap`}>
             <PaperAirplaneIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{ marginTop: -4 }} /> Email DID
           </a>
         </li>
@@ -256,7 +255,7 @@ export function ImportSpace() {
           Import the UCAN they send you.
           <p className='text-black my-2'>Instruct your friend to use the web console or CLI to create a UCAN, delegating your DID acces to their space.</p>
           <div className='mt-4'>
-            <label className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap cursor-pointer'>
+            <label className='inline-block bg-white border border-hot-red hover:bg-hot-red hover:text-white font-epilogue text-hot-red uppercase text-xs md:text-sm px-3 md:px-6 py-2 rounded-lg whitespace-nowrap cursor-pointer'>
               <ArrowDownOnSquareStackIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{ marginTop: -4 }} />
               Import UCAN
               <input
@@ -276,7 +275,7 @@ export function ImportSpace() {
           <Header>Added</Header>
           <div className='max-w-3xl border border-hot-red rounded-2xl'>
             <SpacePreview
-              did={proof.capabilities[0].with}
+              did={proof.capabilities[0].with as SpaceDID}
               name={proof.facts[0]?.space.name}
               capabilities={proof.capabilities.map(c => c.can)}
               key={proof.capabilities[0].with} />

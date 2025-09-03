@@ -101,7 +101,7 @@ export const Done = ({ dataCID }: DoneProps): JSX.Element => {
       </a>
       <div className='my-4'>
         <button
-          className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap'
+          className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-lg whitespace-nowrap'
           onClick={() => {
             setFile(undefined)
           }}
@@ -297,7 +297,7 @@ const UploaderContents = (): JSX.Element => {
             </div>
           </div>
           <div className='p-4'>
-            <button type='submit' className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap' disabled={file === undefined}>
+            <button type='submit' className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-lg whitespace-nowrap' disabled={file === undefined}>
               <CloudArrowUpIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{ marginTop: -4 }} /> Start Upload
             </button>
           </div>

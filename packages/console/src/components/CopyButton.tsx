@@ -12,7 +12,7 @@ export default function CopyButton({ text, children }: PropsWithChildren<{ text:
       setCopied(true)
       clearTimeout(timeoutID)
       setTimeoutID(window.setTimeout(() => setCopied(false), 3000))
-    }} className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`}>
+    }} className={`inline-block bg-white border border-hot-red hover:bg-hot-red hover:text-white font-epilogue text-hot-red uppercase text-xs md:text-sm px-3 md:px-6 py-2 rounded-lg whitespace-nowrap`}>
       {copied
         ? <CheckIcon className={className} style={{ marginTop: -4 }} title='Copied' />
         : (
