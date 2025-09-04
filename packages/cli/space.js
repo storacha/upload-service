@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import * as W3Space from '@storacha/client/space'
 import * as W3Account from '@storacha/client/account'
 import * as UcantoClient from '@ucanto/client'
@@ -137,6 +138,45 @@ export const create = async (name, options) => {
   console.log(`🐔 Space created: ${space.did()}`)
 
   return space
+}
+
+/**
+ * Recover a space from a memonic key
+ * 
+ * @typedef {object} RecoverOptions
+ * @property {import('@storacha/access/types').SpaceAccessType} [access] - The access configuration for the space. Defaults to { type: 'public' }.
+ * @property {string} [file] - The path to a file containing the recovery memonic key. If not provided, user will be prompted to enter it.
+ *
+ * @param {string|undefined} name
+ * @param {RecoverOptions} options
+ */
+export async function recover(name, options) {
+  const client = await getClient()
+  const spaces = client.spaces()
+
+  const chosenName = await chooseName(name ?? '', spaces)
+  let memonic 
+  if (options?.file) {
+    memonic = await fs.promises.readFile(options.file, 'utf-8').catch(() => null)
+    console.log(memonic)
+  } else {
+    memonic = await getRecoveryMemonic()
+  }
+  if (!memonic) {
+    console.error('⚠️ Aborting, space recovery memonic is required')
+    process.exit(1)
+  }
+  const space = await client.agent.recoverSpace(memonic, { name: chosenName, access: options?.access ?? { type: 'public' } })
+  await space.save()
+  console.log(`🐔 Recovered space ${space.did()} (${chosenName})`)
+}
+
+const getRecoveryMemonic = async () => {
+  const memonic = await input({
+    message: 'Enter your space recovery memonic: ',
+    validate: (input) => input.trim().split(' ').length >= 12 || 'Memonic must be at least 12 words',
+  }).catch(() => null)
+  return memonic
 }
 
 /**
