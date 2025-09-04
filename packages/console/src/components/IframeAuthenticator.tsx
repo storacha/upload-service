@@ -35,7 +35,6 @@ import { useIframe } from '@/contexts/IframeContext'
 import { useW3, Authenticator } from '@storacha/ui-react'
 import { useEffect, useState, useMemo, ReactNode, useRef, useCallback } from 'react'
 import { getAllowedOrigins, isOriginAllowed } from '@/lib/sso-origins'
-import { Logo } from '@/brand'
 
 // Global flag to prevent duplicate MessageChannel setup across React StrictMode cycles
 let globalChannelSetup = false
@@ -59,33 +58,68 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
   // Persist authentication across remounts using sessionStorage
   const authStorageKey = `iframe-auth-${ssoProvider || 'default'}`
   
-  // Use lazy initialization to ensure accounts are available
-  const [authState, setAuthState] = useState<'pending' | 'authenticating' | 'finalizing' | 'authenticated' | 'failed'>(() => {
-    // Check if we have stored authentication state
-    const wasAuthenticated = sessionStorage.getItem(authStorageKey) === 'true'
-    if (wasAuthenticated) {
-      devLog('IFRAME: Lazy initializing with authenticated state from sessionStorage')
-      return 'authenticated'
-    }
-    return 'pending'
-  })
+  // Use lazy initialization but wait for client state to be ready
+  const [authState, setAuthState] = useState<'pending' | 'authenticating' | 'finalizing' | 'authenticated' | 'failed'>('pending')
   const [error, setError] = useState<string | null>(null)
   const [channel, setChannel] = useState<MessageChannel | null>(null)
   const [expectedSSOEmail, setExpectedSSOEmail] = useState<string | null>(null)
   const [isCleaningUp, setIsCleaningUp] = useState(false)
 
-  // Only restore from sessionStorage on initial mount if user is already authenticated
-  // and no active authentication flow is happening
-  useEffect(() => {
-    if (accounts.length > 0 && authState === 'pending') {
-      const wasAuthenticated = sessionStorage.getItem(authStorageKey) === 'true'
-      if (wasAuthenticated) {
-        devLog('IFRAME: Restoring authenticated state from sessionStorage')
-        setAuthState('authenticated')
-      }
-    }
-  }, []) // Only run on mount
   
+  // Restore minimal sessionStorage-backed authenticated state across navigation/remounts
+  useEffect(() => {
+    const wasAuthenticated = sessionStorage.getItem(authStorageKey) === 'true';
+    
+    devLog('IFRAME: Session restoration check', {
+      wasAuthenticated,
+      accountsCount: accounts.length,
+      authState,
+      currentEmail: accounts[0]?.toEmail()
+    });
+    
+    // Restore to authenticated if we have sessionStorage flag AND accounts are loaded
+    // This handles component remounts during navigation
+    if (
+      wasAuthenticated &&
+      accounts.length > 0 &&
+      authState === 'pending'
+    ) {
+      devLog('IFRAME: Restoring authenticated state from sessionStorage', {
+        accountsCount: accounts.length,
+        currentEmail: accounts[0]?.toEmail()
+      });
+      setAuthState('authenticated');
+    }
+  }, [accounts, authState, authStorageKey]);
+
+  // Handle navigation remount scenario where sessionStorage indicates auth but no accounts
+  useEffect(() => {
+    const wasAuthenticated = sessionStorage.getItem(authStorageKey) === 'true';
+    
+    // If we have sessionStorage flag but no accounts, this is likely a navigation remount
+    // Give some time for accounts to load before clearing sessionStorage
+    if (wasAuthenticated && accounts.length === 0 && authState === 'pending') {
+      devLog('IFRAME: SessionStorage indicates authentication, but no accounts found - waiting for accounts to load...');
+      
+      // Wait a bit longer for accounts to load during navigation before giving up
+      const timeoutId = setTimeout(() => {
+        const stillNoAccounts = accounts.length === 0;
+        const stillPending = authState === 'pending';
+        
+        if (stillNoAccounts && stillPending) {
+          devLog('IFRAME: Accounts still not loaded after timeout, requesting fresh authentication');
+          sessionStorage.removeItem(authStorageKey);
+          
+          if (channelRef.current && !isCleaningUp) {
+            requestAuthentication(channelRef.current.port1);
+          }
+        }
+      }, 2000); // Wait 2 seconds for accounts to load
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [accounts.length, authState, authStorageKey, isCleaningUp]);
+
   // Log authState changes
   useEffect(() => {
     devLog('IFRAME: authState changed to:', authState)
@@ -133,29 +167,45 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
     }
   }, [hasEmailMismatch, currentEmail, expectedSSOEmail])
 
-  // Effect to handle the final state transition after a delay
+  // Effect to monitor accounts state and transition to authenticated when ready
   useEffect(() => {
     devLog('IFRAME: Auth state changed to:', authState, { hasAccounts: accounts.length > 0 })
     
     if (authState === 'finalizing') {
-      devLog('IFRAME: Starting finalizing timeout')
-      // This delay allows the parent window to process the success message before rendering children
-      const timer = setTimeout(() => {
-        devLog('IFRAME: Finalizing complete, setting to authenticated', {
-          currentAuthState: authState,
-          hasAccounts: accounts.length > 0,
-          currentEmail: accounts[0]?.toEmail()
-        })
-        setAuthState('authenticated')
-        sessionStorage.setItem(authStorageKey, 'true')
-      }, 150) // A short buffer
-
-      return () => {
-        devLog('IFRAME: Cleaning up finalizing timeout', { currentAuthState: authState })
-        clearTimeout(timer)
+      // Check if accounts are loaded and email matches expected SSO email
+      if (accounts.length > 0) {
+        const currentEmail = accounts[0]?.toEmail()
+        
+        // If we have an expected SSO email, validate it matches
+        if (expectedSSOEmail) {
+          if (currentEmail === expectedSSOEmail) {
+            devLog('IFRAME: Accounts loaded and email matches expected SSO email, transitioning to authenticated', {
+              currentEmail,
+              expectedEmail: expectedSSOEmail,
+              accountsCount: accounts.length
+            })
+            setAuthState('authenticated')
+            sessionStorage.setItem(authStorageKey, 'true')
+          } else {
+            devLog('IFRAME: Accounts loaded but email mismatch, waiting...', {
+              currentEmail,
+              expectedEmail: expectedSSOEmail
+            })
+          }
+        } else {
+          // No expected email (session restoration), just check if we have accounts
+          devLog('IFRAME: Accounts loaded (session restoration), transitioning to authenticated', {
+            currentEmail,
+            accountsCount: accounts.length
+          })
+          setAuthState('authenticated')
+          sessionStorage.setItem(authStorageKey, 'true')
+        }
+      } else {
+        devLog('IFRAME: In finalizing state but no accounts yet, waiting for accounts to load...')
       }
     }
-  }, [authState, accounts, authStorageKey])
+  }, [authState, accounts, expectedSSOEmail, authStorageKey])
 
   // Handle email mismatch by cleaning up existing session and proceeding with new login
   useEffect(() => {
@@ -175,7 +225,7 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
           localStorage.clear()
           
           // Clear sessionStorage
-          sessionStorage.clear()
+          sessionStorage.removeItem(authStorageKey)
           
           // Clear IndexedDB
           if ('indexedDB' in window) {
@@ -229,7 +279,13 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
   
   // Log when the component mounts
   useEffect(() => {
-    devLog('IFRAME: Component mounted, current authState:', authState)
+    const wasAuthenticated = sessionStorage.getItem(authStorageKey) === 'true';
+    devLog('IFRAME: Component mounted', {
+      authState,
+      accountsCount: accounts.length,
+      wasAuthenticated,
+      currentEmail: accounts[0]?.toEmail()
+    })
   }, [])
 
   useEffect(() => {
@@ -443,9 +499,10 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
       if (isAuthenticated && currentEmail === email) {
         // Session validation: same email, assume session is still valid
         devLog('IFRAME: Existing session found with matching email, finalizing...')
+        // Ensure sessionStorage flag is set for navigation persistence
+        sessionStorage.setItem(authStorageKey, 'true')
         sendLoginCompleted('success')
         setAuthState('finalizing')
-        sessionStorage.removeItem(authStorageKey)
         return
       }
 
@@ -479,7 +536,7 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
 
       await currentClient.capability.access.claim()
 
-      devLog('IFRAME: Authentication successful, finalizing...')
+      devLog('IFRAME: Authentication successful, transitioning to finalizing state...')
       sendLoginCompleted('success')
       setAuthState('finalizing')
 
@@ -554,8 +611,9 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
     )
   }
 
-  // If waiting for authentication, show waiting state
   if (!isAuthenticated && authState === 'pending') {
+    const wasAuthenticated = sessionStorage.getItem(authStorageKey) === 'true';
+    
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="text-center p-8">
@@ -563,32 +621,37 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
             <div className="w-16 h-16 bg-blue-200 rounded-full mx-auto mb-4"></div>
           </div>
           <h3 className="text-lg font-semibold text-gray-700 mb-2">
-            Authentication
+            {wasAuthenticated ? 'Restoring Session' : 'Authentication'}
           </h3>
           <p className="text-gray-500">
-            Waiting for user authentication in {ssoProvider}...
+            {wasAuthenticated 
+              ? 'Restoring your authenticated session...' 
+              : `Waiting for user authentication in ${ssoProvider}...`
+            }
           </p>
         </div>
       </div>
     )
   }
 
-
-  // If user is authenticated, show the console
+  // Render based on authentication state
   if (authState === 'authenticated') {
+    devLog('IFRAME: Rendering authenticated content with accounts:', accounts.length)
     return <Authenticator>{children}</Authenticator>
   }
 
-  // Default: show a loader for pending, authenticating, or finalizing states
+  // Default loading state
   return (
     <div className="flex items-center justify-center h-screen bg-gray-50">
       <div className="text-center p-8">
-        <Logo className="w-16 h-16 mx-auto mb-4 text-blue-600" />
-        <h3 className="text-lg font-semibold text-gray-700 mb-2 mt-10">
-          Preparing Console
+        <div className="animate-pulse mb-4">
+          <div className="w-16 h-16 bg-blue-200 rounded-full mx-auto mb-4"></div>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">
+          Loading...
         </h3>
         <p className="text-gray-500">
-          Setting up...
+          Preparing console...
         </p>
       </div>
     </div>

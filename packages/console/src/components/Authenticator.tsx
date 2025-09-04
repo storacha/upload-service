@@ -76,18 +76,15 @@ export function AuthenticationEnsurer ({
   const { isIframe } = useIframe()
   
   const authenticated = !!accounts.length
-  
-  // If in iframe, use iframe-specific SSO authentication flow
   if (isIframe) {
     return (
-      <IframeAuthenticator>
-        {/* Standard authentication ensurer for iframe context */}
+      <>
         {authenticated ? (
           <>{children}</>
         ) : (
           <div /> // IframeAuthenticator will handle the UI
         )}
-      </IframeAuthenticator>
+      </>
     )
   }
   
