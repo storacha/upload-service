@@ -23,7 +23,7 @@ export default function QRButton({ link }: { link: string }) {
       </button>
 
       {open && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 !m-0">
           <div className="bg-white rounded-lg shadow-lg p-6 relative flex flex-col items-center">
             {/* Close Button */}
             <button
