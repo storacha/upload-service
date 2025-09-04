@@ -140,7 +140,7 @@ export default function ReferralsPage () {
             <ReferralsList />
             
             {referralLink ? ( 
-                <RefcodeLink referralLink={referralLink} />
+              <RefcodeLink referralLink={referralLink} />
             ) : (
               <RefcodeCreator
                 accountEmail={accountEmail}
