@@ -92,7 +92,7 @@ export const Done = ({ dataCID }: DoneProps): JSX.Element => {
   const [, { setFile }] = useUploader()
   const cid: string = dataCID?.toString() ?? ''
   return (
-    <div className='flex flex-col items-center w-full '>
+    <div className='flex flex-col items-center w-full'>
       <H2>Uploaded</H2>
       <StorachaQRCode value={ipfsGatewayURL(cid)} />
       <a
