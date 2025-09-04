@@ -30,7 +30,6 @@ export function uploadAddProvider(context) {
     return uploadTable.upsert({
       space,
       root,
-      // @ts-expect-error
       shards,
       issuer,
       cause: invocation.cid,

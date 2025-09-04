@@ -9,6 +9,8 @@
  * @module
  */
 import { capability, Link, Schema, ok } from '@ucanto/validator'
+import { codec as CAR } from '@ucanto/transport/car'
+import * as raw from 'multiformats/codecs/raw'
 import { equalWith, and, equal, SpaceDID } from './utils.js'
 
 /**
@@ -29,7 +31,7 @@ export const upload = capability({
 /**
  * Schema representing a link (a.k.a CID) to a shard. Enforces CID v1.
  */
-const ShardLink = Link.match({ version: 1 })
+const ShardLink = Schema.or(Link.match({ version: 1, code: CAR.code }), Link.match({ version: 1, code: raw.code }))
 
 /**
  * Capability allows an agent to add an arbitrary DAG (root) to the upload list

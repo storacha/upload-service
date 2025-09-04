@@ -7,6 +7,7 @@ import {
   claimAccess,
   requestAccess,
 } from '@storacha/access/agent'
+import { base58btc } from 'multiformats/bases/base58'
 import { randomBytes, randomCAR } from './helpers/random.js'
 import { toCAR } from './helpers/car.js'
 import { File } from './helpers/shims.js'
@@ -25,6 +26,18 @@ import * as SpaceCapability from '@storacha/capabilities/space'
 import { getConnection, getContentServeMockService } from './mocks/service.js'
 import { gatewayServiceConnection } from '../src/service.js'
 
+/**
+ * @param {import('multiformats').UnknownLink} actual
+ * @param {import('multiformats').UnknownLink} expected
+ * @param {string | Error} [message]
+ */
+const assertEqualDigest = (actual, expected, message) =>
+  assert.equal(
+    base58btc.encode(actual.multihash.bytes),
+    base58btc.encode(expected.multihash.bytes),
+    message
+  )
+
 /** @type {Test.Suite} */
 export const testClient = {
   uploadFile: Test.withContext({
@@ -35,8 +48,8 @@ export const testClient = {
       const bytes = await randomBytes(128)
       const file = new Blob([bytes])
       const expectedCar = await toCAR(bytes)
-      /** @type {import('@storacha/upload-client/types').CARLink|undefined} */
-      let carCID
+      /** @type {import('@storacha/upload-client/types').ShardLink|undefined} */
+      let shardCID
 
       const alice = new Client(await AgentData.create(), {
         // @ts-ignore
@@ -64,7 +77,7 @@ export const testClient = {
 
       const dataCID = await alice.uploadFile(file, {
         onShardStored: (meta) => {
-          carCID = meta.cid
+          shardCID = meta.cid
         },
       })
 
@@ -73,7 +86,9 @@ export const testClient = {
       })
 
       Result.try(await registry.find(space.did(), expectedCar.cid.multihash))
-      assert.equal(carCID?.toString(), expectedCar.cid.toString())
+
+      if (!shardCID) return assert.fail('missing shard CID')
+      assertEqualDigest(shardCID, expectedCar.cid)
       assert.equal(dataCID.toString(), expectedCar.roots[0].toString())
     },
     'should not allow upload without a current space': async (
@@ -107,8 +122,8 @@ export const testClient = {
         (bytes, index) => new File([bytes], `${index}.txt`)
       )
 
-      /** @type {import('@storacha/upload-client/types').CARLink|undefined} */
-      let carCID
+      /** @type {import('@storacha/upload-client/types').ShardLink|undefined} */
+      let shardCID
 
       const alice = new Client(await AgentData.create(), {
         // @ts-ignore
@@ -137,14 +152,14 @@ export const testClient = {
 
       const dataCID = await alice.uploadDirectory(files, {
         onShardStored: (meta) => {
-          carCID = meta.cid
+          shardCID = meta.cid
         },
       })
 
       assert.deepEqual(await uploadTable.exists(space.did(), dataCID), {
         ok: true,
       })
-      assert.ok(carCID)
+      assert.ok(shardCID)
       assert.ok(dataCID)
     },
   }),
@@ -155,7 +170,8 @@ export const testClient = {
     ) => {
       const car = await randomCAR(32)
 
-      let carCID = /** @type {import('../src/types.js').CARLink|null} */ (null)
+      /** @type {import('../src/types.js').ShardLink|undefined} */
+      let shardCID
 
       const alice = new Client(await AgentData.create(), {
         // @ts-ignore
@@ -182,7 +198,7 @@ export const testClient = {
 
       const root = await alice.uploadCAR(car, {
         onShardStored: (meta) => {
-          carCID = meta.cid
+          shardCID = meta.cid
         },
       })
 
@@ -190,11 +206,8 @@ export const testClient = {
         ok: true,
       })
 
-      if (carCID == null) {
-        return assert.ok(carCID)
-      }
-
-      Result.try(await registry.find(space.did(), carCID.multihash))
+      if (!shardCID) return assert.fail('missing shard CID')
+      Result.try(await registry.find(space.did(), shardCID.multihash))
     },
   }),
   getReceipt: Test.withContext({

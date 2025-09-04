@@ -121,7 +121,7 @@ describe('upload capabilities', function () {
     }, /Expected link to be CID with 0x202 codec/)
   })
 
-  it('validator fails on upload/add if shard contains non CAR cid', async () => {
+  it('validator fails on upload/add if shard contains non CAR or raw CID', async () => {
     const root = await createCborCid('root')
     const add = await delegate({
       issuer: alice,
@@ -132,7 +132,7 @@ describe('upload capabilities', function () {
           with: account.did(),
           nb: {
             root,
-            shards: [parseCarLink('bafkqaaa')],
+            shards: [parseLink('bafybeibrqc2se2p3k4kfdwg7deigdggamlumemkiggrnqw3edrjosqhvnm')],
           },
         },
       ],
@@ -144,6 +144,7 @@ describe('upload capabilities', function () {
       capability: Upload.add,
       principal: Verifier,
       authority: w3,
+      validateAuthorization,
     })
     assert.ok(result.error)
     assert(

@@ -18,7 +18,7 @@ export const SHARD_SIZE = 133_169_152
  * received is assumed to be the DAG root and becomes the CAR root CID for the
  * last CAR output. Set the `rootCID` option to override.
  *
- * @extends {TransformStream<import('@ipld/unixfs').Block, import('./types.js').IndexedSerializedDAGShard>}
+ * @extends {TransformStream<import('@ipld/unixfs').Block, import('./types.js').IndexedCARFile>}
  */
 export class CARShardingStream extends TransformStream {
   /**

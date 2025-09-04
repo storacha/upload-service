@@ -313,7 +313,7 @@ export interface IndexedCARFile extends IndexedSerializedDAGShard, CARFile {}
 export type AnyLink = Link<unknown, number, number, Version>
 
 /**
- * Metadata pertaining to a CAR file.
+ * Metadata pertaining to a DAG shard.
  */
 export interface ShardMetadata extends BlobIndex {
   /**
