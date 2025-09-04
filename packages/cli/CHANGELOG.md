@@ -1,3 +1,13 @@
+## 1.5.0 (2025-09-04)
+
+### 🚀 Features
+
+- feat: output timestamps in JSON space uploads listing ([#411](https://github.com/storacha/upload-service/pull/411))
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.4.15 (2025-08-21)
 
 ### 🧱 Updated Dependencies
