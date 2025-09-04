@@ -11,7 +11,6 @@ export function SpaceEnsurer ({
 }): JSX.Element | JSX.Element[]{
   const [{ spaces, accounts }] = useW3()
   if (spaces && spaces.length > 0) {
-    console.log('SPACE_ENSURER: Has spaces, rendering children')
     return children;
   }
   return (

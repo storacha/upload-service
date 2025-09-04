@@ -20,8 +20,8 @@
  *    - If email differs, performs account switching
  * 
  * 4. LOGIN_STATUS (Iframe -> Parent)
- *    - Status updates during authentication
- *    - Data: {status: 'authenticating'|'authenticated'|'failed'}
+ *    - Status updates during authentication process
+ *    - Data: {status: string} - descriptive status messages like 'waiting for client initialization...'
  * 
  * 5. LOGIN_COMPLETED (Iframe -> Parent)
  *    - Final authentication result
@@ -35,6 +35,7 @@ import { useIframe } from '@/contexts/IframeContext'
 import { useW3, Authenticator } from '@storacha/ui-react'
 import { useEffect, useState, useMemo, ReactNode, useRef, useCallback } from 'react'
 import { getAllowedOrigins, isOriginAllowed } from '@/lib/sso-origins'
+import DefaultLoader from '@/components/Loader'
 
 // Global flag to prevent duplicate MessageChannel setup across React StrictMode cycles
 let globalChannelSetup = false
@@ -56,26 +57,18 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
   const [{ client, accounts }, { logout }] = useW3()
   
   // Persist authentication across remounts using sessionStorage
+  // This is important for handling iframe navigation
   const authStorageKey = `iframe-auth-${ssoProvider || 'default'}`
   
-  // Use lazy initialization but wait for client state to be ready
   const [authState, setAuthState] = useState<'pending' | 'authenticating' | 'finalizing' | 'authenticated' | 'failed'>('pending')
   const [error, setError] = useState<string | null>(null)
   const [channel, setChannel] = useState<MessageChannel | null>(null)
   const [expectedSSOEmail, setExpectedSSOEmail] = useState<string | null>(null)
   const [isCleaningUp, setIsCleaningUp] = useState(false)
 
-  
   // Restore minimal sessionStorage-backed authenticated state across navigation/remounts
   useEffect(() => {
     const wasAuthenticated = sessionStorage.getItem(authStorageKey) === 'true';
-    
-    devLog('IFRAME: Session restoration check', {
-      wasAuthenticated,
-      accountsCount: accounts.length,
-      authState,
-      currentEmail: accounts[0]?.toEmail()
-    });
     
     // Restore to authenticated if we have sessionStorage flag AND accounts are loaded
     // This handles component remounts during navigation
@@ -114,26 +107,12 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
             requestAuthentication(channelRef.current.port1);
           }
         }
-      }, 2000); // Wait 2 seconds for accounts to load
+      }, 5000); // Wait 5 seconds for accounts to load
       
       return () => clearTimeout(timeoutId);
     }
   }, [accounts.length, authState, authStorageKey, isCleaningUp]);
 
-  // Log authState changes
-  useEffect(() => {
-    devLog('IFRAME: authState changed to:', authState)
-  }, [authState])
-  
-  // Log accounts changes
-  useEffect(() => {
-    devLog('IFRAME: Accounts changed:', { 
-      accounts, 
-      isAuthenticated: accounts.length > 0,
-      authState 
-    })
-  }, [accounts, authState])
-  
   // Use ref to track latest client for retry logic
   const clientRef = useRef(client)
   clientRef.current = client
@@ -168,6 +147,7 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
   }, [hasEmailMismatch, currentEmail, expectedSSOEmail])
 
   // Effect to monitor accounts state and transition to authenticated when ready
+  // An account is considered authenticated only after sso login, claim and fetch accounts operations are completed
   useEffect(() => {
     devLog('IFRAME: Auth state changed to:', authState, { hasAccounts: accounts.length > 0 })
     
@@ -213,81 +193,23 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
       devLog('IFRAME: Email mismatch detected, cleaning up existing session and proceeding with new login')
       setIsCleaningUp(true)
       
-      // Clear all browser storage silently
-      const clearAllStorage = async () => {
+      // Handle async cleanup properly
+      const performCleanup = async () => {
         try {
-          devLog('IFRAME: Starting storage cleanup for account switch')
-          
-          // Logout current user first to prevent authentication conflicts
-          await logout()
-          
-          // Clear localStorage
-          localStorage.clear()
-          
-          // Clear sessionStorage
-          sessionStorage.removeItem(authStorageKey)
-          
-          // Clear IndexedDB
-          if ('indexedDB' in window) {
-            const databases = await indexedDB.databases()
-            await Promise.all(
-              databases.map(db => {
-                return new Promise<void>((resolve, reject) => {
-                  const deleteReq = indexedDB.deleteDatabase(db.name!)
-                  deleteReq.onsuccess = () => resolve()
-                  deleteReq.onerror = () => reject(deleteReq.error)
-                })
-              })
-            )
-          }
-          
-          // Clear cache storage
-          if ('caches' in window) {
-            const cacheNames = await caches.keys()
-            await Promise.all(cacheNames.map(name => caches.delete(name)))
-          }
-          
-          // Clear cookies by setting them to expire
-          document.cookie.split(";").forEach(cookie => {
-            const eqPos = cookie.indexOf("=")
-            const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim()
-            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
-            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`
-          })
-          
-          devLog('IFRAME: Storage cleanup completed, ready for new authentication')
-          
-          // Reset authentication state to allow new login
-          setAuthState('pending')
-          setError(null)
-          setExpectedSSOEmail(null) // Clear the expected email to reset mismatch detection
-          setIsCleaningUp(false)
-          
-          devLog('IFRAME: Ready for new SSO authentication')
-          
+          await clearAllStorage()
         } catch (error) {
-          devLog('IFRAME: Error during storage cleanup:', error)
+          devLog('IFRAME: Cleanup failed in useEffect:', error)
           setError('Failed to switch accounts. Please refresh the page.')
           setAuthState('failed')
+        } finally {
           setIsCleaningUp(false)
         }
       }
       
-      clearAllStorage()
+      performCleanup()
     }
   }, [hasEmailMismatch, isCleaningUp, logout])
   
-  // Log when the component mounts
-  useEffect(() => {
-    const wasAuthenticated = sessionStorage.getItem(authStorageKey) === 'true';
-    devLog('IFRAME: Component mounted', {
-      authState,
-      accountsCount: accounts.length,
-      wasAuthenticated,
-      currentEmail: accounts[0]?.toEmail()
-    })
-  }, [])
-
   useEffect(() => {
     if (!isClient || !isIframe || !ssoProvider) return
     
@@ -436,6 +358,52 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
     }
   }
 
+  // Storage cleanup function for account switching
+  const clearAllStorage = async () => {
+    try {
+      devLog('IFRAME: Starting storage cleanup for account switch')
+      
+      // Logout current user first to prevent authentication conflicts
+      await logout()
+
+      // Clean up browser data
+      localStorage.clear()
+      sessionStorage.removeItem(authStorageKey)
+      if ('indexedDB' in window) {
+        const databases = await indexedDB.databases()
+        await Promise.all(
+          databases.map(db => {
+            return new Promise<void>((resolve, reject) => {
+              const deleteReq = indexedDB.deleteDatabase(db.name!)
+              deleteReq.onsuccess = () => resolve()
+              deleteReq.onerror = () => reject(deleteReq.error)
+            })
+          })
+        )
+      }
+      if ('caches' in window) {
+        const cacheNames = await caches.keys()
+        await Promise.all(cacheNames.map(name => caches.delete(name)))
+      }
+      
+      devLog('IFRAME: Storage cleanup completed, ready for new authentication')
+      
+      // Reset authentication state to allow new login
+      setAuthState('pending')
+      setError(null)
+      setExpectedSSOEmail(null) // Clear the expected email to reset mismatch detection
+      setIsCleaningUp(false)
+      
+      devLog('IFRAME: Ready for new SSO authentication')
+      
+    } catch (error) {
+      devLog('IFRAME: Error during storage cleanup:', error)
+      setError('Failed to switch accounts. Please refresh the page.')
+      setAuthState('failed')
+      setIsCleaningUp(false)
+    }
+  }
+
   // SSO Authentication function with session validation
   const authenticateWithSSO = async (authData: any) => {
     devLog('IFRAME: authenticateWithSSO called with:', authData)
@@ -506,14 +474,6 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
         return
       }
 
-      // Different email or not authenticated - proceed with authentication
-      if (isAuthenticated && currentEmail !== email) {
-        devLog(`Account switching detected: ${currentEmail} -> ${email}`)
-        if (logout) {
-          await logout()
-        }
-      }
-
       setAuthState('authenticating')
 
       // Use w3up client login with SSO parameters
@@ -538,6 +498,8 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
 
       devLog('IFRAME: Authentication successful, transitioning to finalizing state...')
       sendLoginCompleted('success')
+      // Set authentication state to finalizing instead of authenticated because
+      // the client is considered authenticated only when the useWeb3 hooks loads the accounts
       setAuthState('finalizing')
 
     } catch (err) {
@@ -567,8 +529,10 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
   // Show authentication progress
   if (authState === 'authenticating') {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+      <div className="flex flex-col items-center justify-center h-screen bg-hot-red-light">
+        <div className="mb-4">
+          <DefaultLoader className="h-8 w-8 text-black mb-4" />
+        </div>
         <h3 className="text-lg font-semibold text-gray-700 mb-2">
           Authenticating with SSO
         </h3>
@@ -585,7 +549,7 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
   // Show authentication failure
   if (authState === 'failed') {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+      <div className="flex flex-col items-center justify-center h-screen bg-hot-red-light">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
           <div className="flex items-center mb-4">
             <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center mr-3">
@@ -612,40 +576,32 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
   }
 
   if (!isAuthenticated && authState === 'pending') {
-    const wasAuthenticated = sessionStorage.getItem(authStorageKey) === 'true';
-    
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-center p-8">
-          <div className="animate-pulse mb-4">
-            <div className="w-16 h-16 bg-blue-200 rounded-full mx-auto mb-4"></div>
-          </div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">
-            {wasAuthenticated ? 'Restoring Session' : 'Authentication'}
-          </h3>
-          <p className="text-gray-500">
-            {wasAuthenticated 
-              ? 'Restoring your authenticated session...' 
-              : `Waiting for user authentication in ${ssoProvider}...`
-            }
-          </p>
+      <div className="flex flex-col items-center justify-center h-screen bg-hot-red-light">
+        <div className="mb-4">
+          <DefaultLoader className="h-8 w-8 text-black mb-4" />
         </div>
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">
+          Authentication
+        </h3>
+        <p className="text-gray-500">
+          Waiting for user authentication in {ssoProvider}...
+        </p>
       </div>
     )
   }
 
-  // Render based on authentication state
+  // If user is authenticated, show the console
   if (authState === 'authenticated') {
-    devLog('IFRAME: Rendering authenticated content with accounts:', accounts.length)
     return <Authenticator>{children}</Authenticator>
   }
 
   // Default loading state
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-50">
+    <div className="flex items-center justify-center h-screen bg-hot-red-light">
       <div className="text-center p-8">
-        <div className="animate-pulse mb-4">
-          <div className="w-16 h-16 bg-blue-200 rounded-full mx-auto mb-4"></div>
+        <div className="mb-4">
+          <DefaultLoader className="h-8 w-8 text-black mb-4" />
         </div>
         <h3 className="text-lg font-semibold text-gray-700 mb-2">
           Loading...

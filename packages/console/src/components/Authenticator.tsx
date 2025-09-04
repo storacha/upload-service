@@ -82,7 +82,7 @@ export function AuthenticationEnsurer ({
         {authenticated ? (
           <>{children}</>
         ) : (
-          <div /> // IframeAuthenticator will handle the UI
+          <TopLevelLoader />
         )}
       </>
     )
