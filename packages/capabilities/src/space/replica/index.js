@@ -14,8 +14,7 @@
  */
 import { capability, Schema, ok, fail } from '@ucanto/validator'
 import { equals } from 'multiformats/bytes'
-import { content } from '../blob.js'
-import { and, equalWith, SpaceDID, equal } from '../../utils.js'
+import { equalWith, SpaceDID } from '../../utils.js'
 
 /**
  * Capability can only be delegated (but not invoked) allowing audience to
@@ -39,7 +38,7 @@ export const list = capability({
   with: SpaceDID,
   nb: Schema.struct({
     /** Blob to list replicas for. */
-    blob: content,
+    blob: Schema.bytes(),
     /**
      * A pointer that can be moved back and forth on the list.
      * It can be used to paginate a list for instance.
@@ -56,13 +55,11 @@ export const list = capability({
         `Expected 'with: "${delegated.with}"' instead got '${claimed.with}'`
       )
     } else if (
-      delegated.nb.blob?.digest &&
-      !equals(delegated.nb.blob.digest, claimed.nb.blob.digest)
+      delegated.nb.blob &&
+      !equals(delegated.nb.blob, claimed.nb.blob)
     ) {
       return fail(
-        `Blob digest ${
-          claimed.nb.blob.digest ? `${claimed.nb.blob.digest}` : ''
-        } violates imposed ${delegated.nb.blob.digest} constraint.`
+        `Blob digest ${claimed.nb.blob ? `${claimed.nb.blob}` : ''} violates imposed ${delegated.nb.blob} constraint.`
       )
     }
     return ok({})

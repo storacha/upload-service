@@ -37,10 +37,7 @@ describe('space replica capabilities', function () {
       audience: storageNode,
       with: account.did(),
       nb: {
-        blob: {
-          digest: car.cid.multihash.bytes,
-          size: car.bytes.length,
-        },
+        blob: car.cid.multihash.bytes,
       },
       proofs: [await top()],
     })
@@ -65,10 +62,7 @@ describe('space replica capabilities', function () {
       audience: storageNode,
       with: account.did(),
       nb: {
-        blob: {
-          digest: car.cid.multihash.bytes,
-          size: car.bytes.length,
-        },
+        blob: car.cid.multihash.bytes,
       },
       proofs: [await replica()],
     })
@@ -94,10 +88,7 @@ describe('space replica capabilities', function () {
       audience: alice,
       with: account.did(),
       nb: {
-        blob: {
-          digest: car1.cid.multihash.bytes,
-          size: car1.bytes.length,
-        },
+        blob: car1.cid.multihash.bytes,
       },
       proofs: [await top()],
     })
@@ -107,10 +98,7 @@ describe('space replica capabilities', function () {
       audience: storageNode,
       with: account.did(),
       nb: {
-        blob: {
-          digest: car2.cid.multihash.bytes,
-          size: car2.bytes.length,
-        },
+        blob: car2.cid.multihash.bytes,
       },
     })
 
