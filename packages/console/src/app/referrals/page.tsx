@@ -138,7 +138,6 @@ export default function ReferralsPage () {
         ) : (
           <>
             <ReferralsList />
-            
             {referralLink ? ( 
               <RefcodeLink referralLink={referralLink} />
             ) : (
