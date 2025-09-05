@@ -13,7 +13,7 @@ export const SidebarMigrations = () => {
       <button type='button' className='float-right' onClick={e => { e.preventDefault(); router.push('/migration/create') }}>
         <PlusCircleIcon className='w-9 px-2 hover:text-white' style={{ marginTop: -2 }} title='Start a new migration' />
       </button>
-      <H2 className='text-white'>Migrations</H2>
+      <H2 className='text-hot-red font-bold'>Migrations</H2>
       <MigrationsList migrations={migrations} />
     </>
   )
