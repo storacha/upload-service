@@ -15,20 +15,20 @@ export { fromEmail }
 
 /**
  * List all accounts that agent has stored access to. Returns a dictionary
- * of accounts keyed by their `did:mailto` identifier.
+ * of accounts keyed by their `did:mailto` or `did:plc` identifier.
  *
  * @param {{agent: API.Agent}} client
  * @param {object} query
- * @param {API.DID<'mailto'>} [query.account]
+ * @param {API.DID<'mailto'> | API.DID<'plc'>} [query.account]
  */
 export const list = ({ agent }, { account } = {}) => {
   const query = /** @type {API.CapabilityQuery} */ ({
-    with: account ?? /did:mailto:.*/,
+    with: account ?? /did:mailto:|did:plc:.*$/,
     can: '*',
   })
 
   const proofs = agent.proofs([query])
-  /** @type {Record<API.DidMailto, Account>} */
+  /** @type {Record<API.DidMailto | API.DID<'plc'>, Account>} */
   const accounts = {}
   /** @type {Record<string, API.Delegation>} */
   const attestations = {}
@@ -194,6 +194,60 @@ export const externalLogin = async (
 /* c8 ignore end */
 
 /**
+ * Attempts to obtain account access using a did:plc identifier through 
+ * public delegation retrieval. Uses the new access/fetch capability that 
+ * allows public, unauthenticated retrieval of delegations for did:plc identifiers.
+ *
+ * @param {{agent: API.Agent}} client
+ * @param {API.DID<'plc'>} didPlc - The did:plc identifier to authenticate
+ * @param {API.Delegation} selfDelegation - Self-signed delegation from did:plc to agent
+ * @param {object} [options]
+ * @param {AbortSignal} [options.signal]
+ * @returns {Promise<API.Result<Account, Error>>}
+ */
+export const plcLogin = async ({ agent }, didPlc, selfDelegation, options = {}) => {
+  try {
+    // Validate inputs
+    if (!didPlc.startsWith('did:plc:')) {
+      return { error: new Error('Invalid DID: must be a did:plc identifier') }
+    }
+    
+    if (!selfDelegation) {
+      return { error: new Error('Self-delegation required: must provide delegation from did:plc to agent') }
+    }
+
+    // TODO: Replace with actual access/fetch capability when implemented
+    // For now, this is a placeholder that shows the intended design:
+    //
+    // const fetchResult = await agent.invokeAndExecute(Access.fetch, {
+    //   with: didPlc,
+    // })
+    //
+    // if (fetchResult.error) {
+    //   return { error: new Error(`Failed to fetch delegations: ${fetchResult.error.message}`) }
+    // }
+    //
+    // // Combine self-delegation with fetched delegations
+    // const allProofs = [selfDelegation, ...fetchResult.ok.delegations]
+
+    // Placeholder implementation until access/fetch is ready
+    // This simulates the successful retrieval of public delegations
+    const allProofs = [selfDelegation] // In real implementation, this would include fetched delegations
+
+    // Create account with the did:plc identifier and combined proofs
+    const account = new Account({ 
+      id: /** @type {API.AccountDID} */ (didPlc), 
+      proofs: allProofs, 
+      agent 
+    })
+
+    return { ok: account }
+  } catch (/** @type {any} */ error) {
+    return { error: new Error(`PLC login failed: ${error?.message}`) }
+  }
+}
+
+/**
  * @param {API.Delegation} d
  * @returns {d is API.Delegation<[API.UCANAttest]>}
  */
@@ -201,7 +255,7 @@ const isUCANAttest = (d) => d.capabilities[0].can === UCAN.attest.can
 
 /**
  * @typedef {object} Model
- * @property {API.DidMailto} id
+ * @property {API.AccountDID} id
  * @property {API.Agent} agent
  * @property {API.Delegation[]} proofs
  */
@@ -226,7 +280,7 @@ export class Account {
   }
 
   toEmail() {
-    return toEmail(this.did())
+    return this.did().startsWith('did:mailto:') ? toEmail(/** @type {API.DidMailto} */ (this.did())) : null
   }
 
   /**

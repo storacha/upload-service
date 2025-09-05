@@ -88,7 +88,7 @@ export class ProvisionsStorage {
   /**
    *
    * @param {Types.ProviderDID} provider
-   * @param {Types.DID<'mailto'>} customer
+   * @param {Types.AccountDID} customer
    * @returns
    */
   async getCustomer(provider, customer) {
