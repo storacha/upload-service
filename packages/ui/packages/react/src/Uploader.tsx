@@ -15,6 +15,7 @@ import React, {
   createContext,
   useState,
   Fragment,
+  useRef,
 } from 'react'
 import { createComponent, createElement } from 'ariakit-react-utils'
 import { useW3 } from './providers/Provider.js'
@@ -86,6 +87,10 @@ export interface UploaderContextState {
    * KMS configuration (when using KMS strategy)
    */
   kmsConfig?: KMSConfig
+  /**
+   * Whether the current upload can be canceled.
+   */
+  canCancel?: boolean
 }
 
 export interface UploaderContextActions {
@@ -119,6 +124,10 @@ export interface UploaderContextActions {
    * Configure Google KMS settings
    */
   setKmsConfig: (config: KMSConfig) => void
+  /**
+   * Cancel an in-flight upload.
+   */
+  cancelUpload: () => void
 }
 
 export type UploaderContextValue = [
@@ -134,6 +143,7 @@ export const UploaderContextDefaultValue: UploaderContextValue = [
     wrapInDirectory: false,
     uploadAsCAR: false,
     encryptionStrategy: 'kms',
+    canCancel: false,
   },
   {
     setFile: () => {
@@ -153,6 +163,9 @@ export const UploaderContextDefaultValue: UploaderContextValue = [
     },
     setKmsConfig: () => {
       throw new Error('missing set kms config function')
+    },
+    cancelUpload: () => {
+      throw new Error('missing cancel upload function')
     },
   },
 ]
@@ -216,6 +229,8 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
       UploaderContextState['storedDAGShards']
     >([])
     const [uploadProgress, setUploadProgress] = useState<UploadProgress>({})
+    const [abortController, setAbortController] = useState<AbortController | undefined>()
+    const canceledRef = useRef(false)
 
     const setFilesAndReset = (files?: File[]): void => {
       setFiles(files)
@@ -224,6 +239,7 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
 
     const handleUploadSubmit: FormEventHandler<HTMLFormElement> = (e) => {
       e.preventDefault()
+      canceledRef.current = false
       if (client === undefined) {
         // eslint-disable-next-line no-console
         console.error(
@@ -272,7 +288,7 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
         if (spaceAccess.encryption.provider === 'google-kms') {
           // Use KMS strategy with config from shared hook
           setEncryptionStrategy('kms')
-          cryptoAdapter = await createKMSAdapter()
+          const cryptoAdapter = await createKMSAdapter()
           if (!cryptoAdapter) {
             throw new Error('KMS configuration required for encrypted uploads')
           }
@@ -323,7 +339,10 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
         setStatus(UploadStatus.Uploading)
         const storedShards: CARMetadata[] = []
         setStoredDAGShards(storedShards)
+        const controller = new AbortController()
+        setAbortController(controller)
         const uploadOptions = {
+          signal: controller.signal,
           onShardStored(meta: CARMetadata) {
             storedShards.push(meta)
             setStoredDAGShards([...storedShards])
@@ -369,8 +388,21 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
       doUpload().catch((error_: unknown) => {
         const error =
           error_ instanceof Error ? error_ : new Error(String(error_))
+        // If aborted or canceled, reset quietly without throwing an error
+        if (
+          canceledRef.current === true ||
+          abortController?.signal?.aborted === true ||
+          (error as any).name === 'AbortError' ||
+          /aborted/i.test(error.message)
+        ) {
+          setError(undefined)
+          setStatus(UploadStatus.Idle)
+          setAbortController(undefined)
+          return
+        }
         setError(error)
         setStatus(UploadStatus.Failed)
+        setAbortController(undefined)
       })
     }
 
@@ -389,6 +421,7 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
           uploadAsCAR,
           encryptionStrategy,
           kmsConfig: kmsConfigState,
+          canCancel: status === UploadStatus.Uploading && abortController != null,
         },
         {
           setFile: (file?: File) => {
@@ -399,6 +432,16 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
           setUploadAsCAR,
           setEncryptionStrategy,
           setKmsConfig,
+          cancelUpload: () => {
+            if (abortController) {
+              canceledRef.current = true
+              setStatus(UploadStatus.Idle)
+              setError(undefined)
+              setStoredDAGShards([])
+              setUploadProgress({})
+              abortController.abort()
+            }
+          },
         },
       ],
       [
@@ -410,6 +453,7 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
         setFile,
         encryptionStrategy,
         kmsConfigState,
+        abortController,
       ]
     )
 
