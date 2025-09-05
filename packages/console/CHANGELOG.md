@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.4.0](https://github.com/storacha/upload-service/compare/console-v2.3.7...console-v2.4.0) (2025-09-05)
+
+
+### Features
+
+* auto-clean user session and continue with SSO flow ([#397](https://github.com/storacha/upload-service/issues/397)) ([f26a3c6](https://github.com/storacha/upload-service/commit/f26a3c646a951748977fb8edddd93e102b9c69ac))
+* automatically handle email mismatch in iframe SSO authentication ([#414](https://github.com/storacha/upload-service/issues/414)) ([787739e](https://github.com/storacha/upload-service/commit/787739e55712f3e78725ebfe462323fd79f3ac69))
+
+
+### Fixes
+
+* "revert feat: auto-clean user session and continue with SSO flow ([#397](https://github.com/storacha/upload-service/issues/397))" ([#403](https://github.com/storacha/upload-service/issues/403)) ([94f94cd](https://github.com/storacha/upload-service/commit/94f94cd22a22f9bfac664d942177e92401509db3))
+* **console:** resolve sidebar height issue for full page coverage ([#381](https://github.com/storacha/upload-service/issues/381)) ([6f7bd68](https://github.com/storacha/upload-service/commit/6f7bd68eedbed89eda620fc1b877a0df61e42a23)), closes [#368](https://github.com/storacha/upload-service/issues/368)
+
+
+### Other Changes
+
+* **release:** publish ([27a2dc5](https://github.com/storacha/upload-service/commit/27a2dc568ffec5d7cf79dab7e0b0c3d081169398))
+
 ## [2.3.7](https://github.com/storacha/upload-service/compare/console-v2.3.6...console-v2.3.7) (2025-08-28)
 
 
