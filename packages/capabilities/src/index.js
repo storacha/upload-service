@@ -19,6 +19,7 @@ import * as Aggregator from './filecoin/aggregator.js'
 import * as Dealer from './filecoin/dealer.js'
 import * as DealTracker from './filecoin/deal-tracker.js'
 import * as SpaceIndex from './space/index.js'
+import * as SpaceReplica from './space/replica/index.js'
 import * as UCAN from './ucan.js'
 import * as Plan from './plan.js'
 import * as Usage from './usage.js'
@@ -44,6 +45,7 @@ export {
   Subscription,
   Filecoin,
   SpaceIndex,
+  SpaceReplica,
   Storefront,
   Aggregator,
   Dealer,
@@ -127,4 +129,6 @@ export const abilitiesAsStrings = [
   HTTP.put.can,
   SpaceIndex.index.can,
   SpaceIndex.add.can,
+  SpaceReplica.replica.can,
+  SpaceReplica.list.can,
 ]
