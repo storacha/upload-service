@@ -17,7 +17,7 @@ import {
   PieceLink,
   ProofData,
   uint64,
-  RAW_CODE
+  RAW_CODE,
 } from '@web3-storage/data-segment'
 import * as AssertCaps from './assert.js'
 import * as ClaimCaps from './claim.js'

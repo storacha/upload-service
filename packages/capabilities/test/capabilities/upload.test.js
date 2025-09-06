@@ -132,7 +132,11 @@ describe('upload capabilities', function () {
           with: account.did(),
           nb: {
             root,
-            shards: [parseLink('bafybeibrqc2se2p3k4kfdwg7deigdggamlumemkiggrnqw3edrjosqhvnm')],
+            shards: [
+              parseLink(
+                'bafybeibrqc2se2p3k4kfdwg7deigdggamlumemkiggrnqw3edrjosqhvnm'
+              ),
+            ],
           },
         },
       ],

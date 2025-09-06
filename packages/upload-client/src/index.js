@@ -338,7 +338,9 @@ export async function uploadBlocks(
 
   // encode indexed shard
   await blockStream
-    .pipeThrough(new FilepackShardingStream({ ...options, shardSize: Infinity }))
+    .pipeThrough(
+      new FilepackShardingStream({ ...options, shardSize: Infinity })
+    )
     .pipeTo(
       new WritableStream({
         write: (c) => {

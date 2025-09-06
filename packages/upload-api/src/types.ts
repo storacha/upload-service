@@ -479,7 +479,7 @@ export interface LegacyStoreAddInput extends LegacyUploadAPI.StoreAddInput {}
 /** @deprecated */
 export type LegacyBlobServiceContext = Omit<
   LegacyUploadAPI.BlobServiceContext,
-  'allocationsStorage'|'getServiceConnection'
+  'allocationsStorage' | 'getServiceConnection'
 > & {
   registry: BlobRegistry
   getServiceConnection: () => ConnectionView<Service>
@@ -588,10 +588,7 @@ export interface RevocationServiceContext {
 
 /** @deprecated */
 export interface LegacyConcludeServiceContext
-  extends Pick<
-    LegacyUploadAPI.ConcludeServiceContext,
-    'id'
-  > {
+  extends Pick<LegacyUploadAPI.ConcludeServiceContext, 'id'> {
   registry: BlobRegistry
   getServiceConnection: () => ConnectionView<Service>
 }
