@@ -104,7 +104,7 @@ describe('upload capabilities', function () {
     })
   })
 
-  it('creating upload/add throws if shards contains a non CAR cid', async () => {
+  it('creating upload/add throws if shards contains a non CAR or raw cid', async () => {
     const proofs = [await any]
     const root = await createCborCid('root')
     assert.throws(() => {
@@ -114,7 +114,7 @@ describe('upload capabilities', function () {
         with: account.did(),
         nb: {
           root,
-          shards: [parseCarLink('bafkqaaa')],
+          shards: [parseCarLink('bafybeibrqc2se2p3k4kfdwg7deigdggamlumemkiggrnqw3edrjosqhvnm')],
         },
         proofs,
       })
