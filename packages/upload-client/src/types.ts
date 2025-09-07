@@ -422,6 +422,15 @@ export interface ShardingOptions {
   rootCID?: AnyLink
 }
 
+export interface SharderOptions {
+  /**
+   * Sharding implementation to use.
+   */
+  sharder?: (
+    options: ShardingOptions
+  ) => TransformStream<Block, IndexedSerializedDAGShard>
+}
+
 export interface ShardStoringOptions
   extends RequestOptions,
     UploadProgressTrackable {}
@@ -429,6 +438,7 @@ export interface ShardStoringOptions
 export interface UploadOptions
   extends RequestOptions,
     ShardingOptions,
+    SharderOptions,
     DeduplicationOptions,
     ShardStoringOptions,
     UploadProgressTrackable {

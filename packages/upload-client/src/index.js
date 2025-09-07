@@ -17,6 +17,7 @@ import {
   defaultFileComparator,
   SHARD_SIZE,
   FilepackShardingStream,
+  CARShardingStream,
 } from './sharding.js'
 import { ShardedDAGIndex, indexShardedDAG } from '@storacha/blob-index'
 
@@ -55,15 +56,21 @@ const isSubArray = (bytes) =>
  * @param {import('./types.js').UploadFileOptions} [options]
  */
 export async function uploadFile(conf, file, options = {}) {
+  const sharder =
+    options.sharder ?? ((opts) => new FilepackShardingStream(opts))
   const shardSize = options.shardSize ?? SHARD_SIZE
   if (file.size != null && file.size < shardSize) {
     const { blocks, cid } = await UnixFS.encodeFile(file, options)
-    return await uploadBlocks(conf, blocks, { rootCID: cid, ...options })
+    return await uploadBlocks(conf, blocks, {
+      rootCID: cid,
+      sharder,
+      ...options,
+    })
   }
   return await uploadBlockStream(
     conf,
     UnixFS.createFileEncoderStream(file, options),
-    options
+    { ...options, sharder }
   )
 }
 
@@ -109,16 +116,22 @@ export async function uploadDirectory(conf, files, options = {}) {
     size += entry.size
   }
 
+  const sharder =
+    options.sharder ?? ((opts) => new FilepackShardingStream(opts))
   const shardSize = options.shardSize ?? SHARD_SIZE
   if (isKnownSize && size < shardSize) {
     const { blocks, cid } = await UnixFS.encodeDirectory(entries, options)
-    return await uploadBlocks(conf, blocks, { rootCID: cid, ...options })
+    return await uploadBlocks(conf, blocks, {
+      rootCID: cid,
+      sharder,
+      ...options,
+    })
   }
 
   return await uploadBlockStream(
     conf,
     UnixFS.createDirectoryEncoderStream(entries, options),
-    options
+    { ...options, sharder }
   )
 }
 
@@ -186,8 +199,10 @@ export async function uploadBlockStream(
     blocks = blocks.pipeThrough(new BlockDeduplicationStream())
   }
 
+  const sharder = options.sharder ?? ((opts) => new CARShardingStream(opts))
+
   await blocks
-    .pipeThrough(new FilepackShardingStream(options))
+    .pipeThrough(sharder(options))
     .pipeThrough(
       /** @type {TransformStream<import('./types.js').IndexedSerializedDAGShard, import('./types.js').ShardMetadata>} */
       (
@@ -336,11 +351,11 @@ export async function uploadBlocks(
     },
   })
 
+  const sharder = options.sharder ?? ((opts) => new CARShardingStream(opts))
+
   // encode indexed shard
   await blockStream
-    .pipeThrough(
-      new FilepackShardingStream({ ...options, shardSize: Infinity })
-    )
+    .pipeThrough(sharder({ ...options, shardSize: Infinity }))
     .pipeTo(
       new WritableStream({
         write: (c) => {
@@ -354,6 +369,7 @@ export async function uploadBlocks(
   if (!shard) throw new Error('missing shard')
 
   const root = shard.root
+  /* c8 ignore next */
   if (!root) throw new Error('missing shard root')
 
   const bytes = new Uint8Array(await shard.arrayBuffer())

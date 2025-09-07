@@ -13,11 +13,15 @@ import { Piece } from '@web3-storage/data-segment'
 import { base58btc } from 'multiformats/bases/base58'
 import { uploadFile, uploadDirectory, uploadCAR } from '../src/index.js'
 import * as UnixFS from '../src/unixfs.js'
-import { encode as encodeCAR } from '../src/car.js'
+import {
+  blockEncodingLength,
+  encode as encodeCAR,
+  headerEncodingLength,
+} from '../src/car.js'
 import { dedupe } from '../src/deduplication.js'
 import { serviceSigner } from './fixtures.js'
 import { randomBlock, randomBytes } from './helpers/random.js'
-import { toCAR } from './helpers/car.js'
+import { toFilepackData } from './helpers/shard.js'
 import { File } from './helpers/shims.js'
 import { mockService } from './helpers/mocks.js'
 import {
@@ -25,14 +29,10 @@ import {
   setupBlobAddSuccessResponse,
   receiptsEndpoint,
 } from './helpers/utils.js'
-import {
-  blockEncodingLength,
-  encode,
-  headerEncodingLength,
-} from '../src/car.js'
 import { toBlock } from './helpers/block.js'
 import { getFilecoinOfferResponse } from './helpers/filecoin.js'
 import { defaultFileComparator } from '../src/sharding.js'
+import { encodeDataArchive as encodeFilepackDataArchive } from '../src/filepack.js'
 
 /**
  * @param {Uint8Array} bytes
@@ -98,7 +98,7 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
       const agent = await Signer.generate() // The "user" that will ask the service to accept the upload
       const bytes = await randomBytes(128)
       const file = toBlob(bytes, sizeVariant)
-      const expectedCar = await toCAR(bytes)
+      const expectedShard = await toFilepackData(bytes)
       const piece = Piece.fromPayload(bytes).link
 
       /** @type {import('../src/types.js').ShardLink|undefined} */
@@ -161,8 +161,8 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
             assert.equal(String(invCap.nb?.shards?.[0]), shardCID?.toString())
             return {
               ok: {
-                root: expectedCar.roots[0],
-                shards: [expectedCar.cid],
+                root: expectedShard.root,
+                shards: [expectedShard.cid],
               },
             }
           }),
@@ -202,8 +202,8 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
       assert.equal(service.upload.add.callCount, 1)
 
       assert(shardCID)
-      assertEqualDigest(shardCID, expectedCar.cid)
-      assert.equal(dataCID.toString(), expectedCar.roots[0].toString())
+      assertEqualDigest(shardCID, expectedShard.cid)
+      assert.equal(dataCID.toString(), expectedShard.root.toString())
     })
 
     it('allows custom shard size to be set', async function () {
@@ -279,14 +279,11 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
         file,
         {
           connection,
-          // chunk size = 1_048_576
-          // encoded block size = 1_048_615
-          // shard size = 2_097_153 (as configured below)
-          // total file size = 5_242_880 (as above)
-          // so, at least 2 shards, but 2 encoded blocks (_without_ CAR header) = 2_097_230
-          // ...which is > shard size of 2_097_153
-          // so we actually end up with a shard for each block - 5 CARs!
-          shardSize: 1024 * 1024 * 2 + 1,
+          // chunk size = 1 MiB
+          // shard size = 1.5 MiB
+          // total file size = 5 MiB
+          // = 5 shards
+          shardSize: 1024 * 1024 + 512,
           onShardStored: (meta) => shardCIDs.push(meta.cid),
           receiptsEndpoint,
         }
@@ -498,7 +495,7 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
     it('allows custom shard size to be set', async () => {
       const space = await Signer.generate()
       const agent = await Signer.generate() // The "user" that will ask the service to accept the upload
-      const bytesList = [await randomBytes(500_000)]
+      const bytesList = [await randomBytes(250_000), await randomBytes(250_000)]
       const files = bytesList.map((bytes, index) =>
         toFile(`${index}.txt`, bytes, sizeVariant)
       )
@@ -569,16 +566,13 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
         files,
         {
           connection,
-          shardSize: 500_057, // should end up with 2 CAR files
+          shardSize: 499_999, // should end up with 2 CAR files
           onShardStored: (meta) => shardCIDs.push(meta.cid),
           receiptsEndpoint,
         }
       )
 
-      // when size is known, we are below the shard size and so never create
-      // more than 1 shard. However when size is unknown the CAR header and
-      // encoding bytes will result in 2 shards.
-      assert.equal(shardCIDs.length, sizeVariant === 'known' ? 1 : 2)
+      assert.equal(shardCIDs.length, 2)
     })
 
     it('sorts files unless options.customOrder', async () => {
@@ -757,8 +751,9 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
       const bytes = await randomBytes(128)
       const file0 = toFile('repo0/LICENSE.md', bytes, sizeVariant)
       const file1 = toFile('repo1/LICENSE.md', bytes, sizeVariant)
-      const { blocks, cid } = await UnixFS.encodeDirectory([file0, file1])
-      const expectedShardFile = await encodeCAR(dedupe(blocks), cid) // dedupe
+      const { blocks } = await UnixFS.encodeDirectory([file0, file1])
+      const chunks = [...dedupe(blocks)].map((b) => b.bytes) // dedupe
+      const expectedShardFile = encodeFilepackDataArchive(chunks)
       const expectedShardBytes = new Uint8Array(
         await expectedShardFile.arrayBuffer()
       )
@@ -859,8 +854,9 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
       const bytes = await randomBytes(128)
       const file0 = toFile('repo0/LICENSE.md', bytes, sizeVariant)
       const file1 = toFile('repo1/LICENSE.md', bytes, sizeVariant)
-      const { blocks, cid } = await UnixFS.encodeDirectory([file0, file1])
-      const expectedShardFile = await encodeCAR(blocks, cid) // no dedupe
+      const { blocks } = await UnixFS.encodeDirectory([file0, file1])
+      const chunks = blocks.map((b) => b.bytes) // no dedupe
+      const expectedShardFile = encodeFilepackDataArchive(chunks)
       const expectedShardBytes = new Uint8Array(
         await expectedShardFile.arrayBuffer()
       )
@@ -965,7 +961,7 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
         await randomBlock(128),
         await randomBlock(128),
       ]
-      const _car = await encode(blocks, blocks.at(-1)?.cid)
+      const _car = await encodeCAR(blocks, blocks.at(-1)?.cid)
       const car =
         sizeVariant === 'known'
           ? _car
@@ -1091,7 +1087,7 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
         await toBlock(new Uint8Array([1, 3, 8])),
         await toBlock(new Uint8Array([1, 1, 3, 8])),
       ]
-      const _car = await encode(blocks, blocks.at(-1)?.cid)
+      const _car = await encodeCAR(blocks, blocks.at(-1)?.cid)
       const car =
         sizeVariant === 'known'
           ? _car
@@ -1209,7 +1205,7 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
       const agent = await Signer.generate() // The "user" that will ask the service to accept the upload
       const bytes = await randomBytes(128)
       const file = toBlob(bytes, sizeVariant)
-      const expectedCar = await toCAR(bytes)
+      const expectedShard = await toFilepackData(bytes)
       const piece = Piece.fromPayload(bytes).link
 
       /** @type {import('../src/types.js').ShardLink|undefined} */
@@ -1271,8 +1267,8 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
             assert.equal(String(invCap.nb?.shards?.[0]), shardCID?.toString())
             return {
               ok: {
-                root: expectedCar.roots[0],
-                shards: [expectedCar.cid],
+                root: expectedShard.root,
+                shards: [expectedShard.cid],
               },
             }
           }),
@@ -1359,8 +1355,8 @@ for (const sizeVariant of /** @type {const} */ (['known', 'unknown'])) {
       assert.equal(service.upload.add.callCount, 1)
 
       assert(shardCID)
-      assertEqualDigest(shardCID, expectedCar.cid)
-      assert.equal(dataCID.toString(), expectedCar.roots[0].toString())
+      assertEqualDigest(shardCID, expectedShard.cid)
+      assert.equal(dataCID.toString(), expectedShard.root.toString())
     })
   })
 }
