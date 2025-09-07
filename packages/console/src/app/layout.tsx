@@ -4,6 +4,7 @@ import Provider from '@/components/W3UIProvider'
 import Toaster from '@/components/Toaster'
 import { Provider as MigrationsProvider } from '@/components/MigrationsProvider'
 import { IframeProvider } from '@/contexts/IframeContext'
+import { PlausibleProvider } from '@/components/PlausibleProvider'
 
 export const metadata: Metadata = {
   title: 'Storacha console',
@@ -23,14 +24,16 @@ export default function RootLayout ({
         <link href="https://fonts.googleapis.com/css2?family=Epilogue:ital@0;1&display=swap" rel="stylesheet" />
       </head>
       <body className='bg-hot-red-light min-h-screen'>
-        <IframeProvider>
-          <Provider>
-            <MigrationsProvider>
-              {children}
-            </MigrationsProvider>
-          </Provider>
-          <Toaster />
-        </IframeProvider>
+        <PlausibleProvider domain='console.storacha.network'>
+          <IframeProvider>
+            <Provider>
+              <MigrationsProvider>
+                {children}
+              </MigrationsProvider>
+            </Provider>
+            <Toaster />
+          </IframeProvider>
+        </PlausibleProvider>
       </body>
     </html>
   )

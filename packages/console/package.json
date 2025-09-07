@@ -19,6 +19,7 @@
     "@ipld/car": "catalog:",
     "@ipld/dag-json": "catalog:",
     "@ipld/dag-ucan": "catalog:",
+    "@plausible-analytics/tracker": "^0.4.2",
     "@sentry/nextjs": "8.35.0",
     "@tailwindcss/postcss": "catalog:",
     "@ucanto/client": "catalog:",
