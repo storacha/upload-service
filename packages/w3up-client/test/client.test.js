@@ -9,7 +9,7 @@ import {
 } from '@storacha/access/agent'
 import { base58btc } from 'multiformats/bases/base58'
 import { randomBytes, randomCAR } from './helpers/random.js'
-import { toCAR } from './helpers/car.js'
+import { toFilepackData } from './helpers/shard.js'
 import { File } from './helpers/shims.js'
 import { authorizeContentServe, Client } from '../src/client.js'
 import * as Test from './test.js'
@@ -47,7 +47,7 @@ export const testClient = {
     ) => {
       const bytes = await randomBytes(128)
       const file = new Blob([bytes])
-      const expectedCar = await toCAR(bytes)
+      const expectedShard = await toFilepackData(bytes)
       /** @type {import('@storacha/upload-client/types').ShardLink|undefined} */
       let shardCID
 
@@ -85,11 +85,11 @@ export const testClient = {
         ok: true,
       })
 
-      Result.try(await registry.find(space.did(), expectedCar.cid.multihash))
+      Result.try(await registry.find(space.did(), expectedShard.cid.multihash))
 
       if (!shardCID) return assert.fail('missing shard CID')
-      assertEqualDigest(shardCID, expectedCar.cid)
-      assert.equal(dataCID.toString(), expectedCar.roots[0].toString())
+      assertEqualDigest(shardCID, expectedShard.cid)
+      assert.equal(dataCID.toString(), expectedShard.root.toString())
     },
     'should not allow upload without a current space': async (
       assert,
@@ -1350,8 +1350,8 @@ export const testClient = {
       { connection }
     ) => {
       const bytes = await randomBytes(128)
-      const uploadedCar = await toCAR(bytes)
-      const contentCID = uploadedCar.roots[0]
+      const uploadedShard = await toFilepackData(bytes)
+      const contentCID = uploadedShard.root
 
       const alice = new Client(await AgentData.create(), {
         // @ts-ignore
@@ -1429,8 +1429,8 @@ export const testClient = {
       const alice = new Client(await AgentData.create())
 
       const bytes = await randomBytes(128)
-      const uploadedCar = await toCAR(bytes)
-      const contentCID = uploadedCar.roots[0]
+      const uploadedCar = await toFilepackData(bytes)
+      const contentCID = uploadedCar.root
 
       await assert.rejects(alice.remove(contentCID, { shards: true }))
     },
