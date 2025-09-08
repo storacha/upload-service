@@ -1,3 +1,13 @@
+## 2.2.4 (2025-09-08)
+
+### 🩹 Fixes
+
+- fix: infinite recursion on EntryNotFound and EntryExists error messages ([#419](https://github.com/storacha/upload-service/pull/419))
+
+### ❤️ Thank You
+
+- ash
+
 ## 2.2.3 (2025-08-21)
 
 ### 🩹 Fixes
