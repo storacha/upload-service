@@ -29,7 +29,7 @@ export function AuthenticationForm (): JSX.Element {
             className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap'
             type='submit'
             disabled={submitted}
-            onClick={() => plausible('Login Authorization Requested')}
+            onClick={() => { plausible('Login Authorization Requested') }}
           >
             Authorize
           </button>
