@@ -12,7 +12,6 @@ import { dataSources } from '@/app/migration/data-sources'
 import { logAndCaptureError } from '@/sentry'
 import { usePlausible } from '@/components/PlausibleProvider'
 
-
 interface WizardProps {
   config: Partial<MigrationConfiguration>
   onPrev: () => void
