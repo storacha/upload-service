@@ -14,7 +14,7 @@ import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { useRouter } from 'next/navigation'
 import { createUploadsListKey } from '@/cache'
 import { logAndCaptureError } from '@/sentry'
-import { ipfsGatewayURL, ipfsGatewayURLStr } from '@/components/services'
+import { ipfsGatewayURLStr } from '@/components/services'
 import { useFileDecryption } from '@/hooks/useFileDecryption'
 
 interface PageProps {
@@ -73,12 +73,9 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
     }
   }
 
-  let url = ipfsGatewayURLStr(root)
+  const url = ipfsGatewayURLStr(root)
   const isPrivateSpace = space.access?.type === 'private'
-  // Staging/Dev env will redirect to Prod gateway, so we need to add format=raw to the URL to open private files
-  if (isPrivateSpace && process.env.NODE_ENV !== 'production') {
-    url = `${url}?format=raw`
-  }
+  
   return (
     <div>
       <Breadcrumbs space={space.did()} root={root} />
