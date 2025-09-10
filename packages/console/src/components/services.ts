@@ -22,7 +22,9 @@ export const servicePrincipal = DID.parse(
 export const ipfsGatewayURL = (rootCID: UnknownLink | string) => new URL(
   // 'https://%ROOT_CID%.ipfs.w3s.link' or 'https://%ROOT_CID%.ipfs-staging.w3s.link'
   process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL?.replace('%ROOT_CID%', rootCID.toString()) ?? `https://${rootCID}.ipfs.w3s.link`
-).toString()
+)
+
+export const ipfsGatewayURLStr = (rootCID: UnknownLink | string) => ipfsGatewayURL(rootCID).toString()
 
 export const serviceConnection = connect<Service>({
   id: servicePrincipal,
