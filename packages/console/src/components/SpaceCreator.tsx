@@ -15,7 +15,7 @@ import * as CAR from '@ucanto/transport/car'
 import { gatewayHost } from './services'
 import { logAndCaptureError } from '@/sentry'
 import { usePrivateSpacesAccess } from '@/hooks/usePrivateSpacesAccess'
-import { usePlausible } from '@/components/PlausibleProvider'
+import { usePlausible } from "next-plausible"
 
 export function SpaceCreatorCreating(): JSX.Element {
   return (

@@ -2,7 +2,7 @@
 import { useW3 } from "@storacha/ui-react"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
-import { usePlausible } from '@/components/PlausibleProvider'
+import { usePlausible } from "next-plausible"
 
 export default function LogoutPage () {
   const [, { logout }] = useW3()

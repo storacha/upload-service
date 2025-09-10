@@ -9,7 +9,7 @@ import { TopLevelLoader } from './Loader'
 import { useIframe } from '@/contexts/IframeContext'
 import IframeAuthenticator from './IframeAuthenticator'
 import { useRecordRefcode } from '@/lib/referrals/hooks'
-import { usePlausible } from '@/components/PlausibleProvider'
+import { usePlausible } from "next-plausible"
 
 export function AuthenticationForm (): JSX.Element {
   const plausible = usePlausible()

@@ -10,7 +10,7 @@ import { DidIcon } from '@/components/DidIcon'
 import { MigrationConfiguration, DataSourceID } from '@/lib/migrations/api'
 import { dataSources } from '@/app/migration/data-sources'
 import { logAndCaptureError } from '@/sentry'
-import { usePlausible } from '@/components/PlausibleProvider'
+import { usePlausible } from "next-plausible"
 
 interface WizardProps {
   config: Partial<MigrationConfiguration>
