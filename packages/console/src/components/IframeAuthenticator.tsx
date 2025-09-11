@@ -36,6 +36,7 @@ import { useW3, Authenticator } from '@storacha/ui-react'
 import { useEffect, useState, useMemo, ReactNode, useRef, useCallback } from 'react'
 import { getAllowedOrigins, isOriginAllowed } from '@/lib/sso-origins'
 import DefaultLoader from '@/components/Loader'
+import { usePlausible } from 'next-plausible'
 
 // Global flag to prevent duplicate MessageChannel setup across React StrictMode cycles
 let globalChannelSetup = false
@@ -65,6 +66,7 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
   const [channel, setChannel] = useState<MessageChannel | null>(null)
   const [expectedSSOEmail, setExpectedSSOEmail] = useState<string | null>(null)
   const [isCleaningUp, setIsCleaningUp] = useState(false)
+  const plausible = usePlausible()
 
   // Restore minimal sessionStorage-backed authenticated state across navigation/remounts
   useEffect(() => {
@@ -501,13 +503,26 @@ export default function IframeAuthenticator({ children }: IframeAuthenticatorPro
       // Set authentication state to finalizing instead of authenticated because
       // the client is considered authenticated only when the useWeb3 hooks loads the accounts
       setAuthState('finalizing')
-
+      plausible('Iframe Authentication Success', {
+        props: {
+          email: email,
+          authProvider: authProvider, // Currently "dmail"
+          userType: 'iframe_user'
+        }
+      })
     } catch (err) {
       console.error('SSO authentication failed:', err)
       const errorMessage = err instanceof Error ? err.message : 'Authentication failed'
       setError(errorMessage)
       setAuthState('failed')
       sendLoginCompleted('error', errorMessage)
+      plausible('Iframe Authentication Failed', {
+        props: {
+          email: email,
+          authProvider: authProvider, // Currently "dmail"
+          userType: 'iframe_user'
+        }
+      })
     }
   }
 
