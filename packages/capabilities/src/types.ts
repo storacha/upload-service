@@ -60,7 +60,7 @@ export type CARLink = Link<unknown, typeof CAR.codec.code>
 
 export type Multihash = Uint8Array
 
-export type AccountDID = DID<'mailto'>
+export type AccountDID = DID<'mailto'> | DID<'plc'>
 export type SpaceDID = DID<'key'>
 
 /**
@@ -110,7 +110,14 @@ export interface AccessClaimSuccess {
 }
 export interface AccessClaimFailure extends Ucanto.Failure {
   name: 'AccessClaimFailure'
-  message: string
+}
+
+export type AccessFetch = InferInvokedCapability<typeof AccessCaps.fetch>
+export interface AccessFetchSuccess {
+  delegations: Record<string, Ucanto.ByteView<Ucanto.Delegation>>
+}
+export interface AccessFetchFailure extends Ucanto.Failure {
+  name: 'AccessFetchFailure' | 'InvalidDID'
 }
 
 export interface AccessConfirmSuccess {

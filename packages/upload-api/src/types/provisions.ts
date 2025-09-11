@@ -13,12 +13,12 @@ import { SpaceDID } from '../types.js'
 export interface Provision {
   cause: Ucanto.Invocation<ProviderAdd>
   consumer: Ucanto.DID<'key'>
-  customer: Ucanto.DID<'mailto'>
+  customer: AccountDID
   provider: ProviderDID
 }
 
 export interface Customer {
-  did: Ucanto.DID<'mailto'>
+  did: AccountDID
   subscriptions: string[]
 }
 

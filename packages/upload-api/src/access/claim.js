@@ -13,11 +13,14 @@ export const provide = (ctx) =>
 
 /**
  * Checks if the given Principal is an Account.
+ * At the moment we allow `did:mailto` and `did:plc` as account principals.
  *
  * @param {API.Principal} principal
  * @returns {principal is API.Principal<API.DID<'mailto'>>}
  */
-const isAccount = (principal) => principal.did().startsWith('did:mailto:')
+const isAccount = (principal) =>
+  principal.did().startsWith('did:mailto:') ||
+  principal.did().startsWith('did:plc:')
 
 /**
  * Returns true when the delegation has a `ucan:*` capability.
@@ -130,7 +133,8 @@ async function createSessionProofsForLogin(
   delegationsStorage,
   signer
 ) {
-  // These should always be Accounts (did:mailto:), but if one's not, skip it.
+  // TODO(fforbeck): we probably wont need this if we use just did:plc:
+  // These should always be Accounts (did:mailto: or did:plc:), but if one's not, skip it.
   if (!isAccount(loginDelegation.issuer)) return { ok: [] }
 
   const accountDelegationsResult = await delegationsStorage.find({

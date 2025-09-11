@@ -2,6 +2,7 @@ import * as API from './types.js'
 import * as Authorize from './access/authorize.js'
 import * as Delegate from './access/delegate.js'
 import * as Claim from './access/claim.js'
+import * as Fetch from './access/fetch.js'
 import * as Confirm from './access/confirm.js'
 
 /**
@@ -11,5 +12,6 @@ export const createService = (context) => ({
   authorize: Authorize.provide(context),
   delegate: Delegate.provide(context),
   claim: Claim.provide(context),
+  fetch: Fetch.provide(context),
   confirm: Confirm.provide(context),
 })

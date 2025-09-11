@@ -899,6 +899,40 @@ importers:
         specifier: 'catalog:'
         version: 5.8.3
 
+  packages/did-plc:
+    dependencies:
+      '@noble/ed25519':
+        specifier: ^2.2.3
+        version: 2.2.3
+      '@ucanto/principal':
+        specifier: 'catalog:'
+        version: 9.0.2
+      base64url:
+        specifier: ^3.0.1
+        version: 3.0.1
+      cross-fetch:
+        specifier: ^4.0.0
+        version: 4.1.0(encoding@0.1.13)
+      multiformats:
+        specifier: 'catalog:'
+        version: 13.3.3
+    devDependencies:
+      '@types/mocha':
+        specifier: ^10.0.1
+        version: 10.0.10
+      '@typescript-eslint/eslint-plugin':
+        specifier: 'catalog:'
+        version: 8.26.1(@typescript-eslint/parser@8.26.1(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
+      mocha:
+        specifier: ^10.2.0
+        version: 10.8.2
+      ts-node:
+        specifier: ^10.9.1
+        version: 10.9.1(@swc/core@1.11.11(@swc/helpers@0.5.15))(@types/node@22.13.10)(typescript@5.8.3)
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
+
   packages/encrypt-upload-client:
     dependencies:
       '@ipld/car':
@@ -4114,6 +4148,9 @@ packages:
 
   '@noble/ed25519@1.7.3':
     resolution: {integrity: sha512-iR8GBkDt0Q3GyaVcIu7mSsVIqnFbkbRzGLWlvhwunacoLwt4J3swfKhfaM6rN6WY+TBGoYT1GtT1mIh2/jGbRQ==}
+
+  '@noble/ed25519@2.2.3':
+    resolution: {integrity: sha512-iHV8eI2mRcUmOx159QNrU8vTpQ/Xm70yJ2cTk3Trc86++02usfqFoNl6x0p3JN81ZDS/1gx6xiK0OwrgqCT43g==}
 
   '@noble/hashes@1.7.0':
     resolution: {integrity: sha512-HXydb0DgzTpDPwbVeDGCG1gIu7X6+AuU6Zl6av/E/KG8LMsvPntvq+w17CHRpKBmN6Ybdrt1eP3k4cj8DJa78w==}
@@ -7401,6 +7438,9 @@ packages:
 
   cross-fetch@3.1.8:
     resolution: {integrity: sha512-cvA+JwZoU0Xq+h6WkMvAUqPEYy92Obet6UdKLfW60qn99ftItKjB5T+BkyWOFWe2pUyfQ+IJHmpOTznqk1M6Kg==}
+
+  cross-fetch@4.1.0:
+    resolution: {integrity: sha512-uKm5PU+MHTootlWEY+mZ4vvXoCn4fLQxT9dSc1sXVMSFkINTJVN8cAQROpwcKm8bJ/c7rgZVIBWzH5T78sNZZw==}
 
   cross-spawn@6.0.6:
     resolution: {integrity: sha512-VqCUuhcd1iB+dsv8gxPttb5iZh/D0iubSP21g36KXdEuf6I5JiioesUVjpCdHV9MZRUfVFlvwtIUyPfxo5trtw==}
@@ -15757,7 +15797,7 @@ snapshots:
 
   '@ipld/dag-pb@4.1.3':
     dependencies:
-      multiformats: 13.3.3
+      multiformats: 13.3.6
 
   '@ipld/dag-ucan@3.4.5':
     dependencies:
@@ -15786,7 +15826,7 @@ snapshots:
       '@multiformats/murmur3': 2.1.8
       '@perma/map': 1.0.3
       actor: 2.3.1
-      multiformats: 13.3.3
+      multiformats: 13.3.6
       protobufjs: 7.4.0
       rabin-rs: 2.1.0
 
@@ -16756,7 +16796,7 @@ snapshots:
 
   '@multiformats/murmur3@2.1.8':
     dependencies:
-      multiformats: 13.3.3
+      multiformats: 13.3.6
       murmurhash3js-revisited: 3.0.0
 
   '@multiformats/sha3@3.0.2':
@@ -16819,6 +16859,8 @@ snapshots:
       '@noble/hashes': 1.7.1
 
   '@noble/ed25519@1.7.3': {}
+
+  '@noble/ed25519@2.2.3': {}
 
   '@noble/hashes@1.7.0': {}
 
@@ -19198,7 +19240,7 @@ snapshots:
       '@noble/ed25519': 1.7.3
       '@noble/hashes': 1.7.1
       '@ucanto/interface': 10.3.0
-      multiformats: 13.3.3
+      multiformats: 13.3.6
       one-webcrypto: 1.0.3
 
   '@ucanto/server@10.2.0':
@@ -19935,7 +19977,7 @@ snapshots:
       '@ucanto/interface': 10.3.0
       '@web3-storage/capabilities': 18.0.1
       carstream: 2.3.0
-      multiformats: 13.3.3
+      multiformats: 13.3.6
       uint8arrays: 5.1.0
 
   '@web3-storage/capabilities@17.4.1':
@@ -19963,7 +20005,7 @@ snapshots:
       '@multiformats/blake2': 2.0.2
       '@multiformats/murmur3': 2.1.8
       '@multiformats/sha3': 3.0.2
-      multiformats: 13.3.3
+      multiformats: 13.3.6
       uint8arrays: 5.1.0
 
   '@web3-storage/clock@0.4.1':
@@ -19978,7 +20020,7 @@ snapshots:
       '@ucanto/validator': 9.1.0
       '@web3-storage/pail': 0.5.0
       hashlru: 2.3.0
-      multiformats: 13.3.3
+      multiformats: 13.3.6
       p-retry: 6.2.1
 
   '@web3-storage/content-claims@5.2.1':
@@ -20041,7 +20083,7 @@ snapshots:
       archy: 1.0.0
       carstream: 2.3.0
       cli-color: 2.0.4
-      multiformats: 13.3.3
+      multiformats: 13.3.6
       sade: 1.8.1
 
   '@web3-storage/parse-link-header@3.1.0': {}
@@ -21347,6 +21389,12 @@ snapshots:
       luxon: 3.6.1
 
   cross-fetch@3.1.8(encoding@0.1.13):
+    dependencies:
+      node-fetch: 2.7.0(encoding@0.1.13)
+    transitivePeerDependencies:
+      - encoding
+
+  cross-fetch@4.1.0(encoding@0.1.13):
     dependencies:
       node-fetch: 2.7.0(encoding@0.1.13)
     transitivePeerDependencies:
