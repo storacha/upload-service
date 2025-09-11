@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react'
 import { RadioGroup } from '@headlessui/react'
 import { H2 } from './Text'
 import { logAndCaptureError } from '@/sentry'
+import { StorachaQRCode } from '@/qr'
 
 function StatusLoader ({ progressStatus }: { progressStatus: ProgressStatus }) {
   const { total, loaded, lengthComputable } = progressStatus
@@ -93,8 +94,9 @@ export const Done = ({ dataCID }: DoneProps): JSX.Element => {
   return (
     <div className='flex flex-col items-center w-full'>
       <H2>Uploaded</H2>
+      <StorachaQRCode value={ipfsGatewayURL(cid)} />
       <a
-        className='font-mono text-xs max-w-full overflow-hidden no-wrap text-ellipsis'
+        className='font-mono text-xs max-w-full overflow-hidden no-wrap text-ellipsis my-2'
         href={ipfsGatewayURL(cid)}
       >
         {cid}
@@ -202,7 +204,7 @@ const UploaderForm = ({ space }: UploaderFormProps): JSX.Element => {
             </RadioGroup>
           </>
         )}
-        <div className={`relative h-80 mb-5 p-8 rounded-md bg-white/5 hover:border-hot-red border-2 border-dashed border-black flex flex-col justify-center items-center text-center`}>
+        <div className={`relative min-h-80 mb-5 p-8 rounded-md bg-white/5 hover:border-hot-red border-2 border-dashed border-black flex flex-col justify-center items-center text-center`}>
           {hasFile ? '' : <span className='mb-5 text-hot-red'><img src='/icon-tray.svg' /></span>}
           <label className={`${hasFile ? 'hidden' : 'block h-px w-px overflow-hidden absolute whitespace-nowrap'}`}>File:</label>
           <W3Uploader.Input className={`${hasFile ? 'hidden' : 'block absolute inset-0 cursor-pointer w-full opacity-0'}`} allowDirectory={allowDirectory} />
