@@ -64,9 +64,19 @@ export class BlobNotFound extends Failure {
 
 export class EntryNotFound extends Failure {
   static name = /** @type {const} */ ('EntryNotFound')
+  #message
 
-  get reason() {
-    return this.message
+  /**
+   * @param {string} [message]
+   * @param {ErrorOptions} [options]
+   */
+  constructor(message, options) {
+    super(message, options)
+    this.#message = message ?? 'Entry not found'
+  }
+
+  describe() {
+    return this.#message
   }
 
   get name() {
@@ -76,9 +86,19 @@ export class EntryNotFound extends Failure {
 
 export class EntryExists extends Failure {
   static name = /** @type {const} */ ('EntryExists')
+  #message
 
-  get reason() {
-    return this.message
+  /**
+   * @param {string} [message]
+   * @param {ErrorOptions} [options]
+   */
+  constructor(message, options) {
+    super(message, options)
+    this.#message = message ?? 'Entry exists'
+  }
+
+  describe() {
+    return this.#message
   }
 
   get name() {

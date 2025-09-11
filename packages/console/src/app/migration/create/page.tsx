@@ -10,6 +10,7 @@ import { DidIcon } from '@/components/DidIcon'
 import { MigrationConfiguration, DataSourceID } from '@/lib/migrations/api'
 import { dataSources } from '@/app/migration/data-sources'
 import { logAndCaptureError } from '@/sentry'
+import { usePlausible } from "next-plausible"
 
 interface WizardProps {
   config: Partial<MigrationConfiguration>
@@ -173,6 +174,7 @@ function ChooseTargetSpace ({ config, onNext, onPrev }: WizardProps) {
 }
 
 function Confirmation ({ config, onNext, onPrev }: WizardProps) {
+  const plausible = usePlausible()
   const [{ spaces }] = useW3()
   const space = spaces.find(s => s.did() === config.space)
   if (!space) return
@@ -182,6 +184,11 @@ function Confirmation ({ config, onNext, onPrev }: WizardProps) {
 
   const handleNextClick: MouseEventHandler = async e => {
     e.preventDefault()
+    plausible('Migration Started', {
+      props: {
+        source: ds.name
+      }
+    })
     onNext(config)
   }
   return (

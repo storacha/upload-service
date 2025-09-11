@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.1](https://github.com/storacha/upload-service/compare/console-v2.4.0...console-v2.4.1) (2025-09-05)
+
+
+### Fixes
+
+* **console:** add gmail spam warning, see [#415](https://github.com/storacha/upload-service/issues/415) ([#416](https://github.com/storacha/upload-service/issues/416)) ([900f6c2](https://github.com/storacha/upload-service/commit/900f6c26668d69beb6f5b90dd1515bf89103414c))
+
 ## [2.4.0](https://github.com/storacha/upload-service/compare/console-v2.3.7...console-v2.4.0) (2025-09-05)
 
 
