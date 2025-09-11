@@ -7,7 +7,7 @@ import { SpacePreview } from './components/SpaceCreator'
 import { H2, H3 } from '@/components/Text'
 import CopyButton from './components/CopyButton'
 import Tooltip from './components/Tooltip'
-import { ArrowDownOnSquareStackIcon, CloudArrowDownIcon, PaperAirplaneIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
+import { ArrowDownOnSquareStackIcon, CloudArrowDownIcon, PaperAirplaneIcon, InformationCircleIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import * as DIDMailTo from '@storacha/did-mailto'
 import { DID } from '@ucanto/core'
 import { logAndCaptureError } from './sentry'
@@ -37,9 +37,12 @@ function isEmail(value: string): boolean {
 export function ShareSpace({ spaceDID }: { spaceDID: SpaceDID }): JSX.Element {
   const [{ client }] = useW3()
   const [value, setValue] = useState('')
-  const [sharedEmails, setSharedEmails] = useState<{ email: string, capabilities: string[] }[]>([])
+  const [sharedEmails, setSharedEmails] = useState<{ email: string, capabilities: string[], delegation: Delegation<Capabilities>, revoked?: boolean }[]>([])
+  const [revokingEmails, setRevokingEmails] = useState<Set<string>>(new Set())
+  const [loadingSharedEmails, setLoadingSharedEmails] = useState(false)
+  const [shareError, setShareError] = useState<string | null>(null)
 
-  const updateSharedEmails = (delegations: { email: string, capabilities: string[] }[]) => {
+  const updateSharedEmails = (delegations: { email: string, capabilities: string[], delegation: Delegation<Capabilities>, revoked?: boolean }[]) => {
     setSharedEmails(prev => {
       const newEmails = delegations.filter(d => !prev.some(item => item.email === d.email))
       return [...prev, ...newEmails]
@@ -48,18 +51,56 @@ export function ShareSpace({ spaceDID }: { spaceDID: SpaceDID }): JSX.Element {
 
   useEffect(() => {
     if (client && spaceDID) {
+      setLoadingSharedEmails(true)
+      
       // Find all delegations via email where the spaceDID is present
       const delegations = client.delegations()
         .filter(d => d.capabilities.some(c => c.with === spaceDID))
         .filter(d => d.audience.did().startsWith('did:mailto:'))
         .map(d => ({
           email: DIDMailTo.toEmail(DIDMailTo.fromString(d.audience.did())),
-          capabilities: d.capabilities.map(c => c.can)
+          capabilities: d.capabilities.map(c => c.can),
+          delegation: d,
+          revoked: false // Will be updated after checking revocation status
         }))
-      updateSharedEmails(delegations)
+      
+      // If no delegations found, stop loading immediately
+      if (delegations.length === 0) {
+        setSharedEmails([])
+        setLoadingSharedEmails(false)
+        return
+      }
+      
+      // Check revocation status for each delegation
+      const checkRevocationStatus = async () => {
+        try {
+          const delegationsWithStatus = await Promise.all(
+            delegations.map(async (delegation) => {
+              const isRevoked = await checkDelegationRevoked(delegation.delegation.cid.toString())
+              return { ...delegation, revoked: isRevoked }
+            })
+          )
+          setSharedEmails(delegationsWithStatus)
+        } catch (error) {
+          console.error('Error checking delegation statuses:', error)
+          // Fallback to showing delegations without revocation status
+          setSharedEmails(delegations)
+        } finally {
+          setLoadingSharedEmails(false)
+        }
+      }
+      
+      void checkRevocationStatus()
+    } else {
+      setSharedEmails([])
+      setLoadingSharedEmails(false)
     }
   }, [client, spaceDID])
 
+  /**
+   * Delegations directly to the user did:mailto can be revoked by the agent who delegated it.
+   * 
+   */
   async function shareViaEmail(email: string): Promise<void> {
     if (!client) {
       throw new Error(`Client not found`)
@@ -71,10 +112,28 @@ export function ShareSpace({ spaceDID }: { spaceDID: SpaceDID }): JSX.Element {
     }
 
     const delegatedEmail = DIDMailTo.email(email)
-    const delegation: Delegation<Capabilities> = await client.shareSpace(delegatedEmail, space.did())
-    const next = { email: delegatedEmail, capabilities: delegation.capabilities.map(c => c.can) }
-    updateSharedEmails([next])
-    setValue('')
+    
+    // Check if this email already has a revoked delegation
+    const existingRevokedDelegation = sharedEmails.find(item => 
+      item.email === delegatedEmail && item.revoked
+    )
+    
+    if (existingRevokedDelegation) {
+      setShareError(`Cannot grant access to ${delegatedEmail}. This email has a previously revoked delegation. Revoked delegations cannot be reactivated.`)
+      return
+    }
+
+    // Clear any previous errors
+    setShareError(null)
+
+    try {
+      const delegation: Delegation<Capabilities> = await client.shareSpace(delegatedEmail, space.did())
+      const next = { email: delegatedEmail, capabilities: delegation.capabilities.map(c => c.can), delegation }
+      updateSharedEmails([next])
+      setValue('')
+    } catch (error) {
+      setShareError(`Failed to share space: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
   async function makeDownloadLink(did: string): Promise<string> {
@@ -89,7 +148,6 @@ export function ShareSpace({ spaceDID }: { spaceDID: SpaceDID }): JSX.Element {
         'upload/*',
         'access/*',
         'usage/*',
-        // @ts-expect-error (FIXME: https://github.com/storacha/w3up/issues/1554)
         'filecoin/*',
       ], {
         expiration: Infinity,
@@ -119,6 +177,10 @@ export function ShareSpace({ spaceDID }: { spaceDID: SpaceDID }): JSX.Element {
   function onChange(e: ChangeEvent<HTMLInputElement>): void {
     const input = e.target.value
     setValue(input)
+    // Clear error when user starts typing
+    if (shareError) {
+      setShareError(null)
+    }
   }
 
   function downloadName(ready: boolean, inputDid: string): string {
@@ -136,6 +198,57 @@ export function ShareSpace({ spaceDID }: { spaceDID: SpaceDID }): JSX.Element {
     link.click()
     document.body.removeChild(link)
   }
+
+  async function checkDelegationRevoked(cid: string): Promise<boolean> {
+    try {
+      const serviceUrl = process.env.NEXT_PUBLIC_W3UP_SERVICE_URL
+      if (!serviceUrl) {
+        console.warn('NEXT_PUBLIC_W3UP_SERVICE_URL not configured, assuming delegation is not revoked')
+        return false
+      }
+
+      const response = await fetch(`${serviceUrl}/revocations/${cid}`)
+      return response.status === 200
+    } catch (error) {
+      console.warn('Failed to check delegation revocation status:', error)
+      return false // Assume not revoked if we can't check
+    }
+  }
+
+  async function revokeDelegation(email: string, delegation: Delegation<Capabilities>): Promise<void> {
+    if (!client) {
+      throw new Error('Client not found')
+    }
+
+    try {
+      setRevokingEmails(prev => new Set([...prev, email]))
+      await client.revokeDelegation(delegation.cid)
+      
+      // Mark the delegation as revoked instead of removing it
+      setSharedEmails(prev => prev.map(item => 
+        item.email === email ? { ...item, revoked: true } : item
+      ))
+    } catch (error) {
+      logAndCaptureError(error)
+      throw error
+    } finally {
+      setRevokingEmails(prev => {
+        const next = new Set(prev)
+        next.delete(email)
+        return next
+      })
+    }
+  }
+
+  // Helper function to truncate CID for display
+  function truncateCID(cid: string): string {
+    if (cid.length <= 14) return cid
+    return `${cid.slice(0, 7)}...${cid.slice(-7)}`
+  }
+
+  // Separate active and revoked delegations
+  const activeDelegations = sharedEmails.filter(item => !item.revoked)
+  const revokedDelegations = sharedEmails.filter(item => item.revoked)
 
   return (
     <div className='max-w-4xl'>
@@ -180,28 +293,125 @@ export function ShareSpace({ spaceDID }: { spaceDID: SpaceDID }): JSX.Element {
           </button>
         </form>
 
+        {shareError && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-700">{shareError}</p>
+          </div>
+        )}
 
       </div>
-      {sharedEmails.length > 0 && (
+      {/* Active Delegations Panel */}
+      {(activeDelegations.length > 0 || loadingSharedEmails) && (
         <div className='bg-white rounded-2xl border border-hot-red p-5 mt-5 font-epilogue'>
           <p className='mb-4'>
             Shared With:
           </p>
+          {loadingSharedEmails ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-hot-red mr-3"></div>
+              <span className="text-gray-600">Checking delegation status...</span>
+            </div>
+          ) : (
+            <ul>
+            {activeDelegations.map(({ email, capabilities, delegation }, i) => {
+              const isRevoking = revokingEmails.has(email)
+              const cidString = delegation.cid.toString()
+              return (
+                <li key={email} className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full mt-1">
+                  <div className="flex flex-col w-full">
+                    <div className="flex items-center w-full">
+                      <span className="truncate mt-1">{email}</span>
+                      <InformationCircleIcon className={`h-5 w-5 ml-1 share-capabilities-${i}`} />
+                      <Tooltip anchorSelect={`.share-capabilities-${i}`}>
+                        <H3>Capabilities</H3>
+                        {capabilities.map((c, j) => (
+                          <p key={j}>{c}</p>
+                        ))}
+                      </Tooltip>
+                    </div>
+                    <div className="flex items-center mt-1">
+                      <span className="text-xs text-gray-500 font-mono">{truncateCID(cidString)}</span>
+                      <div className="ml-2">
+                        <CopyButton text={cidString}>
+                          <span className="text-xs"></span>
+                        </CopyButton>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await revokeDelegation(email, delegation)
+                      } catch (error) {
+                        console.error('Failed to revoke delegation:', error)
+                      }
+                    }}
+                    disabled={isRevoking}
+                    className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                      isRevoking 
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
+                    }`}
+                    title="Revoke access for this email"
+                  >
+                    {isRevoking ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400 mr-1"></div>
+                        Revoking...
+                      </>
+                    ) : (
+                      <>
+                        <XMarkIcon className="h-4 w-4 mr-1" />
+                        Revoke
+                      </>
+                    )}
+                  </button>
+                </li>
+              )
+            })}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {/* Revoked Delegations Panel */}
+      {revokedDelegations.length > 0 && (
+        <div className='bg-gray-50 rounded-2xl border border-gray-300 p-5 mt-5 font-epilogue'>
+          <p className='mb-4 text-gray-700'>
+            Revoked Access:
+          </p>
           <ul>
-            {sharedEmails.map(({ email, capabilities }, i) => (
-              <li key={email} className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full mt-1">
-                <span className="flex items-center w-full">
-                  <span className="truncate mt-1">{email}</span>
-                  <InformationCircleIcon className={`h-5 w-5 ml-1 share-capabilities-${i}`} />
-                  <Tooltip anchorSelect={`.share-capabilities-${i}`}>
-                    <H3>Capabilities</H3>
-                    {capabilities.map((c, j) => (
-                      <p key={j}>{c}</p>
-                    ))}
-                  </Tooltip>
-                </span>
-              </li>
-            ))}
+            {revokedDelegations.map(({ email, capabilities, delegation }, i) => {
+              const cidString = delegation.cid.toString()
+              return (
+                <li key={email} className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full mt-1 opacity-75">
+                  <div className="flex flex-col w-full">
+                    <div className="flex items-center w-full">
+                      <span className="truncate mt-1 line-through text-gray-500">{email}</span>
+                      <InformationCircleIcon className={`h-5 w-5 ml-1 text-gray-400 revoked-capabilities-${i}`} />
+                      <Tooltip anchorSelect={`.revoked-capabilities-${i}`}>
+                        <H3>Capabilities (Revoked)</H3>
+                        {capabilities.map((c, j) => (
+                          <p key={j} className="text-gray-500">{c}</p>
+                        ))}
+                      </Tooltip>
+                    </div>
+                    <div className="flex items-center mt-1">
+                      <span className="text-xs text-gray-400 font-mono">{truncateCID(cidString)}</span>
+                      <div className="ml-2">
+                        <CopyButton text={cidString}>
+                          <span className="text-xs text-gray-500"></span>
+                        </CopyButton>
+                      </div>
+                    </div>
+                  </div>
+                  <span className="inline-flex items-center px-3 py-1 text-sm font-medium text-gray-500 bg-gray-200 rounded-md">
+                    <XMarkIcon className="h-4 w-4 mr-1" />
+                    Revoked
+                  </span>
+                </li>
+              )
+            })}
           </ul>
         </div>
       )}

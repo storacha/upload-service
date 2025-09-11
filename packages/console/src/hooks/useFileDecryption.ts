@@ -7,6 +7,7 @@ import { useKMSConfig } from '@storacha/ui-react'
 import { decrypt } from '@storacha/capabilities/space'
 import type { FileMetadata } from '@storacha/encrypt-upload-client/types'
 import { delegate } from '@ucanto/core'
+import { ipfsGatewayURL } from '@/components/services'
 
 interface DecryptionState {
   loading: boolean
@@ -71,7 +72,8 @@ export const useFileDecryption = (space?: Space) => {
       // Create encrypted client
       const encryptedClient = await createEncryptedClient({
         storachaClient: client,
-        cryptoAdapter
+        cryptoAdapter,
+        gatewayURL: ipfsGatewayURL(cid)
       })
 
       const getPlanProofs = client.agent.proofs([
