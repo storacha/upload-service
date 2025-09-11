@@ -35,13 +35,12 @@ function isEmail(value: string): boolean {
 }
 
 export function ShareSpace({ spaceDID }: { spaceDID: SpaceDID }): JSX.Element {
-  const [{ client, accounts }] = useW3()
-  /** @type {Account | undefined} */
-  const account = accounts[0]
+  const [{ client }] = useW3()
   const [value, setValue] = useState('')
   const [sharedEmails, setSharedEmails] = useState<{ email: string, capabilities: string[], delegation: Delegation<Capabilities>, revoked?: boolean }[]>([])
   const [revokingEmails, setRevokingEmails] = useState<Set<string>>(new Set())
   const [loadingSharedEmails, setLoadingSharedEmails] = useState(false)
+  const [shareError, setShareError] = useState<string | null>(null)
 
   const updateSharedEmails = (delegations: { email: string, capabilities: string[], delegation: Delegation<Capabilities>, revoked?: boolean }[]) => {
     setSharedEmails(prev => {
@@ -113,10 +112,28 @@ export function ShareSpace({ spaceDID }: { spaceDID: SpaceDID }): JSX.Element {
     }
 
     const delegatedEmail = DIDMailTo.email(email)
-    const delegation: Delegation<Capabilities> = await client.shareSpace(delegatedEmail, space.did())
-    const next = { email: delegatedEmail, capabilities: delegation.capabilities.map(c => c.can), delegation }
-    updateSharedEmails([next])
-    setValue('')
+    
+    // Check if this email already has a revoked delegation
+    const existingRevokedDelegation = sharedEmails.find(item => 
+      item.email === delegatedEmail && item.revoked
+    )
+    
+    if (existingRevokedDelegation) {
+      setShareError(`Cannot grant access to ${delegatedEmail}. This email has a previously revoked delegation. Revoked delegations cannot be reactivated.`)
+      return
+    }
+
+    // Clear any previous errors
+    setShareError(null)
+
+    try {
+      const delegation: Delegation<Capabilities> = await client.shareSpace(delegatedEmail, space.did())
+      const next = { email: delegatedEmail, capabilities: delegation.capabilities.map(c => c.can), delegation }
+      updateSharedEmails([next])
+      setValue('')
+    } catch (error) {
+      setShareError(`Failed to share space: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
   async function makeDownloadLink(did: string): Promise<string> {
@@ -160,6 +177,10 @@ export function ShareSpace({ spaceDID }: { spaceDID: SpaceDID }): JSX.Element {
   function onChange(e: ChangeEvent<HTMLInputElement>): void {
     const input = e.target.value
     setValue(input)
+    // Clear error when user starts typing
+    if (shareError) {
+      setShareError(null)
+    }
   }
 
   function downloadName(ready: boolean, inputDid: string): string {
@@ -272,6 +293,11 @@ export function ShareSpace({ spaceDID }: { spaceDID: SpaceDID }): JSX.Element {
           </button>
         </form>
 
+        {shareError && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-700">{shareError}</p>
+          </div>
+        )}
 
       </div>
       {/* Active Delegations Panel */}
