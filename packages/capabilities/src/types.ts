@@ -17,6 +17,7 @@ import {
   PieceLink,
   ProofData,
   uint64,
+  RAW_CODE,
 } from '@web3-storage/data-segment'
 import * as AssertCaps from './assert.js'
 import * as ClaimCaps from './claim.js'
@@ -57,6 +58,8 @@ export interface UCANAwait<Selector extends string = string, Task = unknown> {
  * An IPLD Link that has the CAR codec code.
  */
 export type CARLink = Link<unknown, typeof CAR.codec.code>
+
+export type ShardLink = CARLink | Link<unknown, RAW_CODE, number, 1>
 
 export type Multihash = Uint8Array
 
@@ -826,7 +829,7 @@ export interface StoreListItem {
 
 export interface UploadListItem {
   root: UnknownLink
-  shards?: CARLink[]
+  shards?: ShardLink[]
   insertedAt: ISO8601Date
   updatedAt: ISO8601Date
 }

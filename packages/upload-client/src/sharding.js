@@ -2,9 +2,10 @@ import { DigestMap } from '@storacha/blob-index'
 import {
   blockEncodingLength,
   blockHeaderEncodingLength,
-  encode,
+  encode as encodeCAR,
   headerEncodingLength,
 } from './car.js'
+import { encodeDataArchive as encodeFilepackDataArchive } from './filepack.js'
 
 /**
  * @typedef {import('./types.js').FileLike} FileLike
@@ -20,7 +21,7 @@ export const SHARD_SIZE = 133_169_152
  *
  * @extends {TransformStream<import('@ipld/unixfs').Block, import('./types.js').IndexedCARFile>}
  */
-export class ShardingStream extends TransformStream {
+export class CARShardingStream extends TransformStream {
   /**
    * @param {import('./types.js').ShardingOptions} [options]
    */
@@ -40,7 +41,7 @@ export class ShardingStream extends TransformStream {
     super({
       async transform(block, controller) {
         if (readyBlocks != null && readySlices != null) {
-          controller.enqueue(await encodeCAR(readyBlocks, readySlices))
+          controller.enqueue(await encodeIndexedCAR(readyBlocks, readySlices))
           readyBlocks = null
           readySlices = null
         }
@@ -70,7 +71,7 @@ export class ShardingStream extends TransformStream {
 
       async flush(controller) {
         if (readyBlocks != null && readySlices != null) {
-          controller.enqueue(await encodeCAR(readyBlocks, readySlices))
+          controller.enqueue(await encodeIndexedCAR(readyBlocks, readySlices))
         }
 
         const rootBlock = blocks.at(-1)
@@ -98,7 +99,7 @@ export class ShardingStream extends TransformStream {
                 `block will cause CAR to exceed shard size: ${block.cid}`
               )
           }
-          controller.enqueue(await encodeCAR(blocks, slices))
+          controller.enqueue(await encodeIndexedCAR(blocks, slices))
 
           // Finally, re-calc block positions from blocks we moved out of the
           // CAR that was too big.
@@ -115,7 +116,7 @@ export class ShardingStream extends TransformStream {
               overflowBlockHeaderLength + block.bytes.length
           }
           controller.enqueue(
-            await encodeCAR(overflowBlocks, overflowSlices, rootCID)
+            await encodeIndexedCAR(overflowBlocks, overflowSlices, rootCID)
           )
         } else {
           // adjust offsets for longer header in final shard
@@ -123,7 +124,78 @@ export class ShardingStream extends TransformStream {
           for (const slice of slices.values()) {
             slice[0] += diff
           }
-          controller.enqueue(await encodeCAR(blocks, slices, rootCID))
+          controller.enqueue(await encodeIndexedCAR(blocks, slices, rootCID))
+        }
+      },
+    })
+  }
+}
+
+/** @deprecated Use `CARShardingStream` */
+export const ShardingStream = CARShardingStream
+
+/**
+ * Shard a set of blocks into a set of Filepack data archives. By default the
+ * last block received is assumed to be the DAG root and becomes the root CID
+ * for the last archive output. Set the `rootCID` option to override.
+ *
+ * @extends {TransformStream<import('@ipld/unixfs').Block, import('./types.js').IndexedSerializedDAGShard>}
+ */
+export class FilepackShardingStream extends TransformStream {
+  /**
+   * @param {import('./types.js').ShardingOptions} [options]
+   */
+  constructor(options = {}) {
+    const shardSize = options.shardSize ?? SHARD_SIZE
+    const maxBlockLength = shardSize
+    /** @type {Uint8Array[]} */
+    let chunks = []
+    /** @type {Uint8Array[] | null} */
+    let readyChunks = null
+    /** @type {Map<import('./types.js').SliceDigest, import('./types.js').Position>} */
+    let slices = new DigestMap()
+    /** @type {Map<import('./types.js').SliceDigest, import('./types.js').Position> | null} */
+    let readySlices = null
+    let offset = 0
+    /** @type {import('@ipld/unixfs').Block | null} */
+    let last = null
+
+    super({
+      async transform(block, controller) {
+        last = block
+
+        if (readyChunks != null && readySlices != null) {
+          controller.enqueue(
+            encodeIndexedFilepackDataArchive(readyChunks, readySlices)
+          )
+          readyChunks = null
+          readySlices = null
+        }
+
+        if (block.bytes.length > maxBlockLength) {
+          throw new Error(
+            `block will cause shard to exceed max shard size: ${block.cid}`
+          )
+        }
+
+        if (chunks.length && offset + block.bytes.length > shardSize) {
+          readyChunks = chunks
+          readySlices = slices
+          chunks = []
+          slices = new DigestMap()
+          offset = 0
+        }
+        chunks.push(block.bytes)
+        slices.set(block.cid.multihash, [offset, block.bytes.length])
+        offset += block.bytes.length
+      },
+
+      async flush(controller) {
+        if (last != null) {
+          const root = options.rootCID ?? last.cid
+          controller.enqueue(
+            encodeIndexedFilepackDataArchive(chunks, slices, root)
+          )
         }
       },
     })
@@ -167,5 +239,14 @@ function ascending(a, b, getComparedValue) {
  * @param {import('./types.js').AnyLink} [root]
  * @returns {Promise<import('./types.js').IndexedCARFile>}
  */
-const encodeCAR = async (blocks, slices, root) =>
-  Object.assign(await encode(blocks, root), { slices })
+const encodeIndexedCAR = async (blocks, slices, root) =>
+  Object.assign(await encodeCAR(blocks, root), { root, slices })
+
+/**
+ * @param {Iterable<Uint8Array>} chunks
+ * @param {Map<import('./types.js').SliceDigest, import('./types.js').Position>} slices
+ * @param {import('./types.js').AnyLink} [root]
+ * @returns {import('./types.js').IndexedSerializedDAGShard}
+ */
+const encodeIndexedFilepackDataArchive = (chunks, slices, root) =>
+  Object.assign(encodeFilepackDataArchive(chunks), { root, slices })

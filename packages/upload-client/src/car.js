@@ -33,7 +33,7 @@ export function blockEncodingLength(block) {
 
 /**
  * @param {Iterable<Block> | AsyncIterable<Block>} blocks
- * @param {import('./types.js').AnyLink} [root]
+ * @param {import('./types.js').UnknownLink} [root]
  * @returns {Promise<import('./types.js').CARFile>}
  */
 export async function encode(blocks, root) {

@@ -84,7 +84,8 @@ const testUploadFile = async (
     }
     const clientOptions = { serviceConf, receiptsEndpoint }
     const alice = legacy.client
-      ? new LegacyClient(await LegacyAgentData.create(), clientOptions)
+      ? // @ts-expect-error upload/add return type for shards is now CAR _or_ raw
+        new LegacyClient(await LegacyAgentData.create(), clientOptions)
       : new Client(await AgentData.create(), clientOptions)
 
     const space = await alice.createSpace('upload-test', {

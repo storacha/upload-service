@@ -210,7 +210,6 @@ import {
   UploadGetSuccess,
   UploadGetFailure,
   ListResponse,
-  CARLink,
   UCANConclude,
   UCANConcludeSuccess,
   UCANConcludeFailure,
@@ -236,6 +235,7 @@ import {
   SpaceBlobReplicate,
   SpaceBlobReplicateSuccess,
   SpaceBlobReplicateFailure,
+  ShardLink,
 } from '@storacha/capabilities/types'
 import * as Capabilities from '@storacha/capabilities'
 import { RevocationsStorage } from './types/revocations.js'
@@ -479,9 +479,10 @@ export interface LegacyStoreAddInput extends LegacyUploadAPI.StoreAddInput {}
 /** @deprecated */
 export type LegacyBlobServiceContext = Omit<
   LegacyUploadAPI.BlobServiceContext,
-  'allocationsStorage'
+  'allocationsStorage' | 'getServiceConnection'
 > & {
   registry: BlobRegistry
+  getServiceConnection: () => ConnectionView<Service>
 }
 
 /** @deprecated */
@@ -587,11 +588,9 @@ export interface RevocationServiceContext {
 
 /** @deprecated */
 export interface LegacyConcludeServiceContext
-  extends Pick<
-    LegacyUploadAPI.ConcludeServiceContext,
-    'id' | 'getServiceConnection'
-  > {
+  extends Pick<LegacyUploadAPI.ConcludeServiceContext, 'id'> {
   registry: BlobRegistry
+  getServiceConnection: () => ConnectionView<Service>
 }
 
 export interface ConcludeServiceContext {
@@ -833,7 +832,7 @@ export type AdminUploadInspectResult = Result<
 export interface UploadAddInput {
   space: DID
   root: UnknownLink
-  shards?: CARLink[]
+  shards?: ShardLink[]
   issuer: DID
   cause: UCANLink
 }

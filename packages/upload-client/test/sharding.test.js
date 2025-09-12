@@ -3,10 +3,10 @@ import { CID } from 'multiformats'
 import { equals } from 'multiformats/bytes'
 import { sha256 } from 'multiformats/hashes/sha2'
 import { createFileEncoderStream } from '../src/unixfs.js'
-import { ShardingStream } from '../src/sharding.js'
+import { CARShardingStream, FilepackShardingStream } from '../src/sharding.js'
 import { randomBlock, randomBytes } from './helpers/random.js'
 
-describe('ShardingStream', () => {
+describe('CARShardingStream', () => {
   it('creates shards from blocks', async () => {
     const file = new Blob([await randomBytes(1024 * 1024 * 5)])
     const shardSize = 1024 * 1024 * 2
@@ -15,7 +15,7 @@ describe('ShardingStream', () => {
     const shards = []
 
     await createFileEncoderStream(file)
-      .pipeThrough(new ShardingStream({ shardSize }))
+      .pipeThrough(new CARShardingStream({ shardSize }))
       .pipeTo(
         new WritableStream({
           write: (s) => {
@@ -42,7 +42,7 @@ describe('ShardingStream', () => {
     const shards = []
 
     await createFileEncoderStream(file)
-      .pipeThrough(new ShardingStream({ rootCID }))
+      .pipeThrough(new CARShardingStream({ rootCID }))
       .pipeTo(
         new WritableStream({
           write: (s) => {
@@ -65,7 +65,7 @@ describe('ShardingStream', () => {
             controller.close()
           },
         })
-          .pipeThrough(new ShardingStream({ shardSize: 64 }))
+          .pipeThrough(new CARShardingStream({ shardSize: 64 }))
           .pipeTo(new WritableStream()),
       /block will cause CAR to exceed shard size/
     )
@@ -93,7 +93,7 @@ describe('ShardingStream', () => {
       // 166 + 102 + 70 + 59 (1 root CAR header) = 397
       // Choose 360 as shard size so when CAR header with a root is added, the
       // 3rd block is moved into a new shard.
-      .pipeThrough(new ShardingStream({ shardSize: 360 }))
+      .pipeThrough(new CARShardingStream({ shardSize: 360 }))
       .pipeTo(
         new WritableStream({
           write: (s) => {
@@ -155,7 +155,7 @@ describe('ShardingStream', () => {
           // shard with 1 root = encoded block (166) + CAR header (59) = 225
           // i.e. shard size of 183 should allow us 1 shard with no roots and then
           // we'll fail to create a shard with 1 root.
-          .pipeThrough(new ShardingStream({ shardSize: 184 }))
+          .pipeThrough(new CARShardingStream({ shardSize: 184 }))
           .pipeTo(new WritableStream())
       )
     }, /block will cause CAR to exceed shard size/)
@@ -168,7 +168,7 @@ describe('ShardingStream', () => {
         controller.close()
       },
     })
-      .pipeThrough(new ShardingStream({ shardSize: 206 }))
+      .pipeThrough(new CARShardingStream({ shardSize: 206 }))
       .pipeTo(
         new WritableStream({
           write: () => {
@@ -187,7 +187,7 @@ describe('ShardingStream', () => {
     const shards = []
 
     await createFileEncoderStream(file)
-      .pipeThrough(new ShardingStream({ shardSize }))
+      .pipeThrough(new CARShardingStream({ shardSize }))
       .pipeTo(
         new WritableStream({
           write: (s) => {
@@ -201,6 +201,117 @@ describe('ShardingStream', () => {
     for (const car of shards) {
       const bytes = new Uint8Array(await car.arrayBuffer())
       for (const [expected, [offset, length]] of car.slices.entries()) {
+        const actual = await sha256.digest(bytes.slice(offset, offset + length))
+        assert(equals(expected.bytes, actual.bytes))
+      }
+    }
+  })
+})
+
+describe('FilepackShardingStream', () => {
+  it('creates shards from blocks', async () => {
+    const file = new Blob([await randomBytes(1024 * 1024 * 5)])
+    const shardSize = 1024 * 1024 * 2
+
+    /** @type {import('../src/types.js').IndexedSerializedDAGShard[]} */
+    const shards = []
+
+    await createFileEncoderStream(file)
+      .pipeThrough(new FilepackShardingStream({ shardSize }))
+      .pipeTo(
+        new WritableStream({
+          write: (s) => {
+            shards.push(s)
+          },
+        })
+      )
+
+    assert(shards.length > 1)
+
+    for (const shard of shards) {
+      assert(shard.size <= shardSize)
+    }
+  })
+
+  it('uses passed root CID', async () => {
+    const file = new Blob([await randomBytes(32)])
+
+    const rootCID = CID.parse(
+      'bafybeibrqc2se2p3k4kfdwg7deigdggamlumemkiggrnqw3edrjosqhvnm'
+    )
+    /** @type {import('../src/types.js').IndexedSerializedDAGShard[]} */
+    const shards = []
+
+    await createFileEncoderStream(file)
+      .pipeThrough(new FilepackShardingStream({ rootCID }))
+      .pipeTo(
+        new WritableStream({
+          write: (s) => {
+            shards.push(s)
+          },
+        })
+      )
+
+    assert.equal(shards.length, 1)
+    assert.equal(shards[0].root?.toString(), rootCID.toString())
+  })
+
+  it('exceeds shard size when block bigger than shard size is encoded', async () => {
+    await assert.rejects(
+      () =>
+        new ReadableStream({
+          async pull(controller) {
+            const block = await randomBlock(128)
+            controller.enqueue(block)
+            controller.close()
+          },
+        })
+          .pipeThrough(new FilepackShardingStream({ shardSize: 64 }))
+          .pipeTo(new WritableStream()),
+      /block will cause shard to exceed max shard size/
+    )
+  })
+
+  it('no blocks no shards', async () => {
+    let shards = 0
+    await new ReadableStream({
+      pull: (controller) => {
+        controller.close()
+      },
+    })
+      .pipeThrough(new FilepackShardingStream({ shardSize: 206 }))
+      .pipeTo(
+        new WritableStream({
+          write: () => {
+            shards++
+          },
+        })
+      )
+    assert.equal(shards, 0)
+  })
+
+  it('indexes blocks in shards', async () => {
+    const file = new Blob([await randomBytes(1024 * 1024 * 10)])
+    const shardSize = 1024 * 1024 * 3
+
+    /** @type {import('../src/types.js').IndexedSerializedDAGShard[]} */
+    const shards = []
+
+    await createFileEncoderStream(file)
+      .pipeThrough(new FilepackShardingStream({ shardSize }))
+      .pipeTo(
+        new WritableStream({
+          write: (s) => {
+            shards.push(s)
+          },
+        })
+      )
+
+    assert(shards.length > 1)
+
+    for (const s of shards) {
+      const bytes = new Uint8Array(await s.arrayBuffer())
+      for (const [expected, [offset, length]] of s.slices.entries()) {
         const actual = await sha256.digest(bytes.slice(offset, offset + length))
         assert(equals(expected.bytes, actual.bytes))
       }
