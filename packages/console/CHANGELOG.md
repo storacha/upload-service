@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.5.0](https://github.com/storacha/upload-service/compare/console-v2.4.1...console-v2.5.0) (2025-09-11)
+
+
+### Features
+
+* add Plausible analytics tracking for console.storacha.network([#418](https://github.com/storacha/upload-service/issues/418)) ([749b8af](https://github.com/storacha/upload-service/commit/749b8afa5b7c620667f813d8ca4112dbaf2e27b5))
+* Add plausible tracking for console.storacha.network ([84b7066](https://github.com/storacha/upload-service/commit/84b70666ecfaf27a4ebf8474e9a82e45866f40bb))
+* Add plausible tracking for users from dmail. ([45fcd9d](https://github.com/storacha/upload-service/commit/45fcd9dfdac091704dfa9b6570465928aa59df77))
+
+
+### Fixes
+
+* Use next-plausible instead of plausible analytics-tracker. ([8f015c5](https://github.com/storacha/upload-service/commit/8f015c526196106a9a8f8ab4d616ecb4f78690fa))
+
 ## [2.4.1](https://github.com/storacha/upload-service/compare/console-v2.4.0...console-v2.4.1) (2025-09-05)
 
 
