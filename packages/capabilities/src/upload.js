@@ -10,6 +10,7 @@
  */
 import { capability, Link, Schema, ok } from '@ucanto/validator'
 import { codec as CAR } from '@ucanto/transport/car'
+import * as raw from 'multiformats/codecs/raw'
 import { equalWith, and, equal, SpaceDID } from './utils.js'
 
 /**
@@ -28,9 +29,12 @@ export const upload = capability({
 })
 
 /**
- * Schema representing a link (a.k.a CID) to a CAR file. Enforces CAR codec code and CID v1.
+ * Schema representing a link (a.k.a CID) to a shard. Enforces CID v1.
  */
-const CARLink = Link.match({ code: CAR.code, version: 1 })
+const ShardLink = Schema.or(
+  Link.match({ version: 1, code: CAR.code }),
+  Link.match({ version: 1, code: raw.code })
+)
 
 /**
  * Capability allows an agent to add an arbitrary DAG (root) to the upload list
@@ -63,9 +67,9 @@ export const add = capability({
      */
     root: Link,
     /**
-     * CIDs to the CAR files that contain blocks of the DAG.
+     * CIDs to the shards that contain blocks of the DAG.
      */
-    shards: CARLink.array().optional(),
+    shards: ShardLink.array().optional(),
   }),
   derives: (self, from) => {
     return (

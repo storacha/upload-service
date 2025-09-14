@@ -6,7 +6,7 @@ import type {
   HTMLProps,
 } from 'ariakit-react-utils'
 import type { ChangeEvent, FormEventHandler } from 'react'
-import type { AnyLink, CARMetadata, ProgressStatus, UploadOptions } from '@storacha/ui-core'
+import type { AnyLink, ShardMetadata, ProgressStatus, UploadOptions } from '@storacha/ui-core'
 
 import React, {
   useContext,
@@ -59,9 +59,9 @@ export interface UploaderContextState {
    */
   dataCID?: AnyLink
   /**
-   * Shards of a DAG uploaded to web3.storage.
+   * Shards of a DAG uploaded to storacha.network.
    */
-  storedDAGShards: CARMetadata[]
+  storedDAGShards: ShardMetadata[]
   /**
    * Shard upload progress information.
    */
@@ -321,10 +321,10 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
       const doUpload = async (): Promise<void> => {
         setError(undefined)
         setStatus(UploadStatus.Uploading)
-        const storedShards: CARMetadata[] = []
+        const storedShards: ShardMetadata[] = []
         setStoredDAGShards(storedShards)
         const uploadOptions = {
-          onShardStored(meta: CARMetadata) {
+          onShardStored(meta: ShardMetadata) {
             storedShards.push(meta)
             setStoredDAGShards([...storedShards])
           },

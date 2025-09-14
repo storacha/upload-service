@@ -24,7 +24,7 @@ import { REQUEST_RETRIES } from '../constants.js'
  *
  * The issuer needs the `upload/add` delegated capability.
  * @param {import('multiformats/link').UnknownLink} root Root data CID for the DAG that was stored.
- * @param {import('../types.js').CARLink[]} shards CIDs of CAR files that contain the DAG.
+ * @param {import('../types.js').ShardLink[]} shards CIDs of shards that contain the DAG.
  * @param {import('../types.js').RequestOptions} [options]
  * @returns {Promise<import('../types.js').UploadAddSuccess>}
  */
@@ -72,6 +72,6 @@ export const ability = UploadCapabilities.add.can
  * Returns required input to the invocation.
  *
  * @param {import('multiformats/link').UnknownLink} root
- * @param {import('../types.js').CARLink[]} shards
+ * @param {import('../types.js').ShardLink[]} shards
  */
 export const input = (root, shards) => ({ root, shards })

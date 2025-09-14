@@ -3,7 +3,7 @@ import {
   Uploader,
   useUploader,
   UploadStatus,
-  CARMetadata,
+  ShardMetadata,
   UploadProgress,
   AnyLink,
 } from '@storacha/ui-react'
@@ -17,7 +17,7 @@ function humanFileSize(bytes: number): string {
 interface UploadingProps {
   file?: File
   files?: File[]
-  storedDAGShards: CARMetadata[]
+  storedDAGShards: ShardMetadata[]
   uploadProgress: UploadProgress
 }
 
@@ -66,7 +66,7 @@ interface DoneProps {
   file?: File
   files?: File[]
   dataCID?: AnyLink
-  storedDAGShards: CARMetadata[]
+  storedDAGShards: ShardMetadata[]
 }
 
 const Done = ({
