@@ -708,6 +708,76 @@ export const testSpace = {
       'space got provisioned'
     )
   }),
+
+  'storacha space recover': test(async (assert, context) => {
+    const command = storacha
+      .args(['space', 'recover'])
+      .env(context.env.alice)
+      .fork()
+
+    const line = await command.output.take(1).text()
+
+    assert.match(line, /What would you like to call this space/)
+
+    await command.terminate().join().catch()
+  }),
+
+  'storacha space recover home': test(async (assert, context) => {
+    const command = storacha
+      .args(['space', 'recover', 'home'])
+      .env(context.env.bob)
+      .fork()
+
+    const line = await command.output.take(1).text()
+
+    assert.match(line, /Enter your space recovery mnemonic/)
+    await command.terminate().join().catch()
+  }),
+
+  'storacha space recover home --file': test(async (assert, context) => {
+    const create = storacha
+      .args([
+        'space',
+        'create',
+        'home',
+        '--no-caution',
+        '--no-gateway-authorization',
+      ])
+      .env(context.env.alice)
+      .fork()
+
+    const message = await create.output.lines().take(6).text()
+
+    const lines = message.split('\n').filter((line) => line.trim() !== '')
+    const key = lines[1].trim()
+    const words = key.split(' ')
+
+    assert.ok(
+      words.every((word) => [...word].every((letter) => letter !== '█')),
+      'key is revealed'
+    )
+    assert.ok(words.length > 20, 'there are several words')
+    await create.terminate().join().catch()
+
+    const keyPath = path.join(
+      os.tmpdir(),
+      `storacha-cli-test-recovery-key-${Date.now()}`
+    )
+    fs.writeFileSync(keyPath, key, 'utf-8')
+
+    const command = await storacha
+      .args(['space', 'recover', 'home', '--file', keyPath])
+      .env(context.env.bob)
+      .join()
+
+    assert.match(command.output, /Recovered space did:key:/)
+
+    const list = await storacha
+      .args(['space', 'ls'])
+      .env(context.env.bob)
+      .join()
+    assert.ok(list.output.includes('home'))
+  }),
 }
 
 export const testStorachaUp = {

@@ -49,6 +49,7 @@ storacha up recipies.txt
   - [`storacha space ls`](#storacha-space-ls)
   - [`storacha space use`](#storacha-space-use-did)
   - [`storacha space info`](#storacha-space-info)
+  - [`storacha space recover`](#storacha-space-recover-name)
 - Capability management
   - [`storacha delegation create`](#storacha-delegation-create-audience-did)
   - [`storacha delegation ls`](#storacha-delegation-ls)
@@ -156,6 +157,10 @@ which providers the space is currently registered with.
 
 - `--space` The space to get information about. Defaults to the current space.
 - `--json` Format as newline delimited JSON
+
+### `storacha space recover [name]`
+
+Recover a space from a saved mnemonic key
 
 ### `storacha delegation create <audience-did>`
 

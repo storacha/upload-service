@@ -3,7 +3,7 @@
 import sade from 'sade'
 import open from 'open'
 import updateNotifier from 'update-notifier'
-import { getPkg } from './lib.js'
+import { getPkg, parseAccessFromOptions } from './lib.js'
 import {
   Account,
   Space,
@@ -187,30 +187,7 @@ cli
     }
 
     // Create access type object
-    let access
-    const accessType = options['access-type'] || 'public'
-
-    if (accessType === 'public') {
-      access = { type: 'public' }
-    } else {
-      const provider = options['encryption-provider'] || 'google-kms'
-
-      // Ensure only Google KMS is supported
-      if (provider !== 'google-kms') {
-        console.error(
-          'Invalid encryption provider. Only "google-kms" is supported for private spaces.'
-        )
-        process.exit(1)
-      }
-
-      const algorithm =
-        options['encryption-algorithm'] || 'RSA_DECRYPT_OAEP_3072_SHA256'
-
-      access = {
-        type: 'private',
-        encryption: { provider, algorithm },
-      }
-    }
+    const access = parseAccessFromOptions(options)
 
     const parsedOptions = {
       ...options,
@@ -223,6 +200,35 @@ cli
     }
 
     return Space.create(name, parsedOptions)
+  })
+
+cli
+  .command('space recover [name]')
+  .describe('Import a space from a paper recover key')
+  .option(
+    '-at, --access-type <type>',
+    'Access type for the space: public or private (default: public)'
+  )
+  .option(
+    '-ep, --encryption-provider <provider>',
+    'Encryption provider for private spaces: google-kms (default: google-kms)'
+  )
+  .option(
+    '-ea, --encryption-algorithm <algorithm>',
+    'Encryption algorithm for private spaces (default: RSA_DECRYPT_OAEP_3072_SHA256)'
+  )
+  .option(
+    '-file, --file <path>',
+    'Path to a file containing the recovery mnemonic phrase'
+  )
+  .action((name, options) => {
+    const access = parseAccessFromOptions(options)
+    const parsedOptions = {
+      ...options,
+      access,
+    }
+
+    return Space.recover(name, parsedOptions)
   })
 
 cli
