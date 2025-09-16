@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
-import Fuse from 'fuse.js'
 
 // Mock search data - in a real app this would come from your documentation content
 const searchData = [
@@ -21,29 +20,37 @@ const searchData = [
   { title: 'Responsive Design', content: 'Mobile-first responsive design', href: '/styling/responsive' },
 ]
 
-const fuse = new Fuse(searchData, {
-  keys: ['title', 'content'],
-  threshold: 0.3,
-})
-
 export function SearchBar() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<typeof searchData>([])
   const [isOpen, setIsOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted) return
+    
     if (query.trim()) {
-      const searchResults = fuse.search(query).map(result => result.item)
+      // Simple search implementation without Fuse.js to avoid hydration issues
+      const searchResults = searchData.filter(item =>
+        item.title.toLowerCase().includes(query.toLowerCase()) ||
+        item.content.toLowerCase().includes(query.toLowerCase())
+      )
       setResults(searchResults)
       setIsOpen(true)
     } else {
       setResults([])
       setIsOpen(false)
     }
-  }, [query])
+  }, [query, mounted])
 
   useEffect(() => {
+    if (!mounted) return
+
     function handleClickOutside(event: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setIsOpen(false)
@@ -52,7 +59,23 @@ export function SearchBar() {
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+  }, [mounted])
+
+  if (!mounted) {
+    return (
+      <div className="relative">
+        <div className="relative">
+          <MagnifyingGlassIcon className="pointer-events-none absolute inset-y-0 left-0 h-full w-5 text-gray-400 pl-3" />
+          <input
+            type="text"
+            placeholder="Search documentation..."
+            disabled
+            className="block w-full rounded-md border-0 py-2 pl-10 pr-3 text-gray-900 bg-gray-50 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 text-sm leading-6"
+          />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="relative" ref={searchRef}>
