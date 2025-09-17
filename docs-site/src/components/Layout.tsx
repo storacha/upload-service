@@ -6,6 +6,7 @@ import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { Footer } from './Footer'
+import { EditThisPage } from './EditThisPage'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -90,6 +91,7 @@ export function Layout({ children }: LayoutProps) {
         <main className="py-10">
           <div className="px-4 sm:px-6 lg:px-8">
             {children}
+            <EditThisPage />
           </div>
         </main>
 
