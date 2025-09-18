@@ -1,3 +1,13 @@
+## 1.6.0 (2025-09-18)
+
+### 🚀 Features
+
+- space recover command for importing paper key ([44a3e595](https://github.com/storacha/upload-service/commit/44a3e595))
+
+### ❤️ Thank You
+
+- hannahhoward
+
 ## 1.5.1 (2025-09-08)
 
 ### 🧱 Updated Dependencies
