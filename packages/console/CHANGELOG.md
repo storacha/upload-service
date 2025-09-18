@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.1](https://github.com/storacha/upload-service/compare/console-v2.5.0...console-v2.5.1) (2025-09-18)
+
+
+### Fixes
+
+* update the upload-service DIDs ([#427](https://github.com/storacha/upload-service/issues/427)) ([d670007](https://github.com/storacha/upload-service/commit/d6700079893f7d715a1cf7ad1855a1da16c91f86))
+
 ## [2.5.0](https://github.com/storacha/upload-service/compare/console-v2.4.1...console-v2.5.0) (2025-09-11)
 
 
