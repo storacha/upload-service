@@ -15,6 +15,7 @@ export const Await = Schema.struct({
 })
 
 /**
+ *
  * Check URI can be delegated.
  *
  * @param {string} [child]
@@ -61,6 +62,22 @@ export function equal(child, parent, constraint) {
   } else {
     return fail(
       `Constraint violation: ${child} violates imposed ${constraint} constraint ${parent}`
+    )
+  }
+}
+
+/**
+ * @template {any} T
+ * @param {T[]} child
+ * @param {T[]} parent
+ * @param {string} constraint
+ */
+export function containedWithin(child, parent, constraint) {
+  if (child.every((item) => parent.includes(item))) {
+    return ok({})
+  } else {
+    return fail(
+      `Constraint violation: ${child} violates imposed ${constraint} constraint ${parent} because it contains items not in the constraint`
     )
   }
 }

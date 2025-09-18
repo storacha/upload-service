@@ -69,4 +69,34 @@ export const createAuthorization = async ({ account, agent, service }) => {
   return [delegation, attestation]
 }
 
+/**
+ * @template {Ucanto.Match<Ucanto.ParsedCapability>} M
+ * @param {Ucanto.TheCapabilityParser<M>} parser
+ * @param {Omit<Ucanto.InferDelegationOptions<M['value']['with'], M['value']['nb']>, 'issuer'> & { account: Ucanto.DID, service: Ucanto.Signer }} data
+ */
+export const delegateWithAttestation = async (
+  parser,
+  { account, service, audience, ...remaining }
+) => {
+  const delegation = await parser.delegate({
+    issuer: Absentee.from({ id: account }),
+    audience,
+    ...remaining,
+  })
+
+  const attestation = await delegate({
+    issuer: service,
+    audience,
+    capabilities: [
+      {
+        with: service.did(),
+        can: 'ucan/attest',
+        nb: { proof: delegation.cid },
+      },
+    ],
+  })
+
+  return [delegation, attestation]
+}
+
 export const validateAuthorization = () => ({ ok: {} })
