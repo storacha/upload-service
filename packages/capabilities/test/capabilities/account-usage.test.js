@@ -12,7 +12,6 @@ import {
   bob,
 } from '../helpers/fixtures.js'
 import {
-  createAuthorization,
   delegateWithAttestation,
   validateAuthorization,
 } from '../helpers/utils.js'

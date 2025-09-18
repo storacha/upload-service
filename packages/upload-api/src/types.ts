@@ -236,6 +236,9 @@ import {
   SpaceBlobReplicate,
   SpaceBlobReplicateSuccess,
   SpaceBlobReplicateFailure,
+  AccountUsageGet,
+  AccountUsageGetFailure,
+  AccountUsageGetSuccess,
 } from '@storacha/capabilities/types'
 import * as Capabilities from '@storacha/capabilities'
 import { RevocationsStorage } from './types/revocations.js'
@@ -442,6 +445,13 @@ export interface Service extends StorefrontService {
   usage: {
     report: ServiceMethod<UsageReport, UsageReportSuccess, UsageReportFailure>
   }
+  'account-usage': {
+    get: ServiceMethod<
+      AccountUsageGet,
+      AccountUsageGetSuccess,
+      AccountUsageGetFailure
+    >
+  }
   // legacy handlers
   store: LegacyUploadAPI.Service['store']
   ['web3.storage']: {
@@ -521,6 +531,8 @@ export interface AccessServiceContext extends AccessClaimContext, AgentContext {
   email: Email
   url: URL
   provisionsStorage: Provisions
+  subscriptionsStorage: SubscriptionsStorage
+  usageStorage: UsageStorage
   rateLimitsStorage: RateLimits
   ssoService?: SSOService
 }
@@ -560,6 +572,8 @@ export interface ConsoleServiceContext {}
 
 export interface SpaceServiceContext extends AgentContext {
   provisionsStorage: Provisions
+  usageStorage: UsageStorage
+  subscriptionsStorage: SubscriptionsStorage
   delegationsStorage: Delegations
   rateLimitsStorage: RateLimits
 }
@@ -621,6 +635,12 @@ export interface PlanServiceContext {
 export interface UsageServiceContext {
   provisionsStorage: Provisions
   usageStorage: UsageStorage
+}
+
+export interface AccountUsageServiceContext {
+  provisionsStorage: Provisions
+  usageStorage: UsageStorage
+  subscriptionsStorage: SubscriptionsStorage
 }
 
 export interface ServiceContext

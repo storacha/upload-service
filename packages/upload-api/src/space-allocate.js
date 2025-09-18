@@ -2,6 +2,7 @@ import * as API from './types.js'
 import * as Server from '@ucanto/server'
 import * as Space from '@storacha/capabilities/space'
 import { ensureRateLimitAbove } from './utils/rate-limits.js'
+import { get as accountUsageGet } from './account-usage/get.js'
 
 /**
  * @param {{capability: {with: API.SpaceDID, nb?: {size: number }}}} input
@@ -37,6 +38,8 @@ export const allocate = async ({ capability }, context) => {
     )
   }
 
+  /** @type {Record<API.AccountDID, API.AccountUsageGetSuccess> } */
+  const accountUsage = {}
   if (capability.nb?.size) {
     /** @type {API.ProviderDID[]} */
     const providersWithSpace = []
@@ -49,8 +52,20 @@ export const allocate = async ({ capability }, context) => {
         continue
       }
       const consumer = result.ok
+      if (!accountUsage[consumer.customer]) {
+        const usageResult = await accountUsageGet(
+          { capability: { with: consumer.customer, nb: {} } },
+          context
+        )
+        if (usageResult.error) {
+          continue
+        }
+        accountUsage[consumer.customer] = usageResult.ok
+      }
       if (
-        consumer.allocated + capability.nb.size <= consumer.limit ||
+        accountUsage[consumer.customer].providers[provider].total +
+          capability.nb.size <=
+          consumer.limit ||
         consumer.limit === 0
       ) {
         providersWithSpace.push(provider)

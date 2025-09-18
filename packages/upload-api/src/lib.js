@@ -23,6 +23,7 @@ import { createService as createLegacyW3sService } from './web3.storage.js'
 import { createService as createFilecoinService } from '@storacha/filecoin-api/storefront/service'
 import { createService as createLegacyAdminService } from '@web3-storage/upload-api/admin'
 import { createService as createLegacyStoreService } from '@web3-storage/upload-api/store'
+import { createService as createAccountUsageService } from './account-usage.js'
 import * as AgentMessage from './utils/agent-message.js'
 
 export * from './types.js'
@@ -195,6 +196,7 @@ export const createService = (context) => ({
   // storefront of filecoin pipeline
   filecoin: createFilecoinService(context).filecoin,
   usage: createUsageService(context),
+  'account-usage': createAccountUsageService(context),
   // legacy
   store: createLegacyStoreService(context),
   'web3.storage': createLegacyW3sService(context),

@@ -2,11 +2,12 @@ import * as API from '../../../../types.js'
 import { sha256 } from 'multiformats/hashes/sha2'
 import { ed25519 } from '@ucanto/principal'
 import { Receipt } from '@ucanto/core'
+import * as CAR from '@ucanto/transport/car'
 import * as SpaceBlobCapabilities from '@storacha/capabilities/space/blob'
 import { createServer, connect } from '../../../../lib.js'
 import { alice, registerSpace } from '../../../util.js'
 import { createConcludeInvocation } from '../../../../ucan/conclude.js'
-import { parseBlobAddReceiptNext } from '../../../helpers/blob.js'
+import { parseBlobAddReceiptNext, uploadBlob } from '../../../helpers/blob.js'
 import { BlobSizeLimitExceededError } from '../../../../blob.js'
 import { MAX_UPLOAD_SIZE } from '../../../../web3.storage/blob/constants.js'
 import { ProvisionsStorage } from '../../../storage/provisions-storage.js'
@@ -490,7 +491,7 @@ export const test = {
       const provisionsStorage = /** @type {ProvisionsStorage} */ (
         context.provisionsStorage
       )
-      provisionsStorage.spaceLimits[spaceDid] = { allocated: 900, limit: 1000 }
+      provisionsStorage.spaceLimits[spaceDid] = { limit: 1000 }
       // prepare data
       const data = new Uint8Array([11, 22, 34, 44, 55])
       const multihash = await sha256.digest(data)
@@ -501,6 +502,22 @@ export const test = {
         id: context.id,
         channel: createServer(context),
       })
+
+      const initialData = new Uint8Array(900)
+      // invoke `blob/add`
+      await uploadBlob(
+        {
+          connection,
+          issuer: alice,
+          audience: context.id,
+          with: spaceDid,
+          proofs: [proof],
+        },
+        {
+          digest: (await CAR.codec.link(initialData)).multihash,
+          bytes: initialData,
+        }
+      )
 
       // invoke `blob/add`
       const invocation = SpaceBlobCapabilities.add.invoke({
