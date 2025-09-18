@@ -55,10 +55,10 @@ jobs:
           cat .env.tpl | excludeDefaultServiceVariables > .env
 
           # add vars configuring console frontend to use staging w3up as backend
-          echo "NEXT_PUBLIC_W3UP_SERVICE_DID=did:web:staging.web3.storage" >> .env
+          echo "NEXT_PUBLIC_W3UP_SERVICE_DID=did:web:staging.up.storacha.network" >> .env
           echo "NEXT_PUBLIC_W3UP_SERVICE_URL=https://staging.up.storacha.network" >> .env
           echo "NEXT_PUBLIC_W3UP_RECEIPTS_URL=https://staging.up.storacha.network/receipt/" >> .env
-          echo "NEXT_PUBLIC_W3UP_PROVIDER=did:web:staging.web3.storage" >> .env
+          echo "NEXT_PUBLIC_W3UP_PROVIDER=did:web:staging.up.storacha.network" >> .env
           echo "NEXT_PUBLIC_W3UP_GATEWAY_HOST=https://staging.w3s.link" >> .env
           echo "NEXT_PUBLIC_W3UP_GATEWAY_ID=did:web:staging.w3s.link" >> .env
           echo "NEXT_PUBLIC_IPFS_GATEWAY_URL=https://%ROOT_CID%.ipfs-staging.w3s.link" >> .env
@@ -170,10 +170,10 @@ jobs:
           cat .env.tpl | excludeDefaultServiceVariables > .env
 
           # add vars configuring console frontend to use staging w3up as backend
-          echo "NEXT_PUBLIC_W3UP_SERVICE_DID=did:web:web3.storage" >> .env
+          echo "NEXT_PUBLIC_W3UP_SERVICE_DID=did:web:up.storacha.network" >> .env
           echo "NEXT_PUBLIC_W3UP_SERVICE_URL=https://up.storacha.network" >> .env
           echo "NEXT_PUBLIC_W3UP_RECEIPTS_URL=https://up.storacha.network/receipt/" >> .env
-          echo "NEXT_PUBLIC_W3UP_PROVIDER=did:web:web3.storage" >> .env
+          echo "NEXT_PUBLIC_W3UP_PROVIDER=did:web:up.storacha.network" >> .env
           echo "NEXT_PUBLIC_W3UP_GATEWAY_HOST=https://gateway.storacha.network" >> .env
           echo "NEXT_PUBLIC_W3UP_GATEWAY_ID=did:web:w3s.link" >> .env
           echo "NEXT_PUBLIC_IPFS_GATEWAY_URL=https://%ROOT_CID%.ipfs.w3s.link" >> .env

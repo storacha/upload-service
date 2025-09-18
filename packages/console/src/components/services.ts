@@ -5,18 +5,18 @@ import * as DID from '@ipld/dag-ucan/did'
 
 
 export const serviceURL = new URL(
-  // 'https://staging.up.web3.storage'
-  process.env.NEXT_PUBLIC_W3UP_SERVICE_URL ?? 'https://up.web3.storage'
+  // 'https://staging.up.storacha.network'
+  process.env.NEXT_PUBLIC_W3UP_SERVICE_URL ?? 'https://up.storacha.network'
 )
 
 export const receiptsURL = new URL(
-  // 'https://staging.up.web3.storage/receipt/'
-  process.env.NEXT_PUBLIC_W3UP_RECEIPTS_URL ?? 'https://up.web3.storage/receipt/'
+  // 'https://staging.up.storacha.network/receipt/'
+  process.env.NEXT_PUBLIC_W3UP_RECEIPTS_URL ?? 'https://up.storacha.network/receipt/'
 )
 
 export const servicePrincipal = DID.parse(
-  // 'did:web:staging.web3.storage'
-  process.env.NEXT_PUBLIC_W3UP_SERVICE_DID ?? 'did:web:web3.storage'
+  // 'did:web:staging.up.storacha.network'
+  process.env.NEXT_PUBLIC_W3UP_SERVICE_DID ?? 'did:web:up.storacha.network'
 )
 
 export const ipfsGatewayURL = (rootCID: UnknownLink | string) => new URL(
