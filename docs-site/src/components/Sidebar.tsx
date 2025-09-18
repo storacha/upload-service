@@ -60,6 +60,23 @@ const navigation: NavigationItem[] = [
       { name: 'Types', href: '/api/types' },
     ],
   },
+  {
+    name: 'Suites',
+    children: [
+      { name: 'Authentication', href: '/suites/auth' },
+      { name: 'Spaces', href: '/suites/spaces' },
+      { name: 'Uploader', href: '/suites/uploader' },
+      { name: 'Uploads List', href: '/suites/uploads-list' },
+      { name: 'Sharing Tools', href: '/suites/sharing' },
+    ],
+  },
+  {
+    name: 'Guides',
+    children: [
+      { name: 'Integration Context', href: '/guides/integration-context' },
+      { name: 'Examples', href: '/examples' },
+    ],
+  },
 ]
 
 function NavItem({ item, level = 0 }: { item: NavigationItem; level?: number }) {
