@@ -126,6 +126,9 @@ export type {
   FilecoinInfoSuccess,
   FilecoinInfoFailure,
   UCANAttest,
+  AccountUsageGet,
+  AccountUsageGetSuccess,
+  AccountUsageGetFailure,
 } from '@storacha/capabilities/types'
 
 export type {

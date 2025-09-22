@@ -41,7 +41,7 @@ export class AccountUsageClient extends Base {
  * @param {{ from: Date, to: Date }} [options.period]
  * @param {string} [options.nonce]
  * @param {API.Delegation[]} [options.proofs]
- * @returns {Promise<API.Result<API.UsageReportSuccess, API.UsageReportFailure>>}
+ * @returns {Promise<API.Result<API.AccountUsageGetSuccess, API.AccountUsageGetFailure>>}
  */
 export const get = async (
   { agent },
@@ -61,5 +61,7 @@ export const get = async (
         : undefined,
     },
   })
-  return receipt.out
+  return /** @type {API.Result<API.AccountUsageGetSuccess, API.AccountUsageGetFailure>} */ (
+    receipt.out
+  )
 }

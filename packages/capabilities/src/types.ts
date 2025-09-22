@@ -1115,6 +1115,7 @@ export type ServiceAbilityArray = [
   HTTPPut['can'],
   SpaceIndex['can'],
   SpaceIndexAdd['can'],
+  AccountUsage['can'],
   AccountUsageGet['can']
 ]
 
