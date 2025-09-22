@@ -1,3 +1,21 @@
+## 2.3.0 (2025-09-22)
+
+### 🚀 Features
+
+- enforce space limits on blob/add ([e3f031fc](https://github.com/storacha/upload-service/commit/e3f031fc))
+- add account/usage/get capability ([bcd04c30](https://github.com/storacha/upload-service/commit/bcd04c30))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.6.1
+- Updated @storacha/capabilities to 1.9.0
+- Updated @storacha/filecoin-api to 1.1.13
+- Updated @storacha/blob-index to 1.2.1
+
+### ❤️ Thank You
+
+- hannahhoward
+
 ## 2.2.4 (2025-09-08)
 
 ### 🩹 Fixes

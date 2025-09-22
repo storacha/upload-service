@@ -1,3 +1,13 @@
+## 1.9.0 (2025-09-22)
+
+### 🚀 Features
+
+- add account/usage/get capability ([bcd04c30](https://github.com/storacha/upload-service/commit/bcd04c30))
+
+### ❤️ Thank You
+
+- hannahhoward
+
 ## 1.8.0 (2025-07-16)
 
 ### 🚀 Features
