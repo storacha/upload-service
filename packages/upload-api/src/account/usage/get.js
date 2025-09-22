@@ -16,24 +16,29 @@ export const get = async ({ capability }, context) => {
   const account = capability.with
   const subscriptions = await context.subscriptionsStorage.list(account)
   if (subscriptions.error) return subscriptions
-  let spaces = subscriptions.ok.results.reduce((spaces, sub) => {
+  let subscriptionsBySpace = subscriptions.ok.results.reduce((spaces, sub) => {
     sub.consumers.forEach((consumer) => {
-      spaces.add(consumer)
+      spaces[consumer] = spaces[consumer] || []
+      spaces[consumer].push(sub.provider)
     })
     return spaces
-  }, /** @type {Set<API.SpaceDID>} */ (new Set()))
+  }, /** @type {Record<API.SpaceDID, API.ProviderDID[]>} */ ({}))
   if (capability.nb.spaces) {
+    /** @type {Record<API.SpaceDID, API.ProviderDID[]>} */
+    const filteredSubscriptionsBySpace = {}
     // ensure all requested spaces are subscribed by the account
     for (const space of capability.nb.spaces) {
-      if (!spaces.has(space)) {
+      if (!subscriptionsBySpace[space]) {
         return {
           error: new NoSubscriptionError(
             `No subscription found for account ${account} in space ${space}`
           ),
         }
       }
+      filteredSubscriptionsBySpace[space] = subscriptionsBySpace[space]
     }
-    spaces = new Set(capability.nb.spaces)
+    // filter to only requested spaces
+    subscriptionsBySpace = filteredSubscriptionsBySpace
   }
 
   const now = new Date()
@@ -47,27 +52,31 @@ export const get = async ({ capability }, context) => {
   const period = { from, to }
 
   /** @type {API.AccountUsageGetSuccess} */
-  const byProvider = {
+  const bySpace = {
     total: 0,
-    providers: {},
+    spaces: {},
   }
-  for (const sub of subscriptions.ok.results) {
-    /** @type {API.ProviderUsage} */
-    const providerReport = byProvider.providers[sub.provider] || {
+  for (const [
+    space,
+    providers,
+  ] of /** @type {[API.SpaceDID, API.ProviderDID[]][]} */ (
+    Object.entries(subscriptionsBySpace)
+  )) {
+    /** @type {API.SpaceUsage} */
+    bySpace.spaces[space] = {
       total: 0,
-      spaces: {},
+      providers: {},
     }
-    for (const space of sub.consumers) {
-      if (!spaces.has(space)) continue
-      const res = await context.usageStorage.report(sub.provider, space, period)
+
+    for (const provider of providers) {
+      const res = await context.usageStorage.report(provider, space, period)
       if (res.error) return res
-      providerReport.spaces[space] = res.ok
-      providerReport.total += res.ok.size.final
-      byProvider.total += res.ok.size.final
+      bySpace.spaces[space].providers[provider] = res.ok
+      bySpace.spaces[space].total += res.ok.size.final
+      bySpace.total += res.ok.size.final
     }
-    byProvider.providers[sub.provider] = providerReport
   }
-  return { ok: byProvider }
+  return { ok: bySpace }
 }
 
 class NoSubscriptionError extends Server.Failure {

@@ -63,7 +63,7 @@ export const allocate = async ({ capability }, context) => {
         accountUsage[consumer.customer] = usageResult.ok
       }
       if (
-        accountUsage[consumer.customer].providers[provider].total +
+        accountUsageByProvider(accountUsage[consumer.customer], provider) +
           capability.nb.size <=
           consumer.limit ||
         consumer.limit === 0
@@ -93,3 +93,16 @@ export const allocate = async ({ capability }, context) => {
  */
 export const provide = (context) =>
   Server.provide(Space.allocate, (input) => allocate(input, context))
+
+/**
+ *
+ * @param {API.AccountUsageGetSuccess} accountUsage
+ * @param {API.ProviderDID} provider
+ */
+const accountUsageByProvider = (accountUsage, provider) =>
+  Object.values(accountUsage.spaces).reduce((acc, usage) => {
+    if (usage.providers[provider]) {
+      acc += usage.providers[provider].size.final
+    }
+    return acc
+  }, 0)

@@ -218,14 +218,14 @@ export interface AccountUsageGetSuccess {
   // total across all providers and spaces
   total: number
   // usages by provider
-  providers: Record<ProviderDID, ProviderUsage>
+  spaces: Record<SpaceDID, SpaceUsage>
 }
 
-export interface ProviderUsage {
+export interface SpaceUsage {
   // total across all providers for the space
   total: number
   // usages by provider
-  spaces: Record<SpaceDID, UsageData>
+  providers: Record<ProviderDID, UsageData>
 }
 
 // Provider

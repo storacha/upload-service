@@ -69,10 +69,10 @@ export const test = {
     const usage = accountUsageRes.out.ok
     assert.ok(usage)
     assert.equal(usage?.total, size)
-    const providerUsage = usage?.providers[context.service.did()]
-    assert.ok(providerUsage)
-    assert.equal(providerUsage?.total, size)
-    const report = providerUsage?.spaces[space.did()]
+    const spaceUsage = usage?.spaces[space.did()]
+    assert.ok(spaceUsage)
+    assert.equal(spaceUsage?.total, size)
+    const report = spaceUsage?.providers[context.service.did()]
     assert.equal(report?.space, spaceDid)
     assert.equal(report?.size.initial, 0)
     assert.equal(report?.size.final, size)
@@ -181,19 +181,15 @@ export const test = {
     console.log(usage)
     assert.equal(usage?.total, size1 + size2)
 
-    const providerUsage = usage?.providers[context.service.did()]
-    assert.ok(providerUsage)
-    assert.equal(providerUsage?.total, size1 + size2)
-
     // Check space 1 usage
-    const space1Usage = providerUsage?.spaces[space1.did()]
+    const space1Usage = usage?.spaces[space1.did()]
     assert.ok(space1Usage)
-    assert.equal(space1Usage?.size.final, size1)
+    assert.equal(space1Usage?.total, size1)
 
     // Check space 2 usage
-    const space2Usage = providerUsage?.spaces[space2.did()]
+    const space2Usage = usage?.spaces[space2.did()]
     assert.ok(space2Usage)
-    assert.equal(space2Usage?.size.final, size2)
+    assert.equal(space2Usage?.total, size2)
   },
 
   'account/usage/get with spaces filter': async (assert, context) => {
@@ -299,17 +295,13 @@ export const test = {
     const usage = accountUsageRes.out.ok
     assert.equal(usage?.total, size1) // Only space1's usage
 
-    const providerUsage = usage?.providers[context.service.did()]
-    assert.ok(providerUsage)
-    assert.equal(providerUsage?.total, size1)
-
     // Should only contain space1
-    const space1Usage = providerUsage?.spaces[space1.did()]
+    const space1Usage = usage?.spaces[space1.did()]
     assert.ok(space1Usage)
-    assert.equal(space1Usage?.size.final, size1)
+    assert.equal(space1Usage?.total, size1)
 
     // Should not contain space2
-    const space2Usage = providerUsage?.spaces[space2.did()]
+    const space2Usage = usage?.spaces[space2.did()]
     assert.equal(space2Usage, undefined)
   },
 

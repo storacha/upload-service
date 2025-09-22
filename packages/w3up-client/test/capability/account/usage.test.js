@@ -39,11 +39,11 @@ export const UsageClient = Test.withContext({
       })
 
       assert.ok(usage.total >= content.size)
-      assert.equal(Object.keys(usage.providers).length, 1)
-      const providerReport = usage.providers[service.did()]
-      assert.ok(providerReport, 'should have usage for provider')
-      const record = providerReport.spaces[space.did()]
-      assert.ok(record, 'should have usage for space')
+      assert.equal(Object.keys(usage.spaces).length, 1)
+      const spaceReport = usage.spaces[space.did()]
+      assert.ok(spaceReport, 'should have usage for space')
+      const record = spaceReport.providers[service.did()]
+      assert.ok(record, 'should have usage for provider')
       assert.equal(record.provider, connection.id.did())
       assert.equal(record.space, space.did())
       assert.equal(record.period.from, period.from.toISOString())
