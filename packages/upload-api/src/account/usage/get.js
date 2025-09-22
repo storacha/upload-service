@@ -41,6 +41,11 @@ export const get = async ({ capability }, context) => {
     subscriptionsBySpace = filteredSubscriptionsBySpace
   }
 
+  // lexocographically order by space DID
+  subscriptionsBySpace = Object.fromEntries(
+    Object.entries(subscriptionsBySpace).sort(([a], [b]) => (a < b ? -1 : 1))
+  )
+
   const now = new Date()
   const from =
     capability.nb.period?.from !== undefined
@@ -68,7 +73,8 @@ export const get = async ({ capability }, context) => {
       providers: {},
     }
 
-    for (const provider of providers) {
+    // lexographically order providers by Provider DID
+    for (const provider of providers.sort()) {
       const res = await context.usageStorage.report(provider, space, period)
       if (res.error) return res
       bySpace.spaces[space].providers[provider] = res.ok
