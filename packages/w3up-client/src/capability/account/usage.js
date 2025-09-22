@@ -1,6 +1,6 @@
 import { AccountUsage as AccountUsageCapabilites } from '@storacha/capabilities'
-import * as API from '../types.js'
-import { Base } from '../base.js'
+import * as API from '../../types.js'
+import { Base } from '../../base.js'
 
 /**
  * Client for interacting with the `usage/*` capabilities.

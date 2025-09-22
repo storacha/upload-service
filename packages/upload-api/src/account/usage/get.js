@@ -1,4 +1,4 @@
-import * as API from '../types.js'
+import * as API from '../../types.js'
 import * as Provider from '@ucanto/server'
 import { AccountUsage } from '@storacha/capabilities'
 import * as Server from '@ucanto/server'
@@ -61,7 +61,6 @@ export const get = async ({ capability }, context) => {
       if (!spaces.has(space)) continue
       const res = await context.usageStorage.report(sub.provider, space, period)
       if (res.error) return res
-      console.log(res.ok)
       providerReport.spaces[space] = res.ok
       providerReport.total += res.ok.size.final
       byProvider.total += res.ok.size.final

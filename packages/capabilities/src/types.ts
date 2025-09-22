@@ -44,7 +44,7 @@ import * as AdminCaps from './admin.js'
 import * as UCANCaps from './ucan.js'
 import * as PlanCaps from './plan.js'
 import * as UsageCaps from './usage.js'
-import * as AccountUsageCaps from './account-usage.js'
+import * as AccountUsageCaps from './account/usage.js'
 
 export type ISO8601Date = string
 

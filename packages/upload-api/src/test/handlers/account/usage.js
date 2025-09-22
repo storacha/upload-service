@@ -1,15 +1,15 @@
 import * as CAR from '@ucanto/transport/car'
 import { AccountUsage, Provider } from '@storacha/capabilities'
-import * as API from '../../types.js'
-import { createServer, connect } from '../../lib.js'
-import { alice, createSpace } from '../util.js'
-import { uploadBlob } from '../helpers/blob.js'
-import { createAuthorization } from '../helpers/utils.js'
+import * as API from '../../../types.js'
+import { createServer, connect } from '../../../lib.js'
+import { alice, createSpace } from '../../util.js'
+import { uploadBlob } from '../../helpers/blob.js'
+import { createAuthorization } from '../../helpers/utils.js'
 import { Absentee } from '@ucanto/principal'
 
 /** @type {API.Tests} */
 export const test = {
-  'account-usage/get retrieves account usage data': async (assert, context) => {
+  'account/usage/get retrieves account usage data': async (assert, context) => {
     const account = 'did:mailto:example.com:alice'
     const authorizations = await createAuthorization({
       agent: alice,
@@ -80,7 +80,7 @@ export const test = {
     assert.equal(report?.events[0].delta, size)
   },
 
-  'account-usage/get with multiple spaces': async (assert, context) => {
+  'account/usage/get with multiple spaces': async (assert, context) => {
     const account = 'did:mailto:example.com:alice'
     const authorizations = await createAuthorization({
       agent: alice,
@@ -196,7 +196,7 @@ export const test = {
     assert.equal(space2Usage?.size.final, size2)
   },
 
-  'account-usage/get with spaces filter': async (assert, context) => {
+  'account/usage/get with spaces filter': async (assert, context) => {
     const account = 'did:mailto:example.com:alice'
     const authorizations = await createAuthorization({
       agent: alice,
@@ -313,7 +313,7 @@ export const test = {
     assert.equal(space2Usage, undefined)
   },
 
-  'account-usage/get should error when space has no provider': async (
+  'account/usage/get should error when space has no provider': async (
     assert,
     context
   ) => {

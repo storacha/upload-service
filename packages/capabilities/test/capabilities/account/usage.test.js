@@ -1,8 +1,8 @@
 import assert from 'assert'
 import { access } from '@ucanto/validator'
 import { Verifier } from '@ucanto/principal'
-import * as AccountUsage from '../../src/account/usage.js'
-import * as Capability from '../../src/top.js'
+import * as AccountUsage from '../../../src/account/usage.js'
+import * as Capability from '../../../src/top.js'
 import {
   alice,
   service,
@@ -10,11 +10,11 @@ import {
   mallory,
   space,
   bob,
-} from '../helpers/fixtures.js'
+} from '../../helpers/fixtures.js'
 import {
   delegateWithAttestation,
   validateAuthorization,
-} from '../helpers/utils.js'
+} from '../../helpers/utils.js'
 
 const top = () =>
   delegateWithAttestation(Capability.top, {

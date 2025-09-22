@@ -2,7 +2,7 @@ import * as API from './types.js'
 import * as Server from '@ucanto/server'
 import * as Space from '@storacha/capabilities/space'
 import { ensureRateLimitAbove } from './utils/rate-limits.js'
-import { get as accountUsageGet } from './account-usage/get.js'
+import { get as accountUsageGet } from './account/usage/get.js'
 
 /**
  * @param {{capability: {with: API.SpaceDID, nb?: {size: number }}}} input

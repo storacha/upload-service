@@ -23,7 +23,7 @@ import { UploadClient } from './capability/upload.js'
 import { SpaceClient } from './capability/space.js'
 import { SubscriptionClient } from './capability/subscription.js'
 import { UsageClient } from './capability/usage.js'
-import { AccountUsageClient } from './capability/account-usage.js'
+import { AccountUsageClient } from './capability/account/usage.js'
 import { AccessClient } from './capability/access.js'
 import { PlanClient } from './capability/plan.js'
 import { FilecoinClient } from './capability/filecoin.js'
@@ -63,7 +63,9 @@ export class Client extends Base {
       subscription: new SubscriptionClient(agentData, options),
       upload: new UploadClient(agentData, options),
       usage: new UsageClient(agentData, options),
-      accountUsage: new AccountUsageClient(agentData, options),
+      account: {
+        usage: new AccountUsageClient(agentData, options),
+      },
     }
     this.coupon = new CouponAPI(agentData, options)
   }

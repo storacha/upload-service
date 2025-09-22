@@ -26,7 +26,7 @@ import * as Blob from './blob/index.js'
 import * as SpaceBlob from './space/blob.js'
 import * as W3sBlob from './web3.storage/blob.js'
 import * as HTTP from './http.js'
-import * as AccountUsage from './account-usage.js'
+import * as AccountUsage from './account/usage.js'
 
 export {
   Access,

@@ -6,15 +6,15 @@ import {
   and,
   equal,
   containedWithin,
-} from './utils.js'
+} from '../utils.js'
 
 /**
  * Capability can only be delegated (but not invoked) allowing audience to
- * be derived any `account-usage/` prefixed capability for the account identified
+ * be derived any `account/usage/` prefixed capability for the account identified
  * by DID in the `with` field.
  */
 export const accountUsage = capability({
-  can: 'account-usage/*',
+  can: 'account/usage/*',
   with: AccountDID,
   derives: equalWith,
 })
@@ -24,7 +24,7 @@ export const accountUsage = capability({
  * specified set of spaces within an account in a given period.
  */
 export const get = capability({
-  can: 'account-usage/get',
+  can: 'account/usage/get',
   with: AccountDID,
   nb: Schema.struct({
     spaces: SpaceDID.array().optional(),

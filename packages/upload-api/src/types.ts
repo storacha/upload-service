@@ -445,12 +445,14 @@ export interface Service extends StorefrontService {
   usage: {
     report: ServiceMethod<UsageReport, UsageReportSuccess, UsageReportFailure>
   }
-  'account-usage': {
-    get: ServiceMethod<
-      AccountUsageGet,
-      AccountUsageGetSuccess,
-      AccountUsageGetFailure
-    >
+  account: {
+    usage: {
+      get: ServiceMethod<
+        AccountUsageGet,
+        AccountUsageGetSuccess,
+        AccountUsageGetFailure
+        >
+    }
   }
   // legacy handlers
   store: LegacyUploadAPI.Service['store']
