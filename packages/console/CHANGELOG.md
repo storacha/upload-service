@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.1](https://github.com/storacha/upload-service/compare/console-v2.6.0...console-v2.6.1) (2025-09-22)
+
+
+### Other Changes
+
+* **release:** publish ([49088de](https://github.com/storacha/upload-service/commit/49088de16bb19a7c375d79e4f26ff6aa5903e420))
+
 ## [2.6.0](https://github.com/storacha/upload-service/compare/console-v2.5.1...console-v2.6.0) (2025-09-22)
 
 
