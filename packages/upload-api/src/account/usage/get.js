@@ -71,6 +71,22 @@ export const get = async ({ capability }, context) => {
 }
 
 class NoSubscriptionError extends Server.Failure {
+  #message
+
+  /**
+   *
+   * @param {string} message
+   * @param {ErrorOptions} [options]
+   */
+  constructor(message, options) {
+    super(message, options)
+    this.#message = message
+  }
+
+  describe() {
+    return this.#message
+  }
+
   get name() {
     return 'NoSubscription'
   }

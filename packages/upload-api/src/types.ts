@@ -451,7 +451,7 @@ export interface Service extends StorefrontService {
         AccountUsageGet,
         AccountUsageGetSuccess,
         AccountUsageGetFailure
-        >
+      >
     }
   }
   // legacy handlers

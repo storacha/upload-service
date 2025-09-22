@@ -15,7 +15,7 @@ export class AccountUsageClient extends Base {
    * @param {API.AccountDID} account
    * @param {object} [options]
    * @param {{ from: Date, to: Date }} [options.period]
-   * @param {import('../types.js').SpaceDID[]} [options.spaces]
+   * @param {import('../../types.js').SpaceDID[]} [options.spaces]
    * @param {string} [options.nonce]
    */
   async get(account, options) {

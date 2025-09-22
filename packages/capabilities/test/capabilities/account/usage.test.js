@@ -33,7 +33,7 @@ const accountUsage = () =>
   })
 
 describe('account/usage/get capabilities', function () {
-  it('account/usage/get can be derived can be derived from *', async () => {
+  it('account/usage/get can be derived from *', async () => {
     const get = AccountUsage.get.invoke({
       issuer: alice,
       audience: service,
@@ -53,7 +53,7 @@ describe('account/usage/get capabilities', function () {
     assert.equal(result.ok.capability.can, AccountUsage.get.can)
   })
 
-  it('account/usage/get can be derived can be derived from account/usage/*', async () => {
+  it('account/usage/get can be derived from account/usage/*', async () => {
     const get = AccountUsage.get.invoke({
       issuer: alice,
       audience: service,
