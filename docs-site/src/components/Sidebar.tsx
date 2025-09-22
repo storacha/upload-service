@@ -24,6 +24,19 @@ const navigation: NavigationItem[] = [
     ],
   },
   {
+    name: 'UI Toolkit',
+    children: [
+      { name: 'Overview', href: '/ui-toolkit/overview' },
+      { name: 'Installation', href: '/ui-toolkit/installation' },
+      { name: 'Provider Setup', href: '/ui-toolkit/provider-setup' },
+      { name: 'Authentication Suite', href: '/ui-toolkit/authentication' },
+      { name: 'Space Management', href: '/ui-toolkit/space-management' },
+      { name: 'Content Management', href: '/ui-toolkit/content-management' },
+      { name: 'Uploader Components', href: '/ui-toolkit/uploader' },
+      { name: 'Theming & Styling', href: '/ui-toolkit/theming' },
+    ],
+  },
+  {
     name: 'Components',
     children: [
       { name: 'Overview', href: '/components' },
@@ -43,12 +56,25 @@ const navigation: NavigationItem[] = [
     ],
   },
   {
-    name: 'Advanced',
+    name: 'Integration',
     children: [
-      { name: 'Customization', href: '/advanced/customization' },
-      { name: 'Performance', href: '/advanced/performance' },
-      { name: 'Testing', href: '/advanced/testing' },
-      { name: 'Deployment', href: '/advanced/deployment' },
+      { name: 'Integration Context', href: '/integration/context' },
+      { name: 'Iframe vs Native', href: '/integration/iframe-vs-native' },
+      { name: 'Partner Integration', href: '/integration/partner-integration' },
+      { name: 'Authentication Flow', href: '/integration/auth-flow' },
+      { name: 'Space Management', href: '/integration/space-management' },
+      { name: 'Upload Integration', href: '/integration/upload-integration' },
+    ],
+  },
+  {
+    name: 'Examples',
+    children: [
+      { name: 'Overview', href: '/examples' },
+      { name: 'Sign Up / Sign In', href: '/examples/sign-up-in' },
+      { name: 'Single File Upload', href: '/examples/file-upload' },
+      { name: 'Multiple File Upload', href: '/examples/multi-file-upload' },
+      { name: 'Uploads List', href: '/examples/uploads-list' },
+      { name: 'Encrypted Uploads', href: '/examples/encrypted-uploads' },
     ],
   },
   {
@@ -61,20 +87,12 @@ const navigation: NavigationItem[] = [
     ],
   },
   {
-    name: 'Suites',
+    name: 'Advanced',
     children: [
-      { name: 'Authentication', href: '/suites/auth' },
-      { name: 'Spaces', href: '/suites/spaces' },
-      { name: 'Uploader', href: '/suites/uploader' },
-      { name: 'Uploads List', href: '/suites/uploads-list' },
-      { name: 'Sharing Tools', href: '/suites/sharing' },
-    ],
-  },
-  {
-    name: 'Guides',
-    children: [
-      { name: 'Integration Context', href: '/guides/integration-context' },
-      { name: 'Examples', href: '/examples' },
+      { name: 'Customization', href: '/advanced/customization' },
+      { name: 'Performance', href: '/advanced/performance' },
+      { name: 'Testing', href: '/advanced/testing' },
+      { name: 'Deployment', href: '/advanced/deployment' },
     ],
   },
 ]
