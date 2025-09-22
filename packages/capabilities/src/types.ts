@@ -44,6 +44,7 @@ import * as AdminCaps from './admin.js'
 import * as UCANCaps from './ucan.js'
 import * as PlanCaps from './plan.js'
 import * as UsageCaps from './usage.js'
+import * as AccountUsageCaps from './account/usage.js'
 
 export type ISO8601Date = string
 
@@ -197,6 +198,34 @@ export interface EgressData {
   servedAt: ISO8601Date
   /** Identifier of the invocation that caused the egress traffic. */
   cause: UnknownLink
+}
+
+// AccountUsage
+export type AccountUsage = InferInvokedCapability<
+  typeof AccountUsageCaps.accountUsage
+>
+export type AccountUsageGet = InferInvokedCapability<
+  typeof AccountUsageCaps.get
+>
+
+export interface NoSubscriptionError extends Ucanto.Failure {
+  name: 'NoSubscription'
+}
+
+export type AccountUsageGetFailure = NoSubscriptionError | Ucanto.Failure
+
+export interface AccountUsageGetSuccess {
+  // total across all providers and spaces
+  total: number
+  // usages by provider
+  spaces: Record<SpaceDID, SpaceUsage>
+}
+
+export interface SpaceUsage {
+  // total across all providers for the space
+  total: number
+  // usages by provider
+  providers: Record<ProviderDID, UsageData>
 }
 
 // Provider
@@ -1085,7 +1114,9 @@ export type ServiceAbilityArray = [
   W3sBlobAccept['can'],
   HTTPPut['can'],
   SpaceIndex['can'],
-  SpaceIndexAdd['can']
+  SpaceIndexAdd['can'],
+  AccountUsage['can'],
+  AccountUsageGet['can']
 ]
 
 /**

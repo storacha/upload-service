@@ -22,6 +22,8 @@ export class ProvisionsStorage {
      */
     this.provisions = {}
     this.providers = /** @type {Types.ServiceDID[]} */ (providers)
+    /** @type {Record<string, { limit: number }>} */
+    this.spaceLimits = {}
   }
 
   /**
@@ -150,7 +152,7 @@ export class ProvisionsStorage {
         ok: {
           did: provision.consumer,
           allocated: 0,
-          limit: 100,
+          limit: this.spaceLimits[provision.consumer]?.limit || 0,
           subscription: itemKey(provision),
           customer: provision.customer,
         },

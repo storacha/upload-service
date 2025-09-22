@@ -26,6 +26,7 @@ import * as Blob from './blob/index.js'
 import * as SpaceBlob from './space/blob.js'
 import * as W3sBlob from './web3.storage/blob.js'
 import * as HTTP from './http.js'
+import * as AccountUsage from './account/usage.js'
 
 export {
   Access,
@@ -56,6 +57,7 @@ export {
   SpaceBlob,
   W3sBlob,
   HTTP,
+  AccountUsage,
 }
 
 /** @type {import('./types.js').ServiceAbility[]} */
@@ -127,4 +129,5 @@ export const abilitiesAsStrings = [
   HTTP.put.can,
   SpaceIndex.index.can,
   SpaceIndex.add.can,
+  AccountUsage.get.can,
 ]
