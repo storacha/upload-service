@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.0](https://github.com/storacha/upload-service/compare/console-v2.5.1...console-v2.6.0) (2025-09-22)
+
+
+### Features
+
+* **upload-api:** enforce space limit on blob/add ([#386](https://github.com/storacha/upload-service/issues/386)) ([589ff6a](https://github.com/storacha/upload-service/commit/589ff6a5543d12893b69cd35150701993dccc55d))
+
 ## [2.5.1](https://github.com/storacha/upload-service/compare/console-v2.5.0...console-v2.5.1) (2025-09-18)
 
 
