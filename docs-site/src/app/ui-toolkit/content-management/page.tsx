@@ -2,6 +2,9 @@ import { Layout } from '@/components/Layout'
 import { MDXContent } from '@/components/MDXContent'
 import { PropsTable } from '@/components/PropsTable'
 import { Playground } from '@/components/Playground'
+import UploadDemoSingle from '@/components/demos/UploadDemoSingle'
+import UploadDemoMulti from '@/components/demos/UploadDemoMulti'
+import UploadsListDemo from '@/components/demos/UploadsListDemo'
 
 export default function ContentManagementPage() {
   return (
@@ -65,6 +68,9 @@ export default function ContentManagementPage() {
         ]} />
 
         <h3>Basic Upload Example</h3>
+        <Playground initialCode={`// Upload single file with UI Toolkit`}>
+          <UploadDemoSingle />
+        </Playground>
 
         <Playground initialCode={`import React from 'react'
 import { Provider, Authenticator, Uploader, useUploader } from '@storacha/ui-react'
@@ -141,6 +147,9 @@ function App() {
 }`} />
 
         <h2>Multiple File Upload</h2>
+        <Playground initialCode={`// Upload multiple files`}>
+          <UploadDemoMulti />
+        </Playground>
 
         <p>
           Support for uploading multiple files or entire directories:
@@ -376,6 +385,9 @@ function UploadProgress() {
 }`}</code></pre>
 
         <h2>File Listing Component</h2>
+        <Playground initialCode={`// Example uploads list`}>
+          <UploadsListDemo />
+        </Playground>
 
         <p>
           Create a component to list and manage uploaded files:

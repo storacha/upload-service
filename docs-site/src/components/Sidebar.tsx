@@ -60,10 +60,6 @@ const navigation: NavigationItem[] = [
     children: [
       { name: 'Integration Context', href: '/integration/context' },
       { name: 'Iframe vs Native', href: '/integration/iframe-vs-native' },
-      { name: 'Partner Integration', href: '/integration/partner-integration' },
-      { name: 'Authentication Flow', href: '/integration/auth-flow' },
-      { name: 'Space Management', href: '/integration/space-management' },
-      { name: 'Upload Integration', href: '/integration/upload-integration' },
     ],
   },
   {
@@ -72,9 +68,6 @@ const navigation: NavigationItem[] = [
       { name: 'Overview', href: '/examples' },
       { name: 'Sign Up / Sign In', href: '/examples/sign-up-in' },
       { name: 'Single File Upload', href: '/examples/file-upload' },
-      { name: 'Multiple File Upload', href: '/examples/multi-file-upload' },
-      { name: 'Uploads List', href: '/examples/uploads-list' },
-      { name: 'Encrypted Uploads', href: '/examples/encrypted-uploads' },
     ],
   },
   {
@@ -84,15 +77,6 @@ const navigation: NavigationItem[] = [
       { name: 'Utilities', href: '/api/utilities' },
       { name: 'Hooks', href: '/api/hooks' },
       { name: 'Types', href: '/api/types' },
-    ],
-  },
-  {
-    name: 'Advanced',
-    children: [
-      { name: 'Customization', href: '/advanced/customization' },
-      { name: 'Performance', href: '/advanced/performance' },
-      { name: 'Testing', href: '/advanced/testing' },
-      { name: 'Deployment', href: '/advanced/deployment' },
     ],
   },
 ]
@@ -132,6 +116,7 @@ function NavItem({ item, level = 0 }: { item: NavigationItem; level?: number }) 
     <li>
       <Link
         href={item.href!}
+        scroll={false}
         className={`block rounded-md py-2 px-3 text-sm leading-6 hover:text-hot-blue dark:hover:text-hot-blue-light hover:bg-gray-50 dark:hover:bg-gray-800 ${
           isActive
             ? 'bg-hot-red-light dark:bg-hot-red/20 text-hot-red dark:text-hot-yellow font-semibold'

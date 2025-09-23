@@ -2,6 +2,7 @@ import { Layout } from '@/components/Layout'
 import { MDXContent } from '@/components/MDXContent'
 import { PropsTable } from '@/components/PropsTable'
 import { Playground } from '@/components/Playground'
+import SpaceDemo from '@/components/demos/SpaceDemo'
 
 export default function SpaceManagementPage() {
   return (
@@ -116,7 +117,9 @@ function App() {
       </Authenticator>
     </Provider>
   )
-}`} />
+}`}>
+          <SpaceDemo />
+        </Playground>
 
         <h2>Space Information</h2>
 

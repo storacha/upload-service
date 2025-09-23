@@ -1,5 +1,7 @@
 import { Layout } from '@/components/Layout'
 import { MDXContent } from '@/components/MDXContent'
+import { Playground } from '@/components/Playground'
+import ColorsDemo from '@/components/demos/ColorsDemo'
 
 export default function ColorsPage() {
   return (
@@ -12,6 +14,9 @@ export default function ColorsPage() {
         </p>
 
         <h2>Palette</h2>
+        <Playground initialCode={`// Click a token to preview & copy hex`}>
+          <ColorsDemo />
+        </Playground>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 not-prose my-6">
           {[
             { name: 'Hot Red', class: 'bg-hot-red', hex: '#E91315' },

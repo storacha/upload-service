@@ -2,6 +2,7 @@ import { Layout } from '@/components/Layout'
 import { MDXContent } from '@/components/MDXContent'
 import { PropsTable } from '@/components/PropsTable'
 import { Playground } from '@/components/Playground'
+import AuthDemo from '@/components/demos/AuthDemo'
 
 export default function AuthenticationSuitePage() {
   return (
@@ -16,6 +17,21 @@ export default function AuthenticationSuitePage() {
         </p>
 
         <h2>Components Overview</h2>
+
+        <Playground initialCode={`// Minimal Auth usage
+import { Provider, Authenticator } from '@storacha/ui-react'
+
+function App() {
+  return (
+    <Provider>
+      <Authenticator>
+        {/* Your auth-aware UI */}
+      </Authenticator>
+    </Provider>
+  )
+}`}> 
+          <AuthDemo />
+        </Playground>
 
         <p>
           The Authentication Suite consists of several components that work together:

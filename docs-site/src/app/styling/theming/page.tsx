@@ -1,5 +1,7 @@
 import { Layout } from '@/components/Layout'
 import { MDXContent } from '@/components/MDXContent'
+import { Playground } from '@/components/Playground'
+import ThemingDemo from '@/components/demos/ThemingDemo'
 
 export default function ThemingPage() {
   return (
@@ -45,6 +47,9 @@ export default function ThemingPage() {
         </div>
 
         <h2>Dark Mode Support</h2>
+        <Playground initialCode={`// Toggle theme at runtime`}>
+          <ThemingDemo />
+        </Playground>
 
         <p>
           Console Toolkit comes with built-in dark mode support. The theme automatically adapts 

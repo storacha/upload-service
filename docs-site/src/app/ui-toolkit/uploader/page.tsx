@@ -2,6 +2,8 @@ import { Layout } from '@/components/Layout'
 import { MDXContent } from '@/components/MDXContent'
 import { PropsTable } from '@/components/PropsTable'
 import { Playground } from '@/components/Playground'
+import UploadDemoSingle from '@/components/demos/UploadDemoSingle'
+import UploadDemoMulti from '@/components/demos/UploadDemoMulti'
 
 export default function UploaderComponentsPage() {
   return (
@@ -88,6 +90,11 @@ export default function UploaderComponentsPage() {
         </div>
 
         <h2>Basic Upload Example</h2>
+        <Playground initialCode={`// Basic uploader usage
+import { Provider, Authenticator, Uploader } from '@storacha/ui-react'
+`}>
+          <UploadDemoSingle />
+        </Playground>
 
         <Playground initialCode={`import React from 'react'
 import { Provider, Authenticator, Uploader, useUploader } from '@storacha/ui-react'
@@ -167,6 +174,11 @@ function App() {
 }`} />
 
         <h2>Advanced Upload with Progress</h2>
+        <Playground initialCode={`// Multiple files with progress
+import { Uploader } from '@storacha/ui-react'
+`}>
+          <UploadDemoMulti />
+        </Playground>
 
         <p>
           Track detailed upload progress with shard information:

@@ -1,6 +1,7 @@
 import { Layout } from '@/components/Layout'
 import { MDXContent } from '@/components/MDXContent'
 import { Playground } from '@/components/Playground'
+import AuthDemo from '@/components/demos/AuthDemo'
 
 export default function SignUpInExamplePage() {
   return (
@@ -115,7 +116,9 @@ function App() {
       </Authenticator>
     </Provider>
   )
-}`} />
+}`}>
+          <AuthDemo />
+        </Playground>
 
         <h2>Code Breakdown</h2>
 

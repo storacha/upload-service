@@ -1,6 +1,7 @@
 import { Layout } from '@/components/Layout'
 import { MDXContent } from '@/components/MDXContent'
 import { Playground } from '@/components/Playground'
+import UploadDemoSingle from '@/components/demos/UploadDemoSingle'
 
 export default function FileUploadExamplePage() {
   return (
@@ -188,7 +189,9 @@ function App() {
       </Authenticator>
     </Provider>
   )
-}`} />
+}`}>
+          <UploadDemoSingle />
+        </Playground>
 
         <h2>Code Breakdown</h2>
 
