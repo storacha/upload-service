@@ -68,6 +68,10 @@ const navigation: NavigationItem[] = [
       { name: 'Overview', href: '/examples' },
       { name: 'Sign Up / Sign In', href: '/examples/sign-up-in' },
       { name: 'Single File Upload', href: '/examples/file-upload' },
+      { name: 'Multiple File Upload', href: '/examples/multi-file-upload' },
+      { name: 'Uploads List', href: '/examples/uploads-list' },
+      { name: 'Encrypted Uploads', href: '/examples/encrypted-uploads' },
+      { name: 'Space Management', href: '/examples/space-management' },
     ],
   },
   {
