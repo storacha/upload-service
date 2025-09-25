@@ -17,7 +17,7 @@ import { EmailAddress, AppName } from '@storacha/ui-core'
 // Types for the enhanced authentication context
 export type StorachaAuthContextState = ContextState & {
   /**
-   * email to be used to "log in"
+   * Email for login
    */
   email?: string
   /**
@@ -25,8 +25,7 @@ export type StorachaAuthContextState = ContextState & {
    */
   submitted: boolean
   /**
-   * A callback that can be passed to an `onSubmit` handler to
-   * register a new space or log in using `email`
+   * Form submit handler
    */
   handleRegisterSubmit?: (e: React.FormEvent<HTMLFormElement>) => Promise<void>
   /**
@@ -168,9 +167,6 @@ export const StorachaAuthProvider = ({ children, ...props }: StorachaAuthProps) 
     [client, email, props.appName, props.onAuthEvent]
   )
 
-  const trackAuthEvent = useCallback((event: string, properties?: Record<string, any>) => {
-    props.onAuthEvent?.(event, properties)
-  }, [props.onAuthEvent])
 
   const value = useMemo<StorachaAuthContextValue>(
     () => [
@@ -189,10 +185,12 @@ export const StorachaAuthProvider = ({ children, ...props }: StorachaAuthProps) 
           loginAbortController?.abort()
           props.onAuthEvent?.('Login Authorization Cancelled')
         },
-        trackAuthEvent,
+        trackAuthEvent: (event: string, properties?: Record<string, any>) => {
+          props.onAuthEvent?.(event, properties)
+        },
       },
     ],
-    [state, actions, email, submitted, handleRegisterSubmit, isAuthenticated, isIframe, trackAuthEvent]
+    [state, actions, email, submitted, handleRegisterSubmit, isAuthenticated, isIframe, props.onAuthEvent]
   )
 
   return (
@@ -332,9 +330,7 @@ export const StorachaAuthEnsurer = ({ children, loader }: StorachaAuthEnsurerPro
           <>{children}</>
         ) : (
           loader || <div className="storacha-auth-loader">
-            <div className="storacha-auth-spinner-container">
-              <div className="storacha-auth-spinner" />
-            </div>
+            <div className="storacha-auth-spinner" />
             <h3 className="storacha-auth-loader-title">
               Authentication
             </h3>
@@ -361,9 +357,7 @@ export const StorachaAuthEnsurer = ({ children, loader }: StorachaAuthEnsurerPro
   }
   
   return loader || <div className="storacha-auth-loader">
-    <div className="storacha-auth-spinner-container">
-      <div className="storacha-auth-spinner" />
-    </div>
+    <div className="storacha-auth-spinner" />
     <h3 className="storacha-auth-loader-title">
       Initializing
     </h3>
