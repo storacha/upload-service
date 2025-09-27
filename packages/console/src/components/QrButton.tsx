@@ -4,7 +4,6 @@ import { StorachaQRCode } from '@/qr'
 
 export default function QRButton({ link }: { link: string }) {
   const [open, setOpen] = useState(false)
-  const className = 'h-5 w-5 inline-block mr-1 align-middle'
 
   return (
     <>
@@ -16,8 +15,7 @@ export default function QRButton({ link }: { link: string }) {
         className="inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap"
       >
         <QrCodeIcon
-          className={`${className} cursor-pointer`}
-          style={{ marginTop: -4 }}
+          className={`h-5 w-5 inline-block mr-1 align-middle cursor-pointer -mt-1`}
           title="Show QR Code"
         />
       </button>
@@ -33,7 +31,7 @@ export default function QRButton({ link }: { link: string }) {
               ✕
             </button>
 
-          <StorachaQRCode value={link} />
+            <StorachaQRCode value={link} />
           </div>
         </div>
       )}

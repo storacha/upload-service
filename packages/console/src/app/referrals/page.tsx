@@ -83,8 +83,8 @@ export function RefcodeLink ({ referralLink }: { referralLink: string }) {
     <div className="border border-hot-red rounded-full px-4 py-2 flex flex-row justify-between items-center">
       <div>{referralLink}</div>
       <div className="flex flex-row space-x-2">
-      <QRButton link={referralLink} />
-      <CopyButton text={referralLink} />
+        <QRButton link={referralLink} />
+        <CopyButton text={referralLink} />
       </div>
     </div>
   )
@@ -138,7 +138,7 @@ export default function ReferralsPage () {
         ) : (
           <>
             <ReferralsList />
-            {referralLink ? ( 
+            {referralLink ? (
               <RefcodeLink referralLink={referralLink} />
             ) : (
               <RefcodeCreator

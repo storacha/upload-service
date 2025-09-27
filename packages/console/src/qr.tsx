@@ -11,7 +11,7 @@ export const StorachaQRCode = forwardRef<QRCode, StorachaQRCodeProps>(({
   value,
   size = 256,
   ecLevel = 'H',
-  fgColor = '#E91315',
+  fgColor = '#E91315', // hot-red from tailwind.config.ts
   bgColor = '#ffffff',
   logoImage = '/storacha-standalone.svg',
   logoWidth = 60,
