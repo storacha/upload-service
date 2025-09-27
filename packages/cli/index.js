@@ -344,7 +344,8 @@ export async function spaceInfo(opts) {
     process.exit(2)
   }
 
-  const spaceDID = opts.space ?? client.currentSpace()?.did()
+  // opts.space is set to `true` if --space is not specified - in this case we should call back to the DID of the current space
+  const spaceDID = (!opts.space || (opts.space === true)) ? client.currentSpace()?.did() : opts.space
   if (!spaceDID) {
     console.error(
       'Error: no current space and no space given: please use "--space" to specify a space or select one using "space use"'
