@@ -47,6 +47,7 @@
     "react-dom": "catalog:",
     "react-hook-form": "^7.51.3",
     "react-hot-toast": "^2.4.1",
+    "react-qrcode-logo": "^4.0.0",
     "react-tooltip": "^5.28.0",
     "swr": "catalog:",
     "web3.storage": "^4.5.5"

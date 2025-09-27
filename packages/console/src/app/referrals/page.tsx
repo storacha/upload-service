@@ -2,7 +2,8 @@
 
 import CopyButton from '@/components/CopyButton'
 import DefaultLoader from '@/components/Loader'
-import { H1, H2, H3 } from '@/components/Text'
+import QRButton from '@/components/QrButton'
+import { H1, H2 } from '@/components/Text'
 import Tooltip from '@/components/Tooltip'
 import { RefcodeResult, useReferrals } from '@/lib/referrals/hooks'
 import { useEffect } from 'react'
@@ -81,7 +82,10 @@ export function RefcodeLink ({ referralLink }: { referralLink: string }) {
   return (
     <div className="border border-hot-red rounded-full px-4 py-2 flex flex-row justify-between items-center">
       <div>{referralLink}</div>
-      <CopyButton text={referralLink} />
+      <div className="flex flex-row space-x-2">
+        <QRButton link={referralLink} />
+        <CopyButton text={referralLink} />
+      </div>
     </div>
   )
 }
