@@ -5,8 +5,9 @@ import * as API from './types.js'
 
 /**
  * @param {API.Tests|Record<string, API.Tests>} suite
+ * @param {Omit<Parameters<typeof createContext>[0], 'http' | 'assert'>} [options]
  */
-export const test = (suite) => {
+export const test = (suite, options = {}) => {
   for (const [name, member] of Object.entries(suite)) {
     if (typeof member === 'function') {
       const define = name.startsWith('only ')
@@ -16,7 +17,7 @@ export const test = (suite) => {
         : it
 
       define(name, async () => {
-        const context = await createContext({ http, assert })
+        const context = await createContext({ ...options, http, assert })
         try {
           await member(assert, context)
         } finally {
@@ -24,7 +25,7 @@ export const test = (suite) => {
         }
       })
     } else {
-      describe(name, () => test(member))
+      describe(name, () => test(member, options))
     }
   }
 }
