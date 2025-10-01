@@ -146,6 +146,7 @@ export const createAuthorization = async ({ account, agent, service }) => {
  * @param {Types.Signer<Types.DIDKey>} input.agent
  * @param {Types.UCAN.Signer<Types.AccountDID>} input.account
  * @param {Types.ConnectionView<Types.Service>} input.connection
+ * @param {Types.DID<'web'>} [input.provider] - provider DID, defaults to service DID
  */
 export const provisionProvider = async ({
   service,
@@ -153,6 +154,7 @@ export const provisionProvider = async ({
   space,
   account,
   connection,
+  provider = service.did(),
 }) =>
   Provider.add
     .invoke({
@@ -160,7 +162,7 @@ export const provisionProvider = async ({
       audience: service,
       with: account.did(),
       nb: {
-        provider: service.did(),
+        provider,
         consumer: space.did(),
       },
       proofs: await createAuthorization({ agent, service, account }),

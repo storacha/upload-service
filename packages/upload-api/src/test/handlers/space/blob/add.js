@@ -1,16 +1,16 @@
 import * as API from '../../../../types.js'
 import { sha256 } from 'multiformats/hashes/sha2'
-import { ed25519 } from '@ucanto/principal'
+import { Absentee, ed25519 } from '@ucanto/principal'
 import { Receipt } from '@ucanto/core'
 import * as CAR from '@ucanto/transport/car'
 import * as SpaceBlobCapabilities from '@storacha/capabilities/space/blob'
 import { createServer, connect } from '../../../../lib.js'
-import { alice, registerSpace } from '../../../util.js'
+import { alice, createSpace, registerSpace } from '../../../util.js'
 import { createConcludeInvocation } from '../../../../ucan/conclude.js'
 import { parseBlobAddReceiptNext, uploadBlob } from '../../../helpers/blob.js'
 import { BlobSizeLimitExceededError } from '../../../../blob.js'
 import { MAX_UPLOAD_SIZE } from '../../../../web3.storage/blob/constants.js'
-import { ProvisionsStorage } from '../../../storage/provisions-storage.js'
+import { provisionProvider } from '../../../helpers/utils.js'
 
 /**
  * @type {API.Tests}
@@ -486,12 +486,8 @@ export const test = {
     },
   'space/blob/add fails when there is not enough space left unallocated on a limited plan':
     async (assert, context) => {
-      const { proof, spaceDid } = await registerSpace(alice, context)
+      const { proof, space, spaceDid } = await createSpace(alice)
 
-      const provisionsStorage = /** @type {ProvisionsStorage} */ (
-        context.provisionsStorage
-      )
-      provisionsStorage.spaceLimits[spaceDid] = { limit: 1000 }
       // prepare data
       const data = new Uint8Array([11, 22, 34, 44, 55])
       const multihash = await sha256.digest(data)
@@ -502,6 +498,28 @@ export const test = {
         id: context.id,
         channel: createServer(context),
       })
+
+      const account = Absentee.from({
+        id: `did:mailto:test.storacha.network:alice`,
+      })
+
+      const billingID = 'stripe:abc123'
+      const product = 'did:web:testlimit.up.storacha.network'
+      await context.plansStorage.initialize(account.did(), billingID, product)
+
+      const provisionResult = await provisionProvider({
+        service: /** @type {API.Signer<API.DID<'web'>>} */ (context.id),
+        agent: /** @type {API.Signer<API.DIDKey>} */ (alice),
+        space,
+        account,
+        connection,
+        provider: 'did:web:testlimit.up.storacha.network',
+      })
+      if (provisionResult.out.error) {
+        throw new Error(`Error provisioning space for ${alice.did()}`, {
+          cause: provisionResult.out.error,
+        })
+      }
 
       const initialData = new Uint8Array(900)
       // invoke `blob/add`

@@ -14,23 +14,21 @@ const itemKey = ({ customer, consumer, provider }) =>
 export class ProvisionsStorage {
   /**
    *
-   * @param {Array<Types.ServiceDID | string>} providers
+   * @param {Record<Types.ServiceDID | string, number>} providers
    */
-  constructor(providers = ['did:web:test.up.storacha.network']) {
+  constructor(providers = { 'did:web:test.up.storacha.network': 0 }) {
     /**
      * @type {Record<string, Types.Provision>}
      */
     this.provisions = {}
-    this.providers = /** @type {Types.ServiceDID[]} */ (providers)
-    /** @type {Record<string, { limit: number }>} */
-    this.spaceLimits = {}
+    this.providers = /** @type {Record<Types.ServiceDID, number>} */ (providers)
   }
 
   /**
    * @returns {Types.ServiceDID[]}
    */
   get services() {
-    return this.providers
+    return /** @type {Types.ServiceDID[]} */ (Object.keys(this.providers))
   }
 
   /**
@@ -152,7 +150,7 @@ export class ProvisionsStorage {
         ok: {
           did: provision.consumer,
           allocated: 0,
-          limit: this.spaceLimits[provision.consumer]?.limit || 0,
+          limit: this.providers[provision.provider] || 0,
           subscription: itemKey(provision),
           customer: provision.customer,
         },
