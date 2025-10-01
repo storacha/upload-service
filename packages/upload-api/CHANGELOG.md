@@ -1,3 +1,13 @@
+## 2.3.1 (2025-10-01)
+
+### 🩹 Fixes
+
+- fix tests to work in w3infra ([c6d5f438](https://github.com/storacha/upload-service/commit/c6d5f438))
+
+### ❤️ Thank You
+
+- hannahhoward
+
 ## 2.3.0 (2025-09-22)
 
 ### 🚀 Features
