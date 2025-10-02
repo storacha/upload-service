@@ -8,10 +8,9 @@ export interface NoticeConfig {
 
 // Configure this for marketing campaigns.
 export const noticeConfig: NoticeConfig = {
-  text:
-    'Partnership Campaign - XENEA Wallet Event Code For Gems: STORA2',
-  href: "",
-  displayUntil: "2025-09-21",
+  text: 'Partnership Campaign - XENEA Wallet Event Code For Gems: STORA2',
+  href: 'https://xenea.app/register/6q8PVmdUA2',
+  displayUntil: "2025-10-31",
   dismissible: false,
   enabled: true,
 }
