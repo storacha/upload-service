@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.8.0](https://github.com/storacha/upload-service/compare/console-v2.7.0...console-v2.8.0) (2025-10-02)
+
+
+### Features
+
+* access revocation ([#421](https://github.com/storacha/upload-service/issues/421)) ([c3377c7](https://github.com/storacha/upload-service/commit/c3377c77fc77b8f0119fa7dabdacaf9549128183))
+
+
+### Other Changes
+
+* **release:** publish ([c4e84af](https://github.com/storacha/upload-service/commit/c4e84af5e71a1e01c7627782963701b66122bd42))
+
 ## [2.7.0](https://github.com/storacha/upload-service/compare/console-v2.6.0...console-v2.7.0) (2025-10-02)
 
 
