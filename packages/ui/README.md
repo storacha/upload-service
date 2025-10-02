@@ -10,11 +10,47 @@
   <a href="https://github.com/storacha/upload-service/blob/main/license.md"><img alt="License: Apache-2.0 OR MIT" src="https://img.shields.io/badge/LICENSE-Apache--2.0%20OR%20MIT-yellow?style=for-the-badge" /></a>
 </p>
 
-This category contains reusauble UI modules for the Storacha service in React and vanilla JavaScript, and a set of example apps to see them dance.
+This category contains reusable UI modules for the Storacha service with modular architecture supporting framework-agnostic utilities and React components.
 
-## Documentation
+## 🚀 Quick Start
 
-The documentation at [beta.ui.web3.storage](https://beta.ui.web3.storage) is currently out of date - updates coming soon!
+```bash
+npm install @storacha/ui
+```
+
+```tsx
+import { Authenticator, Uploader } from '@storacha/ui'
+
+function App() {
+  return (
+    <div>
+      <Authenticator />
+      <Uploader />
+    </div>
+  )
+}
+```
+
+## 📦 Package Structure
+
+- **`@storacha/ui`** - Meta-package with unified exports
+- **`@storacha/ui-core`** - Framework-agnostic utilities, hooks, and services  
+- **`@storacha/ui-react`** - React components and bindings
+- **`@storacha/ui-tailwind`** - Tailwind CSS plugin with design tokens
+- **`@storacha/ui-theme`** - Theme utilities and CSS variables
+
+## 🎨 Features
+
+- **Modular Architecture**: Import only what you need
+- **Tree-Shakeable**: Component-level imports supported
+- **Type-Safe**: Full TypeScript support with proper exports
+- **Themeable**: Built-in dark/light mode with CSS variables
+- **Framework Agnostic Core**: Use utilities in any framework
+- **Tailwind Integration**: Pre-built design system
+
+## 📖 Documentation
+
+See [USAGE.md](./USAGE.md) for detailed usage instructions and examples.
 
 ### Examples
 

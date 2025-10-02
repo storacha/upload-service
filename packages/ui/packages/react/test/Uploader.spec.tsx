@@ -8,7 +8,7 @@ import {
   ContextDefaultValue,
   ContextValue,
 } from '../src/providers/Provider.js'
-import { Uploader } from '../src/Uploader.js'
+import { Uploader } from '../src/components/Uploader.js'
 
 afterEach(() => {
   cleanup()
@@ -19,13 +19,15 @@ test('single file upload', async () => {
     'bafybeibrqc2se2p3k4kfdwg7deigdggamlumemkiggrnqw3edrjosqhvnm'
   )
   const space = {
-    meta: vi.fn().mockImplementation(() => Object.assign({
-      access: {
-        type: 'public'
-      }
-    })),
+    meta: vi.fn().mockImplementation(() =>
+      Object.assign({
+        access: {
+          type: 'public',
+        },
+      })
+    ),
   }
-  const client = { 
+  const client = {
     uploadFile: vi.fn().mockImplementation(() => cid),
     currentSpace: vi.fn().mockImplementation(() => space),
   }
@@ -66,17 +68,19 @@ test('multi file upload', async () => {
     'bafybeibrqc2se2p3k4kfdwg7deigdggamlumemkiggrnqw3edrjosqhvnm'
   )
   const space = {
-    meta: vi.fn().mockImplementation(() => Object.assign({
-      access: {
-        type: 'public'
-      }
-    })),
+    meta: vi.fn().mockImplementation(() =>
+      Object.assign({
+        access: {
+          type: 'public',
+        },
+      })
+    ),
   }
   const client = {
     uploadDirectory: vi.fn().mockImplementation(() => cid),
     currentSpace: vi.fn().mockImplementation(() => space),
   }
-  
+
   const contextValue: ContextValue = [
     {
       ...ContextDefaultValue[0],
@@ -116,11 +120,13 @@ test('wrapping a file in a directory', async () => {
     'bafybeibrqc2se2p3k4kfdwg7deigdggamlumemkiggrnqw3edrjosqhvnm'
   )
   const space = {
-    meta: vi.fn().mockImplementation(() => Object.assign({
-      access: {
-        type: 'public'
-      }
-    })),
+    meta: vi.fn().mockImplementation(() =>
+      Object.assign({
+        access: {
+          type: 'public',
+        },
+      })
+    ),
   }
   const client = {
     uploadDirectory: vi.fn().mockImplementation(() => cid),
@@ -163,11 +169,13 @@ test('uploading a CAR directly', async () => {
     'bafybeibrqc2se2p3k4kfdwg7deigdggamlumemkiggrnqw3edrjosqhvnm'
   )
   const space = {
-    meta: vi.fn().mockImplementation(() => Object.assign({
-      access: {
-        type: 'public'
-      }
-    })),
+    meta: vi.fn().mockImplementation(() =>
+      Object.assign({
+        access: {
+          type: 'public',
+        },
+      })
+    ),
   }
   const client = {
     uploadCAR: vi.fn().mockImplementation(() => cid),
