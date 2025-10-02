@@ -52,6 +52,10 @@ export const allocate = async ({ capability }, context) => {
         continue
       }
       const consumer = result.ok
+      if (consumer.limit === 0) {
+        providersWithSpace.push(provider)
+        continue
+      }
       if (!accountUsage[consumer.customer]) {
         const usageResult = await accountUsageGet(
           { capability: { with: consumer.customer, nb: {} } },
@@ -65,8 +69,7 @@ export const allocate = async ({ capability }, context) => {
       if (
         accountUsageByProvider(accountUsage[consumer.customer], provider) +
           capability.nb.size <=
-          consumer.limit ||
-        consumer.limit === 0
+        consumer.limit
       ) {
         providersWithSpace.push(provider)
       }
