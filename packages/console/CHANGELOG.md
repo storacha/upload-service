@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.7.0](https://github.com/storacha/upload-service/compare/console-v2.6.0...console-v2.7.0) (2025-10-02)
+
+
+### Features
+
+* configre xenea campaign ([31b2af3](https://github.com/storacha/upload-service/commit/31b2af3f0cfdd58b55acf95543dd3f5b9e9bb4c1))
+* **console:** add configurable marketing notice banner for Xenea collaboration ([#369](https://github.com/storacha/upload-service/issues/369)) ([2dc9b8a](https://github.com/storacha/upload-service/commit/2dc9b8a39955d2aa23581ed8638b6d13d51b8c48))
+
+
+### Fixes
+
+* Typo ([#435](https://github.com/storacha/upload-service/issues/435)) ([b384c05](https://github.com/storacha/upload-service/commit/b384c05c37f8c02a05ed83fd707b04356ff51398))
+
+
+### Other Changes
+
+* **release:** publish ([8ed7689](https://github.com/storacha/upload-service/commit/8ed768945a14282ac9c9e5af3105f6859815a140))
+* **release:** publish ([49088de](https://github.com/storacha/upload-service/commit/49088de16bb19a7c375d79e4f26ff6aa5903e420))
+
 ## [2.6.0](https://github.com/storacha/upload-service/compare/console-v2.5.1...console-v2.6.0) (2025-09-22)
 
 
