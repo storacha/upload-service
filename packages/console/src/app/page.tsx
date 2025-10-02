@@ -10,6 +10,8 @@ import { SpacesList } from '@/components/SpacesList'
 import { UpgradePrompt } from '@/components/UpgradePrompt'
 import { usePrivateSpacesAccess } from '@/hooks/usePrivateSpacesAccess'
 import { useFilteredSpaces } from '@/hooks/useFilteredSpaces'
+import { NoticeBanner } from '@/components/NoticeBanner'
+import { noticeConfig } from '@/config/notice'
 
 export default function HomePage() {
   return (
@@ -39,6 +41,15 @@ export function SpacePage() {
 
   return (
     <>
+      {/* Banner at the top of main content - only shown if enabled */}
+      <NoticeBanner
+        show={noticeConfig.enabled}
+        text={noticeConfig.text}
+        href={noticeConfig.href}
+        displayUntil={noticeConfig.displayUntil}
+        dismissible={noticeConfig.dismissible}
+      />
+
       <SpacesNav />
       <H1>Spaces</H1>
       <SpacesTabNavigation
@@ -60,4 +71,3 @@ export function SpacePage() {
     </>
   )
 }
-
