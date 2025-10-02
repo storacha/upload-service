@@ -77,7 +77,7 @@ export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.
       <AuthenticationEnsurer>
         <MaybePlanGate>
           <SpaceEnsurer>
-            <div className='flex min-h-screen w-full text-white'>
+            <div className='flex h-screen w-full text-white overflow-hidden'>
               {/* dialog sidebar for narrow browsers */}
               <Transition.Root show={sidebarOpen} >
                 <Dialog onClose={() => setSidebarOpen(false)} as='div' className='relative z-50'>
@@ -108,17 +108,17 @@ export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.
                   </div>
                 </Dialog>
               </Transition.Root>
-              {/* static sidebar for wide browsers */}
-              <div className='hidden lg:block'>
+              {/* fixed sidebar for wide browsers */}
+              <div className='hidden lg:block fixed left-0 top-0 h-full z-40'>
                 <Sidebar />
               </div>
-              <div className='bg-racha-fire/50 w-full'>
+              <div className='bg-racha-fire/50 w-full lg:ml-64 flex flex-col'>
                 {/* top nav bar for narrow browsers, mainly to have a place to put the hamburger */}
-                <div className='lg:hidden flex justify-between pt-4 px-4'>
+                <div className='lg:hidden flex justify-between pt-4 px-4 flex-shrink-0'>
                   <Bars3Icon className='text-hot-red w-6 h-6' onClick={() => setSidebarOpen(true)} />
                   <Logo className='w-full' />
                 </div>
-                <main className='grow text-black p-12'>
+                <main className='flex-1 text-black p-12 overflow-y-auto'>
                   {children}
                 </main>
               </div>
@@ -134,7 +134,7 @@ export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.
 export function IframeSidebarLayout ({ children }: LayoutComponentProps): JSX.Element {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   return (
-    <div className='flex min-h-screen w-full text-white'>
+    <div className='flex h-screen w-full text-white overflow-hidden'>
       {/* dialog sidebar for narrow browsers */}
       <Transition.Root show={sidebarOpen} >
         <Dialog onClose={() => setSidebarOpen(false)} as='div' className='relative z-50'>
@@ -165,17 +165,17 @@ export function IframeSidebarLayout ({ children }: LayoutComponentProps): JSX.El
           </div>
         </Dialog>
       </Transition.Root>
-      {/* static sidebar for wide browsers */}
-      <div className='hidden lg:block'>
+      {/* fixed sidebar for wide browsers */}
+      <div className='hidden lg:block fixed left-0 top-0 h-full z-40'>
         <Sidebar />
       </div>
-      <div className='bg-racha-fire/50 w-full'>
+      <div className='bg-racha-fire/50 w-full lg:ml-64 flex flex-col'>
         {/* top nav bar for narrow browsers, mainly to have a place to put the hamburger */}
-        <div className='lg:hidden flex justify-between pt-4 px-4'>
+        <div className='lg:hidden flex justify-between pt-4 px-4 flex-shrink-0'>
           <Bars3Icon className='text-hot-red w-6 h-6' onClick={() => setSidebarOpen(true)} />
           <Logo className='w-full' />
         </div>
-        <main className='grow text-black p-12'>
+        <main className='flex-1 text-black p-12 overflow-y-auto'>
           {children}
         </main>
       </div>
