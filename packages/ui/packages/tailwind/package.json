@@ -1,0 +1,21 @@
+{
+  "name": "@storacha/ui-tailwind",
+  "version": "2.9.30",
+  "description": "Tailwind CSS plugin for Storacha UI components",
+  "main": "index.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "index.js"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/storacha/upload-service.git"
+  },
+  "author": "Storacha Team",
+  "license": "Apache-2.0 OR MIT",
+  "peerDependencies": {
+    "tailwindcss": "^3.0.0"
+  }
+}
