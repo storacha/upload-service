@@ -1,3 +1,13 @@
+## 2.3.2 (2025-10-02)
+
+### 🩹 Fixes
+
+- only calculate space usage when limited ([0b8fd6ad](https://github.com/storacha/upload-service/commit/0b8fd6ad))
+
+### ❤️ Thank You
+
+- hannahhoward
+
 ## 2.3.1 (2025-10-01)
 
 ### 🩹 Fixes
