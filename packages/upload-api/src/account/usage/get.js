@@ -41,7 +41,7 @@ export const get = async ({ capability }, context) => {
     subscriptionsBySpace = filteredSubscriptionsBySpace
   }
 
-  // lexocographically order by space DID
+  // lexicographically order by space DID
   subscriptionsBySpace = Object.fromEntries(
     Object.entries(subscriptionsBySpace).sort(([a], [b]) => (a < b ? -1 : 1))
   )
@@ -61,27 +61,31 @@ export const get = async ({ capability }, context) => {
     total: 0,
     spaces: {},
   }
-  for (const [
-    space,
-    providers,
-  ] of /** @type {[API.SpaceDID, API.ProviderDID[]][]} */ (
-    Object.entries(subscriptionsBySpace)
-  )) {
-    /** @type {API.SpaceUsage} */
-    bySpace.spaces[space] = {
-      total: 0,
-      providers: {},
-    }
+  const subsBySpaceEntries =
+    /** @type {[API.SpaceDID, API.ProviderDID[]][]} */
+    (Object.entries(subscriptionsBySpace))
 
-    // lexographically order providers by Provider DID
-    for (const provider of providers.sort()) {
-      const res = await context.usageStorage.report(provider, space, period)
-      if (res.error) return res
-      bySpace.spaces[space].providers[provider] = res.ok
-      bySpace.spaces[space].total += res.ok.size.final
-      bySpace.total += res.ok.size.final
-    }
+  const reports = await Promise.all(
+    subsBySpaceEntries.map(([space, providers]) =>
+      // lexicographically order providers by Provider DID
+      Promise.all(
+        providers
+          .sort()
+          .map((p) => context.usageStorage.report(p, space, period))
+      )
+    )
+  )
+
+  for (const report of reports.flat()) {
+    if (report.error) return report
+    const { provider, space, size } = report.ok
+    /** @type {API.SpaceUsage} */
+    bySpace.spaces[space] = bySpace.spaces[space] ?? { total: 0, providers: {} }
+    bySpace.spaces[space].providers[provider] = report.ok
+    bySpace.spaces[space].total += size.final
+    bySpace.total += size.final
   }
+
   return { ok: bySpace }
 }
 
