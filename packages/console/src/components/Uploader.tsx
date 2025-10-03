@@ -67,7 +67,7 @@ export const Errored = ({ error }: { error: any }): JSX.Element => {
   useEffect(() => {
     if (error != null) {
       // eslint-disable-next-line no-console
-      logAndCaptureError(new Error('Uploader Error:', { cause: error }))
+      logAndCaptureError(new Error(`Uploader Error: ${error.message}`, { cause: error }))
     }
   }, [error])
 
