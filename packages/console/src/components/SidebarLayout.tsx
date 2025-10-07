@@ -11,7 +11,6 @@ import { MaybePlanGate } from './PlanGate'
 import { SpaceFinder } from './SpaceFinder'
 import { usePathname, useRouter } from 'next/navigation'
 import { H2 } from './Text'
-import { SidebarMigrations } from './SidebarMigrations'
 
 const navLinks = [
   { name: 'Terms', href: 'https://docs.storacha.network/terms/' },
@@ -45,9 +44,6 @@ function Sidebar ({ sidebar = <div></div> }: SidebarComponentProps): JSX.Element
           <div className='my-6'>
             <H2 className='text-white'>Spaces</H2>
             <SpaceFinder spaces={spaces} selected={space} setSelected={goToSpace} />
-          </div>
-          <div className='my-6'>
-            <SidebarMigrations />
           </div>
         </div>
         {sidebar}
