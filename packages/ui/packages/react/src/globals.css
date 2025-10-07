@@ -1,0 +1,199 @@
+/* Global CSS for StorachaAuth components */
+
+/* Font family for Epilogue */
+.font-epilogue {
+  font-family: "Epilogue", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* Background with fire pattern */
+.bg-racha-fire {
+  background: #EFE3F3 url("/racha-fire.jpg") bottom left;
+  background-size: 100% auto;
+  background-position: bottom;
+  background-repeat: no-repeat;
+}
+
+.bg-racha-fire\/50 {
+  background: transparent url("/racha-fire.jpg") bottom left;
+  background-size: 100% auto;
+  background-position: bottom;
+  background-repeat: no-repeat;
+  opacity: 0.5;
+}
+
+/* Authenticator container - matches console exactly */
+.authenticator {
+  background: #EFE3F3 url("/racha-fire.jpg") bottom left;
+  background-size: 100% auto;
+  background-position: bottom;
+  background-repeat: no-repeat;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem 0;
+}
+
+/* Animation for background drift */
+@keyframes bgPosDrift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Gradient background utility */
+.bg-grad {
+  background-color: rgb(244 244 245);
+  background-image: linear-gradient(225deg, #ff149296 0%, #00ffff96 100%);
+  background-size: 400% 400%;
+  animation: bgPosDrift 60s ease infinite;
+}
+
+/* StorachaAuth form styles */
+.storacha-auth-form {
+  color: #E91315;
+  background: white;
+  border: 1px solid #E91315;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 2rem 2.5rem;
+}
+
+.storacha-auth-logo-container {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  justify-content: center;
+}
+
+.storacha-auth-logo {
+  width: 9rem;
+}
+
+.storacha-auth-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-family: "Epilogue", sans-serif;
+  margin: 0.25rem;
+}
+
+.storacha-auth-input {
+  color: black;
+  padding: 0.5rem;
+  border-radius: 0.75rem;
+  display: block;
+  margin-bottom: 1rem;
+  border: 1px solid #E91315;
+  width: 20rem;
+}
+
+.storacha-auth-button-container {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.storacha-auth-button {
+  display: inline-block;
+  background: #E91315;
+  border: 1px solid #E91315;
+  color: white;
+  font-family: "Epilogue", sans-serif;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  padding: 0.5rem 1.5rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.storacha-auth-button:hover {
+  background: white;
+  color: #E91315;
+}
+
+.storacha-auth-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.storacha-auth-terms {
+  font-size: 0.75rem;
+  color: rgba(0, 0, 0, 0.8);
+  font-style: italic;
+  max-width: 20rem;
+  text-align: center;
+  margin-top: 1.5rem;
+}
+
+.storacha-auth-terms a {
+  text-decoration: underline;
+}
+
+.storacha-auth-submitted-container {
+  color: #E91315;
+  background: white;
+  border: 1px solid #E91315;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 2rem 2.5rem;
+}
+
+.storacha-auth-submitted-title {
+  font-size: 1.25rem;
+  font-family: "Epilogue", sans-serif;
+}
+
+.storacha-auth-submitted-text {
+  padding-top: 0.5rem;
+  padding-bottom: 1rem;
+}
+
+.storacha-auth-submitted-email {
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+
+/* StorachaAuth loader styles */
+.storacha-auth-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: #EFE3F3;
+}
+
+.storacha-auth-spinner {
+  height: 2rem;
+  width: 2rem;
+  border: 4px solid #E91315;
+  border-top: 4px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+.storacha-auth-loader-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.storacha-auth-loader-text {
+  color: #6b7280;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
