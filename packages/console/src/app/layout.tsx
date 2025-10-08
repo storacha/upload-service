@@ -2,7 +2,6 @@ import './globals.css'
 import type { Metadata } from 'next'
 import Provider from '@/components/W3UIProvider'
 import Toaster from '@/components/Toaster'
-import { Provider as MigrationsProvider } from '@/components/MigrationsProvider'
 import { IframeProvider } from '@/contexts/IframeContext'
 import PlausibleProvider from 'next-plausible' 
 
@@ -34,9 +33,7 @@ export default function RootLayout ({
         >
           <IframeProvider>
             <Provider>
-              <MigrationsProvider>
-                {children}
-              </MigrationsProvider>
+              {children}
             </Provider>
             <Toaster />
           </IframeProvider>
