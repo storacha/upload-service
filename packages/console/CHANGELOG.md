@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.9.0](https://github.com/storacha/upload-service/compare/console-v2.8.0...console-v2.9.0) (2025-10-10)
+
+
+### Features
+
+* remove migrations UI from console ([#450](https://github.com/storacha/upload-service/issues/450)) ([9ea83f0](https://github.com/storacha/upload-service/commit/9ea83f025cfbf14df33409f3a33ef76903473030))
+* upgrade to new humanode CVM ([#451](https://github.com/storacha/upload-service/issues/451)) ([6f89301](https://github.com/storacha/upload-service/commit/6f8930178626b0c1f4929889dada52b9a2dc8631))
+
+
+### Fixes
+
+* **Console UI:** Keep Sidebar & Navbar Fixed, Enable Content-Only Scrolling ([#441](https://github.com/storacha/upload-service/issues/441)) ([01672df](https://github.com/storacha/upload-service/commit/01672dfe91dfbc04e7f6cb99d52e9450bc00ecb3)), closes [#434](https://github.com/storacha/upload-service/issues/434)
+
 ## [2.8.0](https://github.com/storacha/upload-service/compare/console-v2.7.0...console-v2.8.0) (2025-10-06)
 
 
