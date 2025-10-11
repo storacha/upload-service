@@ -6,7 +6,7 @@ import { SpacesNav } from './space/layout'
 import { H1 } from '@/components/Text'
 import SidebarLayout from '@/components/SidebarLayout'
 import { SpacesTabNavigation } from '@/components/SpacesTabNavigation'
-import { SpacesList } from '@/components/SpacesList'
+import { SpaceManager } from '@/components/SpaceManager'
 import { UpgradePrompt } from '@/components/UpgradePrompt'
 import { usePrivateSpacesAccess } from '@/hooks/usePrivateSpacesAccess'
 import { useFilteredSpaces } from '@/hooks/useFilteredSpaces'
@@ -59,11 +59,11 @@ export function SpacePage() {
         privateTabLocked={!canAccessPrivateSpaces}
       />
       {activeTab === 'public' && (
-        <SpacesList spaces={publicSpaces} type="public" />
+        <SpaceManager spaceType="public" />
       )}
       {activeTab === 'private' && (
         canAccessPrivateSpaces ? (
-          <SpacesList spaces={privateSpaces} type="private" />
+          <SpaceManager spaceType="private" />
         ) : (
           <UpgradePrompt hasHiddenSpaces={hasHiddenPrivateSpaces} />
         )
