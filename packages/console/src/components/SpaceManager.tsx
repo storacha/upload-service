@@ -17,7 +17,7 @@ interface SpaceListDisplayProps {
 }
 
 function SpaceListDisplay({ spaces, type }: SpaceListDisplayProps) {
-  const [, { selectSpace }] = useSpacePicker()
+  // Note: useSpacePicker is not used in display component since we use Next.js routing
 
   if (spaces.length === 0) {
     return (
@@ -70,7 +70,7 @@ function SpaceListItem({ space }: SpaceListItemProps) {
 }
 
 function CreateSpaceDialog() {
-  const [{ showCreateDialog, newSpaceName, creatingSpace, createError }, { setShowCreateDialog, setNewSpaceName, createSpace }] = useSpacePicker()
+  const [{ showCreateDialog, newSpaceName, creatingSpace, createError }, { setShowCreateDialog, createSpace }] = useSpacePicker()
 
   if (!showCreateDialog) return null
 

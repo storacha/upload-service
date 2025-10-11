@@ -1,9 +1,9 @@
 'use client'
 
-import { SharingManager } from '@/components/SharingManager'
+import { ShareSpace } from '@/share'
 
 export default function SharePage ({params}): JSX.Element {
   return (
-    <SharingManager spaceDID={decodeURIComponent(params.did)}/>
+    <ShareSpace spaceDID={decodeURIComponent(params.did)}/>
   )
 }
