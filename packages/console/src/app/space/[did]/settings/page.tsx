@@ -30,7 +30,7 @@ export default function SpaceSettingsPage({ params }: PageProps): JSX.Element {
       <div className='border border-hot-red rounded-2xl bg-white p-5 max-w-4xl'>
         <H2>Space Management</H2>
         <button 
-          onClick={() => window.open('https://forms.gle/hCZRauWXmFSJJ4eY6', '_blank')}
+          onClick={() => window.open('https://forms.gle/UyxnioZtfj5qGLNj6', '_blank')}
           className='bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200'
         >
           Request Space Deletion
