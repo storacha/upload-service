@@ -73,7 +73,7 @@ function PlanPicker({
 export default function StripePricingTable({ className = '' }) {
   const [{ accounts, client }] = useW3()
   const account = accounts[0]
-  async function startCheckoutSession(planID: DID) {
+  async function startCheckoutSession(planID: DID, freeTrial: boolean) {
     if (!client) {
       throw new Error(
         'tried to create checkout session but storacha client is not defined'
@@ -85,7 +85,7 @@ export default function StripePricingTable({ className = '' }) {
           successURL: location.href,
           cancelURL: location.href,
           planID,
-          freeTrial: false,
+          freeTrial,
         }
       )
       window.open(response.url)
@@ -101,6 +101,7 @@ export default function StripePricingTable({ className = '' }) {
         overage={0.15}
         planID="did:web:starter.storacha.network"
         pick={startCheckoutSession}
+        freeTrial={true}
       />
       <PlanPicker
         name="Medium"
@@ -110,6 +111,7 @@ export default function StripePricingTable({ className = '' }) {
         overage={0.05}
         planID="did:web:lite.storacha.network"
         pick={startCheckoutSession}
+        freeTrial={true}
       />
       <PlanPicker
         name="Extra Spicy"
@@ -119,6 +121,7 @@ export default function StripePricingTable({ className = '' }) {
         overage={0.03}
         planID="did:web:business.storacha.network"
         pick={startCheckoutSession}
+        freeTrial={true}
       />
     </div>
   )
