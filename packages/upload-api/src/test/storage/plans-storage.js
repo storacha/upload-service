@@ -77,4 +77,18 @@ export class PlansStorage {
       }
     }
   }
+
+  /**
+   * @param {Types.AccountDID} account
+   * @returns {Promise<import('@ucanto/interface').Result<import('../types.js').PlanCreateCheckoutSessionSuccess, import('../types.js').PlanCreateCheckoutSessionFailure>>}
+   */
+  async createCheckoutSession(account) {
+    if (this.plans[account]) {
+      return { ok: { url: 'https://example.com/checkout-session' } }
+    } else {
+      return {
+        error: { name: 'CustomerNotFound', message: `${account} not found` },
+      }
+    }
+  }
 }
