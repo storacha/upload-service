@@ -24,6 +24,7 @@ type PlanInitializeFailure = CustomerExists | UnexpectedError
 export interface PlanCreateCheckoutSessionOptions {
   successURL: string
   cancelURL: string
+  freeTrial: boolean
 }
 
 /**

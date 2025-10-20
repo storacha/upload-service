@@ -21,6 +21,7 @@ const createCheckoutSession = async ({ capability }, context) =>
     capability.nb.planID,
     {
       successURL: capability.nb.successURL,
-      cancelURL: capability.nb.cancelURL
+      cancelURL: capability.nb.cancelURL,
+      freeTrial: capability.nb.freeTrial
     }
   )
