@@ -4,9 +4,7 @@ import { PropsWithChildren } from 'react'
 import { useW3 } from '@storacha/ui-react'
 import { DidIcon } from '@/components/DidIcon'
 import { Nav, NavLink } from '@/components/Nav'
-import { QueueListIcon, ShareIcon, CloudArrowUpIcon, Cog6ToothIcon } from '@heroicons/react/24/outline'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { QueueListIcon, ShareIcon, CloudArrowUpIcon } from '@heroicons/react/24/outline'
 
 interface LayoutProps extends PropsWithChildren {
   params: {
@@ -16,7 +14,6 @@ interface LayoutProps extends PropsWithChildren {
 
 export default function Layout ({children, params}: LayoutProps): JSX.Element {
   const [{ spaces }] = useW3()
-  const pathname = usePathname()
   
   if (!params.did) {
     return <h1>NO SPACE?</h1>
@@ -28,8 +25,6 @@ export default function Layout ({children, params}: LayoutProps): JSX.Element {
     console.warn(`not a known space to this agent: ${spaceDID}`)
     return <div />
   }
-
-  const isSettingsPage = pathname.includes('/settings')
 
   return (
     <section>
@@ -51,15 +46,6 @@ export default function Layout ({children, params}: LayoutProps): JSX.Element {
               <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${space.access?.type === 'private' ? 'bg-hot-red text-white' : 'bg-blue-500 text-white'}`}>
                 {space.access?.type === 'private' ? 'Private' : 'Public'}
               </span>
-              {!isSettingsPage && (
-                <Link 
-                  href={`/space/${space.did()}/settings`}
-                  title='Space Settings'
-                  className='ml-2 p-1 hover:bg-gray-100 rounded-full transition-colors duration-200'
-                >
-                  <Cog6ToothIcon className='w-5 h-5 text-gray-600 hover:text-gray-800' />
-                </Link>
-              )}
             </div>
             <label className='font-mono text-xs'>
               {space.did()}
