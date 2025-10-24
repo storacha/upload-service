@@ -1,3 +1,20 @@
+## 1.6.8 (2025-10-24)
+
+### 🩹 Fixes
+
+- feat: skip index fetch if content link and retrieval auth is provided ([b42c6142](https://github.com/storacha/upload-service/commit/b42c6142))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.6.2
+- Updated @storacha/capabilities to 1.10.0
+- Updated @storacha/client to 1.8.4
+- Updated @storacha/upload-api to 2.4.0
+
+### ❤️ Thank You
+
+- Alan Shaw
+
 ## 1.6.2 (2025-10-02)
 
 ### 🧱 Updated Dependencies
