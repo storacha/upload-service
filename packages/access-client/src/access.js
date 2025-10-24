@@ -382,6 +382,7 @@ export const toCapabilities = (access) => {
  * Set of capabilities required by the agent to manage a space.
  */
 export const spaceAccess = {
+  'assert/*': {},
   'space/*': {},
   'blob/*': {},
   'index/*': {},
