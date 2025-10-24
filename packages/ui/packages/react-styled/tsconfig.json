@@ -1,0 +1,22 @@
+{
+  "extends": "../../../../tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "lib": ["ES2022", "DOM"],
+    "types": ["vitest/globals"],
+    "jsx": "react",
+    "esModuleInterop": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", "dist"],
+  "references": [
+    {
+      "path": "../react"
+    },
+    {
+      "path": "../core"
+    }
+  ]
+}
