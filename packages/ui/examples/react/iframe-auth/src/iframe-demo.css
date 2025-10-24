@@ -1,0 +1,142 @@
+/* Host page styling for iframe demo */
+.host-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  padding: 2rem;
+}
+
+.host-header {
+  max-width: 1200px;
+  margin: 0 auto 2rem;
+  color: white;
+}
+
+.host-header h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.host-header p {
+  opacity: 0.9;
+  font-size: 1.125rem;
+}
+
+.iframe-demo-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.demo-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.demo-card h2 {
+  color: #1e3a8a;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.demo-card p {
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.demo-iframe {
+  width: 100%;
+  height: 600px;
+  border: 2px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: white;
+}
+
+.auth-status {
+  background: #f0fdf4;
+  border: 2px solid #86efac;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+
+.auth-status.authenticated {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.auth-status.not-authenticated {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.auth-status h3 {
+  color: #16a34a;
+  font-size: 1.125rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.auth-status.not-authenticated h3 {
+  color: #dc2626;
+}
+
+.auth-status p {
+  color: #15803d;
+  margin: 0;
+}
+
+.auth-status.not-authenticated p {
+  color: #991b1b;
+}
+
+.code-example {
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.code-example pre {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+
+.feature-list li {
+  padding: 0.5rem 0;
+  padding-left: 1.5rem;
+  position: relative;
+  color: #475569;
+}
+
+.feature-list li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #10b981;
+  font-weight: bold;
+}
+
+@media (max-width: 1024px) {
+  .iframe-demo-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+

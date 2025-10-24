@@ -3,6 +3,9 @@
   "include": ["src/**/*"],
   "references": [
     {
+      "path": "../../../packages/react-styled/tsconfig.lib.json"
+    },
+    {
       "path": "../../../packages/react/tsconfig.lib.json"
     },
     {

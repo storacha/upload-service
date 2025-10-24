@@ -1,0 +1,221 @@
+/* Custom styling example with Chakra-inspired design */
+:root {
+  --chakra-purple: #805AD5;
+  --chakra-purple-light: #D6BCFA;
+  --chakra-green: #38A169;
+  --chakra-bg: #F7FAFC;
+  --chakra-border: #E2E8F0;
+  --chakra-text: #2D3748;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  background: var(--chakra-bg);
+  color: var(--chakra-text);
+}
+
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.auth-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 3rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 480px;
+  width: 100%;
+}
+
+.auth-logo {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.auth-logo h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--chakra-purple);
+  margin-bottom: 0.5rem;
+}
+
+.auth-logo p {
+  color: #718096;
+  font-size: 0.875rem;
+}
+
+.auth-form-group {
+  margin-bottom: 1.5rem;
+}
+
+.auth-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--chakra-text);
+  font-size: 0.875rem;
+}
+
+.auth-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--chakra-border);
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: var(--chakra-purple);
+  box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.1);
+}
+
+.auth-button {
+  width: 100%;
+  padding: 0.875rem 2rem;
+  background: var(--chakra-purple);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-button:hover {
+  background: #6B46C1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(128, 90, 213, 0.3);
+}
+
+.auth-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.auth-submitted {
+  text-align: center;
+}
+
+.auth-submitted h2 {
+  color: var(--chakra-purple);
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.auth-submitted p {
+  color: #4A5568;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.auth-submitted .email-highlight {
+  color: var(--chakra-purple);
+  font-weight: 600;
+}
+
+.auth-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loader-text {
+  color: white;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.authenticated-container {
+  min-height: 100vh;
+  padding: 2rem;
+  background: var(--chakra-bg);
+}
+
+.authenticated-card {
+  max-width: 600px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.authenticated-header {
+  border-bottom: 2px solid var(--chakra-border);
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.authenticated-header h1 {
+  color: var(--chakra-purple);
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.auth-info {
+  background: var(--chakra-purple-light);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.auth-info p {
+  color: var(--chakra-text);
+  line-height: 1.5;
+}
+
+.auth-info strong {
+  color: var(--chakra-purple);
+  font-weight: 600;
+}
+
+.logout-button {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--chakra-purple);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logout-button:hover {
+  background: #6B46C1;
+  transform: translateY(-1px);
+}
+
+

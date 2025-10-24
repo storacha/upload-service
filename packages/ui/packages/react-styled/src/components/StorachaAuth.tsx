@@ -18,39 +18,35 @@ export const StorachaAuthProvider = (props: StorachaAuthProps) => {
  */
 export const StorachaAuthForm = () => {
   return (
-    <HeadlessStorachaAuth.Form
-      renderContainer={(children) => (
-        <div className='authenticator'>
-          {children}
-          <p className='storacha-auth-terms'>
-            By registering with storacha.network, you agree to the storacha.network{' '}
-            <a href='https://docs.storacha.network/terms/'>Terms of Service</a>.
-          </p>
-        </div>
-      )}
-      renderLogo={() => (
+    <div className='authenticator'>
+      <HeadlessStorachaAuth.Form className='storacha-auth-form'>
         <div className='storacha-auth-logo-container'>
           <img src="/storacha-logo.svg" alt="Storacha" className='storacha-auth-logo' />
         </div>
-      )}
-      renderEmailLabel={() => (
-        <label className='storacha-auth-label' htmlFor='storacha-auth-email'>
-          Email
-        </label>
-      )}
-      renderSubmitButton={(disabled) => (
+        <div>
+          <label className='storacha-auth-label' htmlFor='storacha-auth-email'>
+            Email
+          </label>
+          <HeadlessStorachaAuth.EmailInput
+            className='storacha-auth-input'
+            id='storacha-auth-email'
+            required
+          />
+        </div>
         <div className='storacha-auth-button-container'>
           <button
             className='storacha-auth-button'
             type='submit'
-            disabled={disabled}
           >
             Authorize
           </button>
         </div>
-      )}
-      className='storacha-auth-form'
-    />
+      </HeadlessStorachaAuth.Form>
+      <p className='storacha-auth-terms'>
+        By registering with storacha.network, you agree to the storacha.network{' '}
+        <a href='https://docs.storacha.network/terms/'>Terms of Service</a>.
+      </p>
+    </div>
   )
 }
 

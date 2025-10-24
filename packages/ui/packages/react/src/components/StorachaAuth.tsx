@@ -244,9 +244,40 @@ export const StorachaAuthForm = ({
   renderEmailLabel,
   renderSubmitButton,
   renderTerms,
+  children,
   ...formProps 
 }: StorachaAuthFormProps) => {
   const [{ handleRegisterSubmit, submitted }] = useStorachaAuth()
+
+  // If children are provided, render them directly (styled component pattern)
+  if (children) {
+    return (
+      <form 
+        {...formProps} 
+        onSubmit={handleRegisterSubmit}
+        className={className}
+        style={style}
+      >
+        {children as ReactNode}
+      </form>
+    )
+  }
+
+  // Otherwise use render props pattern (headless pattern)
+  // Provide default renderers if none are supplied (for testing/simple usage)
+  const defaultRenderLogo = () => <img src="/storacha-logo.svg" alt="Storacha" />
+  const defaultRenderEmailLabel = () => <label htmlFor="storacha-auth-email">Email</label>
+  const defaultRenderSubmitButton = (disabled: boolean) => (
+    <button type="submit" disabled={disabled}>
+      Authorize
+    </button>
+  )
+  const defaultRenderTerms = () => (
+    <p>
+      By registering with storacha.network, you agree to the storacha.network{' '}
+      <a href="https://docs.storacha.network/terms/">Terms of Service</a>.
+    </p>
+  )
 
   const formContent = (
     <form 
@@ -255,16 +286,16 @@ export const StorachaAuthForm = ({
       className={className}
       style={style}
     >
-      {renderLogo?.()}
+      {(renderLogo || defaultRenderLogo)()}
       <div>
-        {renderEmailLabel?.()}
+        {(renderEmailLabel || defaultRenderEmailLabel)()}
         <StorachaAuthEmailInput 
           id='storacha-auth-email' 
           required 
         />
       </div>
       <div>
-        {renderSubmitButton?.(submitted)}
+        {(renderSubmitButton || defaultRenderSubmitButton)(submitted)}
       </div>
     </form>
   )
@@ -272,7 +303,7 @@ export const StorachaAuthForm = ({
   const content = (
     <>
       {renderContainer ? renderContainer(formContent) : formContent}
-      {renderTerms?.()}
+      {(renderTerms || defaultRenderTerms)()}
     </>
   )
 
@@ -380,16 +411,28 @@ export const StorachaAuthSubmitted = ({
 }: StorachaAuthSubmittedProps) => {
   const [{ email }] = useStorachaAuth()
 
+  // Provide default renderers if none are supplied
+  const defaultRenderLogo = () => <img src="/storacha-logo.svg" alt="Storacha" />
+  const defaultRenderTitle = () => <h1>Verify your email address!</h1>
+  const defaultRenderMessage = (email: string) => (
+    <p>
+      Click the link in the email we sent to <span>{email}</span> to authorize this agent.
+      <br />
+      Once authorized you can close this window and return to the app.
+    </p>
+  )
+  const defaultRenderCancelButton = () => <StorachaAuthCancelButton>Cancel</StorachaAuthCancelButton>
+
   const content = (
     <div 
       {...divProps}
       className={className}
       style={style}
     >
-      {renderLogo?.()}
-      {renderTitle?.()}
-      {renderMessage?.(email || '')}
-      {renderCancelButton?.()}
+      {(renderLogo || defaultRenderLogo)()}
+      {(renderTitle || defaultRenderTitle)()}
+      {(renderMessage || defaultRenderMessage)(email || '')}
+      {(renderCancelButton || defaultRenderCancelButton)()}
     </div>
   )
 
