@@ -27,7 +27,7 @@ export const getExternalServiceImplementations = async (config) => {
   if (config.serviceID.did().startsWith('did:web')) {
     principalResolver.resolveDIDKey = (did) =>
       did === config.serviceID.did()
-        ? ok(config.serviceID.toDIDKey())
+        ? ok([config.serviceID.toDIDKey()])
         : error(new DIDResolutionError(did))
   }
 
