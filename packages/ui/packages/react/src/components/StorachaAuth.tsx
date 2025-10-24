@@ -244,10 +244,26 @@ export const StorachaAuthForm = ({
   renderEmailLabel,
   renderSubmitButton,
   renderTerms,
+  children,
   ...formProps 
 }: StorachaAuthFormProps) => {
   const [{ handleRegisterSubmit, submitted }] = useStorachaAuth()
 
+  // If children are provided, render them directly (styled component pattern)
+  if (children) {
+    return (
+      <form 
+        {...formProps} 
+        onSubmit={handleRegisterSubmit}
+        className={className}
+        style={style}
+      >
+        {children as ReactNode}
+      </form>
+    )
+  }
+
+  // Otherwise use render props pattern (headless pattern)
   const formContent = (
     <form 
       {...formProps} 

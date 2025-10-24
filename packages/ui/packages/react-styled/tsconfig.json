@@ -5,9 +5,9 @@
     "outDir": "dist",
     "rootDir": "src",
     "lib": ["ES2022", "DOM"],
-    "types": ["vitest/globals"],
     "jsx": "react",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "skipLibCheck": true
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "dist"],
