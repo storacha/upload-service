@@ -94,8 +94,8 @@ catalogs:
       specifier: ^9.0.1
       version: 9.0.1
     '@ucanto/core':
-      specifier: ^10.4.0
-      version: 10.4.0
+      specifier: ^10.4.2
+      version: 10.4.2
     '@ucanto/interface':
       specifier: ^10.3.0
       version: 10.3.0
@@ -382,7 +382,7 @@ importers:
         version: 9.0.1
       '@ucanto/core':
         specifier: 'catalog:'
-        version: 10.4.0
+        version: 10.4.2
       '@ucanto/interface':
         specifier: 'catalog:'
         version: 10.3.0
@@ -479,7 +479,7 @@ importers:
         version: 1.0.1
       '@ucanto/core':
         specifier: 'catalog:'
-        version: 10.4.0
+        version: 10.4.2
       '@ucanto/interface':
         specifier: 'catalog:'
         version: 10.3.0
@@ -522,7 +522,7 @@ importers:
     dependencies:
       '@ucanto/core':
         specifier: 'catalog:'
-        version: 10.4.0
+        version: 10.4.2
       '@ucanto/interface':
         specifier: 'catalog:'
         version: 10.3.0
@@ -613,7 +613,7 @@ importers:
         version: 9.0.1
       '@ucanto/core':
         specifier: 'catalog:'
-        version: 10.4.0
+        version: 10.4.2
       '@ucanto/transport':
         specifier: 'catalog:'
         version: 9.2.0
@@ -752,7 +752,7 @@ importers:
         version: 9.0.1
       '@ucanto/core':
         specifier: 'catalog:'
-        version: 10.4.0
+        version: 10.4.2
       '@ucanto/interface':
         specifier: 'catalog:'
         version: 10.3.0
@@ -948,7 +948,7 @@ importers:
         version: 9.0.1
       '@ucanto/core':
         specifier: 'catalog:'
-        version: 10.4.0
+        version: 10.4.2
       '@ucanto/interface':
         specifier: 'catalog:'
         version: 10.3.0
@@ -1030,7 +1030,7 @@ importers:
         version: 9.0.1
       '@ucanto/core':
         specifier: 'catalog:'
-        version: 10.4.0
+        version: 10.4.2
       '@ucanto/interface':
         specifier: 'catalog:'
         version: 10.3.0
@@ -1109,7 +1109,7 @@ importers:
         version: 9.0.1
       '@ucanto/core':
         specifier: 'catalog:'
-        version: 10.4.0
+        version: 10.4.2
       '@ucanto/interface':
         specifier: 'catalog:'
         version: 10.3.0
@@ -1185,7 +1185,7 @@ importers:
         version: 9.0.1
       '@ucanto/core':
         specifier: 'catalog:'
-        version: 10.4.0
+        version: 10.4.2
       '@ucanto/interface':
         specifier: 'catalog:'
         version: 10.3.0
@@ -1553,7 +1553,7 @@ importers:
         version: link:../core
       '@ucanto/core':
         specifier: 'catalog:'
-        version: 10.4.0
+        version: 10.4.2
       ariakit-react-utils:
         specifier: 'catalog:'
         version: 0.17.0-next.27(@types/react@18.3.18)(react@18.3.1)
@@ -1687,7 +1687,7 @@ importers:
         version: 8.26.1(@typescript-eslint/parser@8.26.1(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
       '@ucanto/core':
         specifier: 'catalog:'
-        version: 10.4.0
+        version: 10.4.2
       '@web-std/blob':
         specifier: 'catalog:'
         version: 3.0.5
@@ -1732,7 +1732,7 @@ importers:
         version: 9.0.1
       '@ucanto/core':
         specifier: 'catalog:'
-        version: 10.4.0
+        version: 10.4.2
       '@ucanto/interface':
         specifier: 'catalog:'
         version: 10.3.0
@@ -1841,7 +1841,7 @@ importers:
         version: 9.0.1
       '@ucanto/core':
         specifier: 'catalog:'
-        version: 10.4.0
+        version: 10.4.2
       '@ucanto/interface':
         specifier: 'catalog:'
         version: 10.3.0
@@ -5858,11 +5858,14 @@ packages:
   '@ucanto/client@9.0.1':
     resolution: {integrity: sha512-cV8w3AnaZaYCdUmyFFICj8YhFckDoy2DvWgAzGDMkPz0WbUW4lw9Tjm4hEE8x5kiP47wYej/pHKWCcoELiU0qw==}
 
-  '@ucanto/core@10.4.0':
-    resolution: {integrity: sha512-ohLgxHUo/XgL1G/pvelsHl3zyq7w+fn6ZVN3yVhgiJwbRh67EqvjavXYEFGSLBzlAdMGsfDNkbetQob1sNSNGg==}
+  '@ucanto/core@10.4.2':
+    resolution: {integrity: sha512-F1j6RZ5cJFzcYzZ3PezOwQSr3bOF0Jto9yhzLBAW38lLfSFY2pbsPIVwvSnzW+OySBbtYM6E5QaWR6o+pZBHKw==}
 
   '@ucanto/interface@10.3.0':
     resolution: {integrity: sha512-97929CGr3AM4Y01CLZ3wwhzrlth5pq8eJCbd/hUMxD62nyG9eRsyvt3RSOtBNtu4jTdMH580x0oAF2D1XKcPvw==}
+
+  '@ucanto/interface@11.0.0':
+    resolution: {integrity: sha512-679NmyKXAuh9Zu8BbTNvwmi5gke8RytH7qRvPxpWL/ytKUm/Ea3y1fwGmaCnTbf38GXtVP89eERAsh+p8pSXzA==}
 
   '@ucanto/principal@9.0.2':
     resolution: {integrity: sha512-RE3Rj0oz4wh4C9p2JJZB9+QLd7Fi3lCixrbHgAvEoSyTNpvz6ky8DGNtttmD5j3O94z13qdVdIoSRY6DQZXfAg==}
@@ -18364,7 +18367,7 @@ snapshots:
       '@ipld/dag-cbor': 9.2.4
       '@storacha/capabilities': 1.7.0
       '@storacha/one-webcrypto': 1.0.1
-      '@ucanto/core': 10.4.0
+      '@ucanto/core': 10.4.2
       '@ucanto/interface': 10.3.0
       carstream: 2.3.0
       multiformats: 13.3.6
@@ -18372,7 +18375,7 @@ snapshots:
 
   '@storacha/capabilities@1.7.0':
     dependencies:
-      '@ucanto/core': 10.4.0
+      '@ucanto/core': 10.4.2
       '@ucanto/interface': 10.3.0
       '@ucanto/principal': 9.0.2
       '@ucanto/transport': 9.2.0
@@ -18382,7 +18385,7 @@ snapshots:
 
   '@storacha/capabilities@1.7.0-rc.0':
     dependencies:
-      '@ucanto/core': 10.4.0
+      '@ucanto/core': 10.4.2
       '@ucanto/interface': 10.3.0
       '@ucanto/principal': 9.0.2
       '@ucanto/transport': 9.2.0
@@ -18395,7 +18398,7 @@ snapshots:
       '@ipld/dag-cbor': 9.2.4
       '@storacha/blob-index': 1.1.0-rc.0
       '@storacha/capabilities': 1.7.0-rc.0
-      '@ucanto/core': 10.4.0
+      '@ucanto/core': 10.4.2
       '@ucanto/interface': 10.3.0
       multiformats: 13.3.6
 
@@ -19175,21 +19178,26 @@ snapshots:
 
   '@ucanto/client@9.0.1':
     dependencies:
-      '@ucanto/core': 10.4.0
+      '@ucanto/core': 10.4.2
       '@ucanto/interface': 10.3.0
 
-  '@ucanto/core@10.4.0':
+  '@ucanto/core@10.4.2':
     dependencies:
       '@ipld/car': 5.4.0
-      '@ipld/dag-cbor': 9.2.2
+      '@ipld/dag-cbor': 9.2.4
       '@ipld/dag-ucan': 3.4.5
-      '@ucanto/interface': 10.3.0
-      multiformats: 13.3.3
+      '@ucanto/interface': 11.0.0
+      multiformats: 13.3.6
 
   '@ucanto/interface@10.3.0':
     dependencies:
       '@ipld/dag-ucan': 3.4.5
       multiformats: 13.3.3
+
+  '@ucanto/interface@11.0.0':
+    dependencies:
+      '@ipld/dag-ucan': 3.4.5
+      multiformats: 13.3.6
 
   '@ucanto/principal@9.0.2':
     dependencies:
@@ -19203,21 +19211,21 @@ snapshots:
 
   '@ucanto/server@10.2.0':
     dependencies:
-      '@ucanto/core': 10.4.0
+      '@ucanto/core': 10.4.2
       '@ucanto/interface': 10.3.0
       '@ucanto/principal': 9.0.2
       '@ucanto/validator': 9.1.0
 
   '@ucanto/transport@9.2.0':
     dependencies:
-      '@ucanto/core': 10.4.0
+      '@ucanto/core': 10.4.2
       '@ucanto/interface': 10.3.0
 
   '@ucanto/validator@9.1.0':
     dependencies:
       '@ipld/car': 5.4.0
       '@ipld/dag-cbor': 9.2.2
-      '@ucanto/core': 10.4.0
+      '@ucanto/core': 10.4.2
       '@ucanto/interface': 10.3.0
       multiformats: 13.3.3
 
@@ -19913,7 +19921,7 @@ snapshots:
       '@scure/bip39': 1.5.4
       '@storacha/one-webcrypto': 1.0.1
       '@ucanto/client': 9.0.1
-      '@ucanto/core': 10.4.0
+      '@ucanto/core': 10.4.2
       '@ucanto/interface': 10.3.0
       '@ucanto/principal': 9.0.2
       '@ucanto/transport': 9.2.0
@@ -19931,7 +19939,7 @@ snapshots:
     dependencies:
       '@ipld/dag-cbor': 9.2.2
       '@storacha/one-webcrypto': 1.0.1
-      '@ucanto/core': 10.4.0
+      '@ucanto/core': 10.4.2
       '@ucanto/interface': 10.3.0
       '@web3-storage/capabilities': 18.0.1
       carstream: 2.3.0
@@ -19940,7 +19948,7 @@ snapshots:
 
   '@web3-storage/capabilities@17.4.1':
     dependencies:
-      '@ucanto/core': 10.4.0
+      '@ucanto/core': 10.4.2
       '@ucanto/interface': 10.3.0
       '@ucanto/principal': 9.0.2
       '@ucanto/transport': 9.2.0
@@ -19950,7 +19958,7 @@ snapshots:
 
   '@web3-storage/capabilities@18.0.1':
     dependencies:
-      '@ucanto/core': 10.4.0
+      '@ucanto/core': 10.4.2
       '@ucanto/interface': 10.3.0
       '@ucanto/principal': 9.0.2
       '@ucanto/transport': 9.2.0
@@ -19984,7 +19992,7 @@ snapshots:
   '@web3-storage/content-claims@5.2.1':
     dependencies:
       '@ucanto/client': 9.0.1
-      '@ucanto/core': 10.4.0
+      '@ucanto/core': 10.4.2
       '@ucanto/interface': 10.3.0
       '@ucanto/server': 10.2.0
       '@ucanto/transport': 9.2.0
@@ -20003,7 +20011,7 @@ snapshots:
     dependencies:
       '@ipld/dag-ucan': 3.4.5
       '@ucanto/client': 9.0.1
-      '@ucanto/core': 10.4.0
+      '@ucanto/core': 10.4.2
       '@ucanto/interface': 10.3.0
       '@ucanto/server': 10.2.0
       '@ucanto/transport': 9.2.0
@@ -20017,7 +20025,7 @@ snapshots:
     dependencies:
       '@ipld/dag-ucan': 3.4.5
       '@ucanto/client': 9.0.1
-      '@ucanto/core': 10.4.0
+      '@ucanto/core': 10.4.2
       '@ucanto/interface': 10.3.0
       '@ucanto/transport': 9.2.0
       '@web3-storage/capabilities': 18.0.1
@@ -20074,7 +20082,7 @@ snapshots:
       '@ipld/dag-ucan': 3.4.5
       '@ipld/unixfs': 2.2.0
       '@ucanto/client': 9.0.1
-      '@ucanto/core': 10.4.0
+      '@ucanto/core': 10.4.2
       '@ucanto/interface': 10.3.0
       '@ucanto/transport': 9.2.0
       '@web3-storage/blob-index': 1.0.5
@@ -20092,7 +20100,7 @@ snapshots:
     dependencies:
       '@ipld/dag-ucan': 3.4.5
       '@ucanto/client': 9.0.1
-      '@ucanto/core': 10.4.0
+      '@ucanto/core': 10.4.2
       '@ucanto/interface': 10.3.0
       '@ucanto/principal': 9.0.2
       '@ucanto/transport': 9.2.0
@@ -22324,7 +22332,7 @@ snapshots:
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1)
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
       eslint-plugin-jsx-a11y: 6.10.2(eslint@8.57.1)
       eslint-plugin-react: 7.37.4(eslint@8.57.1)
       eslint-plugin-react-hooks: 4.6.2(eslint@8.57.1)
@@ -22395,7 +22403,7 @@ snapshots:
       tinyglobby: 0.2.13
       unrs-resolver: 1.7.0
     optionalDependencies:
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -22439,7 +22447,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1):
+  eslint-plugin-import@2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.8

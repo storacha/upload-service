@@ -31,7 +31,7 @@ catalog:
   '@typescript-eslint/eslint-plugin': 8.26.1
   '@typescript-eslint/parser': 8.26.1
   '@ucanto/client': ^9.0.1
-  '@ucanto/core': ^10.4.0
+  '@ucanto/core': ^10.4.2
   '@ucanto/interface': '^10.3.0'
   '@ucanto/principal': '^9.0.2'
   '@ucanto/server': '^10.2.0'
