@@ -181,6 +181,7 @@ export async function authorizeAndWait(access, email, opts = {}) {
     access,
     account,
     opts?.capabilities || [
+      { can: 'assert/*' },
       { can: 'space/*' },
       { can: 'store/*' },
       { can: 'provider/add' },
