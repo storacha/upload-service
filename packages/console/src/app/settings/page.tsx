@@ -30,34 +30,15 @@ export default function SettingsPage (): JSX.Element {
 
   const { data: plan } = usePlan(account)
 
-  const { data: usage, isLoading } = useSWR<Record<SpaceDID, number> | undefined>(`/usage/${account ?? ''}`, {
+  const { data: usage } = useSWR<Record<SpaceDID, number> | undefined>(`/usage/${account ?? ''}`, {
     fetcher: async () => {
-      const usage: Record<SpaceDID, number> = {}
       if (!account || !client) return
 
-      const now = new Date()
-      const period = {
-        // we may not have done a snapshot for this month _yet_, so get report
-        // from last month -> now
-        from: startOfLastMonth(now),
-        to: now,
-      }
-
-      const subscriptions = await client.capability.subscription.list(account.did())
-      for (const { consumers } of subscriptions.results) {
-        for (const space of consumers) {
-          try {
-            const result = await client.capability.usage.report(space, period)
-            for (const [, report] of Object.entries(result)) {
-              usage[report.space] = report.size.final
-            }
-          } catch (err) {
-            // TODO: figure out why usage/report cannot be used on old spaces 
-            logAndCaptureError(err)
-          }
-        }
-      }
-      return usage
+      const result = await client.capability.account.usage.get(account.did())
+      return Object.entries(result.spaces).reduce((m, [spaceDID, value]) => {
+        m[spaceDID as SpaceDID] = value.total
+        return m
+      }, {} as Record<SpaceDID, number>)
     },
     onError: logAndCaptureError
   })
