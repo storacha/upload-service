@@ -1,3 +1,68 @@
+## 2.4.0 (2025-10-24)
+
+### 🚀 Features
+
+- feat: skip index fetch if content link and retrieval auth is provided ([b42c6142](https://github.com/storacha/upload-service/commit/b42c6142))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.6.2
+- Updated @storacha/capabilities to 1.10.0
+- Updated @storacha/filecoin-api to 1.1.14
+- Updated @storacha/blob-index to 1.2.2
+
+### ❤️ Thank You
+
+- Alan Shaw
+
+## 2.3.2 (2025-10-02)
+
+### 🩹 Fixes
+
+- only calculate space usage when limited ([0b8fd6ad](https://github.com/storacha/upload-service/commit/0b8fd6ad))
+
+### ❤️ Thank You
+
+- hannahhoward
+
+## 2.3.1 (2025-10-01)
+
+### 🩹 Fixes
+
+- fix tests to work in w3infra ([c6d5f438](https://github.com/storacha/upload-service/commit/c6d5f438))
+
+### ❤️ Thank You
+
+- hannahhoward
+
+## 2.3.0 (2025-09-22)
+
+### 🚀 Features
+
+- enforce space limits on blob/add ([e3f031fc](https://github.com/storacha/upload-service/commit/e3f031fc))
+- add account/usage/get capability ([bcd04c30](https://github.com/storacha/upload-service/commit/bcd04c30))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.6.1
+- Updated @storacha/capabilities to 1.9.0
+- Updated @storacha/filecoin-api to 1.1.13
+- Updated @storacha/blob-index to 1.2.1
+
+### ❤️ Thank You
+
+- hannahhoward
+
+## 2.2.4 (2025-09-08)
+
+### 🩹 Fixes
+
+- fix: infinite recursion on EntryNotFound and EntryExists error messages ([#419](https://github.com/storacha/upload-service/pull/419))
+
+### ❤️ Thank You
+
+- ash
+
 ## 2.2.3 (2025-08-21)
 
 ### 🩹 Fixes

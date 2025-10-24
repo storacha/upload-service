@@ -1,7 +1,7 @@
 {
   "name": "@storacha/cli",
   "type": "module",
-  "version": "1.4.15",
+  "version": "1.6.8",
   "license": "Apache-2.0 OR MIT",
   "description": "Command Line Interface to the Storacha Network",
   "publishConfig": {
@@ -55,9 +55,9 @@
   "dependencies": {
     "@inquirer/core": "catalog:",
     "@inquirer/prompts": "catalog:",
-    "@ipld/car": "^5.4.0",
-    "@ipld/dag-json": "^10.1.5",
-    "@ipld/dag-ucan": "^3.4.5",
+    "@ipld/car": "catalog:",
+    "@ipld/dag-json": "catalog:",
+    "@ipld/dag-ucan": "catalog:",
     "@storacha/access": "workspace:^",
     "@storacha/client": "workspace:^",
     "@storacha/did-mailto": "workspace:^",

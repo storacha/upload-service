@@ -7,5 +7,8 @@ import * as Sentry from '@sentry/nextjs'
  */
 export function logAndCaptureError (err: unknown) {
   console.error(err)
+  if (err && typeof err == 'object' && 'cause' in err) {
+    console.error(err.cause)
+  }
   Sentry.captureException(err)
 }

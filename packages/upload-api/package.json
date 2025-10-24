@@ -4,7 +4,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "2.2.3",
+  "version": "2.4.0",
   "type": "module",
   "main": "./src/lib.js",
   "homepage": "https://storacha.network",
@@ -130,7 +130,7 @@
     "@storacha/capabilities": "workspace:^",
     "@storacha/did-mailto": "workspace:^",
     "@storacha/filecoin-api": "workspace:^",
-    "@storacha/indexing-service-client": "2.2.0-rc.3",
+    "@storacha/indexing-service-client": "^2.6.5",
     "@ucanto/client": "catalog:",
     "@ucanto/interface": "catalog:",
     "@ucanto/principal": "catalog:",

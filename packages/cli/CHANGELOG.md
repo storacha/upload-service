@@ -1,3 +1,68 @@
+## 1.6.8 (2025-10-24)
+
+### 🩹 Fixes
+
+- feat: skip index fetch if content link and retrieval auth is provided ([b42c6142](https://github.com/storacha/upload-service/commit/b42c6142))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.6.2
+- Updated @storacha/capabilities to 1.10.0
+- Updated @storacha/client to 1.8.4
+- Updated @storacha/upload-api to 2.4.0
+
+### ❤️ Thank You
+
+- Alan Shaw
+
+## 1.6.2 (2025-10-02)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.2
+- Updated @storacha/upload-api to 2.3.2
+
+## 1.6.1 (2025-10-01)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.1
+- Updated @storacha/upload-api to 2.3.1
+
+## 1.6.0 (2025-09-22)
+
+### 🚀 Features
+
+- space recover command for importing paper key ([44a3e595](https://github.com/storacha/upload-service/commit/44a3e595))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.6.1
+- Updated @storacha/capabilities to 1.9.0
+- Updated @storacha/client to 1.8.0
+- Updated @storacha/upload-api to 2.3.0
+
+### ❤️ Thank You
+
+- hannahhoward
+
+## 1.5.1 (2025-09-08)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.7.10
+- Updated @storacha/upload-api to 2.2.4
+
+## 1.5.0 (2025-09-04)
+
+### 🚀 Features
+
+- feat: output timestamps in JSON space uploads listing ([#411](https://github.com/storacha/upload-service/pull/411))
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.4.15 (2025-08-21)
 
 ### 🧱 Updated Dependencies

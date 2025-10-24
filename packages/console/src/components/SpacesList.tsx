@@ -23,7 +23,7 @@ export function SpacesList({ spaces, type }: SpaceListProps) {
   }
 
   return (
-    <div className="max-w-lg border rounded-2xl border-hot-red bg-white">
+    <div className="max-w-lg border rounded-2xl border-hot-red bg-white max-h-[75vh] overflow-y-auto">
       {spaces.map(space => (
         <SpaceItem key={space.did()} space={space} type={type} />
       ))}

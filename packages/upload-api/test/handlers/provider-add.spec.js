@@ -179,7 +179,7 @@ describe(`provider/add`, () => {
 
   it('add providers set in env', async () => {
     const { space, agent, account, ...context } = await setup({
-      providers: ['did:web:nft.storage', 'did:web:storacha.network'],
+      providers: { 'did:web:nft.storage': 0, 'did:web:storacha.network': 0 },
     })
     const { service } = context
     try {
@@ -221,7 +221,7 @@ describe(`provider/add`, () => {
 
   it('provider/add can not add two diff providers to the same space', async () => {
     const { space, agent, account, ...context } = await setup({
-      providers: ['did:web:nft.storage', 'did:web:storacha.network'],
+      providers: { 'did:web:nft.storage': 0, 'did:web:storacha.network': 0 },
     })
     const { service } = context
 
@@ -300,7 +300,7 @@ describe(`provider/add`, () => {
 /**
  * Sets up test context and creates various principals used in this test suite.
  *
- * @param {any} options
+ * @param {Parameters<typeof createContext>[0]} options
  * @returns {Promise<Types.ProviderTestContext>}
  */
 const setup = async (options = {}) => {

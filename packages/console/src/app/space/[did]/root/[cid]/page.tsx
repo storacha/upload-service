@@ -14,7 +14,7 @@ import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { useRouter } from 'next/navigation'
 import { createUploadsListKey } from '@/cache'
 import { logAndCaptureError } from '@/sentry'
-import { ipfsGatewayURL } from '@/components/services'
+import { ipfsGatewayURLStr } from '@/components/services'
 import { useFileDecryption } from '@/hooks/useFileDecryption'
 
 interface PageProps {
@@ -73,7 +73,7 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
     }
   }
 
-  const url = ipfsGatewayURL(root)
+  const url = ipfsGatewayURLStr(root)
   const isPrivateSpace = space.access?.type === 'private'
   
   return (

@@ -12,7 +12,7 @@ import {
   WrapInDirectoryCheckbox,
   useUploader
 } from '@storacha/ui-react'
-import { ipfsGatewayURL } from '../components/services'
+import { ipfsGatewayURLStr } from '../components/services'
 import { useEffect, useState } from 'react'
 import { RadioGroup } from '@headlessui/react'
 import { H2 } from './Text'
@@ -67,7 +67,7 @@ export const Errored = ({ error }: { error: any }): JSX.Element => {
   useEffect(() => {
     if (error != null) {
       // eslint-disable-next-line no-console
-      logAndCaptureError(new Error('Uploader Error:', { cause: error }))
+      logAndCaptureError(new Error(`Uploader Error: ${error.message}`, { cause: error }))
     }
   }, [error])
 
@@ -95,7 +95,7 @@ export const Done = ({ dataCID }: DoneProps): JSX.Element => {
       <H2>Uploaded</H2>
       <a
         className='font-mono text-xs max-w-full overflow-hidden no-wrap text-ellipsis'
-        href={ipfsGatewayURL(cid)}
+        href={ipfsGatewayURLStr(cid)}
       >
         {cid}
       </a>

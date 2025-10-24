@@ -11,7 +11,6 @@ import { MaybePlanGate } from './PlanGate'
 import { SpaceFinder } from './SpaceFinder'
 import { usePathname, useRouter } from 'next/navigation'
 import { H2 } from './Text'
-import { SidebarMigrations } from './SidebarMigrations'
 
 const navLinks = [
   { name: 'Terms', href: 'https://docs.storacha.network/terms/' },
@@ -36,7 +35,7 @@ function Sidebar ({ sidebar = <div></div> }: SidebarComponentProps): JSX.Element
     router.push(`/space/${s.did()}`)
   }
   return (
-    <nav className='flex-none w-64 bg-hot-yellow text-hot-red px-5 pb-5 border-r border-hot-red min-h-screen'>
+    <nav className='flex-none w-64 bg-hot-yellow text-hot-red px-5 pb-5 border-r border-hot-red min-h-full'>
       <div className='flex flex-col justify-between h-full'>
         <div>
           <header className='opacity-0 lg:opacity-100 my-8'>
@@ -45,9 +44,6 @@ function Sidebar ({ sidebar = <div></div> }: SidebarComponentProps): JSX.Element
           <div className='my-6'>
             <H2 className='text-white'>Spaces</H2>
             <SpaceFinder spaces={spaces} selected={space} setSelected={goToSpace} />
-          </div>
-          <div className='my-6'>
-            <SidebarMigrations />
           </div>
         </div>
         {sidebar}
@@ -77,7 +73,7 @@ export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.
       <AuthenticationEnsurer>
         <MaybePlanGate>
           <SpaceEnsurer>
-            <div className='flex min-h-screen w-full text-white'>
+            <div className='flex h-screen w-full text-white overflow-hidden'>
               {/* dialog sidebar for narrow browsers */}
               <Transition.Root show={sidebarOpen} >
                 <Dialog onClose={() => setSidebarOpen(false)} as='div' className='relative z-50'>
@@ -108,17 +104,17 @@ export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.
                   </div>
                 </Dialog>
               </Transition.Root>
-              {/* static sidebar for wide browsers */}
-              <div className='hidden lg:block'>
+              {/* fixed sidebar for wide browsers */}
+              <div className='hidden lg:block fixed left-0 top-0 h-full z-40'>
                 <Sidebar />
               </div>
-              <div className='bg-racha-fire/50 w-full'>
+              <div className='bg-racha-fire/50 w-full lg:ml-64 flex flex-col'>
                 {/* top nav bar for narrow browsers, mainly to have a place to put the hamburger */}
-                <div className='lg:hidden flex justify-between pt-4 px-4'>
+                <div className='lg:hidden flex justify-between pt-4 px-4 flex-shrink-0'>
                   <Bars3Icon className='text-hot-red w-6 h-6' onClick={() => setSidebarOpen(true)} />
                   <Logo className='w-full' />
                 </div>
-                <main className='grow text-black p-12'>
+                <main className='flex-1 text-black p-12 overflow-y-auto'>
                   {children}
                 </main>
               </div>
@@ -134,7 +130,7 @@ export default function SidebarLayout ({ children }: LayoutComponentProps): JSX.
 export function IframeSidebarLayout ({ children }: LayoutComponentProps): JSX.Element {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   return (
-    <div className='flex min-h-screen w-full text-white'>
+    <div className='flex h-screen w-full text-white overflow-hidden'>
       {/* dialog sidebar for narrow browsers */}
       <Transition.Root show={sidebarOpen} >
         <Dialog onClose={() => setSidebarOpen(false)} as='div' className='relative z-50'>
@@ -165,17 +161,17 @@ export function IframeSidebarLayout ({ children }: LayoutComponentProps): JSX.El
           </div>
         </Dialog>
       </Transition.Root>
-      {/* static sidebar for wide browsers */}
-      <div className='hidden lg:block'>
+      {/* fixed sidebar for wide browsers */}
+      <div className='hidden lg:block fixed left-0 top-0 h-full z-40'>
         <Sidebar />
       </div>
-      <div className='bg-racha-fire/50 w-full'>
+      <div className='bg-racha-fire/50 w-full lg:ml-64 flex flex-col'>
         {/* top nav bar for narrow browsers, mainly to have a place to put the hamburger */}
-        <div className='lg:hidden flex justify-between pt-4 px-4'>
+        <div className='lg:hidden flex justify-between pt-4 px-4 flex-shrink-0'>
           <Bars3Icon className='text-hot-red w-6 h-6' onClick={() => setSidebarOpen(true)} />
           <Logo className='w-full' />
         </div>
-        <main className='grow text-black p-12'>
+        <main className='flex-1 text-black p-12 overflow-y-auto'>
           {children}
         </main>
       </div>

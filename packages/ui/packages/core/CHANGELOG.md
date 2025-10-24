@@ -1,3 +1,35 @@
+## 2.4.123 (2025-10-24)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.6.2
+- Updated @storacha/client to 1.8.4
+
+## 2.4.116 (2025-10-02)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.2
+
+## 2.4.114 (2025-10-01)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.1
+
+## 2.4.112 (2025-09-22)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.6.1
+- Updated @storacha/client to 1.8.0
+
+## 2.4.105 (2025-09-08)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.7.10
+
 ## 2.4.103 (2025-08-28)
 
 ### 🩹 Fixes

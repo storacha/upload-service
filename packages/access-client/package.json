@@ -1,6 +1,6 @@
 {
   "name": "@storacha/access",
-  "version": "1.6.0",
+  "version": "1.6.2",
   "description": "access client",
   "publishConfig": {
     "access": "public"
@@ -70,8 +70,8 @@
     "!dist/**/*.js.map"
   ],
   "dependencies": {
-    "@ipld/car": "^5.1.1",
-    "@ipld/dag-ucan": "^3.4.5",
+    "@ipld/car": "catalog:",
+    "@ipld/dag-ucan": "catalog:",
     "@scure/bip39": "catalog:",
     "@storacha/capabilities": "workspace:^",
     "@storacha/did-mailto": "workspace:^",

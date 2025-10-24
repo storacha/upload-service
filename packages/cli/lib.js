@@ -171,7 +171,9 @@ export async function readProofFromBytes(bytes) {
 export function uploadListResponseToString(res, opts = {}) {
   if (opts.json) {
     return res.results
-      .map(({ root, shards }) => dagJSON.stringify({ root, shards }))
+      .map(({ root, shards, insertedAt, updatedAt }) =>
+        dagJSON.stringify({ root, shards, insertedAt, updatedAt })
+      )
       .join('\n')
   } else if (opts.shards) {
     return res.results
@@ -322,4 +324,53 @@ export const streamToBlob = async (source) => {
     })
   )
   return new Blob(chunks)
+}
+
+/**
+ * @param {Record<string, any>} options
+ * @returns {import('@storacha/access/types').SpaceAccessType}
+ */
+export const parseAccessFromOptions = (options) => {
+  // Validate access type
+  if (
+    options['access-type'] &&
+    !['public', 'private'].includes(options['access-type'])
+  ) {
+    console.error('Invalid access type. Must be either "public" or "private"')
+    process.exit(1)
+  }
+
+  // Validate encryption provider
+  if (
+    options['encryption-provider'] &&
+    !['google-kms'].includes(options['encryption-provider'])
+  ) {
+    console.error('Invalid encryption provider. Must be "google-kms"')
+    process.exit(1)
+  }
+
+  // Create access type object
+  const accessType = options['access-type'] || 'public'
+
+  if (accessType === 'public') {
+    return { type: 'public' }
+  } else {
+    const provider = options['encryption-provider'] || 'google-kms'
+
+    // Ensure only Google KMS is supported
+    if (provider !== 'google-kms') {
+      console.error(
+        'Invalid encryption provider. Only "google-kms" is supported for private spaces.'
+      )
+      process.exit(1)
+    }
+
+    const algorithm =
+      options['encryption-algorithm'] || 'RSA_DECRYPT_OAEP_3072_SHA256'
+
+    return {
+      type: 'private',
+      encryption: { provider, algorithm },
+    }
+  }
 }

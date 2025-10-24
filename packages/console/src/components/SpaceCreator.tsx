@@ -15,6 +15,7 @@ import * as CAR from '@ucanto/transport/car'
 import { gatewayHost } from './services'
 import { logAndCaptureError } from '@/sentry'
 import { usePrivateSpacesAccess } from '@/hooks/usePrivateSpacesAccess'
+import { usePlausible } from "next-plausible"
 
 export function SpaceCreatorCreating(): JSX.Element {
   return (
@@ -38,6 +39,7 @@ export function SpaceCreatorForm({
   const [name, setName] = useState('')
   const [space, setSpace] = useState<Space>()
   const [accessType, setAccessType] = useState<'public' | 'private'>('public')
+  const plausible = usePlausible()
   
   const { 
     canAccessPrivateSpaces, 
@@ -121,6 +123,7 @@ export function SpaceCreatorForm({
 
       setSpace(client.spaces().find(s => s.did() === space.did()))
       setCreated(true)
+      plausible('Space Created')
       resetForm()
     } catch (error) {
       setSubmitted(false)
@@ -128,6 +131,7 @@ export function SpaceCreatorForm({
       console.log(error)
       /* eslint-disable-next-line no-console */
       logAndCaptureError(error)
+      plausible('Failed Space Creation')
       throw new Error('failed to create space', { cause: error })
     }
   }

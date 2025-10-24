@@ -44,6 +44,7 @@ import * as AdminCaps from './admin.js'
 import * as UCANCaps from './ucan.js'
 import * as PlanCaps from './plan.js'
 import * as UsageCaps from './usage.js'
+import * as AccountUsageCaps from './account/usage.js'
 
 export type ISO8601Date = string
 
@@ -197,6 +198,34 @@ export interface EgressData {
   servedAt: ISO8601Date
   /** Identifier of the invocation that caused the egress traffic. */
   cause: UnknownLink
+}
+
+// AccountUsage
+export type AccountUsage = InferInvokedCapability<
+  typeof AccountUsageCaps.accountUsage
+>
+export type AccountUsageGet = InferInvokedCapability<
+  typeof AccountUsageCaps.get
+>
+
+export interface NoSubscriptionError extends Ucanto.Failure {
+  name: 'NoSubscription'
+}
+
+export type AccountUsageGetFailure = NoSubscriptionError | Ucanto.Failure
+
+export interface AccountUsageGetSuccess {
+  // total across all providers and spaces
+  total: number
+  // usages by provider
+  spaces: Record<SpaceDID, SpaceUsage>
+}
+
+export interface SpaceUsage {
+  // total across all providers for the space
+  total: number
+  // usages by provider
+  providers: Record<ProviderDID, UsageData>
 }
 
 // Provider
@@ -521,6 +550,9 @@ export type SpaceIndexAddFailure =
   | UnknownFormat
   | ShardNotFound
   | SliceNotFound
+  | RetrievalAuthorizationNotFound
+  | InvalidRetrievalAuthorization
+  | PublishFailure
   | Failure
 
 /** An error occurred when decoding the data. */
@@ -552,6 +584,22 @@ export interface SliceNotFound extends Failure {
   name: 'SliceNotFound'
   /** Multihash digest of the slice that could not be found. */
   digest: Multihash
+}
+
+/** Publshing the index to underlying systems failed. */
+export interface PublishFailure extends Failure {
+  name: 'PublishFailure'
+  cause: Failure
+}
+
+/** A retrieval authorization for the blob was not found. */
+export interface RetrievalAuthorizationNotFound extends Failure {
+  name: 'RetrievalAuthorizationNotFound'
+}
+
+/** A retrieval authorization for the blob was invalid. */
+export interface InvalidRetrievalAuthorization extends Failure {
+  name: 'InvalidRetrievalAuthorization'
 }
 
 // Blob
@@ -1085,7 +1133,9 @@ export type ServiceAbilityArray = [
   W3sBlobAccept['can'],
   HTTPPut['can'],
   SpaceIndex['can'],
-  SpaceIndexAdd['can']
+  SpaceIndexAdd['can'],
+  AccountUsage['can'],
+  AccountUsageGet['can']
 ]
 
 /**

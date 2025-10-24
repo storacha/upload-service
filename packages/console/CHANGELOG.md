@@ -1,5 +1,108 @@
 # Changelog
 
+## [2.9.0](https://github.com/storacha/upload-service/compare/console-v2.8.0...console-v2.9.0) (2025-10-10)
+
+
+### Features
+
+* remove migrations UI from console ([#450](https://github.com/storacha/upload-service/issues/450)) ([9ea83f0](https://github.com/storacha/upload-service/commit/9ea83f025cfbf14df33409f3a33ef76903473030))
+* upgrade to new humanode CVM ([#451](https://github.com/storacha/upload-service/issues/451)) ([6f89301](https://github.com/storacha/upload-service/commit/6f8930178626b0c1f4929889dada52b9a2dc8631))
+
+
+### Fixes
+
+* **Console UI:** Keep Sidebar & Navbar Fixed, Enable Content-Only Scrolling ([#441](https://github.com/storacha/upload-service/issues/441)) ([01672df](https://github.com/storacha/upload-service/commit/01672dfe91dfbc04e7f6cb99d52e9450bc00ecb3)), closes [#434](https://github.com/storacha/upload-service/issues/434)
+
+## [2.8.0](https://github.com/storacha/upload-service/compare/console-v2.7.0...console-v2.8.0) (2025-10-06)
+
+
+### Features
+
+* access revocation ([#421](https://github.com/storacha/upload-service/issues/421)) ([c3377c7](https://github.com/storacha/upload-service/commit/c3377c77fc77b8f0119fa7dabdacaf9549128183))
+
+
+### Fixes
+
+* better error logging ([#448](https://github.com/storacha/upload-service/issues/448)) ([f549d53](https://github.com/storacha/upload-service/commit/f549d5390ccf291ebce463a97a9ab44d0b3f1e2f))
+
+
+### Other Changes
+
+* **release:** publish ([c4e84af](https://github.com/storacha/upload-service/commit/c4e84af5e71a1e01c7627782963701b66122bd42))
+
+## [2.7.0](https://github.com/storacha/upload-service/compare/console-v2.6.0...console-v2.7.0) (2025-10-02)
+
+
+### Features
+
+* configre xenea campaign ([31b2af3](https://github.com/storacha/upload-service/commit/31b2af3f0cfdd58b55acf95543dd3f5b9e9bb4c1))
+* **console:** add configurable marketing notice banner for Xenea collaboration ([#369](https://github.com/storacha/upload-service/issues/369)) ([2dc9b8a](https://github.com/storacha/upload-service/commit/2dc9b8a39955d2aa23581ed8638b6d13d51b8c48))
+
+
+### Fixes
+
+* Typo ([#435](https://github.com/storacha/upload-service/issues/435)) ([b384c05](https://github.com/storacha/upload-service/commit/b384c05c37f8c02a05ed83fd707b04356ff51398))
+
+
+### Other Changes
+
+* **release:** publish ([8ed7689](https://github.com/storacha/upload-service/commit/8ed768945a14282ac9c9e5af3105f6859815a140))
+* **release:** publish ([49088de](https://github.com/storacha/upload-service/commit/49088de16bb19a7c375d79e4f26ff6aa5903e420))
+
+## [2.6.0](https://github.com/storacha/upload-service/compare/console-v2.5.1...console-v2.6.0) (2025-09-22)
+
+
+### Features
+
+* **upload-api:** enforce space limit on blob/add ([#386](https://github.com/storacha/upload-service/issues/386)) ([589ff6a](https://github.com/storacha/upload-service/commit/589ff6a5543d12893b69cd35150701993dccc55d))
+
+## [2.5.1](https://github.com/storacha/upload-service/compare/console-v2.5.0...console-v2.5.1) (2025-09-18)
+
+
+### Fixes
+
+* update the upload-service DIDs ([#427](https://github.com/storacha/upload-service/issues/427)) ([d670007](https://github.com/storacha/upload-service/commit/d6700079893f7d715a1cf7ad1855a1da16c91f86))
+
+## [2.5.0](https://github.com/storacha/upload-service/compare/console-v2.4.1...console-v2.5.0) (2025-09-11)
+
+
+### Features
+
+* add Plausible analytics tracking for console.storacha.network([#418](https://github.com/storacha/upload-service/issues/418)) ([749b8af](https://github.com/storacha/upload-service/commit/749b8afa5b7c620667f813d8ca4112dbaf2e27b5))
+* Add plausible tracking for console.storacha.network ([84b7066](https://github.com/storacha/upload-service/commit/84b70666ecfaf27a4ebf8474e9a82e45866f40bb))
+* Add plausible tracking for users from dmail. ([45fcd9d](https://github.com/storacha/upload-service/commit/45fcd9dfdac091704dfa9b6570465928aa59df77))
+
+
+### Fixes
+
+* Use next-plausible instead of plausible analytics-tracker. ([8f015c5](https://github.com/storacha/upload-service/commit/8f015c526196106a9a8f8ab4d616ecb4f78690fa))
+
+## [2.4.1](https://github.com/storacha/upload-service/compare/console-v2.4.0...console-v2.4.1) (2025-09-05)
+
+
+### Fixes
+
+* **console:** add gmail spam warning, see [#415](https://github.com/storacha/upload-service/issues/415) ([#416](https://github.com/storacha/upload-service/issues/416)) ([900f6c2](https://github.com/storacha/upload-service/commit/900f6c26668d69beb6f5b90dd1515bf89103414c))
+
+## [2.4.0](https://github.com/storacha/upload-service/compare/console-v2.3.7...console-v2.4.0) (2025-09-05)
+
+
+### Features
+
+* auto-clean user session and continue with SSO flow ([#397](https://github.com/storacha/upload-service/issues/397)) ([f26a3c6](https://github.com/storacha/upload-service/commit/f26a3c646a951748977fb8edddd93e102b9c69ac))
+* automatically handle email mismatch in iframe SSO authentication ([#414](https://github.com/storacha/upload-service/issues/414)) ([787739e](https://github.com/storacha/upload-service/commit/787739e55712f3e78725ebfe462323fd79f3ac69))
+
+
+### Fixes
+
+* "revert feat: auto-clean user session and continue with SSO flow ([#397](https://github.com/storacha/upload-service/issues/397))" ([#403](https://github.com/storacha/upload-service/issues/403)) ([94f94cd](https://github.com/storacha/upload-service/commit/94f94cd22a22f9bfac664d942177e92401509db3))
+* **console:** resolve sidebar height issue for full page coverage ([#381](https://github.com/storacha/upload-service/issues/381)) ([6f7bd68](https://github.com/storacha/upload-service/commit/6f7bd68eedbed89eda620fc1b877a0df61e42a23)), closes [#368](https://github.com/storacha/upload-service/issues/368)
+
+
+### Other Changes
+
+* **release:** publish ([27a2dc5](https://github.com/storacha/upload-service/commit/27a2dc568ffec5d7cf79dab7e0b0c3d081169398))
+
 ## [2.3.7](https://github.com/storacha/upload-service/compare/console-v2.3.6...console-v2.3.7) (2025-08-28)
 
 

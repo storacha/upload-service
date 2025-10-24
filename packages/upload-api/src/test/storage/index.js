@@ -15,7 +15,7 @@ import { ReplicaStorage } from './replica-storage.js'
 
 /**
  * @param {object} options
- * @param {string[]} [options.providers]
+ * @param {Record<string, number>} [options.providers]
  * @param {boolean} [options.requirePaymentPlan]
  * @param {import('http')} [options.http]
  * @param {{fail(error:unknown): unknown}} [options.assert]
