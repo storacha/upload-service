@@ -1,5 +1,5 @@
 import type { As, Props, Options } from 'ariakit-react-utils'
-import type { ChangeEvent, ReactNode } from 'react'
+import type { ChangeEvent, ReactNode, CSSProperties } from 'react'
 
 import React, {
   useState,
@@ -200,59 +200,102 @@ export const StorachaAuthProvider = ({ children, ...props }: StorachaAuthProps) 
   )
 }
 
-// Form component with console-style styling
-export type StorachaAuthFormOptions<T extends As = 'form'> = Options<T>
+// Headless form component
+export type StorachaAuthFormOptions<T extends As = 'form'> = Options<T> & {
+  /**
+   * Additional CSS class names
+   */
+  className?: string
+  /**
+   * Inline styles
+   */
+  style?: CSSProperties
+  /**
+   * Render prop for the form container wrapper
+   */
+  renderContainer?: (children: ReactNode) => ReactNode
+  /**
+   * Render prop for the logo
+   */
+  renderLogo?: () => ReactNode
+  /**
+   * Render prop for the email label
+   */
+  renderEmailLabel?: () => ReactNode
+  /**
+   * Render prop for the submit button
+   */
+  renderSubmitButton?: (disabled: boolean) => ReactNode
+  /**
+   * Render prop for terms text
+   */
+  renderTerms?: () => ReactNode
+}
+
 export type StorachaAuthFormProps<T extends As = 'form'> = Props<
   StorachaAuthFormOptions<T>
 >
 
-export const StorachaAuthForm = ({ ...formProps }: StorachaAuthFormProps) => {
+export const StorachaAuthForm = ({ 
+  className,
+  style,
+  renderContainer,
+  renderLogo,
+  renderEmailLabel,
+  renderSubmitButton,
+  renderTerms,
+  ...formProps 
+}: StorachaAuthFormProps) => {
   const [{ handleRegisterSubmit, submitted }] = useStorachaAuth()
 
-  return (
-    <div className='authenticator'>
-      <form 
-        {...formProps} 
-        onSubmit={handleRegisterSubmit}
-        className='storacha-auth-form'
-      >
-        <div className='storacha-auth-logo-container'>
-          <img src="/storacha-logo.svg" alt="Storacha" className='storacha-auth-logo' />
-        </div>
-        <div>
-          <label className='storacha-auth-label' htmlFor='storacha-auth-email'>
-            Email
-          </label>
-          <StorachaAuthEmailInput 
-            className='storacha-auth-input' 
-            id='storacha-auth-email' 
-            required 
-          />
-        </div>
-        <div className='storacha-auth-button-container'>
-          <button
-            className='storacha-auth-button'
-            type='submit'
-            disabled={submitted}
-          >
-            Authorize
-          </button>
-        </div>
-      </form>
-      <p className='storacha-auth-terms'>
-        By registering with storacha.network, you agree to the storacha.network <a href='https://docs.storacha.network/terms/'>Terms of Service</a>.
-      </p>
-    </div>
+  const formContent = (
+    <form 
+      {...formProps} 
+      onSubmit={handleRegisterSubmit}
+      className={className}
+      style={style}
+    >
+      {renderLogo?.()}
+      <div>
+        {renderEmailLabel?.()}
+        <StorachaAuthEmailInput 
+          id='storacha-auth-email' 
+          required 
+        />
+      </div>
+      <div>
+        {renderSubmitButton?.(submitted)}
+      </div>
+    </form>
   )
+
+  const content = (
+    <>
+      {renderContainer ? renderContainer(formContent) : formContent}
+      {renderTerms?.()}
+    </>
+  )
+
+  return content
 }
 
-// Email input component
-export type StorachaAuthEmailInputOptions<T extends As = 'input'> = Options<T>
+// Headless email input component
+export type StorachaAuthEmailInputOptions<T extends As = 'input'> = Options<T> & {
+  /**
+   * Additional CSS class names
+   */
+  className?: string
+  /**
+   * Inline styles
+   */
+  style?: CSSProperties
+}
+
 export type StorachaAuthEmailInputProps<T extends As = 'input'> = Props<
   StorachaAuthEmailInputOptions<T>
 >
 
-export const StorachaAuthEmailInput = (props: StorachaAuthEmailInputProps) => {
+export const StorachaAuthEmailInput = ({ className, style, ...props }: StorachaAuthEmailInputProps) => {
   const [{ email }, { setEmail }] = useStorachaAuth()
   const onChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value)
@@ -263,81 +306,134 @@ export const StorachaAuthEmailInput = (props: StorachaAuthEmailInputProps) => {
     type: 'email',
     value: email,
     onChange,
+    className,
+    style,
   })
 }
 
-// Cancel button component
-export type StorachaAuthCancelButtonOptions<T extends As = 'button'> = Options<T>
+// Headless cancel button component
+export type StorachaAuthCancelButtonOptions<T extends As = 'button'> = Options<T> & {
+  /**
+   * Additional CSS class names
+   */
+  className?: string
+  /**
+   * Inline styles
+   */
+  style?: CSSProperties
+}
+
 export type StorachaAuthCancelButtonProps<T extends As = 'button'> = Props<
   StorachaAuthCancelButtonOptions<T>
 >
 
-export const StorachaAuthCancelButton = (props: StorachaAuthCancelButtonProps) => {
+export const StorachaAuthCancelButton = ({ className, style, ...props }: StorachaAuthCancelButtonProps) => {
   const [, { cancelLogin }] = useStorachaAuth()
-  return createElement('button', { ...props, onClick: cancelLogin })
+  return createElement('button', { ...props, onClick: cancelLogin, className, style })
 }
 
-// Submitted state component
-export type StorachaAuthSubmittedOptions<T extends As = 'div'> = Options<T>
+// Headless submitted state component
+export type StorachaAuthSubmittedOptions<T extends As = 'div'> = Options<T> & {
+  /**
+   * Additional CSS class names
+   */
+  className?: string
+  /**
+   * Inline styles
+   */
+  style?: CSSProperties
+  /**
+   * Render prop for the container wrapper
+   */
+  renderContainer?: (children: ReactNode) => ReactNode
+  /**
+   * Render prop for the logo
+   */
+  renderLogo?: () => ReactNode
+  /**
+   * Render prop for the title
+   */
+  renderTitle?: () => ReactNode
+  /**
+   * Render prop for the message
+   */
+  renderMessage?: (email: string) => ReactNode
+  /**
+   * Render prop for the cancel button
+   */
+  renderCancelButton?: () => ReactNode
+}
+
 export type StorachaAuthSubmittedProps<T extends As = 'div'> = Props<
   StorachaAuthSubmittedOptions<T>
-> & {
-}
+>
 
-export const StorachaAuthSubmitted = ({ ...divProps }: StorachaAuthSubmittedProps) => {
+export const StorachaAuthSubmitted = ({ 
+  className,
+  style,
+  renderContainer,
+  renderLogo,
+  renderTitle,
+  renderMessage,
+  renderCancelButton,
+  ...divProps 
+}: StorachaAuthSubmittedProps) => {
   const [{ email }] = useStorachaAuth()
 
-  return (
-    <div className='authenticator'>
-      <div 
-        {...divProps}
-        className='storacha-auth-submitted-container'
-      >
-        <div className='storacha-auth-logo-container'>
-          <img src="/storacha-logo.svg" alt="Storacha" className='storacha-auth-logo' />
-        </div>
-        <h1 className='storacha-auth-submitted-title'>Verify your email address!</h1>
-        <p className='storacha-auth-submitted-text'>
-          Click the link in the email we sent to <span className='storacha-auth-submitted-email'>{email}</span> to authorize this agent.
-          <br />
-          Don&apos;t forget to check your spam folder!
-        </p>
-        <StorachaAuthCancelButton className='storacha-auth-button'>
-          Cancel
-        </StorachaAuthCancelButton>
-      </div>
+  const content = (
+    <div 
+      {...divProps}
+      className={className}
+      style={style}
+    >
+      {renderLogo?.()}
+      {renderTitle?.()}
+      {renderMessage?.(email || '')}
+      {renderCancelButton?.()}
     </div>
   )
+
+  return renderContainer ? renderContainer(content) : content
 }
 
-// Ensurer component that handles the authentication flow
+// Headless ensurer component that handles the authentication flow
 export interface StorachaAuthEnsurerProps {
   children: ReactNode
   /**
    * Custom loader component
    */
   loader?: ReactNode
+  /**
+   * Render prop for custom loader
+   */
+  renderLoader?: (type: 'initializing' | 'authenticating') => ReactNode
+  /**
+   * Render prop for custom form
+   */
+  renderForm?: () => ReactNode
+  /**
+   * Render prop for custom submitted state
+   */
+  renderSubmitted?: () => ReactNode
 }
 
-export const StorachaAuthEnsurer = ({ children, loader }: StorachaAuthEnsurerProps) => {
+export const StorachaAuthEnsurer = ({ 
+  children, 
+  loader,
+  renderLoader,
+  renderForm,
+  renderSubmitted
+}: StorachaAuthEnsurerProps) => {
   const [{ submitted, client, isAuthenticated, isIframe }] = useStorachaAuth()
 
-  // Iframe handling - simplified for now
+  // Iframe handling
   if (isIframe) {
     return (
       <>
         {isAuthenticated ? (
           <>{children}</>
         ) : (
-          loader || <div className="storacha-auth-loader">
-            <div className="storacha-auth-spinner" />
-            <h3 className="storacha-auth-loader-title">
-              Authentication
-            </h3>
-            <p className="storacha-auth-loader-text">
-              Loading...
-            </p>
-          </div>
+          loader || renderLoader?.('authenticating') || <div>Loading...</div>
         )}
       </>
     )
@@ -349,22 +445,14 @@ export const StorachaAuthEnsurer = ({ children, loader }: StorachaAuthEnsurerPro
   }
   
   if (submitted) {
-    return <StorachaAuthSubmitted />
+    return renderSubmitted ? <>{renderSubmitted()}</> : <StorachaAuthSubmitted />
   }
   
   if (client) {
-    return <StorachaAuthForm />
+    return renderForm ? <>{renderForm()}</> : <StorachaAuthForm />
   }
   
-  return loader || <div className="storacha-auth-loader">
-    <div className="storacha-auth-spinner" />
-    <h3 className="storacha-auth-loader-title">
-      Initializing
-    </h3>
-    <p className="storacha-auth-loader-text">
-      Setting up authentication...
-    </p>
-  </div>
+  return loader || renderLoader?.('initializing') || <div>Initializing...</div>
 }
 
 /**
