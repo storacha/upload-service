@@ -1,10 +1,6 @@
-import {
-  Provider,
-  useW3,
-  StorachaAuth,
-  useStorachaAuthEnhanced,
-} from '@storacha/ui-react'
-import '@storacha/ui-react/globals.css'
+import { Provider, useW3, useStorachaAuthEnhanced } from '@storacha/ui-react'
+import { StorachaAuth } from '@storacha/ui-react-styled'
+import '@storacha/ui-react-styled/styles.css'
 
 function AuthenticatedApp() {
   const [{ accounts }] = useW3()

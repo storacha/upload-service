@@ -15,6 +15,7 @@
     "@heroicons/react": "catalog:",
     "@storacha/ui-example-react-components": "workspace:^",
     "@storacha/ui-react": "workspace:^",
+    "@storacha/ui-react-styled": "workspace:^",
     "react": "catalog:",
     "react-dom": "catalog:"
   },
