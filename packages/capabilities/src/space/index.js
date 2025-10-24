@@ -40,6 +40,8 @@ export const add = capability({
   nb: Schema.struct({
     /** Content Archive (CAR) containing the `Index`. */
     index: Schema.link({ code: SpaceIndex.code, version: 1 }),
+    /** The content root CID - the root of the DAG that is indexed. */
+    content: Schema.link().optional(),
   }),
   derives: (claimed, delegated) =>
     and(equalWith(claimed, delegated)) ||

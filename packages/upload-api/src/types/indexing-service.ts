@@ -7,7 +7,7 @@ import {
 } from '@ucanto/interface'
 import {
   IndexingService as Service,
-  IndexingServiceClient as Client,
+  IndexingServiceQueryClient as Client,
   Claim,
 } from '@storacha/indexing-service-client/api'
 

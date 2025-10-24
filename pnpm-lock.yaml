@@ -90,27 +90,6 @@ catalogs:
     '@typescript-eslint/parser':
       specifier: 8.26.1
       version: 8.26.1
-    '@ucanto/client':
-      specifier: ^9.0.1
-      version: 9.0.1
-    '@ucanto/core':
-      specifier: ^10.4.0
-      version: 10.4.0
-    '@ucanto/interface':
-      specifier: ^10.3.0
-      version: 10.3.0
-    '@ucanto/principal':
-      specifier: ^9.0.2
-      version: 9.0.2
-    '@ucanto/server':
-      specifier: ^10.2.0
-      version: 10.2.0
-    '@ucanto/transport':
-      specifier: ^9.2.0
-      version: 9.2.0
-    '@ucanto/validator':
-      specifier: ^9.1.0
-      version: 9.1.0
     '@vitejs/plugin-react':
       specifier: ^4.2.0
       version: 4.3.4
@@ -118,8 +97,8 @@ catalogs:
       specifier: ^3.0.5
       version: 3.0.5
     '@web3-storage/content-claims':
-      specifier: ^5.2.1
-      version: 5.2.1
+      specifier: ^5.2.2
+      version: 5.2.2
     '@web3-storage/data-segment':
       specifier: ^5.3.0
       version: 5.3.0
@@ -211,8 +190,8 @@ catalogs:
       specifier: ^13.2.0
       version: 13.3.0
     multiformats:
-      specifier: ^13.3.3
-      version: 13.3.3
+      specifier: ^13.3.6
+      version: 13.3.6
     next:
       specifier: ^13.5.4
       version: 13.5.11
@@ -293,6 +272,13 @@ catalogs:
       version: 1.0.2
 
 overrides:
+  '@ucanto/client': ^9.0.2
+  '@ucanto/core': ^10.4.5
+  '@ucanto/interface': ^11.0.1
+  '@ucanto/principal': ^9.0.3
+  '@ucanto/server': ^11.0.3
+  '@ucanto/transport': ^9.2.1
+  '@ucanto/validator': ^10.0.1
   hd-scripts>@typescript-eslint/eslint-plugin: 8.26.1
   hd-scripts>@typescript-eslint/parser: 8.26.1
   eslint-config-standard-with-typescript>@typescript-eslint/eslint-plugin: 8.26.1
@@ -360,10 +346,10 @@ importers:
   packages/access-client:
     dependencies:
       '@ipld/car':
-        specifier: ^5.1.1
+        specifier: 'catalog:'
         version: 5.4.0
       '@ipld/dag-ucan':
-        specifier: ^3.4.5
+        specifier: 'catalog:'
         version: 3.4.5
       '@scure/bip39':
         specifier: 'catalog:'
@@ -378,23 +364,23 @@ importers:
         specifier: 'catalog:'
         version: 1.0.1
       '@ucanto/client':
-        specifier: 'catalog:'
-        version: 9.0.1
-      '@ucanto/core':
-        specifier: 'catalog:'
-        version: 10.4.0
-      '@ucanto/interface':
-        specifier: 'catalog:'
-        version: 10.3.0
-      '@ucanto/principal':
-        specifier: 'catalog:'
+        specifier: ^9.0.2
         version: 9.0.2
+      '@ucanto/core':
+        specifier: ^10.4.5
+        version: 10.4.5
+      '@ucanto/interface':
+        specifier: ^11.0.1
+        version: 11.0.1
+      '@ucanto/principal':
+        specifier: ^9.0.3
+        version: 9.0.3
       '@ucanto/transport':
-        specifier: 'catalog:'
-        version: 9.2.0
+        specifier: ^9.2.1
+        version: 9.2.1
       '@ucanto/validator':
-        specifier: 'catalog:'
-        version: 9.1.0
+        specifier: ^10.0.1
+        version: 10.0.1
       bigint-mod-arith:
         specifier: 'catalog:'
         version: 3.3.1
@@ -403,7 +389,7 @@ importers:
         version: 11.0.2
       multiformats:
         specifier: 'catalog:'
-        version: 13.3.3
+        version: 13.3.6
       p-defer:
         specifier: 'catalog:'
         version: 4.0.1
@@ -445,8 +431,8 @@ importers:
         specifier: 'catalog:'
         version: 8.26.1(@typescript-eslint/parser@8.26.1(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
       '@ucanto/server':
-        specifier: 'catalog:'
-        version: 10.2.0
+        specifier: ^11.0.3
+        version: 11.0.3
       assert:
         specifier: 'catalog:'
         version: 2.1.0
@@ -478,17 +464,17 @@ importers:
         specifier: 'catalog:'
         version: 1.0.1
       '@ucanto/core':
-        specifier: 'catalog:'
-        version: 10.4.0
+        specifier: ^10.4.5
+        version: 10.4.5
       '@ucanto/interface':
-        specifier: 'catalog:'
-        version: 10.3.0
+        specifier: ^11.0.1
+        version: 11.0.1
       carstream:
         specifier: 'catalog:'
         version: 2.3.0
       multiformats:
         specifier: 'catalog:'
-        version: 13.3.3
+        version: 13.3.6
       sade:
         specifier: 'catalog:'
         version: 1.8.1
@@ -506,8 +492,8 @@ importers:
         specifier: 'catalog:'
         version: 8.26.1(@typescript-eslint/parser@8.26.1(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
       '@ucanto/transport':
-        specifier: 'catalog:'
-        version: 9.2.0
+        specifier: ^9.2.1
+        version: 9.2.1
       c8:
         specifier: ^7.14.0
         version: 7.14.0
@@ -521,26 +507,26 @@ importers:
   packages/capabilities:
     dependencies:
       '@ucanto/core':
-        specifier: 'catalog:'
-        version: 10.4.0
+        specifier: ^10.4.5
+        version: 10.4.5
       '@ucanto/interface':
-        specifier: 'catalog:'
-        version: 10.3.0
+        specifier: ^11.0.1
+        version: 11.0.1
       '@ucanto/principal':
-        specifier: 'catalog:'
-        version: 9.0.2
+        specifier: ^9.0.3
+        version: 9.0.3
       '@ucanto/transport':
-        specifier: 'catalog:'
-        version: 9.2.0
+        specifier: ^9.2.1
+        version: 9.2.1
       '@ucanto/validator':
-        specifier: 'catalog:'
-        version: 9.1.0
+        specifier: ^10.0.1
+        version: 10.0.1
       '@web3-storage/data-segment':
         specifier: ^5.2.0
         version: 5.3.0
       multiformats:
         specifier: 'catalog:'
-        version: 13.3.3
+        version: 13.3.6
     devDependencies:
       '@arethetypeswrong/cli':
         specifier: 'catalog:'
@@ -591,13 +577,13 @@ importers:
         specifier: 'catalog:'
         version: 3.3.2
       '@ipld/car':
-        specifier: ^5.4.0
+        specifier: 'catalog:'
         version: 5.4.0
       '@ipld/dag-json':
-        specifier: ^10.1.5
+        specifier: 'catalog:'
         version: 10.2.3
       '@ipld/dag-ucan':
-        specifier: ^3.4.5
+        specifier: 'catalog:'
         version: 3.4.5
       '@storacha/access':
         specifier: workspace:^
@@ -609,17 +595,17 @@ importers:
         specifier: workspace:^
         version: link:../did-mailto
       '@ucanto/client':
-        specifier: 'catalog:'
-        version: 9.0.1
+        specifier: ^9.0.2
+        version: 9.0.2
       '@ucanto/core':
-        specifier: 'catalog:'
-        version: 10.4.0
+        specifier: ^10.4.5
+        version: 10.4.5
       '@ucanto/transport':
-        specifier: 'catalog:'
-        version: 9.2.0
+        specifier: ^9.2.1
+        version: 9.2.1
       '@web3-storage/content-claims':
         specifier: 'catalog:'
-        version: 5.2.1
+        version: 5.2.2
       '@web3-storage/data-segment':
         specifier: 'catalog:'
         version: 5.3.0
@@ -676,14 +662,14 @@ importers:
         specifier: 'catalog:'
         version: 8.26.1(@typescript-eslint/parser@8.26.1(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
       '@ucanto/interface':
-        specifier: 'catalog:'
-        version: 10.3.0
+        specifier: ^11.0.1
+        version: 11.0.1
       '@ucanto/principal':
-        specifier: 'catalog:'
-        version: 9.0.2
+        specifier: ^9.0.3
+        version: 9.0.3
       '@ucanto/server':
-        specifier: 'catalog:'
-        version: 10.2.0
+        specifier: ^11.0.3
+        version: 11.0.3
       '@web-std/blob':
         specifier: 'catalog:'
         version: 3.0.5
@@ -695,7 +681,7 @@ importers:
         version: 2.2.1
       multiformats:
         specifier: 'catalog:'
-        version: 13.3.3
+        version: 13.3.6
       prettier:
         specifier: ^3.0.3
         version: 3.4.2
@@ -748,20 +734,20 @@ importers:
         specifier: 'catalog:'
         version: 4.1.4
       '@ucanto/client':
-        specifier: 'catalog:'
-        version: 9.0.1
+        specifier: ^9.0.2
+        version: 9.0.2
       '@ucanto/core':
-        specifier: 'catalog:'
-        version: 10.4.0
+        specifier: ^10.4.5
+        version: 10.4.5
       '@ucanto/interface':
-        specifier: 'catalog:'
-        version: 10.3.0
+        specifier: ^11.0.1
+        version: 11.0.1
       '@ucanto/transport':
-        specifier: 'catalog:'
-        version: 9.2.0
+        specifier: ^9.2.1
+        version: 9.2.1
       '@web3-storage/content-claims':
         specifier: 'catalog:'
-        version: 5.2.1
+        version: 5.2.2
       '@web3-storage/data-segment':
         specifier: 'catalog:'
         version: 5.3.0
@@ -779,7 +765,7 @@ importers:
         version: 3.0.0
       multiformats:
         specifier: 'catalog:'
-        version: 13.3.3
+        version: 13.3.6
       next:
         specifier: 'catalog:'
         version: 13.5.11(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.87.0)
@@ -944,26 +930,26 @@ importers:
         specifier: workspace:^
         version: link:../upload-client
       '@ucanto/client':
-        specifier: 'catalog:'
-        version: 9.0.1
-      '@ucanto/core':
-        specifier: 'catalog:'
-        version: 10.4.0
-      '@ucanto/interface':
-        specifier: 'catalog:'
-        version: 10.3.0
-      '@ucanto/principal':
-        specifier: 'catalog:'
+        specifier: ^9.0.2
         version: 9.0.2
+      '@ucanto/core':
+        specifier: ^10.4.5
+        version: 10.4.5
+      '@ucanto/interface':
+        specifier: ^11.0.1
+        version: 11.0.1
+      '@ucanto/principal':
+        specifier: ^9.0.3
+        version: 9.0.3
       '@ucanto/server':
-        specifier: 'catalog:'
-        version: 10.2.0
+        specifier: ^11.0.3
+        version: 11.0.3
       '@ucanto/transport':
-        specifier: 'catalog:'
-        version: 9.2.0
+        specifier: ^9.2.1
+        version: 9.2.1
       '@ucanto/validator':
-        specifier: 'catalog:'
-        version: 9.1.0
+        specifier: ^10.0.1
+        version: 10.0.1
       blockstore-core:
         specifier: 'catalog:'
         version: 3.0.0
@@ -981,7 +967,7 @@ importers:
         version: 10.0.1
       multiformats:
         specifier: 'catalog:'
-        version: 13.3.3
+        version: 13.3.6
     devDependencies:
       '@lit-protocol/types':
         specifier: ^7.0.8
@@ -1026,23 +1012,23 @@ importers:
         specifier: workspace:^
         version: link:../capabilities
       '@ucanto/client':
-        specifier: 'catalog:'
-        version: 9.0.1
+        specifier: ^9.0.2
+        version: 9.0.2
       '@ucanto/core':
-        specifier: 'catalog:'
-        version: 10.4.0
+        specifier: ^10.4.5
+        version: 10.4.5
       '@ucanto/interface':
-        specifier: 'catalog:'
-        version: 10.3.0
+        specifier: ^11.0.1
+        version: 11.0.1
       '@ucanto/server':
-        specifier: 'catalog:'
-        version: 10.2.0
+        specifier: ^11.0.3
+        version: 11.0.3
       '@ucanto/transport':
-        specifier: 'catalog:'
-        version: 9.2.0
+        specifier: ^9.2.1
+        version: 9.2.1
       '@web3-storage/content-claims':
         specifier: 'catalog:'
-        version: 5.2.1
+        version: 5.2.2
       '@web3-storage/data-segment':
         specifier: 'catalog:'
         version: 5.3.0
@@ -1075,8 +1061,8 @@ importers:
         specifier: 'catalog:'
         version: 8.26.1(@typescript-eslint/parser@8.26.1(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
       '@ucanto/principal':
-        specifier: 'catalog:'
-        version: 9.0.2
+        specifier: ^9.0.3
+        version: 9.0.3
       '@web-std/blob':
         specifier: 'catalog:'
         version: 3.0.5
@@ -1088,7 +1074,7 @@ importers:
         version: 10.8.2
       multiformats:
         specifier: 'catalog:'
-        version: 13.3.3
+        version: 13.3.6
       p-wait-for:
         specifier: 'catalog:'
         version: 5.0.2
@@ -1105,17 +1091,17 @@ importers:
         specifier: workspace:^
         version: link:../capabilities
       '@ucanto/client':
-        specifier: 'catalog:'
-        version: 9.0.1
+        specifier: ^9.0.2
+        version: 9.0.2
       '@ucanto/core':
-        specifier: 'catalog:'
-        version: 10.4.0
+        specifier: ^10.4.5
+        version: 10.4.5
       '@ucanto/interface':
-        specifier: 'catalog:'
-        version: 10.3.0
+        specifier: ^11.0.1
+        version: 11.0.1
       '@ucanto/transport':
-        specifier: 'catalog:'
-        version: 9.2.0
+        specifier: ^9.2.1
+        version: 9.2.1
     devDependencies:
       '@arethetypeswrong/cli':
         specifier: 'catalog:'
@@ -1139,11 +1125,11 @@ importers:
         specifier: 'catalog:'
         version: 8.26.1(@typescript-eslint/parser@8.26.1(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
       '@ucanto/principal':
-        specifier: 'catalog:'
-        version: 9.0.2
+        specifier: ^9.0.3
+        version: 9.0.3
       '@ucanto/server':
-        specifier: 'catalog:'
-        version: 10.2.0
+        specifier: ^11.0.3
+        version: 11.0.3
       '@web3-storage/data-segment':
         specifier: ^5.3.0
         version: 5.3.0
@@ -1161,7 +1147,7 @@ importers:
         version: 10.8.2
       multiformats:
         specifier: 'catalog:'
-        version: 13.3.3
+        version: 13.3.6
       playwright-test:
         specifier: 'catalog:'
         version: 12.6.1
@@ -1181,23 +1167,23 @@ importers:
         specifier: 'catalog:'
         version: 3.4.5
       '@ucanto/client':
-        specifier: 'catalog:'
-        version: 9.0.1
-      '@ucanto/core':
-        specifier: 'catalog:'
-        version: 10.4.0
-      '@ucanto/interface':
-        specifier: 'catalog:'
-        version: 10.3.0
-      '@ucanto/principal':
-        specifier: 'catalog:'
+        specifier: ^9.0.2
         version: 9.0.2
+      '@ucanto/core':
+        specifier: ^10.4.5
+        version: 10.4.5
+      '@ucanto/interface':
+        specifier: ^11.0.1
+        version: 11.0.1
+      '@ucanto/principal':
+        specifier: ^9.0.3
+        version: 9.0.3
       '@ucanto/server':
-        specifier: 'catalog:'
-        version: 10.2.0
+        specifier: ^11.0.3
+        version: 11.0.3
       '@ucanto/transport':
-        specifier: 'catalog:'
-        version: 9.2.0
+        specifier: ^9.2.1
+        version: 9.2.1
       '@web3-storage/clock':
         specifier: ^0.4.1
         version: 0.4.1
@@ -1209,7 +1195,7 @@ importers:
         version: 2.3.0
       multiformats:
         specifier: 'catalog:'
-        version: 13.3.3
+        version: 13.3.6
       p-defer:
         specifier: 'catalog:'
         version: 4.0.1
@@ -1503,17 +1489,17 @@ importers:
         specifier: workspace:^
         version: link:../../../did-mailto
       '@ucanto/client':
-        specifier: 'catalog:'
-        version: 9.0.1
-      '@ucanto/interface':
-        specifier: 'catalog:'
-        version: 10.3.0
-      '@ucanto/principal':
-        specifier: 'catalog:'
+        specifier: ^9.0.2
         version: 9.0.2
+      '@ucanto/interface':
+        specifier: ^11.0.1
+        version: 11.0.1
+      '@ucanto/principal':
+        specifier: ^9.0.3
+        version: 9.0.3
       '@ucanto/transport':
-        specifier: 'catalog:'
-        version: 9.2.0
+        specifier: ^9.2.1
+        version: 9.2.1
     devDependencies:
       '@storacha/eslint-config-ui':
         specifier: workspace:^
@@ -1552,8 +1538,8 @@ importers:
         specifier: workspace:^
         version: link:../core
       '@ucanto/core':
-        specifier: 'catalog:'
-        version: 10.4.0
+        specifier: ^10.4.5
+        version: 10.4.5
       ariakit-react-utils:
         specifier: 'catalog:'
         version: 0.17.0-next.27(@types/react@18.3.18)(react@18.3.1)
@@ -1577,17 +1563,17 @@ importers:
         specifier: 'catalog:'
         version: 18.3.18
       '@ucanto/client':
-        specifier: 'catalog:'
-        version: 9.0.1
-      '@ucanto/interface':
-        specifier: 'catalog:'
-        version: 10.3.0
-      '@ucanto/principal':
-        specifier: 'catalog:'
+        specifier: ^9.0.2
         version: 9.0.2
+      '@ucanto/interface':
+        specifier: ^11.0.1
+        version: 11.0.1
+      '@ucanto/principal':
+        specifier: ^9.0.3
+        version: 9.0.3
       '@ucanto/transport':
-        specifier: 'catalog:'
-        version: 9.2.0
+        specifier: ^9.2.1
+        version: 9.2.1
       eslint-plugin-react-hooks:
         specifier: 'catalog:'
         version: 4.6.2(eslint@8.57.1)
@@ -1602,7 +1588,7 @@ importers:
         version: 23.2.0
       multiformats:
         specifier: 'catalog:'
-        version: 13.3.3
+        version: 13.3.6
       react:
         specifier: 'catalog:'
         version: 18.3.1
@@ -1631,35 +1617,35 @@ importers:
         specifier: workspace:^
         version: link:../filecoin-api
       '@storacha/indexing-service-client':
-        specifier: 2.2.0-rc.3
-        version: 2.2.0-rc.3
+        specifier: ^2.6.5
+        version: 2.6.5
       '@ucanto/client':
-        specifier: 'catalog:'
-        version: 9.0.1
-      '@ucanto/interface':
-        specifier: 'catalog:'
-        version: 10.3.0
-      '@ucanto/principal':
-        specifier: 'catalog:'
+        specifier: ^9.0.2
         version: 9.0.2
+      '@ucanto/interface':
+        specifier: ^11.0.1
+        version: 11.0.1
+      '@ucanto/principal':
+        specifier: ^9.0.3
+        version: 9.0.3
       '@ucanto/server':
-        specifier: 'catalog:'
-        version: 10.2.0
+        specifier: ^11.0.3
+        version: 11.0.3
       '@ucanto/transport':
-        specifier: 'catalog:'
-        version: 9.2.0
+        specifier: ^9.2.1
+        version: 9.2.1
       '@ucanto/validator':
-        specifier: 'catalog:'
-        version: 9.1.0
+        specifier: ^10.0.1
+        version: 10.0.1
       '@web3-storage/content-claims':
         specifier: 'catalog:'
-        version: 5.2.1
+        version: 5.2.2
       '@web3-storage/upload-api':
         specifier: 'catalog:'
         version: 19.0.0
       multiformats:
         specifier: 'catalog:'
-        version: 13.3.3
+        version: 13.3.6
       uint8arrays:
         specifier: ^5.0.3
         version: 5.1.0
@@ -1686,8 +1672,8 @@ importers:
         specifier: 'catalog:'
         version: 8.26.1(@typescript-eslint/parser@8.26.1(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
       '@ucanto/core':
-        specifier: 'catalog:'
-        version: 10.4.0
+        specifier: ^10.4.5
+        version: 10.4.5
       '@web-std/blob':
         specifier: 'catalog:'
         version: 3.0.5
@@ -1728,17 +1714,17 @@ importers:
         specifier: workspace:^
         version: link:../filecoin-client
       '@ucanto/client':
-        specifier: 'catalog:'
-        version: 9.0.1
+        specifier: ^9.0.2
+        version: 9.0.2
       '@ucanto/core':
-        specifier: 'catalog:'
-        version: 10.4.0
+        specifier: ^10.4.5
+        version: 10.4.5
       '@ucanto/interface':
-        specifier: 'catalog:'
-        version: 10.3.0
+        specifier: ^11.0.1
+        version: 11.0.1
       '@ucanto/transport':
-        specifier: 'catalog:'
-        version: 9.2.0
+        specifier: ^9.2.1
+        version: 9.2.1
       '@web3-storage/data-segment':
         specifier: ^5.1.0
         version: 5.3.0
@@ -1747,7 +1733,7 @@ importers:
         version: 9.0.14(encoding@0.1.13)
       multiformats:
         specifier: 'catalog:'
-        version: 13.3.3
+        version: 13.3.6
       p-retry:
         specifier: 'catalog:'
         version: 5.1.2
@@ -1777,14 +1763,14 @@ importers:
         specifier: 'catalog:'
         version: 8.26.1(@typescript-eslint/parser@8.26.1(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
       '@ucanto/principal':
-        specifier: 'catalog:'
-        version: 9.0.2
+        specifier: ^9.0.3
+        version: 9.0.3
       '@ucanto/server':
-        specifier: 'catalog:'
-        version: 10.2.0
+        specifier: ^11.0.3
+        version: 11.0.3
       '@web3-storage/content-claims':
         specifier: 'catalog:'
-        version: 5.2.1
+        version: 5.2.2
       assert:
         specifier: 'catalog:'
         version: 2.1.0
@@ -1837,20 +1823,20 @@ importers:
         specifier: workspace:^
         version: link:../upload-client
       '@ucanto/client':
-        specifier: 'catalog:'
-        version: 9.0.1
-      '@ucanto/core':
-        specifier: 'catalog:'
-        version: 10.4.0
-      '@ucanto/interface':
-        specifier: 'catalog:'
-        version: 10.3.0
-      '@ucanto/principal':
-        specifier: 'catalog:'
+        specifier: ^9.0.2
         version: 9.0.2
+      '@ucanto/core':
+        specifier: ^10.4.5
+        version: 10.4.5
+      '@ucanto/interface':
+        specifier: ^11.0.1
+        version: 11.0.1
+      '@ucanto/principal':
+        specifier: ^9.0.3
+        version: 9.0.3
       '@ucanto/transport':
-        specifier: 'catalog:'
-        version: 9.2.0
+        specifier: ^9.2.1
+        version: 9.2.1
       environment:
         specifier: ^1.1.0
         version: 1.1.0
@@ -1883,14 +1869,14 @@ importers:
         specifier: 'catalog:'
         version: 8.26.1(@typescript-eslint/parser@8.26.1(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
       '@ucanto/server':
-        specifier: 'catalog:'
-        version: 10.2.0
+        specifier: ^11.0.3
+        version: 11.0.3
       '@web3-storage/access':
         specifier: ^20.1.0
         version: 20.1.1
       '@web3-storage/content-claims':
         specifier: 'catalog:'
-        version: 5.2.1
+        version: 5.2.2
       '@web3-storage/data-segment':
         specifier: 'catalog:'
         version: 5.3.0
@@ -1911,7 +1897,7 @@ importers:
         version: 10.8.2
       multiformats:
         specifier: 'catalog:'
-        version: 13.3.3
+        version: 13.3.6
       npm-run-all:
         specifier: 'catalog:'
         version: 4.1.5
@@ -5205,18 +5191,19 @@ packages:
   '@stablelib/x25519@1.0.3':
     resolution: {integrity: sha512-KnTbKmUhPhHavzobclVJQG5kuivH+qDLpe84iRqX3CLrKp881cF160JvXJ+hjn1aMyCwYOKeIZefIH/P5cJoRw==}
 
-  '@storacha/blob-index@1.1.0-rc.0':
-    resolution: {integrity: sha512-LTPfv0POAKbFJAem1Iz7utZzlh2auIhUZ7TQYz9YM9tZOWXwWz4oKXv6v0sXsqK5NGZsnolT5iQbNJ2f8GXZBg==}
+  '@storacha/blob-index@1.2.1':
+    resolution: {integrity: sha512-hmT+xj73VGf17700D2aIjEdJdfMRtYCWDxOJ9PusNCeJwihykLW7hCnajenfcccTtfujZsLww5UmoO8xaX/KLQ==}
     engines: {node: '>=16.15'}
+    hasBin: true
 
-  '@storacha/capabilities@1.7.0':
-    resolution: {integrity: sha512-YMIuocTgaVpqlgyds5NG+eJqfr+dfFkxdk33lJcFIRD30SZaGiA8vQ0ZPUHqcC9Azj0XZCRexz6nHXqEsn1aag==}
+  '@storacha/capabilities@1.9.0':
+    resolution: {integrity: sha512-vWQ+RRatcRGfsvHKOr8En2K7nahu+uYXigMQvIMDa2kYE8JYEEkdH0O2ti95gOVNLDxYA7cAEAemak2C4g+Row==}
 
-  '@storacha/capabilities@1.7.0-rc.0':
-    resolution: {integrity: sha512-y+BhKDY8fem15+4YstC07BQY2jLO5zD8zcsBUpnMmZOmouDfPiq/SK/e8S5FbXS7J+xcqCTamSacXLxCojsAsg==}
+  '@storacha/capabilities@1.9.1-rc.1':
+    resolution: {integrity: sha512-TN8gxotCH2MarLzsHtMg2dxsZP82soESdD8hTAAUb97bQZq6ZTGHrdXMManMZ354JbA/24M/N4kOsZaveRmYdg==}
 
-  '@storacha/indexing-service-client@2.2.0-rc.3':
-    resolution: {integrity: sha512-eyEW3EVkWBiNim5YEfK4gV/Qbocc8EQcaavuewpz79/+z32ICYvzJVZrNBNxgxvSBiIi8qtuc++1bvgoSNWL5w==}
+  '@storacha/indexing-service-client@2.6.5':
+    resolution: {integrity: sha512-JYZVdUE79FUFHvVkhSbUkjeeYVNkIS5tDkentoP7vxu1QajQ6nNrkYBkHHTdoapgEEfiS/NrdPryZToOhrk4VA==}
 
   '@storacha/one-webcrypto@1.0.1':
     resolution: {integrity: sha512-bD+vWmcgsEBqU0Dz04BR43SA03bBoLTAY29vaKasY9Oe8cb6XIP0/vkm0OS2UwKC13c8uRgFW4rjJUgDCNLejQ==}
@@ -5855,26 +5842,26 @@ packages:
     resolution: {integrity: sha512-AjOC3zfnxd6S4Eiy3jwktJPclqhFHNyd8L6Gycf9WUPoKZpgM5PjkxY1X7uSy61xVpiJDhhk7XT2NVsN3ALTWg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@ucanto/client@9.0.1':
-    resolution: {integrity: sha512-cV8w3AnaZaYCdUmyFFICj8YhFckDoy2DvWgAzGDMkPz0WbUW4lw9Tjm4hEE8x5kiP47wYej/pHKWCcoELiU0qw==}
+  '@ucanto/client@9.0.2':
+    resolution: {integrity: sha512-XbG8rw/fc1hPSFKDQ/z1NpIuc4Lm79J4NWbP+dedvDnb5LmOBMHE8bjjEPD4xGO2eh6fWQSZ4YTYk5wjkLz+3Q==}
 
-  '@ucanto/core@10.4.0':
-    resolution: {integrity: sha512-ohLgxHUo/XgL1G/pvelsHl3zyq7w+fn6ZVN3yVhgiJwbRh67EqvjavXYEFGSLBzlAdMGsfDNkbetQob1sNSNGg==}
+  '@ucanto/core@10.4.5':
+    resolution: {integrity: sha512-NKVgAFjpPu1QFyKjYHlaeJbSvst3oA79S7XNSFFQGhNKhGJ45ro67Fa5zxdy5jlU5jhSox3+T81VsmsszfBRYw==}
 
-  '@ucanto/interface@10.3.0':
-    resolution: {integrity: sha512-97929CGr3AM4Y01CLZ3wwhzrlth5pq8eJCbd/hUMxD62nyG9eRsyvt3RSOtBNtu4jTdMH580x0oAF2D1XKcPvw==}
+  '@ucanto/interface@11.0.1':
+    resolution: {integrity: sha512-d0yoPFXdbb3EyM3sBom5VVcVyz58HT+57qi/ywSY1dbZAm4c7GZss0lpfcI5OXQREzGCzJYAg1e7pFwqbATnmQ==}
 
-  '@ucanto/principal@9.0.2':
-    resolution: {integrity: sha512-RE3Rj0oz4wh4C9p2JJZB9+QLd7Fi3lCixrbHgAvEoSyTNpvz6ky8DGNtttmD5j3O94z13qdVdIoSRY6DQZXfAg==}
+  '@ucanto/principal@9.0.3':
+    resolution: {integrity: sha512-MFLvckOpQA46VSeLWyB7xCysL+ub5vnbCEtHbWhNE3qkzeo14v4wSThd60odPhxj83QXrzbveiebp0gcaEvXJg==}
 
-  '@ucanto/server@10.2.0':
-    resolution: {integrity: sha512-RKoh7m86V97Kk8LZRaKmF1f2HdT3iQNyAGYShx9gasEV3qUuTaq2k6gXBTBRiEaYjX27C3C/KSaTrmVCEPwp1g==}
+  '@ucanto/server@11.0.3':
+    resolution: {integrity: sha512-NiiUHYnyM4UPSWKquHbi1n3a5paAl8fQ0K8ankfaME1p18JyTGcbC8SOEUOecewqBpET5jHXPe/4DDt0M9Hi9A==}
 
-  '@ucanto/transport@9.2.0':
-    resolution: {integrity: sha512-w/CtD5LYEpGo/CxV78IiWalW99gNRPHKZ/DoOpart5QShozvnU//PwUqyqnGimZCDIrIq4LH6x92z2L/2k5OKQ==}
+  '@ucanto/transport@9.2.1':
+    resolution: {integrity: sha512-/Dhr+2vjpGO5GTKsSl8XcPQFtFdZvIA9Yk/yzzY9DHFsdI+tXrUjLWYwXcidx8EIdx5Xd9oitF4wodIZuiW8GQ==}
 
-  '@ucanto/validator@9.1.0':
-    resolution: {integrity: sha512-2JnEEZYc8kTZz+qbyL7LbI/TSpBRWLOchNhaRB5DTyj38FxMFQUXIB7gQ5lZHv49uYJGx/FXKPw0268WgJdEvg==}
+  '@ucanto/validator@10.0.1':
+    resolution: {integrity: sha512-J1/2NAfvs55CxDEuHKMTjoLgoVrFqBbZqErYwL7TDx8Pu2V9sv7rc2wZS5dRxcM1VCEzHXY3SWeLOJuH8VgKrw==}
 
   '@ungap/structured-clone@1.2.1':
     resolution: {integrity: sha512-fEzPV3hSkSMltkw152tJKNARhOupqbH96MZWyRjNaYZOMIzbrTeQDG+MTc6Mr2pgzFQzFxAfmhGDNP5QK++2ZA==}
@@ -6218,9 +6205,8 @@ packages:
   '@web3-storage/clock@0.4.1':
     resolution: {integrity: sha512-VHAyvbl7ZrNls6yltS5Djuwjz9Rw0rcA8tpv7qQp1WoheY00YBdqa8gjR1V4egVkqV1ZugGA06XH+ug0OhGXDg==}
 
-  '@web3-storage/content-claims@5.2.1':
-    resolution: {integrity: sha512-cOLxfzPJJo36CrbXEDtH/hNOIyB3gfF9cv8FS3QcK/OM1Xlsvihi4WvAX0aT6iql+P9Bcg9vRSthpLT2pU+t4g==}
-    deprecated: Web3.storage became storacha.network, please upgrade to @storacha/indexing-service-client
+  '@web3-storage/content-claims@5.2.2':
+    resolution: {integrity: sha512-nV+mHLOZqL806DZBneCF6hszGF+A08QWV+6KE0iGExu4aKsQt4/Revwn6c9TqF8iZqLSmcF8lfgfmG7S2aL48Q==}
 
   '@web3-storage/data-segment@5.3.0':
     resolution: {integrity: sha512-zFJ4m+pEKqtKatJNsFrk/2lHeFSbkXZ6KKXjBe7/2ayA9wAar7T/unewnOcZrrZTnCWmaxKsXWqdMFy9bXK9dw==}
@@ -10564,9 +10550,6 @@ packages:
   multiformats@12.1.3:
     resolution: {integrity: sha512-eajQ/ZH7qXZQR2AgtfpmSMizQzmyYVmCql7pdhldPuYQi4atACekbJaQplk6dWyIi10jCaFnd6pqvcEFXjbaJw==}
     engines: {node: '>=16.0.0', npm: '>=7.0.0'}
-
-  multiformats@13.3.3:
-    resolution: {integrity: sha512-TlaFCzs3NHNzMpwiGwRYehnnhHlZcWfptygFekshlb9xCyO09GfN+9881+VBENCdRnKOeqmMxDCbupNecV8xRQ==}
 
   multiformats@13.3.6:
     resolution: {integrity: sha512-yakbt9cPYj8d3vi/8o/XWm61MrOILo7fsTL0qxNx6zS0Nso6K5JqqS2WV7vK/KSuDBvrW3KfCwAdAgarAgOmww==}
@@ -15721,9 +15704,9 @@ snapshots:
 
   '@ipld/car@5.4.0':
     dependencies:
-      '@ipld/dag-cbor': 9.2.2
+      '@ipld/dag-cbor': 9.2.4
       cborg: 4.2.7
-      multiformats: 13.3.3
+      multiformats: 13.3.6
       varint: 6.0.0
 
   '@ipld/dag-cbor@6.0.15':
@@ -15739,7 +15722,7 @@ snapshots:
   '@ipld/dag-cbor@9.2.2':
     dependencies:
       cborg: 4.2.7
-      multiformats: 13.3.3
+      multiformats: 13.3.6
 
   '@ipld/dag-cbor@9.2.4':
     dependencies:
@@ -15749,7 +15732,7 @@ snapshots:
   '@ipld/dag-json@10.2.3':
     dependencies:
       cborg: 4.2.7
-      multiformats: 13.3.3
+      multiformats: 13.3.6
 
   '@ipld/dag-pb@2.1.18':
     dependencies:
@@ -15757,13 +15740,13 @@ snapshots:
 
   '@ipld/dag-pb@4.1.3':
     dependencies:
-      multiformats: 13.3.3
+      multiformats: 13.3.6
 
   '@ipld/dag-ucan@3.4.5':
     dependencies:
-      '@ipld/dag-cbor': 9.2.2
+      '@ipld/dag-cbor': 9.2.4
       '@ipld/dag-json': 10.2.3
-      multiformats: 13.3.3
+      multiformats: 13.3.6
 
   '@ipld/schema@6.0.6':
     dependencies:
@@ -15786,7 +15769,7 @@ snapshots:
       '@multiformats/murmur3': 2.1.8
       '@perma/map': 1.0.3
       actor: 2.3.1
-      multiformats: 13.3.3
+      multiformats: 13.3.6
       protobufjs: 7.4.0
       rabin-rs: 2.1.0
 
@@ -16756,7 +16739,7 @@ snapshots:
 
   '@multiformats/murmur3@2.1.8':
     dependencies:
-      multiformats: 13.3.3
+      multiformats: 13.3.6
       murmurhash3js-revisited: 3.0.0
 
   '@multiformats/sha3@3.0.2':
@@ -18359,44 +18342,48 @@ snapshots:
       '@stablelib/random': 1.0.2
       '@stablelib/wipe': 1.0.1
 
-  '@storacha/blob-index@1.1.0-rc.0':
+  '@storacha/blob-index@1.2.1':
     dependencies:
       '@ipld/dag-cbor': 9.2.4
-      '@storacha/capabilities': 1.7.0
+      '@storacha/capabilities': 1.9.0
       '@storacha/one-webcrypto': 1.0.1
-      '@ucanto/core': 10.4.0
-      '@ucanto/interface': 10.3.0
+      '@ucanto/core': 10.4.5
+      '@ucanto/interface': 11.0.1
       carstream: 2.3.0
       multiformats: 13.3.6
+      sade: 1.8.1
       uint8arrays: 5.1.0
 
-  '@storacha/capabilities@1.7.0':
+  '@storacha/capabilities@1.9.0':
     dependencies:
-      '@ucanto/core': 10.4.0
-      '@ucanto/interface': 10.3.0
-      '@ucanto/principal': 9.0.2
-      '@ucanto/transport': 9.2.0
-      '@ucanto/validator': 9.1.0
+      '@ucanto/core': 10.4.5
+      '@ucanto/interface': 11.0.1
+      '@ucanto/principal': 9.0.3
+      '@ucanto/transport': 9.2.1
+      '@ucanto/validator': 10.0.1
       '@web3-storage/data-segment': 5.3.0
       multiformats: 13.3.6
 
-  '@storacha/capabilities@1.7.0-rc.0':
+  '@storacha/capabilities@1.9.1-rc.1':
     dependencies:
-      '@ucanto/core': 10.4.0
-      '@ucanto/interface': 10.3.0
-      '@ucanto/principal': 9.0.2
-      '@ucanto/transport': 9.2.0
-      '@ucanto/validator': 9.1.0
+      '@ucanto/core': 10.4.5
+      '@ucanto/interface': 11.0.1
+      '@ucanto/principal': 9.0.3
+      '@ucanto/transport': 9.2.1
+      '@ucanto/validator': 10.0.1
       '@web3-storage/data-segment': 5.3.0
       multiformats: 13.3.6
 
-  '@storacha/indexing-service-client@2.2.0-rc.3':
+  '@storacha/indexing-service-client@2.6.5':
     dependencies:
       '@ipld/dag-cbor': 9.2.4
-      '@storacha/blob-index': 1.1.0-rc.0
-      '@storacha/capabilities': 1.7.0-rc.0
-      '@ucanto/core': 10.4.0
-      '@ucanto/interface': 10.3.0
+      '@ipld/dag-ucan': 3.4.5
+      '@storacha/blob-index': 1.2.1
+      '@storacha/capabilities': 1.9.1-rc.1
+      '@ucanto/client': 9.0.2
+      '@ucanto/core': 10.4.5
+      '@ucanto/interface': 11.0.1
+      '@ucanto/transport': 9.2.1
       multiformats: 13.3.6
 
   '@storacha/one-webcrypto@1.0.1': {}
@@ -19173,53 +19160,53 @@ snapshots:
       '@typescript-eslint/types': 8.26.1
       eslint-visitor-keys: 4.2.0
 
-  '@ucanto/client@9.0.1':
+  '@ucanto/client@9.0.2':
     dependencies:
-      '@ucanto/core': 10.4.0
-      '@ucanto/interface': 10.3.0
+      '@ucanto/core': 10.4.5
+      '@ucanto/interface': 11.0.1
 
-  '@ucanto/core@10.4.0':
+  '@ucanto/core@10.4.5':
     dependencies:
       '@ipld/car': 5.4.0
-      '@ipld/dag-cbor': 9.2.2
+      '@ipld/dag-cbor': 9.2.4
       '@ipld/dag-ucan': 3.4.5
-      '@ucanto/interface': 10.3.0
-      multiformats: 13.3.3
+      '@ucanto/interface': 11.0.1
+      multiformats: 13.3.6
 
-  '@ucanto/interface@10.3.0':
+  '@ucanto/interface@11.0.1':
     dependencies:
       '@ipld/dag-ucan': 3.4.5
-      multiformats: 13.3.3
+      multiformats: 13.3.6
 
-  '@ucanto/principal@9.0.2':
+  '@ucanto/principal@9.0.3':
     dependencies:
       '@ipld/dag-ucan': 3.4.5
       '@noble/curves': 1.8.1
       '@noble/ed25519': 1.7.3
       '@noble/hashes': 1.7.1
-      '@ucanto/interface': 10.3.0
-      multiformats: 13.3.3
+      '@ucanto/interface': 11.0.1
+      multiformats: 13.3.6
       one-webcrypto: 1.0.3
 
-  '@ucanto/server@10.2.0':
+  '@ucanto/server@11.0.3':
     dependencies:
-      '@ucanto/core': 10.4.0
-      '@ucanto/interface': 10.3.0
-      '@ucanto/principal': 9.0.2
-      '@ucanto/validator': 9.1.0
+      '@ucanto/core': 10.4.5
+      '@ucanto/interface': 11.0.1
+      '@ucanto/principal': 9.0.3
+      '@ucanto/validator': 10.0.1
 
-  '@ucanto/transport@9.2.0':
+  '@ucanto/transport@9.2.1':
     dependencies:
-      '@ucanto/core': 10.4.0
-      '@ucanto/interface': 10.3.0
+      '@ucanto/core': 10.4.5
+      '@ucanto/interface': 11.0.1
 
-  '@ucanto/validator@9.1.0':
+  '@ucanto/validator@10.0.1':
     dependencies:
       '@ipld/car': 5.4.0
-      '@ipld/dag-cbor': 9.2.2
-      '@ucanto/core': 10.4.0
-      '@ucanto/interface': 10.3.0
-      multiformats: 13.3.3
+      '@ipld/dag-cbor': 9.2.4
+      '@ucanto/core': 10.4.5
+      '@ucanto/interface': 11.0.1
+      multiformats: 13.3.6
 
   '@ungap/structured-clone@1.2.1': {}
 
@@ -19912,12 +19899,12 @@ snapshots:
       '@ipld/dag-ucan': 3.4.5
       '@scure/bip39': 1.5.4
       '@storacha/one-webcrypto': 1.0.1
-      '@ucanto/client': 9.0.1
-      '@ucanto/core': 10.4.0
-      '@ucanto/interface': 10.3.0
-      '@ucanto/principal': 9.0.2
-      '@ucanto/transport': 9.2.0
-      '@ucanto/validator': 9.1.0
+      '@ucanto/client': 9.0.2
+      '@ucanto/core': 10.4.5
+      '@ucanto/interface': 11.0.1
+      '@ucanto/principal': 9.0.3
+      '@ucanto/transport': 9.2.1
+      '@ucanto/validator': 10.0.1
       '@web3-storage/capabilities': 18.0.1
       '@web3-storage/did-mailto': 2.1.0
       bigint-mod-arith: 3.3.1
@@ -19931,30 +19918,30 @@ snapshots:
     dependencies:
       '@ipld/dag-cbor': 9.2.2
       '@storacha/one-webcrypto': 1.0.1
-      '@ucanto/core': 10.4.0
-      '@ucanto/interface': 10.3.0
+      '@ucanto/core': 10.4.5
+      '@ucanto/interface': 11.0.1
       '@web3-storage/capabilities': 18.0.1
       carstream: 2.3.0
-      multiformats: 13.3.3
+      multiformats: 13.3.6
       uint8arrays: 5.1.0
 
   '@web3-storage/capabilities@17.4.1':
     dependencies:
-      '@ucanto/core': 10.4.0
-      '@ucanto/interface': 10.3.0
-      '@ucanto/principal': 9.0.2
-      '@ucanto/transport': 9.2.0
-      '@ucanto/validator': 9.1.0
+      '@ucanto/core': 10.4.5
+      '@ucanto/interface': 11.0.1
+      '@ucanto/principal': 9.0.3
+      '@ucanto/transport': 9.2.1
+      '@ucanto/validator': 10.0.1
       '@web3-storage/data-segment': 5.3.0
       uint8arrays: 5.1.0
 
   '@web3-storage/capabilities@18.0.1':
     dependencies:
-      '@ucanto/core': 10.4.0
-      '@ucanto/interface': 10.3.0
-      '@ucanto/principal': 9.0.2
-      '@ucanto/transport': 9.2.0
-      '@ucanto/validator': 9.1.0
+      '@ucanto/core': 10.4.5
+      '@ucanto/interface': 11.0.1
+      '@ucanto/principal': 9.0.3
+      '@ucanto/transport': 9.2.1
+      '@ucanto/validator': 10.0.1
       '@web3-storage/data-segment': 5.3.0
       uint8arrays: 5.1.0
 
@@ -19963,38 +19950,38 @@ snapshots:
       '@multiformats/blake2': 2.0.2
       '@multiformats/murmur3': 2.1.8
       '@multiformats/sha3': 3.0.2
-      multiformats: 13.3.3
+      multiformats: 13.3.6
       uint8arrays: 5.1.0
 
   '@web3-storage/clock@0.4.1':
     dependencies:
       '@ipld/dag-cbor': 9.2.2
       '@ipld/dag-ucan': 3.4.5
-      '@ucanto/client': 9.0.1
-      '@ucanto/interface': 10.3.0
-      '@ucanto/principal': 9.0.2
-      '@ucanto/server': 10.2.0
-      '@ucanto/transport': 9.2.0
-      '@ucanto/validator': 9.1.0
+      '@ucanto/client': 9.0.2
+      '@ucanto/interface': 11.0.1
+      '@ucanto/principal': 9.0.3
+      '@ucanto/server': 11.0.3
+      '@ucanto/transport': 9.2.1
+      '@ucanto/validator': 10.0.1
       '@web3-storage/pail': 0.5.0
       hashlru: 2.3.0
-      multiformats: 13.3.3
+      multiformats: 13.3.6
       p-retry: 6.2.1
 
-  '@web3-storage/content-claims@5.2.1':
+  '@web3-storage/content-claims@5.2.2':
     dependencies:
-      '@ucanto/client': 9.0.1
-      '@ucanto/core': 10.4.0
-      '@ucanto/interface': 10.3.0
-      '@ucanto/server': 10.2.0
-      '@ucanto/transport': 9.2.0
+      '@ucanto/client': 9.0.2
+      '@ucanto/core': 10.4.5
+      '@ucanto/interface': 11.0.1
+      '@ucanto/server': 11.0.3
+      '@ucanto/transport': 9.2.1
       carstream: 2.3.0
-      multiformats: 13.3.3
+      multiformats: 13.3.6
 
   '@web3-storage/data-segment@5.3.0':
     dependencies:
       '@ipld/dag-cbor': 9.2.2
-      multiformats: 13.3.3
+      multiformats: 13.3.6
       sync-multihash-sha2: 1.0.0
 
   '@web3-storage/did-mailto@2.1.0': {}
@@ -20002,13 +19989,13 @@ snapshots:
   '@web3-storage/filecoin-api@8.0.0':
     dependencies:
       '@ipld/dag-ucan': 3.4.5
-      '@ucanto/client': 9.0.1
-      '@ucanto/core': 10.4.0
-      '@ucanto/interface': 10.3.0
-      '@ucanto/server': 10.2.0
-      '@ucanto/transport': 9.2.0
+      '@ucanto/client': 9.0.2
+      '@ucanto/core': 10.4.5
+      '@ucanto/interface': 11.0.1
+      '@ucanto/server': 11.0.3
+      '@ucanto/transport': 9.2.1
       '@web3-storage/capabilities': 18.0.1
-      '@web3-storage/content-claims': 5.2.1
+      '@web3-storage/content-claims': 5.2.2
       '@web3-storage/data-segment': 5.3.0
       fr32-sha2-256-trunc254-padded-binary-tree-multihash: 3.3.0
       p-map: 6.0.0
@@ -20016,10 +20003,10 @@ snapshots:
   '@web3-storage/filecoin-client@3.3.5':
     dependencies:
       '@ipld/dag-ucan': 3.4.5
-      '@ucanto/client': 9.0.1
-      '@ucanto/core': 10.4.0
-      '@ucanto/interface': 10.3.0
-      '@ucanto/transport': 9.2.0
+      '@ucanto/client': 9.0.2
+      '@ucanto/core': 10.4.5
+      '@ucanto/interface': 11.0.1
+      '@ucanto/transport': 9.2.1
       '@web3-storage/capabilities': 18.0.1
 
   '@web3-storage/multipart-parser@1.0.0': {}
@@ -20041,7 +20028,7 @@ snapshots:
       archy: 1.0.0
       carstream: 2.3.0
       cli-color: 2.0.4
-      multiformats: 13.3.3
+      multiformats: 13.3.6
       sade: 1.8.1
 
   '@web3-storage/parse-link-header@3.1.0': {}
@@ -20052,16 +20039,16 @@ snapshots:
 
   '@web3-storage/upload-api@19.0.0':
     dependencies:
-      '@ucanto/client': 9.0.1
-      '@ucanto/interface': 10.3.0
-      '@ucanto/principal': 9.0.2
-      '@ucanto/server': 10.2.0
-      '@ucanto/transport': 9.2.0
-      '@ucanto/validator': 9.1.0
+      '@ucanto/client': 9.0.2
+      '@ucanto/interface': 11.0.1
+      '@ucanto/principal': 9.0.3
+      '@ucanto/server': 11.0.3
+      '@ucanto/transport': 9.2.1
+      '@ucanto/validator': 10.0.1
       '@web3-storage/access': 20.1.1
       '@web3-storage/blob-index': 1.0.5
       '@web3-storage/capabilities': 18.0.1
-      '@web3-storage/content-claims': 5.2.1
+      '@web3-storage/content-claims': 5.2.2
       '@web3-storage/did-mailto': 2.1.0
       '@web3-storage/filecoin-api': 8.0.0
       multiformats: 12.1.3
@@ -20073,10 +20060,10 @@ snapshots:
       '@ipld/dag-cbor': 9.2.2
       '@ipld/dag-ucan': 3.4.5
       '@ipld/unixfs': 2.2.0
-      '@ucanto/client': 9.0.1
-      '@ucanto/core': 10.4.0
-      '@ucanto/interface': 10.3.0
-      '@ucanto/transport': 9.2.0
+      '@ucanto/client': 9.0.2
+      '@ucanto/core': 10.4.5
+      '@ucanto/interface': 11.0.1
+      '@ucanto/transport': 9.2.1
       '@web3-storage/blob-index': 1.0.5
       '@web3-storage/capabilities': 18.0.1
       '@web3-storage/data-segment': 5.3.0
@@ -20091,11 +20078,11 @@ snapshots:
   '@web3-storage/w3up-client@16.5.2(encoding@0.1.13)':
     dependencies:
       '@ipld/dag-ucan': 3.4.5
-      '@ucanto/client': 9.0.1
-      '@ucanto/core': 10.4.0
-      '@ucanto/interface': 10.3.0
-      '@ucanto/principal': 9.0.2
-      '@ucanto/transport': 9.2.0
+      '@ucanto/client': 9.0.2
+      '@ucanto/core': 10.4.5
+      '@ucanto/interface': 11.0.1
+      '@ucanto/principal': 9.0.3
+      '@ucanto/transport': 9.2.1
       '@web3-storage/access': 20.1.1
       '@web3-storage/blob-index': 1.0.5
       '@web3-storage/capabilities': 17.4.1
@@ -20942,7 +20929,7 @@ snapshots:
   carstream@2.3.0:
     dependencies:
       '@ipld/dag-cbor': 9.2.2
-      multiformats: 13.3.3
+      multiformats: 13.3.6
       uint8arraylist: 2.4.8
 
   cbor-web@9.0.2: {}
@@ -22324,7 +22311,7 @@ snapshots:
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1)
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
       eslint-plugin-jsx-a11y: 6.10.2(eslint@8.57.1)
       eslint-plugin-react: 7.37.4(eslint@8.57.1)
       eslint-plugin-react-hooks: 4.6.2(eslint@8.57.1)
@@ -22395,7 +22382,7 @@ snapshots:
       tinyglobby: 0.2.13
       unrs-resolver: 1.7.0
     optionalDependencies:
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -22439,7 +22426,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1):
+  eslint-plugin-import@2.31.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.31.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.8
@@ -25209,8 +25196,6 @@ snapshots:
   multiformats@11.0.2: {}
 
   multiformats@12.1.3: {}
-
-  multiformats@13.3.3: {}
 
   multiformats@13.3.6: {}
 
@@ -28111,7 +28096,7 @@ snapshots:
 
   uint8arrays@5.1.0:
     dependencies:
-      multiformats: 13.3.3
+      multiformats: 13.3.6
 
   unbox-primitive@1.1.0:
     dependencies:
