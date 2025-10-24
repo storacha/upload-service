@@ -63,6 +63,29 @@ export class PlanClient extends Base {
     }
     return out.ok
   }
+
+  /**
+   *
+   * @param {API.AccountDID} account
+   * @param {object} options
+   * @param {API.DID} options.planID
+   * @param {string} options.successURL
+   * @param {string} options.cancelURL
+   * @param {boolean} options.freeTrial
+   * @param {string} [options.nonce]
+   */
+  async createCheckoutSession(account, options) {
+    const out = await createCheckoutSession(
+      { agent: this.agent },
+      { ...options, account }
+    )
+    if (!out.ok) {
+      throw new Error(`failed ${Plan.createCheckoutSession.can} invocation`, {
+        cause: out.error,
+      })
+    }
+    return out.ok
+  }
 }
 
 /**
@@ -129,6 +152,40 @@ export const createAdminSession = async (
     nonce,
     nb: {
       returnURL,
+    },
+  })
+  return receipt.out
+}
+
+/**
+ * Creates a checkout session for the given account.
+ *
+ * Returns a URL that a user can resolve to send the user
+ * through Stripe checkout.
+ *
+ * @param {{agent: API.Agent}} client
+ * @param {object} options
+ * @param {API.AccountDID} options.account
+ * @param {API.DID} options.planID
+ * @param {string} options.successURL
+ * @param {string} options.cancelURL
+ * @param {boolean} options.freeTrial
+ * @param {string} [options.nonce]
+ * @param {API.Delegation[]} [options.proofs]
+ */
+export const createCheckoutSession = async (
+  { agent },
+  { account, planID, successURL, cancelURL, freeTrial, nonce, proofs = [] }
+) => {
+  const receipt = await agent.invokeAndExecute(Plan.createCheckoutSession, {
+    with: account,
+    proofs,
+    nonce,
+    nb: {
+      planID,
+      successURL,
+      cancelURL,
+      freeTrial
     },
   })
   return receipt.out
