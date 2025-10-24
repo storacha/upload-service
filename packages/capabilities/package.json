@@ -83,6 +83,10 @@
       "types": "./dist/space/blob.d.ts",
       "import": "./dist/space/blob.js"
     },
+    "./space/content": {
+      "types": "./dist/space/content.d.ts",
+      "import": "./dist/space/content.js"
+    },
     "./web3.storage/blob": {
       "types": "./dist/web3.storage/blob.d.ts",
       "import": "./dist/web3.storage/blob.js"
