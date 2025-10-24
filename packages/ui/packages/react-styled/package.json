@@ -1,0 +1,56 @@
+{
+  "name": "@storacha/ui-react-styled",
+  "version": "1.0.0",
+  "description": "Styled authentication components for Storacha - console-exact UI implementation",
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./styles.css": "./src/styles.css"
+  },
+  "scripts": {
+    "build": "tsc --build --pretty --verbose",
+    "typecheck": "../../../../node_modules/.bin/tsc --build --emitDeclarationOnly --pretty --verbose",
+    "dev": "tsc --build --watch --preserveWatchOutput",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "lint": "echo 'Linting in @storacha/ui-react-styled is temporarily disabled while we resolve version issues.'",
+    "lint:fix": "echo 'Linting in @storacha/ui-react-styled is temporarily disabled while we resolve version issues.'",
+    "test": "vitest run",
+    "test:watch": "vitest watch"
+  },
+  "files": [
+    "dist",
+    "src/styles.css",
+    "!dist/**/*.js.map"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/storacha/upload-service.git"
+  },
+  "author": "Storacha Team",
+  "license": "Apache-2.0 OR MIT",
+  "bugs": {
+    "url": "https://github.com/storacha/upload-service/issues"
+  },
+  "homepage": "https://github.com/storacha/upload-service/tree/main/packages/ui",
+  "dependencies": {
+    "@storacha/ui-react": "workspace:^",
+    "@storacha/ui-core": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "react": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0"
+  }
+}
