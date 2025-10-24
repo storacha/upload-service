@@ -50,26 +50,26 @@ const add = async ({ capability, invocation }, context) => {
       issuer: context.indexingService.invocationConfig.issuer,
       audience: context.indexingService.invocationConfig.audience,
       with: space,
-      proofs: [retrievalAuthResult.ok]
+      proofs: [retrievalAuthResult.ok],
     })
 
     const pubRes = await publishIndexClaim(context, {
       content: contentLink,
       index: idxLink,
       providers: providersRes.ok,
-      retrievalAuth: indexerRetrievalAuth
+      retrievalAuth: indexerRetrievalAuth,
     })
     if (pubRes.error) {
       console.error('failed to publish assert/index claim', pubRes.error)
       return Server.error({
         name: 'PublishFailure',
         message: `failed to publish assert/index claim: ${pubRes.error.message}`,
-        cause: pubRes.error
+        cause: pubRes.error,
       })
     }
     return Server.ok({})
   }
-  
+
   // fetch the index from the network
   const idxBlobRes = await context.blobRetriever.stream(idxLink.multihash)
   if (!idxBlobRes.ok) {
@@ -163,9 +163,12 @@ const assertRegistered = async (context, space, digest, errorName) => {
  *   index: API.CARLink
  *   providers: API.ProviderDID[]
  *   retrievalAuth?: API.Delegation
- * }} params Retrieval auth is unused for legacy spaces. 
+ * }} params Retrieval auth is unused for legacy spaces.
  */
-const publishIndexClaim = async (ctx, { content, index, providers, retrievalAuth }) => {
+const publishIndexClaim = async (
+  ctx,
+  { content, index, providers, retrievalAuth }
+) => {
   const params = { nb: { content, index }, expiration: Infinity }
   // if legacy provider, publish claim to legacy content claims service
   const isLegacy = providers.some(isW3sProvider)
@@ -186,12 +189,14 @@ const publishIndexClaim = async (ctx, { content, index, providers, retrievalAuth
         facts[b.cid.toString()] = b.cid
       }
     }
-    res = await Assert.index.invoke({
-      ...ctx.indexingService.invocationConfig,
-      ...params,
-      facts: [facts],
-      attachedBlocks
-    }).execute(ctx.indexingService.connection)
+    res = await Assert.index
+      .invoke({
+        ...ctx.indexingService.invocationConfig,
+        ...params,
+        facts: [facts],
+        attachedBlocks,
+      })
+      .execute(ctx.indexingService.connection)
   }
   return res.out
 }
@@ -200,25 +205,25 @@ const publishIndexClaim = async (ctx, { content, index, providers, retrievalAuth
 const extractContentRetrieveDelegation = (invocation) => {
   /** @type {API.Link|undefined} */
   const root = invocation.facts
-    .filter(f => f['retrievalAuth'])
-    .map(a => Link.parse(String(a)).toV1())
+    .filter((f) => f['retrievalAuth'])
+    .map((a) => Link.parse(String(a)).toV1())
     .find(() => true)
 
   if (!root) {
     return Server.error({
       name: 'RetrievalAuthorizationNotFound',
-      message: 'retrieval authorization delegation link not found in facts'
+      message: 'retrieval authorization delegation link not found in facts',
     })
   }
   const blocks =
     /** @type {Server.API.BlockStore<unknown>} */
-    (new Map([...invocation.export()].map(b => [b.cid.toString(), b])))
+    (new Map([...invocation.export()].map((b) => [b.cid.toString(), b])))
   try {
     const delegation = Delegation.view({ root, blocks })
     const match = SpaceContent.retrieve.match({
       // @ts-expect-error
       capability: delegation.capabilities[0],
-      delegation
+      delegation,
     })
     if (match.error) throw match.error
     return Server.ok(delegation)
@@ -226,7 +231,7 @@ const extractContentRetrieveDelegation = (invocation) => {
     console.error('invalid retrieval authorization', err)
     return Server.error({
       name: 'InvalidRetrievalAuthorization',
-      message: `invalid retrieval authorization: ${err.message}`
+      message: `invalid retrieval authorization: ${err.message}`,
     })
   }
 }
