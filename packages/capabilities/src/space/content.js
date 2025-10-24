@@ -38,12 +38,12 @@ export const retrieve = capability({
   nb: Schema.struct({
     blob: Schema.struct({
       /** A multihash digest of the blob to retrieve bytes from. */
-      digest: Schema.bytes()
+      digest: Schema.bytes(),
     }),
     /** Byte range to extract. Start and end byte. Both inclusive. */
     range: Schema.tuple([
       Schema.integer().greaterThan(-1),
-      Schema.integer().greaterThan(-1)
+      Schema.integer().greaterThan(-1),
     ]),
   }),
   derives: (claimed, delegated) =>
@@ -62,12 +62,17 @@ export const retrieve = capability({
 export const equalDigest = (claimed, delegated) => {
   if (
     delegated.nb.blob?.digest &&
-    (!claimed.nb.blob?.digest || !equals(delegated.nb.blob.digest, claimed.nb.blob.digest))
+    (!claimed.nb.blob?.digest ||
+      !equals(delegated.nb.blob.digest, claimed.nb.blob.digest))
   ) {
     return fail(
       `digest ${
-        claimed.nb.blob?.digest ? `${base58btc.encode(claimed.nb.blob.digest)}` : ''
-      } violates imposed ${base58btc.encode(delegated.nb.blob.digest)} constraint.`
+        claimed.nb.blob?.digest
+          ? `${base58btc.encode(claimed.nb.blob.digest)}`
+          : ''
+      } violates imposed ${base58btc.encode(
+        delegated.nb.blob.digest
+      )} constraint.`
     )
   }
   return ok({})
@@ -82,10 +87,17 @@ export const equalDigest = (claimed, delegated) => {
 export const equalByteRange = (claimed, delegated) => {
   if (delegated.nb.range) {
     if (!claimed.nb.range) {
-      return fail(`byte range violates imposed [${delegated.nb.range}] constraint.`)
+      return fail(
+        `byte range violates imposed [${delegated.nb.range}] constraint.`
+      )
     }
-    if (claimed.nb.range[0] < delegated.nb.range[0] || claimed.nb.range[1] > delegated.nb.range[1]) {
-      return fail(`byte range [${claimed.nb.range}] violates imposed [${delegated.nb.range}] constraint.`)
+    if (
+      claimed.nb.range[0] < delegated.nb.range[0] ||
+      claimed.nb.range[1] > delegated.nb.range[1]
+    ) {
+      return fail(
+        `byte range [${claimed.nb.range}] violates imposed [${delegated.nb.range}] constraint.`
+      )
     }
   }
   return ok({})

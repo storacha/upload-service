@@ -4,7 +4,12 @@ import { Verifier } from '@ucanto/principal'
 import { Delegation } from '@ucanto/core'
 import * as SpaceContent from '../../../src/space/content.js'
 import * as Capability from '../../../src/top.js'
-import { alice, bob, service, mallory as space } from '../../helpers/fixtures.js'
+import {
+  alice,
+  bob,
+  service,
+  mallory as space,
+} from '../../helpers/fixtures.js'
 import { createCar, validateAuthorization } from '../../helpers/utils.js'
 
 const top = () =>
@@ -120,7 +125,7 @@ describe('space/content capabilities', function () {
       audience: bob,
       with: space.did(),
       nb: {
-        blob: { digest: car.cid.multihash.bytes }
+        blob: { digest: car.cid.multihash.bytes },
       },
       proofs: [await top()],
     })
@@ -128,15 +133,17 @@ describe('space/content capabilities', function () {
     const retrieve = await Delegation.delegate({
       issuer: bob,
       audience: service,
-      capabilities: [{
-        can: SpaceContent.retrieve.can,
-        with: space.did(),
-        nb: {
-          blob: { digest: car2.cid.multihash.bytes },
-          range: [0, 100]
-        }
-      }],
-      proofs: [proof]
+      capabilities: [
+        {
+          can: SpaceContent.retrieve.can,
+          with: space.did(),
+          nb: {
+            blob: { digest: car2.cid.multihash.bytes },
+            range: [0, 100],
+          },
+        },
+      ],
+      proofs: [proof],
     })
 
     const result = await access(retrieve, {
@@ -163,24 +170,26 @@ describe('space/content capabilities', function () {
     })
 
     const cases = [
-      {range: [0, 100], message: 'Constraint violation: byte range'},
-      {range: [0, 100], message: 'Constraint violation: byte range'},
-      {range: undefined, message: 'invalid field "range"'},
+      { range: [0, 100], message: 'Constraint violation: byte range' },
+      { range: [0, 100], message: 'Constraint violation: byte range' },
+      { range: undefined, message: 'invalid field "range"' },
     ]
 
     for (const { range, message } of cases) {
       const retrieve = await Delegation.delegate({
         issuer: bob,
         audience: service,
-        capabilities: [{
-          can: SpaceContent.retrieve.can,
-          with: space.did(),
-          nb: {
-            blob: { digest: car.cid.multihash.bytes },
-          ...(range ? { range } : {})
-          }
-        }],
-        proofs: [proof]
+        capabilities: [
+          {
+            can: SpaceContent.retrieve.can,
+            with: space.did(),
+            nb: {
+              blob: { digest: car.cid.multihash.bytes },
+              ...(range ? { range } : {}),
+            },
+          },
+        ],
+        proofs: [proof],
       })
 
       const result = await access(retrieve, {
