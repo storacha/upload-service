@@ -27,7 +27,7 @@ import { CarReader } from '@ipld/car'
  */
 
 /**
- *
+ * load package.json as json
  */
 export function getPkg() {
   // @ts-ignore JSON.parse works with Buffer in Node.js
