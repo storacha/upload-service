@@ -50,6 +50,7 @@ const add = async ({ capability, invocation }, context) => {
       issuer: context.indexingService.invocationConfig.issuer,
       audience: context.indexingService.invocationConfig.audience,
       with: space,
+      nb: retrievalAuthResult.ok.capabilities[0].nb,
       proofs: [retrievalAuthResult.ok],
     })
 
@@ -226,7 +227,10 @@ const extractContentRetrieveDelegation = (invocation) => {
       delegation,
     })
     if (match.error) throw match.error
-    return Server.ok(delegation)
+    return Server.ok(
+      /** @type {API.Delegation<[API.InferDelegatedCapability<typeof match.ok.value>]>} */
+      (delegation)
+    )
   } catch (/** @type {any} */ err) {
     console.error('invalid retrieval authorization', err)
     return Server.error({
