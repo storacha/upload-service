@@ -1,3 +1,13 @@
+## 2.4.1 (2025-10-27)
+
+### 🩹 Fixes
+
+- fix: parsing retrieval auth CID ([#461](https://github.com/storacha/upload-service/pull/461))
+
+### ❤️ Thank You
+
+- ash
+
 ## 2.4.0 (2025-10-24)
 
 ### 🚀 Features
