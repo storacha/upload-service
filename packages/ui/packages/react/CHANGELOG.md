@@ -1,3 +1,11 @@
+## 2.9.55 (2025-10-27)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/encrypt-upload-client to 1.1.45
+- Updated @storacha/encrypt-upload-client to 1.1.45
+- Updated @storacha/ui-core to 2.4.129
+
 ## 2.9.51 (2025-10-27)
 
 ### 🧱 Updated Dependencies
