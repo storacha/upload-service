@@ -1,3 +1,13 @@
+## 2.4.3 (2025-10-27)
+
+### 🩹 Fixes
+
+- bump to test oidc trusted publishing flow ([#468](https://github.com/storacha/upload-service/pull/468))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 2.4.2 (2025-10-27)
 
 ### 🩹 Fixes
