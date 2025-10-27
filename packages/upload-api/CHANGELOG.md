@@ -1,3 +1,13 @@
+## 2.4.2 (2025-10-27)
+
+### 🩹 Fixes
+
+- fix: retrieval delegation caveats ([#463](https://github.com/storacha/upload-service/pull/463))
+
+### ❤️ Thank You
+
+- ash
+
 ## 2.4.1 (2025-10-27)
 
 ### 🩹 Fixes
