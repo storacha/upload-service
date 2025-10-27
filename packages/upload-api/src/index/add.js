@@ -205,8 +205,8 @@ const publishIndexClaim = async (
 const extractContentRetrieveDelegation = (invocation) => {
   /** @type {API.Link|undefined} */
   const root = invocation.facts
-    .filter((f) => f['retrievalAuth'])
-    .map((a) => Link.parse(String(a)).toV1())
+    .filter((f) => Boolean(f['retrievalAuth']))
+    .map((f) => Link.parse(String(f['retrievalAuth'])).toV1())
     .find(() => true)
 
   if (!root) {
