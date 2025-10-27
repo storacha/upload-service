@@ -1,3 +1,13 @@
+## 1.6.12 (2025-10-27)
+
+### 🩹 Fixes
+
+- patch bump to test release ([#471](https://github.com/storacha/upload-service/pull/471))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 1.6.11 (2025-10-27)
 
 ### 🧱 Updated Dependencies
