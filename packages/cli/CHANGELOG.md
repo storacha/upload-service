@@ -1,3 +1,13 @@
+## 1.6.21 (2025-10-28)
+
+### 🩹 Fixes
+
+- update npm for oidc publish ([1dcf6314](https://github.com/storacha/upload-service/commit/1dcf6314))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 1.6.20 (2025-10-28)
 
 ### 🩹 Fixes
