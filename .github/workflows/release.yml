@@ -29,6 +29,8 @@ jobs:
           node-version: 24
           cache: 'pnpm'
           registry-url: https://registry.npmjs.org/
+      - name: Install npm package dependencies
+        run: pnpm install --frozen-lockfile          
       - name: Update Release PR or Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
