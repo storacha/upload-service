@@ -1,3 +1,13 @@
+## 2.4.7 (2025-10-28)
+
+### 🩹 Fixes
+
+- fix: undo everything I did today ([#480](https://github.com/storacha/upload-service/pull/480))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 2.4.6 (2025-10-28)
 
 ### 🩹 Fixes
