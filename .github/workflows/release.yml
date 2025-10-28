@@ -38,6 +38,7 @@ jobs:
 
       - name: Update Release PR or Release
         env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
           MAIN_BRANCH_NAME: ${{ github.event.repository.default_branch }}
