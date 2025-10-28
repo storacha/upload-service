@@ -1,3 +1,18 @@
+## 1.6.14 (2025-10-28)
+
+### 🩹 Fixes
+
+- fix: trivial tweaks to trigger releases ([#476](https://github.com/storacha/upload-service/pull/476))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.9
+- Updated @storacha/upload-api to 2.4.5
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 1.6.13 (2025-10-28)
 
 ### 🩹 Fixes
