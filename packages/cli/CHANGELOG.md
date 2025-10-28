@@ -1,3 +1,13 @@
+## 1.6.19 (2025-10-28)
+
+### 🩹 Fixes
+
+- try rolling back node version ([a526f0fb](https://github.com/storacha/upload-service/commit/a526f0fb))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 1.6.18 (2025-10-28)
 
 ### 🩹 Fixes
