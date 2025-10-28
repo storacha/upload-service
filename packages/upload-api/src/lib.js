@@ -29,8 +29,6 @@ import * as AgentMessage from './utils/agent-message.js'
 export * from './types.js'
 export { AgentMessage }
 
-// this is a comment to trigger a release and can be safely removed
-
 /**
  * @param {Omit<Types.UcantoServerContext, 'validateAuthorization'>} options
  * @returns {Agent<Types.Service>}
