@@ -1,3 +1,13 @@
+## 2.4.4 (2025-10-28)
+
+### 🩹 Fixes
+
+- tweaks to test releases ([#473](https://github.com/storacha/upload-service/pull/473))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 2.4.3 (2025-10-27)
 
 ### 🩹 Fixes
