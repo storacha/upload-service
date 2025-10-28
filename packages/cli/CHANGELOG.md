@@ -1,3 +1,13 @@
+## 1.6.18 (2025-10-28)
+
+### 🩹 Fixes
+
+- keep debugging release ([90835a32](https://github.com/storacha/upload-service/commit/90835a32))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 1.6.17 (2025-10-28)
 
 ### 🩹 Fixes
