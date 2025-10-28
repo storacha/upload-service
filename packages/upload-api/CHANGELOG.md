@@ -1,3 +1,15 @@
+## 2.4.6 (2025-10-28)
+
+### 🩹 Fixes
+
+- fix: bump versions to fix release ([#478](https://github.com/storacha/upload-service/pull/478))
+
+  I forgot to restore access to the NPM_TOKEN
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 2.4.5 (2025-10-28)
 
 ### 🩹 Fixes

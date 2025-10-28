@@ -1,3 +1,20 @@
+## 1.6.15 (2025-10-28)
+
+### 🩹 Fixes
+
+- fix: bump versions to fix release ([#478](https://github.com/storacha/upload-service/pull/478))
+
+  I forgot to restore access to the NPM_TOKEN
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.10
+- Updated @storacha/upload-api to 2.4.6
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 1.6.14 (2025-10-28)
 
 ### 🩹 Fixes
