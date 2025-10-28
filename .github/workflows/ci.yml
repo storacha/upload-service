@@ -27,6 +27,7 @@ jobs:
           pnpm install --frozen-lockfile
           cd packages/console
           pnpm install
+          pnpm build
 
       # Set the base and head that `nx affected` will use
       - uses: nrwl/nx-set-shas@v4
