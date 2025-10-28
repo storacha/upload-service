@@ -30,7 +30,7 @@ jobs:
       - name: Pre-build console
         shell: bash
         working-directory: ./packages/console
-        run: pnpm build
+        run: pnpm nx run build
       
       # Set the base and head that `nx affected` will use
       - uses: nrwl/nx-set-shas@v4
