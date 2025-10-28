@@ -1,3 +1,13 @@
+## 2.4.5 (2025-10-28)
+
+### 🩹 Fixes
+
+- fix: trivial tweaks to trigger releases ([#476](https://github.com/storacha/upload-service/pull/476))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 2.4.4 (2025-10-28)
 
 ### 🩹 Fixes

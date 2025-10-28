@@ -1,7 +1,7 @@
 {
   "name": "@storacha/ui-example-test-playwright",
   "private": true,
-  "version": "1.0.215",
+  "version": "1.0.220",
   "type": "module",
   "scripts": {
     "serve": "serve node_modules/@storacha",
