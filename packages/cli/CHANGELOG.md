@@ -1,3 +1,18 @@
+## 1.6.16 (2025-10-28)
+
+### 🩹 Fixes
+
+- fix: undo everything I did today ([#480](https://github.com/storacha/upload-service/pull/480))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.11
+- Updated @storacha/upload-api to 2.4.7
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 1.6.15 (2025-10-28)
 
 ### 🩹 Fixes
