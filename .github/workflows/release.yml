@@ -31,6 +31,10 @@ jobs:
           registry-url: https://registry.npmjs.org/
       - name: Install npm package dependencies
         run: pnpm install --frozen-lockfile          
+      - name: update npm for oidc publish
+        run: |
+          npm install -g npm@11
+          npm --version
       - name: Update Release PR or Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
