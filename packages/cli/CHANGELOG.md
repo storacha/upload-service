@@ -1,3 +1,13 @@
+## 1.6.22 (2025-10-28)
+
+### 🩹 Fixes
+
+- fix: new release to green the build after reverting oidc changes ([81f373f5](https://github.com/storacha/upload-service/commit/81f373f5))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 1.6.21 (2025-10-28)
 
 ### 🩹 Fixes
