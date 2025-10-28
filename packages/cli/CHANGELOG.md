@@ -1,3 +1,13 @@
+## 1.6.17 (2025-10-28)
+
+### 🩹 Fixes
+
+- continuing work on npm oidc trusted publishing ([#483](https://github.com/storacha/upload-service/pull/483))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 1.6.16 (2025-10-28)
 
 ### 🩹 Fixes
