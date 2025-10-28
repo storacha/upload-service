@@ -1,3 +1,13 @@
+## 1.6.20 (2025-10-28)
+
+### 🩹 Fixes
+
+- try node 22 ([699f04bd](https://github.com/storacha/upload-service/commit/699f04bd))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 1.6.19 (2025-10-28)
 
 ### 🩹 Fixes
