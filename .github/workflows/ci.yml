@@ -23,7 +23,10 @@ jobs:
         with:
           cache: 'pnpm'
       - name: Install npm package dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          pnpm install --frozen-lockfile
+          cd packages/console
+          pnpm install
 
       # Set the base and head that `nx affected` will use
       - uses: nrwl/nx-set-shas@v4
