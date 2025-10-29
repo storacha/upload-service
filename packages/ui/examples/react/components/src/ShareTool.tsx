@@ -39,7 +39,7 @@ export function BasicShareToolExample({ space }: ShareToolExampleProps) {
  * Custom share form component
  */
 function ShareForm() {
-  const [{ sharing, error, successMessage }] = useShareTool()
+  const [{ sharing }] = useShareTool()
 
   return (
     <ShareTool.Form
