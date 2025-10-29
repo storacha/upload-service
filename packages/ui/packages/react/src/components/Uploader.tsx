@@ -6,7 +6,12 @@ import type {
   HTMLProps,
 } from 'ariakit-react-utils'
 import type { ChangeEvent, FormEventHandler } from 'react'
-import type { AnyLink, CARMetadata, ProgressStatus, UploadOptions } from '@storacha/ui-core'
+import type {
+  AnyLink,
+  CARMetadata,
+  ProgressStatus,
+  UploadOptions,
+} from '@storacha/ui-core'
 
 import React, {
   useContext,
@@ -17,10 +22,14 @@ import React, {
   Fragment,
 } from 'react'
 import { createComponent, createElement } from 'ariakit-react-utils'
-import { useW3 } from './providers/Provider.js'
+import { useW3 } from '../providers/Provider.js'
 import { create as createEncryptedClient } from '@storacha/encrypt-upload-client'
-import { EncryptionConfig, EncryptionStrategy, FileMetadata } from '@storacha/encrypt-upload-client/types'
-import { useKMSConfig, type KMSConfig } from './hooks.js'
+import {
+  EncryptionConfig,
+  EncryptionStrategy,
+  FileMetadata,
+} from '@storacha/encrypt-upload-client/types'
+import { useKMSConfig, type KMSConfig } from '../hooks.js'
 import { delegate } from '@ucanto/core'
 
 export type UploadProgress = Record<string, ProgressStatus>
@@ -207,8 +216,13 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
       defaultWrapInDirectory
     )
     const [uploadAsCAR, setUploadAsCAR] = useState(defaultUploadAsCAR)
-    const [encryptionStrategy, setEncryptionStrategy] = useState<EncryptionStrategy>(defaultEncryptionStrategy)
-    const { kmsConfig: kmsConfigState, setKmsConfig, createKMSAdapter } = useKMSConfig(kmsConfig)
+    const [encryptionStrategy, setEncryptionStrategy] =
+      useState<EncryptionStrategy>(defaultEncryptionStrategy)
+    const {
+      kmsConfig: kmsConfigState,
+      setKmsConfig,
+      createKMSAdapter,
+    } = useKMSConfig(kmsConfig)
     const [dataCID, setDataCID] = useState<AnyLink>()
     const [status, setStatus] = useState(UploadStatus.Idle)
     const [error, setError] = useState<Error>()
@@ -244,17 +258,20 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
         const name = file.name || 'unknown'
         const type = file.type || 'application/octet-stream'
         const lastDotIndex = name.lastIndexOf('.')
-        const extension = lastDotIndex !== -1 ? name.substring(lastDotIndex + 1) : ''
+        const extension =
+          lastDotIndex !== -1 ? name.substring(lastDotIndex + 1) : ''
 
         return { name, type, extension }
       }
 
       const doEncryptedUpload = async (
-        uploadOptions: UploadOptions,
+        uploadOptions: UploadOptions
       ): Promise<AnyLink> => {
         // For encrypted uploads, we only support single file uploads currently
         if (files.length > 1) {
-          throw new Error('Encrypted uploads currently only support single files')
+          throw new Error(
+            'Encrypted uploads currently only support single files'
+          )
         }
         if (!account) {
           throw new Error('No account selected for upload encryption')
@@ -265,7 +282,9 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
         }
         const spaceAccess = space.meta()?.access
         if (spaceAccess?.type !== 'private') {
-          throw new Error('Encrypted uploads currently only supported in private spaces')
+          throw new Error(
+            'Encrypted uploads currently only supported in private spaces'
+          )
         }
 
         let cryptoAdapter
@@ -290,32 +309,43 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
 
         // Authorize the UCAN KMS server to check user's plan
         const getPlanProofs = client.agent.proofs([
-          { can: "plan/get", with: account.did() },
+          { can: 'plan/get', with: account.did() },
         ])
         const getPlanDelegation = await delegate({
           issuer: client.agent.issuer,
-          audience: { did: () => kmsConfigState.keyManagerServiceDID as `did:${string}:${string}` },
-          capabilities: [
-            { can: "plan/get", with: account.did() },
-          ],
+          audience: {
+            did: () =>
+              kmsConfigState.keyManagerServiceDID as `did:${string}:${string}`,
+          },
+          capabilities: [{ can: 'plan/get', with: account.did() }],
           proofs: getPlanProofs,
-          expiration: Math.floor((Date.now() + 60 * 15 * 1000) / 1000) // 15 minutes
+          expiration: Math.floor((Date.now() + 60 * 15 * 1000) / 1000), // 15 minutes
         })
 
         // Prepare encryption config
         const proofs = client.agent.proofs([
-          { can: "space/encryption/setup", with: space.did() }
+          { can: 'space/encryption/setup', with: space.did() },
         ])
         const encryptionConfig: EncryptionConfig = {
           issuer: client.agent.issuer,
           spaceDID: space.did(),
           proofs: [...proofs, getPlanDelegation],
           fileMetadata: extractFileMetadata(file),
-          ...(kmsConfigState?.location && encryptionStrategy === 'kms' && { location: kmsConfigState?.location }),
-          ...(kmsConfigState?.keyring && encryptionStrategy === 'kms' && { keyring: kmsConfigState?.keyring }),
+          ...(kmsConfigState?.location &&
+            encryptionStrategy === 'kms' && {
+              location: kmsConfigState?.location,
+            }),
+          ...(kmsConfigState?.keyring &&
+            encryptionStrategy === 'kms' && {
+              keyring: kmsConfigState?.keyring,
+            }),
         }
 
-        return await encryptedClient.encryptAndUploadFile(file, encryptionConfig, uploadOptions)
+        return await encryptedClient.encryptAndUploadFile(
+          file,
+          encryptionConfig,
+          uploadOptions
+        )
       }
 
       const doUpload = async (): Promise<void> => {
@@ -402,11 +432,11 @@ export const UploaderRoot: Component<UploaderRootProps> = createComponent(
         },
       ],
       [
-        file, 
-        dataCID, 
-        status, 
-        error, 
-        handleUploadSubmit, 
+        file,
+        dataCID,
+        status,
+        error,
+        handleUploadSubmit,
         setFile,
         encryptionStrategy,
         kmsConfigState,

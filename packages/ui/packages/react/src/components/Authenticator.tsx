@@ -10,7 +10,7 @@ import React, {
   useMemo,
 } from 'react'
 import { createComponent, createElement } from 'ariakit-react-utils'
-import { useW3, ContextState, ContextActions } from './providers/Provider.js'
+import { useW3, ContextState, ContextActions } from '../providers/Provider.js'
 import { EmailAddress, AppName } from '@storacha/ui-core'
 
 export type AuthenticatorContextState = ContextState & {
@@ -103,7 +103,7 @@ export const AuthenticatorRoot: Component<AuthenticatorRootProps> =
           if (client === undefined) throw new Error('missing client')
           await client.login(email as EmailAddress, {
             signal: controller?.signal,
-            appName: props.appName
+            appName: props.appName,
           })
         } catch (error: any) {
           if (!controller.signal.aborted) {

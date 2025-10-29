@@ -18,6 +18,24 @@
     "test": "vitest run",
     "test:watch": "vitest watch"
   },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./components/*": {
+      "types": "./dist/components/*.d.ts",
+      "import": "./dist/components/*.js"
+    },
+    "./hooks/*": {
+      "types": "./dist/hooks/*.d.ts",
+      "import": "./dist/hooks/*.js"
+    },
+    "./providers/*": {
+      "types": "./dist/providers/*.d.ts",
+      "import": "./dist/providers/*.js"
+    }
+  },
   "files": [
     "dist",
     "!dist/**/*.js.map"

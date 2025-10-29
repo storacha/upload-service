@@ -1,0 +1,83 @@
+{
+  "name": "@storacha/ui",
+  "version": "2.9.30",
+  "description": "Headless, type-safe, UI components for Storacha",
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "pnpm run build:packages && tsc --build --pretty --verbose",
+    "build:packages": "pnpm --filter '@storacha/ui-*' build",
+    "typecheck": "tsc --build --emitDeclarationOnly --pretty --verbose",
+    "dev": "pnpm --filter '@storacha/ui-*' dev",
+    "clean": "rm -rf dist *.tsbuildinfo && pnpm --filter '@storacha/ui-*' clean",
+    "lint": "pnpm --filter '@storacha/ui-*' lint",
+    "lint:fix": "pnpm --filter '@storacha/ui-*' lint:fix",
+    "test": "pnpm --filter '@storacha/ui-*' test",
+    "validate": "node scripts/validate-build.js",
+    "build:validate": "pnpm build && pnpm validate"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./core": {
+      "types": "./packages/core/dist/index.d.ts",
+      "import": "./packages/core/dist/index.js"
+    },
+    "./react": {
+      "types": "./packages/react/dist/index.d.ts",
+      "import": "./packages/react/dist/index.js"
+    },
+    "./react/components/*": {
+      "types": "./packages/react/dist/components/*.d.ts",
+      "import": "./packages/react/dist/components/*.js"
+    },
+    "./tailwind": {
+      "import": "./packages/tailwind/index.js"
+    },
+    "./theme": {
+      "import": "./packages/theme/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "packages/*/dist",
+    "packages/tailwind",
+    "packages/theme",
+    "!**/*.js.map"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/storacha/upload-service.git"
+  },
+  "author": "Storacha Team",
+  "license": "Apache-2.0 OR MIT",
+  "bugs": {
+    "url": "https://github.com/storacha/upload-service/issues"
+  },
+  "homepage": "https://github.com/storacha/upload-service/tree/main/packages/ui",
+  "dependencies": {
+    "@storacha/ui-core": "workspace:^",
+    "@storacha/ui-react": "workspace:^"
+  },
+  "optionalDependencies": {
+    "@storacha/ui-tailwind": "workspace:^",
+    "@storacha/ui-theme": "workspace:^"
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

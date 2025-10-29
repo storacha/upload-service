@@ -12,7 +12,7 @@ import {
   AuthenticatorContext,
   AuthenticatorContextDefaultValue,
   AuthenticatorContextValue,
-} from '../src/Authenticator.js'
+} from '../src/components/Authenticator.js'
 
 test('CancelButton', async () => {
   const cancelLogin = vi.fn()
