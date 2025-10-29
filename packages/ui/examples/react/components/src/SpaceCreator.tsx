@@ -33,7 +33,7 @@ export function BasicSpaceCreatorExample() {
  * Custom form component with styling
  */
 function SpaceCreatorForm() {
-  const [{ name, accessType, creating, created, createdSpace, error }] =
+  const [{ accessType, creating, created, createdSpace, error }] =
     useSpaceCreator()
 
   if (created && createdSpace) {
