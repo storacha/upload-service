@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.10.0](https://github.com/storacha/upload-service/compare/console-v2.9.0...console-v2.10.0) (2025-10-29)
+
+
+### Features
+
+* Add Account and Space Deletion Request Buttons in Storacha Console ([#438](https://github.com/storacha/upload-service/issues/438)) ([422b7b0](https://github.com/storacha/upload-service/commit/422b7b0e886fbce24e50a15ad569c0194d89c911)), closes [#431](https://github.com/storacha/upload-service/issues/431)
+
+
+### Fixes
+
+* use new `account/usage/get` capability to get account usage ([#460](https://github.com/storacha/upload-service/issues/460)) ([76ff5ee](https://github.com/storacha/upload-service/commit/76ff5ee25cc4d38d6415e8e73f837a29e260e306))
+
 ## [2.9.0](https://github.com/storacha/upload-service/compare/console-v2.8.0...console-v2.9.0) (2025-10-10)
 
 
