@@ -29,6 +29,7 @@ export function NoticeBanner({
     const dismissedKey = `notice-dismissed-${displayUntil}`
     const wasDismissed = localStorage.getItem(dismissedKey) === 'true'
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsVisible(show && shouldShow && !wasDismissed)
   }, [displayUntil, show])
 
@@ -40,9 +41,10 @@ export function NoticeBanner({
       setIsVisible(false)
     }
   }
+  const [time] = useState(() => Date.now())
 
   // Don't show if not enabled, past expiration date, or dismissed
-  if (!isVisible || new Date(displayUntil).getTime() <= Date.now()) {
+  if (!isVisible || new Date(displayUntil).getTime() <= time) {
     return null
   }
 

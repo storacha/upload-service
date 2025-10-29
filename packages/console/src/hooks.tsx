@@ -48,6 +48,7 @@ export const usePlan = (account: Account, options?: SWRConfiguration) => {
   // @ts-ignore it's important to assign this into the existing object
   // to avoid calling the getters in SWRResponse when copying values over -
   // I can't think of a cleaner way to do this but open to refactoring
+  // eslint-disable-next-line react-hooks/immutability
   result.setPlan = async (plan: DID) => {
     const setResult = await account.plan.set(plan)
     await result.mutate()
