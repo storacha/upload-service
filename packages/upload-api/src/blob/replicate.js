@@ -15,7 +15,11 @@ import { AgentMessage } from '../lib.js'
 import { toLocationCommitment } from './lib.js'
 import { createConcludeInvocation } from '../ucan/conclude.js'
 
-// replication invocation timeout in seconds
+// Replication invocation timeout in seconds.
+//
+// Note: we set a reasonably large expiration as replication nodes use the
+// invocation as proof for obtaining a retrieval delegation, and we want to 
+// allow for retries and/or job queue delays.
 const allocationTimeout = 60 * 60 // 1h
 
 /**
@@ -193,10 +197,6 @@ export const blobReplicateProvider = (context) => {
               facts: allocFacts,
               // set the expiration now so that we get the same CID for the task
               // when we call delegate/execute.
-              //
-              // we set a reasonably large expiration as replication nodes use
-              // the invocation as proof for obtaining a retrieval delegation,
-              // and we want to allow for retries.
               expiration: now() + allocationTimeout,
             })
             if (confRes.error) {
