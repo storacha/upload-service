@@ -117,6 +117,15 @@ export default function SettingsPage (): JSX.Element {
           </>
         ) : <DefaultLoader className='w-6 h-6 inline-block' />}
       </div>
+      <div className='border border-hot-red rounded-2xl bg-white p-5 max-w-4xl mt-4'>
+        <H2>Account Management</H2>
+        <button 
+          onClick={() => window.open('https://forms.gle/QsvfMip2qzJqzEEo9', '_blank')}
+          className='bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200'
+        >
+          Request Account Deletion
+        </button>
+      </div>
     </>
   )
 }
