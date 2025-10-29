@@ -1,4 +1,5 @@
-'use client'
+'use client';
+import { use, type JSX } from "react";
 
 import {
   useW3,
@@ -22,13 +23,15 @@ interface SearchParams {
 }
 
 interface PageProps {
-  params: {
+  params: Promise<{
     did: string
-  }
-  searchParams: SearchParams
+  }>
+  searchParams: Promise<SearchParams>
 }
 
-export default function Page({ params, searchParams }: PageProps): JSX.Element {
+export default function Page(props: PageProps): JSX.Element {
+  const searchParams = use(props.searchParams);
+  const params = use(props.params);
   const [{ client, spaces }] = useW3()
   const spaceDID = decodeURIComponent(params.did)
   const space = spaces.find((s) => s.did() === spaceDID)

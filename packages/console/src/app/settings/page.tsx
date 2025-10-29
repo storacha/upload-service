@@ -1,5 +1,4 @@
-'use client'
-
+'use client';
 import { useW3, SpaceDID } from '@storacha/ui-react'
 import useSWR from 'swr'
 import Link from 'next/link'
@@ -11,6 +10,8 @@ import DefaultLoader from '@/components/Loader'
 import { RefcodeLink, ReferralsList, RefcodeCreator } from '../referrals/page'
 import { useReferrals } from '@/lib/referrals/hooks'
 import { logAndCaptureError } from '@/sentry'
+
+import type { JSX } from "react";
 
 const Plans: Record<`did:${string}`, { name: string, limit: number }> = {
   'did:web:starter.web3.storage': { name: 'Starter', limit: 5 * GB },

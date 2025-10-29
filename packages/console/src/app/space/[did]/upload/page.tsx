@@ -1,8 +1,9 @@
-'use client'
-
+'use client';
 import { Uploader } from '@/components/Uploader'
 import { useW3 } from '@storacha/ui-react'
 import { useParams } from 'next/navigation'
+
+import type { JSX } from "react";
 
 export default function UploadPage (): JSX.Element {
   const { did } = useParams() as { did: string }

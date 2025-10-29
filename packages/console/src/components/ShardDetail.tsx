@@ -21,7 +21,7 @@ import { filesize } from '@/lib'
 import archy from 'archy'
 import QuestionIcon from '@/components/QuestionIcon'
 import ExpandIcon from '@/components/ExpandIcon'
-import { useState } from 'react'
+import { useState, type JSX } from 'react';
 import AggregateIcon from '@/components/AggregateIcon'
 import PieceIcon from '@/components/PieceIcon'
 import { logAndCaptureError } from '@/sentry'

@@ -13,7 +13,7 @@ import {
   useUploader
 } from '@storacha/ui-react'
 import { ipfsGatewayURLStr } from '../components/services'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type JSX } from 'react';
 import { RadioGroup } from '@headlessui/react'
 import { H2 } from './Text'
 import { logAndCaptureError } from '@/sentry'
