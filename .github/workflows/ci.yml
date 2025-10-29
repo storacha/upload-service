@@ -32,6 +32,7 @@ jobs:
         working-directory: ./packages/console
         run: |
           pnpm install
+          pnpm nx build @storacha/ui-react
           pnpm build
       
       # Set the base and head that `nx affected` will use
