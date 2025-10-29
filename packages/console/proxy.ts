@@ -23,7 +23,7 @@ const getFrameAncestorsHeader = (() => {
   }
 })()
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // Log iframe embedding requests for monitoring
   const referer = request.headers.get('referer')
   const secFetchDest = request.headers.get('sec-fetch-dest')
