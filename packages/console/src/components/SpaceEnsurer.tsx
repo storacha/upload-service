@@ -1,8 +1,9 @@
-'use client'
-
+'use client';
 import { useW3 } from '@storacha/ui-react'
 import { SpaceCreatorForm } from './SpaceCreator';
 import { Logo } from '@/brand';
+
+import type { JSX } from "react";
 
 export function SpaceEnsurer ({
   children
