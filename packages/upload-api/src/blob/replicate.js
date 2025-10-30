@@ -18,7 +18,7 @@ import { createConcludeInvocation } from '../ucan/conclude.js'
 // Replication invocation timeout in seconds.
 //
 // Note: we set a reasonably large expiration as replication nodes use the
-// invocation as proof for obtaining a retrieval delegation, and we want to 
+// invocation as proof for obtaining a retrieval delegation, and we want to
 // allow for retries and/or job queue delays.
 const allocationTimeout = 60 * 60 // 1h
 
