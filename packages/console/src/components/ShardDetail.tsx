@@ -21,7 +21,7 @@ import { filesize } from '@/lib'
 import archy from 'archy'
 import QuestionIcon from '@/components/QuestionIcon'
 import ExpandIcon from '@/components/ExpandIcon'
-import { useState } from 'react'
+import { useState, type JSX } from 'react';
 import AggregateIcon from '@/components/AggregateIcon'
 import PieceIcon from '@/components/PieceIcon'
 import { logAndCaptureError } from '@/sentry'
@@ -145,9 +145,9 @@ export function ShardDetail({client, space, shard}: {client?: Client, space?: Sp
         {claim.isLoading || filecoinInfo.isLoading ? (
           <DefaultLoader className="w-6 h-6 inline-block" />
         ) : filecoinInfo.data && filecoinInfo.data.aggregates.length ? (
-          filecoinInfo.data.aggregates.map(({ aggregate, inclusion }) => {
+          filecoinInfo.data.aggregates.map(({ aggregate, inclusion }, i) => {
             const piece = filecoinInfo.data?.piece
-            if (!piece) return <div key={Math.random()} />
+            if (!piece) return <div key={i}/>
             const pieceInfo = Piece.fromLink(aggregate).toInfo()
             return (
               <div key={aggregate.toString()}>

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { type JSX } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, ArrowPathIcon } from '@heroicons/react/20/solid'
 import { Space, UnknownLink, UploadListSuccess } from '@storacha/ui-react'
 import Link from 'next/link'

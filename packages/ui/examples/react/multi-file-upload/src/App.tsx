@@ -18,7 +18,7 @@ function Options({
 }: {
   allowDirectory: boolean
   setAllowDirectory: (allowDirectory: boolean) => void
-}): React.ReactElement {
+}): React.ReactElement<any> {
   const [{ files }] = useUploader()
   return (
     <div className="flex flex-col">
@@ -42,7 +42,7 @@ function Options({
   )
 }
 
-function App(): React.ReactElement {
+function App(): React.ReactElement<any> {
   const [allowDirectory, setAllowDirectory] = useState(false)
   return (
     <div className="bg-grad flex flex-col items-center h-screen">

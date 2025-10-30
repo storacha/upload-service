@@ -1,8 +1,9 @@
-'use client'
-
+'use client';
 import { SpaceCreatorForm } from '@/components/SpaceCreator'
 import { SpacesNav } from '../layout'
 import { H1, H2 } from '@/components/Text'
+
+import type { JSX } from "react";
 
 export default function CreateSpacePage(): JSX.Element {
   return (

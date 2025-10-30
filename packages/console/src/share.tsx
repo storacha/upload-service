@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useState } from 'react'
+import { ChangeEvent, useEffect, useState, type JSX } from 'react';
 import { SpaceDID, useW3 } from '@storacha/ui-react'
 import { extract } from '@ucanto/core/delegation'
 import type { PropsWithChildren } from 'react'

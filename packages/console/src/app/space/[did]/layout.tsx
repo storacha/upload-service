@@ -1,20 +1,26 @@
 'use client'
 
-import { PropsWithChildren } from 'react'
+import { PropsWithChildren, use, type JSX } from 'react';
 import { useW3 } from '@storacha/ui-react'
 import { DidIcon } from '@/components/DidIcon'
 import { Nav, NavLink } from '@/components/Nav'
 import { QueueListIcon, ShareIcon, CloudArrowUpIcon } from '@heroicons/react/24/outline'
 
 interface LayoutProps extends PropsWithChildren {
-  params: {
+  params: Promise<{
     did: string
-  }
+  }>
 }
 
-export default function Layout ({children, params}: LayoutProps): JSX.Element {
+export default function Layout(props: LayoutProps): JSX.Element {
+  const params = use(props.params);
+
+  const {
+    children
+  } = props;
+
   const [{ spaces }] = useW3()
-  
+
   if (!params.did) {
     return <h1>NO SPACE?</h1>
   }

@@ -1,7 +1,7 @@
 'use client'
 
 import { Logo } from '../brand'
-import { Fragment, useState } from 'react'
+import { Fragment, useState, type JSX } from 'react';
 import { Dialog, Transition } from '@headlessui/react'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { Authenticator, useW3, Space } from '@storacha/ui-react'

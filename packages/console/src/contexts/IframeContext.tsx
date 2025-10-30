@@ -19,20 +19,21 @@ export function IframeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Mark as client-side rendered
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsClient(true)
-    
+
     // Detect if running in iframe
     const inIframe = window.self !== window.top
-    
+
     // Extract SSO provider from URL query parameter
     const urlParams = new URLSearchParams(window.location.search)
     const provider = urlParams.get('sso')
-    
+
     if (inIframe && provider) {
       setIsIframe(true)
       setSsoProvider(provider)
     }
-    
+
     // Mark detection as complete
     setIsDetectionComplete(true)
   }, [])
