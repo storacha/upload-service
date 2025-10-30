@@ -27,7 +27,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # pre-build console to get around some odd bugs that seem to be related to nx 21
-      # TODO: try to get rid of this later
+      # TODO: Try to get rid of this later. If the build ever succeeds without
+      # running this step first, it's working correctly, and we can delete this.
       - name: Pre-build console
         shell: bash
         working-directory: ./packages/console
