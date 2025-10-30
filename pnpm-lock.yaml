@@ -803,6 +803,9 @@ importers:
       '@cloudflare/next-on-pages':
         specifier: ^1.6.3
         version: 1.13.12(vercel@33.2.0(@swc/core@1.11.11(@swc/helpers@0.5.15))(encoding@0.1.13))(wrangler@3.114.7)
+      '@playwright/test':
+        specifier: ^1.51.1
+        version: 1.51.1
       '@types/archy':
         specifier: ^0.0.36
         version: 0.0.36
@@ -2552,7 +2555,7 @@ packages:
 
   '@cloudflare/next-on-pages@1.13.12':
     resolution: {integrity: sha512-rPy7x9c2+0RDDdJ5o0TeRUwXJ1b7N1epnqF6qKSp5Wz1r9KHOyvaZh1ACoOC6Vu5k9su5WZOgy+8fPLIyrldMQ==}
-    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+    deprecated: 'Please use the OpenNext adapter instead: https://opennext.js.org/cloudflare'
     hasBin: true
     peerDependencies:
       '@cloudflare/workers-types': ^4.20240208.0
