@@ -9,6 +9,7 @@ import { useConditionalPlan } from '@/hooks'
 import { useSearchParams } from 'next/navigation'
 import { useIframe } from '@/contexts/IframeContext'
 import { useRecordRefcode } from '@/lib/referrals/hooks'
+import Link from 'next/link'
 
 const PricingTable = ({
   email,
@@ -20,10 +21,16 @@ const PricingTable = ({
   const { isIframe } = useIframe()
   
   return (
-    <div className="flex flex-col justify-center items-center min-h-screen">
+    <div className="flex flex-col justify-center items-center min-h-screen relative">
       <div className="my-6">
         <Logo />
       </div>
+      <Link
+        href="https://storacha.console.network/logout"
+        className="absolute top-4 right-4 bg-hot-red text-white px-4 py-2 rounded-full shadow-md hover:border-white transition"
+      >
+        &larr; Back
+      </Link>
       <div className="max-w-screen-lg font-epilogue text-black text-center bg-white border border-hot-red rounded-2xl overflow-hidden p5 mx-4 mb-4">
         {referredBy ? (
           <>
