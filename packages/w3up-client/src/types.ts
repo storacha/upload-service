@@ -1,12 +1,12 @@
-import { type Driver } from '@storacha/access/drivers/types'
-import {
+import type { Driver } from '@storacha/access/drivers/types'
+import type {
   AccessDelegate,
   AccessDelegateFailure,
   AccessDelegateSuccess,
-  type Service as AccessService,
-  type AgentDataExport,
+  Service as AccessService,
+  AgentDataExport,
 } from '@storacha/access/types'
-import { type Service as UploadService } from '@storacha/upload-client/types'
+import type { Service as UploadService } from '@storacha/upload-client/types'
 import type {
   ConnectionView,
   Signer,
@@ -16,8 +16,8 @@ import type {
   Unit,
   ServiceMethod,
 } from '@ucanto/interface'
-import { type Client } from './client.js'
-import { StorefrontService } from '@storacha/filecoin-client/storefront'
+import type { Client } from './client.js'
+import type { StorefrontService } from '@storacha/filecoin-client/storefront'
 export * from '@ucanto/interface'
 export * from '@storacha/did-mailto'
 export { AppName } from '@storacha/access/types'
@@ -43,6 +43,20 @@ export interface ServiceConf {
   gateway: ConnectionView<ContentServeService>
 }
 
+export interface ServiceConfOptions {
+  access:
+    | ConnectionView<AccessService>
+    | { id?: import('./types.js').Principal<DID>; url: URL }
+  upload:
+    | ConnectionView<UploadService>
+    | { id?: import('./types.js').Principal<DID>; url: URL }
+  filecoin:
+    | ConnectionView<StorefrontService>
+    | { id?: import('./types.js').Principal<DID>; url: URL }
+  gateway:
+    | ConnectionView<ContentServeService>
+    | { id?: import('./types.js').Principal<DID>; url: URL }
+}
 export interface ContentServeService {
   access: {
     delegate: ServiceMethod<
@@ -60,7 +74,7 @@ export interface ClientFactoryOptions {
   /**
    * Service DID and URL configuration.
    */
-  serviceConf?: ServiceConf
+  serviceConf?: Partial<ServiceConfOptions>
   /**
    * Use this principal to sign UCANs. Note: if the store is non-empty and the
    * principal saved in the store is not the same principal as the one passed
