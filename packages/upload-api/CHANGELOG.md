@@ -1,3 +1,13 @@
+## 2.4.8 (2025-10-30)
+
+### 🩹 Fixes
+
+- fix: replication allocation invocation timeout ([#493](https://github.com/storacha/upload-service/pull/493))
+
+### ❤️ Thank You
+
+- ash
+
 ## 2.4.7 (2025-10-28)
 
 ### 🩹 Fixes

@@ -108,7 +108,7 @@ export default function SettingsPage (): JSX.Element {
               {Object.entries(usage).sort((a, b) => b[1] - a[1]).map(([space, total]) => {
                 return (
                   <tr key={space} className='border-b border-hot-red last:border-b-0'>
-                    <td className='text-xs font-mono py-2'>{space}</td>
+                    <td className='text-xs font-mono py-2'><Link href={`/space/${space}`}>{space}</Link></td>
                     <td className='text-xs text-right py-2'>{filesize(total)}</td>
                   </tr>
                 )
