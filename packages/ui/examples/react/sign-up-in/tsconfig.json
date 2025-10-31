@@ -8,6 +8,9 @@
   },
   "references": [
     {
+      "path": "../../../packages/react-styled"
+    },
+    {
       "path": "../../../packages/react"
     },
     {
