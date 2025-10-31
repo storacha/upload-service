@@ -63,6 +63,9 @@ import type {
   PlanCreateAdminSession,
   PlanCreateAdminSessionSuccess,
   PlanCreateAdminSessionFailure,
+  PlanCreateCheckoutSession,
+  PlanCreateCheckoutSessionSuccess,
+  PlanCreateCheckoutSessionFailure,
 } from '@storacha/capabilities/types'
 import type { SetRequired } from 'type-fest'
 import { Driver } from './drivers/types.js'
@@ -149,6 +152,11 @@ export interface Service {
       PlanCreateAdminSession,
       PlanCreateAdminSessionSuccess,
       PlanCreateAdminSessionFailure
+    >
+    'create-checkout-session': ServiceMethod<
+      PlanCreateCheckoutSession,
+      PlanCreateCheckoutSessionSuccess,
+      PlanCreateCheckoutSessionFailure
     >
   }
 }
