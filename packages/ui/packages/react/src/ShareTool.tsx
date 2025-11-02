@@ -1,6 +1,7 @@
 import type { As, Component, Props, Options } from 'ariakit-react-utils'
 import type { ChangeEvent } from 'react'
-import type { Space } from '@storacha/ui-core'
+import type { Space, Client} from '@storacha/ui-core'
+
 
 import React, {
   Fragment,
@@ -12,6 +13,7 @@ import React, {
 } from 'react'
 import { createComponent, createElement } from 'ariakit-react-utils'
 import { useW3, ContextState, ContextActions } from './providers/Provider.js'
+import { DID } from '@ucanto/core'
 
 export type ShareToolContextState = ContextState & {
   /**
@@ -84,6 +86,89 @@ export const ShareToolContextDefaultValue: ShareToolContextValue = [
 export const ShareToolContext = createContext<ShareToolContextValue>(
   ShareToolContextDefaultValue
 )
+
+/**
+ * Helper function to check if a string is a valid DID
+ */
+function isDID(value: string): boolean {
+  try {
+    DID.parse(value.trim())
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Helper function to check if a string is a valid email address
+ */
+function isEmail(value: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return !isDID(value) && emailRegex.test(value)
+}
+
+/**
+ * Share space with email recipient using delegation.
+ * The email will be normalized by client.shareSpace internally.
+ */
+async function shareViaEmail(
+  client: Client,
+  space: Space,
+  email: string
+): Promise<void> {
+  // client.shareSpace expects EmailAddress type and normalizes internally
+  // We pass the string and let the client handle normalization
+  await client.shareSpace(email as any, space.did(), {
+    abilities: [
+      'space/*',
+      'store/*',
+      'upload/*',
+      'access/*',
+      'usage/*',
+      'filecoin/*',
+    ],
+    expiration: Infinity,
+  })
+}
+
+/**
+ * Share space with DID recipient by creating a downloadable UCAN delegation
+ */
+async function shareViaDID(
+  client: Client,
+  space: Space,
+  did: string
+): Promise<{ url: string; filename: string }> {
+  const audience = DID.parse(did.trim())
+  
+  // Create delegation with standard capabilities
+  const delegation = await client.createDelegation(audience, [
+    'space/*',
+    'store/*',
+    'upload/*',
+    'access/*',
+    'usage/*',
+    'filecoin/*',
+  ], {
+    expiration: Infinity,
+  })
+
+  // Archive the delegation to get downloadable bytes
+  const archiveRes = await delegation.archive()
+  if (archiveRes.error) {
+    throw new Error('Failed to archive delegation', { cause: archiveRes.error })
+  }
+
+  // Create a blob URL for download
+  const blob = new Blob([archiveRes.ok])
+  const url = URL.createObjectURL(blob)
+  
+  // Generate filename from DID
+  const [, method = '', id = ''] = did.split(':')
+  const filename = `did-${method}-${id?.substring(0, 10)}.ucan`
+
+  return { url, filename }
+}
 
 export type ShareToolRootOptions<T extends As = typeof Fragment> = Options<T> & {
   /**
@@ -159,20 +244,34 @@ export const ShareToolRoot: Component<ShareToolRootProps> =
             await client.setCurrentSpace(space.did())
           }
 
-          // For email sharing, we need to use the access/authorize flow
-          // For DID sharing, we create a delegation
-          // This is a simplified version - in production, you'd use the full delegation flow
-          
-          // For now, just log the intent - actual implementation depends on your auth flow
-          console.log('Sharing space with:', recipient, recipient.includes('@') ? '(email)' : '(DID)')
-          
-          // You would typically call something like:
-          // await client.capability.access.authorize(recipient)
-          // or create and send a delegation via email
-
-          setShared(true)
-          setSuccessMessage(`Space successfully shared with ${recipient}`)
-          onShared?.(recipient)
+          // Determine if recipient is email or DID and handle accordingly
+          if (isEmail(recipient)) {
+            // Share via email - creates delegation automatically
+            await shareViaEmail(client, space, recipient)
+            setShared(true)
+            setSuccessMessage(`Space successfully shared with ${recipient}`)
+            onShared?.(recipient)
+          } else if (isDID(recipient)) {
+            // Share via DID - creates downloadable UCAN file
+            const { url, filename } = await shareViaDID(client, space, recipient)
+            
+            // Trigger download
+            const link = document.createElement('a')
+            link.href = url
+            link.download = filename
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            
+            // Clean up blob URL after a delay
+            setTimeout(() => URL.revokeObjectURL(url), 100)
+            
+            setShared(true)
+            setSuccessMessage(`UCAN delegation created for ${recipient}. Download started.`)
+            onShared?.(recipient)
+          } else {
+            throw new Error('Invalid recipient. Please enter a valid email address or DID.')
+          }
           
           // Reset after successful share
           setTimeout(() => {
@@ -355,13 +454,25 @@ export function useShareTool(): ShareToolContextValue {
 }
 
 /**
- * Custom hook for space sharing logic without UI
+ * Custom hook for space sharing logic without UI.
+ * 
+ * Useful for programmatic sharing outside of the ShareTool component,
+ * such as in custom workflows or automated sharing scenarios.
+ * 
+ * @example
+ * ```tsx
+ * const { shareSpace } = useShareSpace(space)
+ * await shareSpace('user@example.com') // Email sharing
+ * await shareSpace('did:key:...') // DID sharing (returns download info)
+ * ```
  */
 export function useShareSpace(space: Space) {
   const [{ client }] = useW3()
 
   const shareSpace = useCallback(
-    async (recipient: string): Promise<void> => {
+    async (
+      recipient: string
+    ): Promise<void | { url: string; filename: string }> => {
       if (!client || !space) {
         throw new Error('Client or space not initialized')
       }
@@ -370,15 +481,23 @@ export function useShareSpace(space: Space) {
         throw new Error('Please enter a valid email or DID')
       }
 
+      // Ensure the space is the current space
       if (client.currentSpace()?.did() !== space.did()) {
         await client.setCurrentSpace(space.did())
       }
-      
-      // Simplified sharing - actual implementation depends on your delegation flow
-      console.log('Sharing space with:', recipient, recipient.includes('@') ? '(email)' : '(DID)')
-      
-      // In production, implement proper delegation:
-      // await client.capability.access.authorize(recipient)
+
+      // Handle email sharing
+      if (isEmail(recipient)) {
+        await shareViaEmail(client, space, recipient)
+        return
+      }
+
+      // Handle DID sharing
+      if (isDID(recipient)) {
+        return await shareViaDID(client, space, recipient)
+      }
+
+      throw new Error('Invalid recipient. Please enter a valid email address or DID.')
     },
     [client, space]
   )

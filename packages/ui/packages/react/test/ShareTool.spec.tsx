@@ -22,6 +22,13 @@ const mockSpace = {
 const mockClient = {
   currentSpace: vi.fn().mockReturnValue(mockSpace),
   setCurrentSpace: vi.fn().mockResolvedValue(undefined),
+  shareSpace: vi.fn().mockResolvedValue(undefined),
+  createDelegation: vi.fn().mockResolvedValue({
+    archive: vi.fn().mockResolvedValue({
+      ok: new Uint8Array([1, 2, 3]),
+      error: undefined,
+    }),
+  }),
 }
 
 describe('ShareTool', () => {
