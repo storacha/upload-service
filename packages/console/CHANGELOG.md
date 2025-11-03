@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.2](https://github.com/storacha/upload-service/compare/console-v2.11.1...console-v2.11.2) (2025-11-03)
+
+
+### Fixes
+
+* tweak to test console deploy ([#509](https://github.com/storacha/upload-service/issues/509)) ([5c733b5](https://github.com/storacha/upload-service/commit/5c733b5488b4c3dbcd11aac76853840a8641686e))
+
 ## [2.11.1](https://github.com/storacha/upload-service/compare/console-v2.11.0...console-v2.11.1) (2025-11-03)
 
 
