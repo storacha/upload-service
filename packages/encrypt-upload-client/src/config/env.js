@@ -1,5 +1,4 @@
 import { Schema } from '@ucanto/core'
-import { LIT_NETWORK } from '@lit-protocol/constants'
 
 // Only conditionally load dotenv in Node.js environments to prevent browser bundling issues
 if (
@@ -17,12 +16,6 @@ if (
 }
 
 const envSchema = Schema.struct({
-  LIT_NETWORK: Schema.enum([
-    LIT_NETWORK.Custom,
-    LIT_NETWORK.Datil,
-    LIT_NETWORK.DatilDev,
-    LIT_NETWORK.DatilTest,
-  ]).default(LIT_NETWORK.DatilTest),
   LIT_DEBUG: Schema.boolean().default(false),
 })
 
