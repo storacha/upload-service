@@ -52,6 +52,9 @@ const nextConfig = {
   transpilePackages: [
     '@ipld/dag-ucan',
     '@ipld/unixfs',
+    '@perma/map',
+    '@ucanto/core',
+    '@ucanto/principal',
   ],
 }
 
