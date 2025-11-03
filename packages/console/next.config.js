@@ -49,13 +49,6 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  transpilePackages: [
-    '@ipld/dag-ucan',
-    '@ipld/unixfs',
-    '@perma/map',
-    '@ucanto/core',
-    '@ucanto/principal',
-  ],
 }
 
 /** @type {(phase: string) => Promise<import('next').NextConfig & import('@nx/next/plugins/with-nx').WithNxOptions & import('@sentry/nextjs').WithSentryConfig>} */
