@@ -77,6 +77,7 @@ export function connection(options = {}) {
       HTTP.open({
         url: options.url ?? new URL(HOST),
         method: 'POST',
+        // @ts-expect-error awkward type mismatch with fetch that I'd rather not figure out right now
         fetch: options.fetch ?? globalThis.fetch.bind(globalThis),
       }),
   })
