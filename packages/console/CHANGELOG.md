@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.11.0](https://github.com/storacha/upload-service/compare/console-v2.10.0...console-v2.11.0) (2025-11-03)
+
+
+### Features
+
+* link to space from usage table ([#494](https://github.com/storacha/upload-service/issues/494)) ([f14dd8c](https://github.com/storacha/upload-service/commit/f14dd8cb15fbd3089e9eb494a7e5880908405fb9))
+
+
+### Fixes
+
+* trigger console deployment ([38d3c8b](https://github.com/storacha/upload-service/commit/38d3c8bef3c4be68bbe6ed51ce4334fcbdd96ed7))
+
 ## [2.10.0](https://github.com/storacha/upload-service/compare/console-v2.9.0...console-v2.10.0) (2025-10-29)
 
 
