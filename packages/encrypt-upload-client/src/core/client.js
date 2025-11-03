@@ -73,7 +73,7 @@ export class EncryptedClient {
 /**
  * Creates a new EncryptedClient.
  *
- * If no Gateway URL is provided, the default value of 'https://w3s.link' will be used.
+ * If no Gateway URL is provided, the default value of 'https://storacha.link' will be used.
  *
  * @param {Type.EncryptedClientOptions} options
  */
