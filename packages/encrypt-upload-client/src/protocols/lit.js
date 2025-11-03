@@ -50,6 +50,15 @@ export async function createEoaAuthContext(
     capabilityAuthSigs,
   }
 ) {
+  const authManager = createAuthManager({
+    storage: storagePlugins.localStorageNode({
+      appName: 'my-app',
+      networkName: 'naga-local',
+      storagePath: './lit-auth-local',
+    }),
+  })
+
+  // TODO: need to check if this will work, because '@lit-protocol/types' and '@lit-protocol/access-control-conditions AccessControlConditions are different
   const accsResourceString =
     await LitAccessControlConditionResource.generateResourceString(
       /** @type {import('@lit-protocol/types').AccessControlConditions} */ (
@@ -97,6 +106,14 @@ export async function createPkpAuthContext(
     capabilityAuthSigs,
   }
 ) {
+  const authManager = createAuthManager({
+    storage: storagePlugins.localStorageNode({
+      appName: 'my-app',
+      networkName: 'naga-local',
+      storagePath: './lit-auth-local',
+    }),
+  })
+
   const accsResourceString =
     await LitAccessControlConditionResource.generateResourceString(
       /** @type {import('@lit-protocol/types').AccessControlConditions} */ (
