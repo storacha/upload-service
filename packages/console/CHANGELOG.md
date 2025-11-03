@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.1](https://github.com/storacha/upload-service/compare/console-v2.11.0...console-v2.11.1) (2025-11-03)
+
+
+### Fixes
+
+* trigger console app release ([09978db](https://github.com/storacha/upload-service/commit/09978db795f73cdceaed48f40c737ff420452556))
+
 ## [2.11.0](https://github.com/storacha/upload-service/compare/console-v2.10.0...console-v2.11.0) (2025-11-03)
 
 
