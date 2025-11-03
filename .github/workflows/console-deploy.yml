@@ -44,9 +44,10 @@ jobs:
         run: |
           find packages -name "*.tsbuildinfo" -delete
           pnpm nx reset
+          rm -rf node_modules/.cache
       - name: Build all dependencies
         shell: bash
-        run: pnpm nx build
+        run: pnpm nx build --skip-nx-cache
       - name: create .env from .env.tpl setting env variables used by `pnpm run pages:build`
         run: |
           # set env vars from template
@@ -156,17 +157,16 @@ jobs:
         working-directory: ./packages/console
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: 'main'
       - uses: ./.github/actions/pnpm
       - name: Clean stale build artifacts
         working-directory: .
         run: |
           find packages -name "*.tsbuildinfo" -delete
           pnpm nx reset
+          rm -rf node_modules/.cache
       - name: Build all dependencies
         shell: bash
-        run: pnpm nx build
+        run: pnpm nx build --skip-nx-cache
       - name: create .env from .env.tpl setting env variables used by `pnpm run pages:build`
         run: |
           # set env vars from template
