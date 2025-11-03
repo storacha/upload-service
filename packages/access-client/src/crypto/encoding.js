@@ -55,6 +55,7 @@ export function testUint8Array(param) {
  * https://github.com/w3c-ccg/did-method-key/issues/32
  *
  * @param {Uint8Array} comp - 33 byte compressed public key. 1st byte: 0x02 for even or 0x03 for odd. Following 32 bytes: x coordinate expressed as big-endian.
+ * @returns {Uint8Array<ArrayBuffer>}
  */
 export function decompressP256(comp) {
   if (comp.length !== 33) {
@@ -90,7 +91,11 @@ export function decompressP256(comp) {
   const yPadded = new Uint8Array(32)
   yPadded.set(y, offset)
 
-  // concat coords & prepend P-256 prefix
-  const publicKey = uint8arrays.concat([new Uint8Array([0x04]), x, yPadded])
+  /**
+   *  concat coords & prepend P-256 prefix
+   * 
+   * @type {Uint8Array<ArrayBuffer>}
+   */
+  const publicKey = /** @type {Uint8Array<ArrayBuffer>} */(uint8arrays.concat([new Uint8Array([0x04]), x, yPadded]))
   return publicKey
 }

@@ -36,7 +36,7 @@ export class AesKey {
    */
   async encrypt(data) {
     const iv = randomIV()
-    const dataBytes = uint8arrays.fromString(data, 'utf8')
+    const dataBytes = /** @type {Uint8Array<ArrayBuffer>}*/(uint8arrays.fromString(data, 'utf8'))
     const buf = await webcrypto.subtle.encrypt(
       {
         name: 'AES-GCM',

@@ -24,7 +24,7 @@ async function didFromPubkey(pubkey) {
  */
 function ecdhKeyFromDid(did) {
   // Parse did string and slice algorithm varint
-  const view = DID.parse(did).slice(2)
+  const view = /** @type {Uint8Array<ArrayBuffer>} */(DID.parse(did).slice(2))
 
   return webcrypto.subtle.importKey(
     'raw',

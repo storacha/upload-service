@@ -179,7 +179,7 @@ export function createConcludeInvocation(id, serviceDid, receipt) {
  *
  * The issuer needs the `blob/add` delegated capability.
  * @param {import('multiformats').MultihashDigest} digest
- * @param {Blob|Uint8Array} data Blob data.
+ * @param {Blob|Uint8Array<ArrayBuffer>} data Blob data.
  * @param {API.RequestOptions} [options]
  * @returns {Promise<API.BlobAddOk>}
  */

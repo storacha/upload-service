@@ -95,7 +95,7 @@
     "@types/assert": "^1.5.6",
     "@types/inquirer": "catalog:",
     "@types/mocha": "^10.0.1",
-    "@types/node": "^20.8.4",
+    "@types/node": "^24.9.2",
     "@types/sinon": "catalog:",
     "@types/varint": "catalog:",
     "@types/ws": "catalog:",

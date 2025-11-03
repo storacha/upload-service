@@ -104,7 +104,9 @@ export class AgentData {
         meta: value.meta,
         delegation: [...value.delegation.export()].map((b) => ({
           cid: b.cid.toString(),
-          bytes: uint8ArrayToArrayBuffer(b.bytes),
+          bytes: uint8ArrayToArrayBuffer(
+            /** @type {Uint8Array<ArrayBuffer>} */(b.bytes)
+          ),
         })),
       })
     }
