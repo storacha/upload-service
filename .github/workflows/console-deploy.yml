@@ -39,6 +39,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/pnpm
+      - name: Clean stale build artifacts
+        working-directory: .
+        run: |
+          find packages -name "*.tsbuildinfo" -delete
+          pnpm nx reset
       - name: Build all dependencies
         shell: bash
         run: pnpm nx build
@@ -154,6 +159,11 @@ jobs:
         with:
           ref: 'main'
       - uses: ./.github/actions/pnpm
+      - name: Clean stale build artifacts
+        working-directory: .
+        run: |
+          find packages -name "*.tsbuildinfo" -delete
+          pnpm nx reset
       - name: Build all dependencies
         shell: bash
         run: pnpm nx build
