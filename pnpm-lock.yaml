@@ -416,8 +416,8 @@ importers:
         specifier: ^10.0.1
         version: 10.0.10
       '@types/node':
-        specifier: ^24.9.2
-        version: 24.9.2
+        specifier: ^20.8.4
+        version: 20.17.14
       '@types/sinon':
         specifier: 'catalog:'
         version: 10.0.20
