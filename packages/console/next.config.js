@@ -55,6 +55,7 @@ const nextConfig = {
 const withCustom = async (phase) => {
   const nxConfig = withNx(nextConfig)
   const config = await nxConfig(phase)
+  if ("eslint" in config) delete config.eslint;
   return withSentryConfig(config,  { ...sentryWebpackPluginOptions, ...sentryOptions })
 }
 
