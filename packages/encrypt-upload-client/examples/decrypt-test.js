@@ -12,6 +12,7 @@ import { create } from '../src/index.js'
 import { serviceConf, receiptsEndpoint } from '../src/config/service.js'
 import { createGenericLitAdapter } from '../src/crypto/factories.node.js'
 import { extract } from '@ucanto/core/delegation'
+import { createAuthManager, storagePlugins } from '@lit-protocol/auth'
 
 dotenv.config()
 
@@ -45,9 +46,17 @@ async function main() {
     network: nagaTest,
   })
 
+  const authManager = createAuthManager({
+    storage: storagePlugins.localStorageNode({
+      appName: 'my-app',
+      networkName: 'naga-local',
+      storagePath: './lit-auth-local',
+    }),
+  })
+
   const encryptedClient = await create({
     storachaClient: client,
-    cryptoAdapter: createGenericLitAdapter(litClient),
+    cryptoAdapter: createGenericLitAdapter(litClient, authManager),
   })
 
   console.log('Extracting delegation from CAR file...')

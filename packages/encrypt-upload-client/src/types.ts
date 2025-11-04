@@ -28,6 +28,16 @@ export type { UploadOptions } from '@storacha/client/types'
 // Import SpaceDID for use in interfaces
 import type { SpaceDID } from '@storacha/capabilities/types'
 import { Account } from 'viem'
+import {
+  createAuthManager,
+  getEoaAuthContext,
+  getPkpAuthContext,
+} from '@lit-protocol/auth'
+
+export type AuthManager = ReturnType<typeof createAuthManager>
+export type EoaAuthContext = ReturnType<typeof getEoaAuthContext>
+export type PkpAuthContext = ReturnType<typeof getPkpAuthContext>
+export type AuthenticationContext = EoaAuthContext | PkpAuthContext
 
 export interface FileMetadata {
   name: string // Full filename with extension

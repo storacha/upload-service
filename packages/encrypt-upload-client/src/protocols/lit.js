@@ -1,4 +1,3 @@
-import { createAuthManager, storagePlugins } from '@lit-protocol/auth'
 import { LitAccessControlConditionResource } from '@lit-protocol/auth-helpers'
 import { createAccBuilder } from '@lit-protocol/access-control-conditions'
 
@@ -46,11 +45,13 @@ export const getAccessControlConditions = (spaceDID) => {
 
 /**
  * @param {import('@lit-protocol/lit-client').LitClientType} litClient
+ * @param {Type.AuthManager} authManager - The Lit Auth Manager instance
  * @param {Type.EoaAuthContextOptions} param0
- *  returns {Promise<import('@lit-protocol/types').AuthenticationContext>}
+ * @returns {Promise<Type.EoaAuthContext>}
  */
 export async function createEoaAuthContext(
   litClient,
+  authManager,
   {
     wallet,
     accessControlConditions,
@@ -59,14 +60,6 @@ export async function createEoaAuthContext(
     capabilityAuthSigs,
   }
 ) {
-  const authManager = createAuthManager({
-    storage: storagePlugins.localStorageNode({
-      appName: 'my-app',
-      networkName: 'naga-local',
-      storagePath: './lit-auth-local',
-    }),
-  })
-
   // TODO: need to check if this will work, because '@lit-protocol/types' and '@lit-protocol/access-control-conditions AccessControlConditions are different
   const accsResourceString =
     await LitAccessControlConditionResource.generateResourceString(
@@ -100,10 +93,13 @@ export async function createEoaAuthContext(
  * Get PKP Auth Context.
  *
  * @param {import('@lit-protocol/lit-client').LitClientType} litClient
+ * @param {Type.AuthManager} authManager - The Lit Auth Manager instance
  * @param {Type.PkpAuthContextOptions} options
+ * @returns {Promise<Type.PkpAuthContext>}
  */
 export async function createPkpAuthContext(
   litClient,
+  authManager,
   {
     pkpPublicKey,
     authData,
@@ -113,14 +109,6 @@ export async function createPkpAuthContext(
     capabilityAuthSigs,
   }
 ) {
-  const authManager = createAuthManager({
-    storage: storagePlugins.localStorageNode({
-      appName: 'my-app',
-      networkName: 'naga-local',
-      storagePath: './lit-auth-local',
-    }),
-  })
-
   const accsResourceString =
     await LitAccessControlConditionResource.generateResourceString(
       /** @type {import('@lit-protocol/types').AccessControlConditions} */ (
