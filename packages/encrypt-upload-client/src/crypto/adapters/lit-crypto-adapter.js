@@ -18,10 +18,12 @@ export class LitCryptoAdapter {
    *
    * @param {Type.SymmetricCrypto} symmetricCrypto - The symmetric crypto implementation (browser or node)
    * @param {import('@lit-protocol/lit-client').LitClientType} litClient - The Lit client instance
+   * @param {Type.AuthManager} authManager - The Lit Auth Manager instance
    */
-  constructor(symmetricCrypto, litClient) {
+  constructor(symmetricCrypto, litClient, authManager) {
     this.symmetricCrypto = symmetricCrypto
     this.litClient = litClient
+    this.authManager = authManager
   }
 
   /**
@@ -119,20 +121,28 @@ export class LitCryptoAdapter {
     // Step 2. Get Auth Context for decryption
     let authContext
     if (decryptionConfig.wallet) {
-      authContext = await Lit.createEoaAuthContext(this.litClient, {
-        wallet: decryptionConfig.wallet,
-        accessControlConditions,
-        dataToEncryptHash: plaintextKeyHash,
-        expiration,
-      })
+      authContext = await Lit.createEoaAuthContext(
+        this.litClient,
+        this.authManager,
+        {
+          wallet: decryptionConfig.wallet,
+          accessControlConditions,
+          dataToEncryptHash: plaintextKeyHash,
+          expiration,
+        }
+      )
     } else if (decryptionConfig.pkpPublicKey && decryptionConfig.authData) {
-      authContext = await Lit.createPkpAuthContext(this.litClient, {
-        pkpPublicKey: decryptionConfig.pkpPublicKey,
-        authData: decryptionConfig.authData,
-        accessControlConditions,
-        dataToEncryptHash: plaintextKeyHash,
-        expiration,
-      })
+      authContext = await Lit.createPkpAuthContext(
+        this.litClient,
+        this.authManager,
+        {
+          pkpPublicKey: decryptionConfig.pkpPublicKey,
+          authData: decryptionConfig.authData,
+          accessControlConditions,
+          dataToEncryptHash: plaintextKeyHash,
+          expiration,
+        }
+      )
     } else {
       throw new Error('Either wallet or PKP authData must be provided')
     }

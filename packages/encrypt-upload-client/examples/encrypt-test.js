@@ -13,7 +13,8 @@ import { createLitClient } from '@lit-protocol/lit-client'
 import * as EncryptClient from '../src/index.js'
 import { serviceConf, receiptsEndpoint } from '../src/config/service.js'
 import { createGenericLitAdapter } from '../src/crypto/factories.node.js'
-import { CID } from 'multiformats'
+// import { CID } from 'multiformats'
+import { createAuthManager, storagePlugins } from '@lit-protocol/auth'
 
 dotenv.config()
 
@@ -47,9 +48,17 @@ async function main() {
     network: nagaTest,
   })
 
+  const authManager = createAuthManager({
+    storage: storagePlugins.localStorageNode({
+      appName: 'my-app',
+      networkName: 'naga-local',
+      storagePath: './lit-auth-local',
+    }),
+  })
+
   const encryptedClient = await EncryptClient.create({
     storachaClient: client,
-    cryptoAdapter: createGenericLitAdapter(litClient),
+    cryptoAdapter: createGenericLitAdapter(litClient, authManager),
   })
 
   const fileContent = await fs.promises.readFile('./README.md')
