@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.13.0](https://github.com/storacha/upload-service/compare/console-v2.12.0...console-v2.13.0) (2025-11-04)
+
+
+### Features
+
+* upgrade to next 15 ([#512](https://github.com/storacha/upload-service/issues/512)) ([1f6adb4](https://github.com/storacha/upload-service/commit/1f6adb494af30c768d0817e8f1cc5bad849ea122))
+
 ## [2.12.0](https://github.com/storacha/upload-service/compare/console-v2.11.2...console-v2.12.0) (2025-11-04)
 
 
