@@ -1,4 +1,5 @@
-'use client'
+'use client';
+import { use, type JSX } from "react";
 
 import { UploadsList } from '@/components/UploadsList'
 import { useW3, UnknownLink, UploadListSuccess } from '@storacha/ui-react'
@@ -13,16 +14,18 @@ import BlobsOrUploads from '@/components/BlobsOrUploads'
 const pageSize = 15
 
 interface PageProps {
-  params: {
+  params: Promise<{
     did: string
-  },
-  searchParams: {
+  }>,
+  searchParams: Promise<{
     cursor: string
     pre: string
-  }
+  }>
 }
 
-export default function Page ({ params, searchParams }: PageProps): JSX.Element {
+export default function Page(props: PageProps): JSX.Element {
+  const searchParams = use(props.searchParams);
+  const params = use(props.params);
   const [{ client, spaces }] = useW3()
   const spaceDID = decodeURIComponent(params.did)
   const space = spaces.find(s => s.did() === spaceDID)
@@ -49,7 +52,7 @@ export default function Page ({ params, searchParams }: PageProps): JSX.Element 
   const pathname = usePathname()
 
   if (!space) return <div />
-  
+
   // If space is private and user doesn't have access, the PrivateSpaceGuard will handle redirection
   return (
     <PrivateSpaceGuard spaceDID={spaceDID}>

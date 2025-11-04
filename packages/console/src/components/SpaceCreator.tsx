@@ -1,4 +1,4 @@
-import type { ChangeEvent } from 'react'
+import type { ChangeEvent, JSX } from 'react';
 
 import React, { useState } from 'react'
 import { ContentServeService, Space, useW3 } from '@storacha/ui-react'

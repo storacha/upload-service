@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, use, type JSX } from 'react';
 import { Dialog } from '@headlessui/react'
 import { TrashIcon, ExclamationTriangleIcon, LockOpenIcon } from '@heroicons/react/24/outline'
 import { H2 } from '@/components/Text'
@@ -18,13 +18,14 @@ import { ipfsGatewayURLStr } from '@/components/services'
 import { useFileDecryption } from '@/hooks/useFileDecryption'
 
 interface PageProps {
-  params: {
+  params: Promise<{
     did: string
     cid: string
-  }
+  }>
 }
 
-export default function ItemPage ({ params }: PageProps): JSX.Element {
+export default function ItemPage(props: PageProps): JSX.Element {
+  const params = use(props.params);
   const [{ client, spaces }] = useW3()
   const spaceDID = decodeURIComponent(params.did)
   const space = spaces.find(s => s.did() === spaceDID)
@@ -47,7 +48,7 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
   const [isRemoveConfirmModalOpen, setRemoveConfirmModalOpen] = useState(false)
   const router = useRouter()
   const { mutate } = useSWRConfig()
-  
+
   // Add decryption functionality
   const { decryptAndDownload, canDecrypt, loading: decryptLoading, error: decryptError } = useFileDecryption(space)
 
@@ -75,7 +76,7 @@ export default function ItemPage ({ params }: PageProps): JSX.Element {
 
   const url = ipfsGatewayURLStr(root)
   const isPrivateSpace = space.access?.type === 'private'
-  
+
   return (
     <div>
       <Breadcrumbs space={space.did()} root={root} />

@@ -1,4 +1,5 @@
-'use client'
+'use client';
+import { use, type JSX } from "react";
 
 import { useW3 } from '@storacha/ui-react'
 import { parse as parseLink } from 'multiformats/link'
@@ -6,14 +7,15 @@ import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { ShardDetail } from '@/components/ShardDetail'
 
 interface PageProps {
-  params: {
+  params: Promise<{
     did: string
     cid: string
     shard: string
-  }
+  }>
 }
 
-export default function ItemPage ({ params }: PageProps): JSX.Element {
+export default function ItemPage(props: PageProps): JSX.Element {
+  const params = use(props.params);
   const [{ client, spaces }] = useW3()
   const spaceDID = decodeURIComponent(params.did)
   const space = spaces.find(s => s.did() === spaceDID)

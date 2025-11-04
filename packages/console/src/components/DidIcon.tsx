@@ -1,5 +1,7 @@
 import md5 from 'blueimp-md5'
 
+import type { JSX } from "react";
+
 export function DidIcon({ did, width = 10, display = 'block' }: { did: string, width?: number, display?: 'block'|'inline-block' }): JSX.Element {
   const src = `https://www.gravatar.com/avatar/${md5(did)}?d=identicon`
   return (
