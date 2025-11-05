@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.14.0](https://github.com/storacha/upload-service/compare/console-v2.13.0...console-v2.14.0) (2025-11-05)
+
+
+### Features
+
+* trigger console release ([c2ce9b4](https://github.com/storacha/upload-service/commit/c2ce9b4ad355841253dd760a2040e4f75ea199d3))
+
 ## [2.13.0](https://github.com/storacha/upload-service/compare/console-v2.12.0...console-v2.13.0) (2025-11-04)
 
 
