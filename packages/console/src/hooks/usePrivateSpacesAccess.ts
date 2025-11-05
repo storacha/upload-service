@@ -29,14 +29,19 @@ export const usePrivateSpacesAccess = () => {
   const isStorachaUser = useMemo(() => 
     email?.endsWith('@storacha.network') ?? false
   , [email])
+
+  const isZKAGIUser = useMemo(() => 
+    email?.endsWith('@zkagi.ai') ?? false
+  , [email])
+
   
   // Check if user has a paid plan
   const isPaidUser = useMemo(() => {
-    if (isStorachaUser) return true
+    if (isStorachaUser || isZKAGIUser) return true
     if (!plan?.product) return false
     return plan.product === PLANS.lite || 
            plan.product === PLANS.business
-  }, [plan, isStorachaUser])
+  }, [plan, isStorachaUser, isZKAGIUser])
   
   // Check if user's email domain is in the allowed domains list
   const isEligibleDomain = useMemo(() => 
@@ -47,11 +52,12 @@ export const usePrivateSpacesAccess = () => {
   const debugInfo = useCallback(() => ({
     email,
     isStorachaUser,
+    isZKAGIUser,
     isPaidUser,
     isEligibleDomain,
     plan: plan?.product,
     planLoading: isLoading
-  }), [email, isStorachaUser, isPaidUser, isEligibleDomain, plan, isLoading])
+  }), [email, isStorachaUser, isZKAGIUser, isPaidUser, isEligibleDomain, plan, isLoading])
   
   if (process.env.NODE_ENV === 'development') {
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -62,7 +68,7 @@ export const usePrivateSpacesAccess = () => {
   
   return {
     canAccessPrivateSpaces: isEligibleDomain && isPaidUser,
-    shouldShowUpgradePrompt: isEligibleDomain && !isPaidUser && !isStorachaUser,
+    shouldShowUpgradePrompt: isEligibleDomain && !isPaidUser && !isStorachaUser && !isZKAGIUser,
     shouldShowPrivateSpacesTab: isEligibleDomain,
     email,
     plan,
