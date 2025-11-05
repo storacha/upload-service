@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.15.0](https://github.com/storacha/upload-service/compare/console-v2.14.0...console-v2.15.0) (2025-11-05)
+
+
+### Features
+
+* enable free privacy for zkagi ([#519](https://github.com/storacha/upload-service/issues/519)) ([c9d8d93](https://github.com/storacha/upload-service/commit/c9d8d9354b8192591c860843cbb9ba93c27aa229))
+
 ## [2.14.0](https://github.com/storacha/upload-service/compare/console-v2.13.0...console-v2.14.0) (2025-11-05)
 
 
