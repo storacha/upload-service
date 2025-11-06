@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 interface LinkProps {
   className?: string
   href: string

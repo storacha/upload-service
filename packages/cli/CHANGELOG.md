@@ -1,3 +1,190 @@
+## 1.6.24 (2025-10-30)
+
+### 🩹 Fixes
+
+- another oidc trusted publishing test ([7da68b3e](https://github.com/storacha/upload-service/commit/7da68b3e))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
+## 1.6.23 (2025-10-30)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.12
+- Updated @storacha/upload-api to 2.4.8
+
+## 1.6.22 (2025-10-28)
+
+### 🩹 Fixes
+
+- fix: new release to green the build after reverting oidc changes ([81f373f5](https://github.com/storacha/upload-service/commit/81f373f5))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
+## 1.6.21 (2025-10-28)
+
+### 🩹 Fixes
+
+- update npm for oidc publish ([1dcf6314](https://github.com/storacha/upload-service/commit/1dcf6314))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
+## 1.6.20 (2025-10-28)
+
+### 🩹 Fixes
+
+- try node 22 ([699f04bd](https://github.com/storacha/upload-service/commit/699f04bd))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
+## 1.6.19 (2025-10-28)
+
+### 🩹 Fixes
+
+- try rolling back node version ([a526f0fb](https://github.com/storacha/upload-service/commit/a526f0fb))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
+## 1.6.18 (2025-10-28)
+
+### 🩹 Fixes
+
+- keep debugging release ([90835a32](https://github.com/storacha/upload-service/commit/90835a32))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
+## 1.6.17 (2025-10-28)
+
+### 🩹 Fixes
+
+- continuing work on npm oidc trusted publishing ([#483](https://github.com/storacha/upload-service/pull/483))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
+## 1.6.16 (2025-10-28)
+
+### 🩹 Fixes
+
+- fix: undo everything I did today ([#480](https://github.com/storacha/upload-service/pull/480))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.11
+- Updated @storacha/upload-api to 2.4.7
+
+### ❤️ Thank You
+
+- Travis Vachon
+
+## 1.6.15 (2025-10-28)
+
+### 🩹 Fixes
+
+- fix: bump versions to fix release ([#478](https://github.com/storacha/upload-service/pull/478))
+
+  I forgot to restore access to the NPM_TOKEN
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.10
+- Updated @storacha/upload-api to 2.4.6
+
+### ❤️ Thank You
+
+- Travis Vachon
+
+## 1.6.14 (2025-10-28)
+
+### 🩹 Fixes
+
+- fix: trivial tweaks to trigger releases ([#476](https://github.com/storacha/upload-service/pull/476))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.9
+- Updated @storacha/upload-api to 2.4.5
+
+### ❤️ Thank You
+
+- Travis Vachon
+
+## 1.6.13 (2025-10-28)
+
+### 🩹 Fixes
+
+- tweaks to test releases ([#473](https://github.com/storacha/upload-service/pull/473))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.8
+- Updated @storacha/upload-api to 2.4.4
+
+### ❤️ Thank You
+
+- Travis Vachon
+
+## 1.6.12 (2025-10-27)
+
+### 🩹 Fixes
+
+- patch bump to test release ([#471](https://github.com/storacha/upload-service/pull/471))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
+## 1.6.11 (2025-10-27)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.7
+- Updated @storacha/upload-api to 2.4.3
+
+## 1.6.10 (2025-10-27)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.6
+- Updated @storacha/upload-api to 2.4.2
+
+## 1.6.9 (2025-10-27)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.5
+- Updated @storacha/upload-api to 2.4.1
+
+## 1.6.8 (2025-10-24)
+
+### 🩹 Fixes
+
+- feat: skip index fetch if content link and retrieval auth is provided ([b42c6142](https://github.com/storacha/upload-service/commit/b42c6142))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.6.2
+- Updated @storacha/capabilities to 1.10.0
+- Updated @storacha/client to 1.8.4
+- Updated @storacha/upload-api to 2.4.0
+
+### ❤️ Thank You
+
+- Alan Shaw
+
 ## 1.6.2 (2025-10-02)
 
 ### 🧱 Updated Dependencies

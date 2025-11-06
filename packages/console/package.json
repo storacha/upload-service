@@ -1,6 +1,6 @@
 {
   "name": "@storacha/console",
-  "version": "2.9.0",
+  "version": "2.15.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,7 +8,7 @@
     "build:fresh": "nx build --skip-nx-cache",
     "start": "next start",
     "test": "pnpm lint",
-    "lint": "next lint",
+    "lint": "eslint",
     "pages:build": "pnpm dlx @cloudflare/next-on-pages@1",
     "pages:watch": "pnpm @cloudflare/next-on-pages@1 --watch",
     "pages:dev": "pnpm wrangler pages dev .vercel/output/static --compatibility-flag=nodejs_compat"
@@ -62,8 +62,8 @@
     "browserify-zlib": "^0.2.0",
     "buffer": "^6.0.3",
     "eslint": "catalog:",
-    "eslint-config-next": "14.0.4",
-    "eslint-plugin-next-on-pages": "1.6.3",
+    "eslint-config-next": "16.0.1",
+    "eslint-plugin-next-on-pages": "1.13.16",
     "postcss": "catalog:",
     "process": "^0.11.10",
     "stream-browserify": "^3.0.0",

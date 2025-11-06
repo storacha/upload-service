@@ -1,5 +1,4 @@
-'use client'
-
+'use client';
 import { useW3, SpaceDID } from '@storacha/ui-react'
 import useSWR from 'swr'
 import Link from 'next/link'
@@ -11,6 +10,8 @@ import DefaultLoader from '@/components/Loader'
 import { RefcodeLink, ReferralsList, RefcodeCreator } from '../referrals/page'
 import { useReferrals } from '@/lib/referrals/hooks'
 import { logAndCaptureError } from '@/sentry'
+
+import type { JSX } from "react";
 
 const Plans: Record<`did:${string}`, { name: string, limit: number }> = {
   'did:web:starter.web3.storage': { name: 'Starter', limit: 5 * GB },
@@ -30,34 +31,15 @@ export default function SettingsPage (): JSX.Element {
 
   const { data: plan } = usePlan(account)
 
-  const { data: usage, isLoading } = useSWR<Record<SpaceDID, number> | undefined>(`/usage/${account ?? ''}`, {
+  const { data: usage } = useSWR<Record<SpaceDID, number> | undefined>(`/usage/${account ?? ''}`, {
     fetcher: async () => {
-      const usage: Record<SpaceDID, number> = {}
       if (!account || !client) return
 
-      const now = new Date()
-      const period = {
-        // we may not have done a snapshot for this month _yet_, so get report
-        // from last month -> now
-        from: startOfLastMonth(now),
-        to: now,
-      }
-
-      const subscriptions = await client.capability.subscription.list(account.did())
-      for (const { consumers } of subscriptions.results) {
-        for (const space of consumers) {
-          try {
-            const result = await client.capability.usage.report(space, period)
-            for (const [, report] of Object.entries(result)) {
-              usage[report.space] = report.size.final
-            }
-          } catch (err) {
-            // TODO: figure out why usage/report cannot be used on old spaces 
-            logAndCaptureError(err)
-          }
-        }
-      }
-      return usage
+      const result = await client.capability.account.usage.get(account.did())
+      return Object.entries(result.spaces).reduce((m, [spaceDID, value]) => {
+        m[spaceDID as SpaceDID] = value.total
+        return m
+      }, {} as Record<SpaceDID, number>)
     },
     onError: logAndCaptureError
   })
@@ -127,7 +109,7 @@ export default function SettingsPage (): JSX.Element {
               {Object.entries(usage).sort((a, b) => b[1] - a[1]).map(([space, total]) => {
                 return (
                   <tr key={space} className='border-b border-hot-red last:border-b-0'>
-                    <td className='text-xs font-mono py-2'>{space}</td>
+                    <td className='text-xs font-mono py-2'><Link href={`/space/${space}`}>{space}</Link></td>
                     <td className='text-xs text-right py-2'>{filesize(total)}</td>
                   </tr>
                 )
@@ -135,6 +117,15 @@ export default function SettingsPage (): JSX.Element {
             </table>
           </>
         ) : <DefaultLoader className='w-6 h-6 inline-block' />}
+      </div>
+      <div className='border border-hot-red rounded-2xl bg-white p-5 max-w-4xl mt-4'>
+        <H2>Account Management</H2>
+        <button 
+          onClick={() => window.open('https://forms.gle/QsvfMip2qzJqzEEo9', '_blank')}
+          className='bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200'
+        >
+          Request Account Deletion
+        </button>
       </div>
     </>
   )

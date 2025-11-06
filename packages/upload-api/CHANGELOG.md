@@ -1,3 +1,102 @@
+## 2.4.8 (2025-10-30)
+
+### 🩹 Fixes
+
+- fix: replication allocation invocation timeout ([#493](https://github.com/storacha/upload-service/pull/493))
+
+### ❤️ Thank You
+
+- ash
+
+## 2.4.7 (2025-10-28)
+
+### 🩹 Fixes
+
+- fix: undo everything I did today ([#480](https://github.com/storacha/upload-service/pull/480))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
+## 2.4.6 (2025-10-28)
+
+### 🩹 Fixes
+
+- fix: bump versions to fix release ([#478](https://github.com/storacha/upload-service/pull/478))
+
+  I forgot to restore access to the NPM_TOKEN
+
+### ❤️ Thank You
+
+- Travis Vachon
+
+## 2.4.5 (2025-10-28)
+
+### 🩹 Fixes
+
+- fix: trivial tweaks to trigger releases ([#476](https://github.com/storacha/upload-service/pull/476))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
+## 2.4.4 (2025-10-28)
+
+### 🩹 Fixes
+
+- tweaks to test releases ([#473](https://github.com/storacha/upload-service/pull/473))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
+## 2.4.3 (2025-10-27)
+
+### 🩹 Fixes
+
+- bump to test oidc trusted publishing flow ([#468](https://github.com/storacha/upload-service/pull/468))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
+## 2.4.2 (2025-10-27)
+
+### 🩹 Fixes
+
+- fix: retrieval delegation caveats ([#463](https://github.com/storacha/upload-service/pull/463))
+
+### ❤️ Thank You
+
+- ash
+
+## 2.4.1 (2025-10-27)
+
+### 🩹 Fixes
+
+- fix: parsing retrieval auth CID ([#461](https://github.com/storacha/upload-service/pull/461))
+
+### ❤️ Thank You
+
+- ash
+
+## 2.4.0 (2025-10-24)
+
+### 🚀 Features
+
+- feat: skip index fetch if content link and retrieval auth is provided ([b42c6142](https://github.com/storacha/upload-service/commit/b42c6142))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.6.2
+- Updated @storacha/capabilities to 1.10.0
+- Updated @storacha/filecoin-api to 1.1.14
+- Updated @storacha/blob-index to 1.2.2
+
+### ❤️ Thank You
+
+- Alan Shaw
+
 ## 2.3.2 (2025-10-02)
 
 ### 🩹 Fixes

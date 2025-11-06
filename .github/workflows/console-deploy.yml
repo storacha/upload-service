@@ -39,6 +39,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/pnpm
+      - name: Clean stale build artifacts
+        working-directory: .
+        run: |
+          find packages -name "*.tsbuildinfo" -delete
+          pnpm nx reset
+      # pre-build console to get around some odd bugs that seem to be related to nx 21
+      # TODO: Try to get rid of this later. If the build ever succeeds without
+      # running this step first, it's working correctly, and we can delete this.
+      - name: Pre-build console
+        shell: bash
+        working-directory: ./packages/console
+        run: |
+          pnpm install
+          pnpm nx build @storacha/ui-core
+          pnpm nx build @storacha/ui-react
+          pnpm build              
       - name: Build all dependencies
         shell: bash
         run: pnpm nx build
@@ -71,7 +87,7 @@ jobs:
           echo "NEXT_PUBLIC_SENTRY_ENV=staging" >> .env
           echo "NEXT_PUBLIC_HUMANODE_OAUTH_CALLBACK_URL=https://staging.up.storacha.network/oauth/humanode/callback" >> .env
           echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" >> .env
-          echo "NEXT_PUBLIC_PRIVATE_SPACES_DOMAINS=dmail.ai,storacha.network" >> .env
+          echo "NEXT_PUBLIC_PRIVATE_SPACES_DOMAINS=dmail.ai,storacha.network,zkagi.ai" >> .env
           echo "NEXT_PUBLIC_UCAN_KMS_URL=https://ucan-kms-staging.protocol-labs.workers.dev" >> .env
           echo "NEXT_PUBLIC_UCAN_KMS_DID=did:key:z6MkmRf149D6oc9wq9ioXCsT5fgTn6esd7JjB9S5JnM4Y9qj" >> .env
           echo "NEXT_PUBLIC_ENABLE_TEST_IFRAME=true" >> .env
@@ -154,6 +170,22 @@ jobs:
         with:
           ref: 'main'
       - uses: ./.github/actions/pnpm
+      - name: Clean stale build artifacts
+        working-directory: .
+        run: |
+          find packages -name "*.tsbuildinfo" -delete
+          pnpm nx reset
+      # pre-build console to get around some odd bugs that seem to be related to nx 21
+      # TODO: Try to get rid of this later. If the build ever succeeds without
+      # running this step first, it's working correctly, and we can delete this.
+      - name: Pre-build console
+        shell: bash
+        working-directory: ./packages/console
+        run: |
+          pnpm install
+          pnpm nx build @storacha/ui-core
+          pnpm nx build @storacha/ui-react
+          pnpm build          
       - name: Build all dependencies
         shell: bash
         run: pnpm nx build
@@ -186,7 +218,7 @@ jobs:
           echo "NEXT_PUBLIC_SENTRY_ENV=production" >> .env
           echo "NEXT_PUBLIC_HUMANODE_OAUTH_CALLBACK_URL=https://up.storacha.network/oauth/humanode/callback" >> .env
           echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" >> .env
-          echo "NEXT_PUBLIC_PRIVATE_SPACES_DOMAINS=dmail.ai,storacha.network" >> .env
+          echo "NEXT_PUBLIC_PRIVATE_SPACES_DOMAINS=dmail.ai,storacha.network,zkagi.ai" >> .env
           echo "NEXT_PUBLIC_UCAN_KMS_URL=https://ucan-kms-production.protocol-labs.workers.dev" >> .env
           echo "NEXT_PUBLIC_UCAN_KMS_DID=did:key:z6MksQJobJmBfPhjHWgFXVppqM6Fcjc1k7xu4z6xvusVrtKv" >> .env
           echo "NEXT_PUBLIC_ENABLE_TEST_IFRAME=true" >> .env

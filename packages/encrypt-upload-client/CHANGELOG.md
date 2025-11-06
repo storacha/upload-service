@@ -1,3 +1,59 @@
+## 1.1.55 (2025-10-30)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.12
+
+## 1.1.53 (2025-10-28)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.11
+
+## 1.1.51 (2025-10-28)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.10
+
+## 1.1.49 (2025-10-28)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.9
+
+## 1.1.47 (2025-10-28)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.8
+
+## 1.1.45 (2025-10-27)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.7
+
+## 1.1.43 (2025-10-27)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.6
+
+## 1.1.41 (2025-10-27)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.5
+
+## 1.1.39 (2025-10-24)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/upload-client to 1.3.4
+- Updated @storacha/capabilities to 1.10.0
+- Updated @storacha/client to 1.8.4
+
 ## 1.1.32 (2025-10-02)
 
 ### 🧱 Updated Dependencies

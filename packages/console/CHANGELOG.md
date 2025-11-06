@@ -1,5 +1,71 @@
 # Changelog
 
+## [2.15.0](https://github.com/storacha/upload-service/compare/console-v2.14.0...console-v2.15.0) (2025-11-05)
+
+
+### Features
+
+* enable free privacy for zkagi ([#519](https://github.com/storacha/upload-service/issues/519)) ([c9d8d93](https://github.com/storacha/upload-service/commit/c9d8d9354b8192591c860843cbb9ba93c27aa229))
+
+## [2.14.0](https://github.com/storacha/upload-service/compare/console-v2.13.0...console-v2.14.0) (2025-11-05)
+
+
+### Features
+
+* trigger console release ([c2ce9b4](https://github.com/storacha/upload-service/commit/c2ce9b4ad355841253dd760a2040e4f75ea199d3))
+
+## [2.13.0](https://github.com/storacha/upload-service/compare/console-v2.12.0...console-v2.13.0) (2025-11-04)
+
+
+### Features
+
+* upgrade to next 15 ([#512](https://github.com/storacha/upload-service/issues/512)) ([1f6adb4](https://github.com/storacha/upload-service/commit/1f6adb494af30c768d0817e8f1cc5bad849ea122))
+
+## [2.12.0](https://github.com/storacha/upload-service/compare/console-v2.11.2...console-v2.12.0) (2025-11-04)
+
+
+### Features
+
+* trigger console release ([#513](https://github.com/storacha/upload-service/issues/513)) ([381ad5d](https://github.com/storacha/upload-service/commit/381ad5d1b1c61908d755f9349e04e352f11a446e))
+
+## [2.11.2](https://github.com/storacha/upload-service/compare/console-v2.11.1...console-v2.11.2) (2025-11-03)
+
+
+### Fixes
+
+* tweak to test console deploy ([#509](https://github.com/storacha/upload-service/issues/509)) ([5c733b5](https://github.com/storacha/upload-service/commit/5c733b5488b4c3dbcd11aac76853840a8641686e))
+
+## [2.11.1](https://github.com/storacha/upload-service/compare/console-v2.11.0...console-v2.11.1) (2025-11-03)
+
+
+### Fixes
+
+* trigger console app release ([09978db](https://github.com/storacha/upload-service/commit/09978db795f73cdceaed48f40c737ff420452556))
+
+## [2.11.0](https://github.com/storacha/upload-service/compare/console-v2.10.0...console-v2.11.0) (2025-11-03)
+
+
+### Features
+
+* link to space from usage table ([#494](https://github.com/storacha/upload-service/issues/494)) ([f14dd8c](https://github.com/storacha/upload-service/commit/f14dd8cb15fbd3089e9eb494a7e5880908405fb9))
+
+
+### Fixes
+
+* trigger console deployment ([38d3c8b](https://github.com/storacha/upload-service/commit/38d3c8bef3c4be68bbe6ed51ce4334fcbdd96ed7))
+
+## [2.10.0](https://github.com/storacha/upload-service/compare/console-v2.9.0...console-v2.10.0) (2025-10-29)
+
+
+### Features
+
+* Add Account and Space Deletion Request Buttons in Storacha Console ([#438](https://github.com/storacha/upload-service/issues/438)) ([422b7b0](https://github.com/storacha/upload-service/commit/422b7b0e886fbce24e50a15ad569c0194d89c911)), closes [#431](https://github.com/storacha/upload-service/issues/431)
+
+
+### Fixes
+
+* use new `account/usage/get` capability to get account usage ([#460](https://github.com/storacha/upload-service/issues/460)) ([76ff5ee](https://github.com/storacha/upload-service/commit/76ff5ee25cc4d38d6415e8e73f837a29e260e306))
+
 ## [2.9.0](https://github.com/storacha/upload-service/compare/console-v2.8.0...console-v2.9.0) (2025-10-10)
 
 

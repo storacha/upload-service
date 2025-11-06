@@ -22,7 +22,7 @@ interface PageProps {
 
 function Uploads({
   searchParams = { cursor: '', pre: 'false' },
-}: PageProps): React.ReactElement {
+}: PageProps): React.ReactElement<any> {
   const [{ client, spaces }] = useW3()
   const spaceDID = client?.currentSpace()?.did()
   const space = spaces.find((s) => s.did() === spaceDID)
@@ -82,7 +82,7 @@ function Uploads({
   )
 }
 
-function App(): React.ReactElement {
+function App(): React.ReactElement<any> {
   return (
     <div className="bg-grad flex flex-col items-center h-screen">
       <Provider>

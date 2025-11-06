@@ -1,3 +1,62 @@
+## 1.8.12 (2025-10-30)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/upload-api to 2.4.8
+
+## 1.8.11 (2025-10-28)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/upload-api to 2.4.7
+
+## 1.8.10 (2025-10-28)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/upload-api to 2.4.6
+
+## 1.8.9 (2025-10-28)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/upload-api to 2.4.5
+
+## 1.8.8 (2025-10-28)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/upload-api to 2.4.4
+
+## 1.8.7 (2025-10-27)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/upload-api to 2.4.3
+
+## 1.8.6 (2025-10-27)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/upload-api to 2.4.2
+
+## 1.8.5 (2025-10-27)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/upload-api to 2.4.1
+
+## 1.8.4 (2025-10-24)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-client to 1.0.13
+- Updated @storacha/access to 1.6.2
+- Updated @storacha/upload-client to 1.3.4
+- Updated @storacha/capabilities to 1.10.0
+- Updated @storacha/blob-index to 1.2.2
+- Updated @storacha/upload-api to 2.4.0
+
 ## 1.8.2 (2025-10-02)
 
 ### 🧱 Updated Dependencies

@@ -550,6 +550,9 @@ export type SpaceIndexAddFailure =
   | UnknownFormat
   | ShardNotFound
   | SliceNotFound
+  | RetrievalAuthorizationNotFound
+  | InvalidRetrievalAuthorization
+  | PublishFailure
   | Failure
 
 /** An error occurred when decoding the data. */
@@ -581,6 +584,22 @@ export interface SliceNotFound extends Failure {
   name: 'SliceNotFound'
   /** Multihash digest of the slice that could not be found. */
   digest: Multihash
+}
+
+/** Publshing the index to underlying systems failed. */
+export interface PublishFailure extends Failure {
+  name: 'PublishFailure'
+  cause: Failure
+}
+
+/** A retrieval authorization for the blob was not found. */
+export interface RetrievalAuthorizationNotFound extends Failure {
+  name: 'RetrievalAuthorizationNotFound'
+}
+
+/** A retrieval authorization for the blob was invalid. */
+export interface InvalidRetrievalAuthorization extends Failure {
+  name: 'InvalidRetrievalAuthorization'
 }
 
 // Blob
