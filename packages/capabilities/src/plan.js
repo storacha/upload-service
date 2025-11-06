@@ -65,7 +65,7 @@ export const createCheckoutSession = capability({
     planID: Schema.DID,
     successURL: Schema.string(),
     cancelURL: Schema.string(),
-    freeTrial: Schema.boolean()
+    freeTrial: Schema.boolean(),
   }),
   derives: (child, parent) => {
     return (

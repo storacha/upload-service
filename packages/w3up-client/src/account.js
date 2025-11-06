@@ -372,7 +372,6 @@ export class AccountPlan {
     })
   }
 
-
   /**
    *
    * @param {import('@storacha/access').AccountDID} accountDID

@@ -185,7 +185,7 @@ export const createCheckoutSession = async (
       planID,
       successURL,
       cancelURL,
-      freeTrial
+      freeTrial,
     },
   })
   return receipt.out

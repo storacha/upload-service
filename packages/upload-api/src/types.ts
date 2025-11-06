@@ -266,7 +266,11 @@ export type {
 } from './types/revocations.js'
 export type { RateLimitsStorage, RateLimit } from './types/rate-limits.js'
 import { PlansStorage } from './types/plans.js'
-export type { PlansStorage, PlanCreateCheckoutSessionOptions, PlanID } from './types/plans.js'
+export type {
+  PlansStorage,
+  PlanCreateCheckoutSessionOptions,
+  PlanID,
+} from './types/plans.js'
 import { SubscriptionsStorage } from './types/subscriptions.js'
 export type { SubscriptionsStorage }
 import { UsageStorage } from './types/usage.js'
@@ -444,7 +448,7 @@ export interface Service extends StorefrontService {
       PlanCreateAdminSessionSuccess,
       PlanCreateAdminSessionFailure
     >
-   'create-checkout-session': ServiceMethod<
+    'create-checkout-session': ServiceMethod<
       PlanCreateCheckoutSession,
       PlanCreateCheckoutSessionSuccess,
       PlanCreateCheckoutSessionFailure

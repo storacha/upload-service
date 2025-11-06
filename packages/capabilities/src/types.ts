@@ -1075,7 +1075,6 @@ export type PlanCreateCheckoutSessionFailure =
   | PlanNotFound
   | UnexpectedError
 
-
 // Top
 export type Top = InferInvokedCapability<typeof top>
 

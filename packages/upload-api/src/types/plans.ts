@@ -9,7 +9,7 @@ import {
   PlanCreateAdminSessionFailure,
   PlanCreateAdminSessionSuccess,
   PlanCreateCheckoutSessionFailure,
-  PlanCreateCheckoutSessionSuccess,  
+  PlanCreateCheckoutSessionSuccess,
   UnexpectedError,
 } from '../types.js'
 
@@ -85,7 +85,7 @@ export interface PlansStorage {
 
   /**
    * Create a "checkout session"
-   * 
+   *
    * May not be possible with all billing providers - this is designed with
    * https://docs.stripe.com/api/checkout/sessions in mind.
    *
@@ -96,6 +96,9 @@ export interface PlansStorage {
     plan: PlanID,
     options: PlanCreateCheckoutSessionOptions
   ) => Promise<
-    Ucanto.Result<PlanCreateCheckoutSessionSuccess, PlanCreateCheckoutSessionFailure>
+    Ucanto.Result<
+      PlanCreateCheckoutSessionSuccess,
+      PlanCreateCheckoutSessionFailure
+    >
   >
 }
