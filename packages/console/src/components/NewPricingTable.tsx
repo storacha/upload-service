@@ -59,7 +59,7 @@ function PlanPicker({
           <h5>Additional at ${overage}/GB per month</h5>
         </div>
         <div className="py-4">
-          <h3 className="text-xl">{storage}GB Storage</h3>
+          <h3 className="text-xl">{storage} Storage</h3>
           <h5>Additional at ${overage}/GB per month</h5>
         </div>
         <PickPlanButton pick={pick} planID={planID} freeTrial={freeTrial}>
