@@ -12,23 +12,6 @@ import { STORACHA_LIT_ACTION_CID } from '../config/constants.js'
  * @returns {import('@lit-protocol/access-control-conditions').AccessControlConditions} - The access control conditions
  */
 export const getAccessControlConditions = (spaceDID) => {
-  //   /** @type {import('@lit-protocol/access-control-conditions').EvmBasicAcc} */
-  //   const rawCondition = {
-  //     conditionType: 'evmBasic',
-  //     contractAddress: '',
-  //     standardContractType: 'LitAction',
-  //     chain: 'ethereum',
-  //     method: 'decrypt',
-  //     parameters: [':currentActionIpfsId', spaceDID],
-  //     returnValueTest: {
-  //       comparator: '=',
-  //       value: STORACHA_LIT_ACTION_CID,
-  //     },
-  //   }
-
-  //   const acc = createAccBuilder().unifiedAccs(rawCondition).build()
-
-  // TODO: The two ways of building ACC are equivalent, the only difference is that the previous way does not have contractAddress set to the ipfs cid
   const acc = createAccBuilder()
     .requireLitAction(
       STORACHA_LIT_ACTION_CID,
@@ -68,7 +51,6 @@ export async function createEoaAuthContext(
       ),
       dataToEncryptHash
     )
-  console.log('accsResourceString: ', accsResourceString)
 
   const authContext = await authManager.createEoaAuthContext({
     config: {
@@ -150,6 +132,9 @@ export const executeUcanValidationAction = async (litClient, options) => {
     authContext,
     jsParams,
   })
+
+  console.log('Lit Action Response: \n')
+  console.log(litActionResponse)
 
   if (!litActionResponse.response) {
     throw new Error('Error getting lit action response.')

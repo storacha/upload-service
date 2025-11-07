@@ -22,19 +22,6 @@ export function createGenericKMSAdapter(
   )
 }
 
-// TODO: remove
-// /**
-//  * Create a Lit crypto adapter for Node.js using AES-CBC (legacy).
-//  * Compatible with previous versions of the library.
-//  *
-//  * @deprecated Use createGenericLitAdapter instead for new uploads.
-//  * @param {import('@lit-protocol/lit-node-client').LitNodeClient} litClient
-//  */
-// export function createNodeLitAdapter(litClient) {
-//   const symmetricCrypto = new NodeAesCbcCrypto()
-//   return new LitCryptoAdapter(symmetricCrypto, litClient)
-// }
-
 /**
  * Create a Lit crypto adapter for Node.js using the generic AES-CTR streaming crypto.
  * Works in Node.js & browser environments.

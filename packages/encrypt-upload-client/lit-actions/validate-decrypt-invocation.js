@@ -95,6 +95,13 @@ const validateDecryptDelegation = (wrappedInvocation, spaceDID) => {
  */
 const decrypt = async () => {
   try {
+    const {
+      identityBoundCiphertext,
+      accessControlConditions,
+      plaintextKeyHash,
+      spaceDID,
+      wrappedInvocationJSON,
+    } = jsParams
     const wrappedInvocationCar = dagJSON.parse(wrappedInvocationJSON)
     const wrappedInvocationResult = await extract(wrappedInvocationCar)
     if (wrappedInvocationResult.error) {
@@ -118,7 +125,7 @@ const decrypt = async () => {
     if (authorization.ok) {
       response.validateAccess = 'ok'
       console.log('Delegation authorized successfully!')
-      const decryptedString = await Lit.Actions.decryptAndCombine({
+      const decryptedString = await LitActions.decryptAndCombine({
         accessControlConditions,
         ciphertext: identityBoundCiphertext,
         dataToEncryptHash: plaintextKeyHash,
@@ -130,10 +137,14 @@ const decrypt = async () => {
     } else {
       response.validateAccess = JSON.stringify(authorization)
     }
-    return Lit.Actions.setResponse({ response: JSON.stringify(response) })
+    return LitActions.setResponse({
+      response: JSON.stringify(response),
+      success: true,
+    })
   } catch (/** @type any*/ error) {
-    return Lit.Actions.setResponse({
+    return LitActions.setResponse({
       response: JSON.stringify({ error: error.message }),
+      success: false,
     })
   }
 }
