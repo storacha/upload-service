@@ -5,14 +5,12 @@ import { useW3 } from '@storacha/ui-react'
 import StripePricingTable, {
   StripeTrialPricingTable,
   SSOIframeStripePricingTable,
-} from './PricingTable'
+} from './NewPricingTable'
 import { TopLevelLoader } from './Loader'
 import { Logo } from '@/brand'
 import { useConditionalPlan } from '@/hooks'
-import { useSearchParams } from 'next/navigation'
 import { useIframe } from '@/contexts/IframeContext'
 import { useRecordRefcode } from '@/lib/referrals/hooks'
-import { PlanGate as NewPlanGate } from './NewPlanGate'
 
 const PricingTable = ({
   email,
@@ -28,10 +26,10 @@ const PricingTable = ({
       <div className="my-6">
         <Logo />
       </div>
-      <div className="max-w-screen-lg font-epilogue text-black text-center bg-white border border-hot-red rounded-2xl overflow-hidden p5 mx-4 mb-4">
+      <div className="max-w-screen-lg overflow-hidden p5 mx-4 mb-4 flex flex-col items-center gap-8">
         {referredBy ? (
           <>
-            <div className="px-6 py-6 lg:px-24">
+            <div className="px-6 py-6 font-epilogue text-black text-center bg-white border border-hot-red rounded-2xl">
               <h1 className="my-4 font-bold">Welcome, {email}!</h1>
               <p className="my-4">
                 Congratulations! You are eligible for a free trial of our Lite
@@ -56,7 +54,7 @@ const PricingTable = ({
           </>
         ) : (
           <>
-            <div className="px-6 py-6 lg:px-24">
+            <div className="px-6 py-6 max-w-3xl font-epilogue text-hot-red text-center bg-white border-2 border-hot-red rounded-2xl">
               <h1 className="my-4 font-bold">Welcome, {email}!</h1>
               <p className="my-4">
                 To get started you&apos;ll need to sign up for a subscription.
@@ -140,20 +138,3 @@ export function PlanGate({ children }: { children: ReactNode }): ReactNode {
   return children
 }
 
-export function MaybePlanGate({
-  children,
-}: {
-  children: ReactNode
-}): ReactNode {
-  const params = useSearchParams()
-  if (
-    process.env.NEXT_PUBLIC_DISABLE_PLAN_GATE == 'true' ||
-    params.get('checkout.session')
-  ) {
-    return children
-  } else if (params.get('new-plan-gate')) {
-    return <NewPlanGate>{children}</NewPlanGate>
-  } else {
-    return <PlanGate>{children}</PlanGate>
-  }
-}

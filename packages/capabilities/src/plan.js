@@ -51,3 +51,30 @@ export const createAdminSession = capability({
     )
   },
 })
+
+/**
+ * Capability can be invoked by an account to generate a billing checkout session.
+ *
+ * May not be possible with all billing providers - this is designed with
+ * https://docs.stripe.com/api/customer_portal/sessions/create in mind.
+ */
+export const createCheckoutSession = capability({
+  can: 'plan/create-checkout-session',
+  with: AccountDID,
+  nb: struct({
+    planID: Schema.DID,
+    successURL: Schema.string(),
+    cancelURL: Schema.string(),
+    freeTrial: Schema.boolean(),
+  }),
+  derives: (child, parent) => {
+    return (
+      and(equalWith(child, parent)) ||
+      and(equal(child.nb.planID, parent.nb.planID, 'planID')) ||
+      and(equal(child.nb.successURL, parent.nb.successURL, 'successURL')) ||
+      and(equal(child.nb.cancelURL, parent.nb.cancelURL, 'cancelURL')) ||
+      and(equal(child.nb.freeTrial, parent.nb.freeTrial, 'freeTrial')) ||
+      ok({})
+    )
+  },
+})

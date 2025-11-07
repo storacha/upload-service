@@ -1053,6 +1053,28 @@ export type PlanCreateAdminSessionFailure =
   | CustomerNotFound
   | UnexpectedError
 
+export type PlanCreateCheckoutSession = InferInvokedCapability<
+  typeof PlanCaps.createCheckoutSession
+>
+
+export interface PlanCreateCheckoutSessionSuccess {
+  url: string
+}
+
+export interface SessionCreationError extends Ucanto.Failure {
+  name: 'SessionCreationError'
+}
+
+export interface PlanNotFound extends Ucanto.Failure {
+  name: 'PlanNotFound'
+}
+
+export type PlanCreateCheckoutSessionFailure =
+  | SessionCreationError
+  | CustomerNotFound
+  | PlanNotFound
+  | UnexpectedError
+
 // Top
 export type Top = InferInvokedCapability<typeof top>
 

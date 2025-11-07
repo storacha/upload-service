@@ -2,6 +2,7 @@ import * as Types from './types.js'
 import * as Get from './plan/get.js'
 import * as Set from './plan/set.js'
 import * as CreateAdminSession from './plan/create-admin-session.js'
+import * as CreateCheckoutSession from './plan/create-checkout-session.js'
 
 import { Failure } from '@ucanto/server'
 
@@ -55,5 +56,6 @@ export const createService = (context) => {
     get: Get.provide(context),
     set: Set.provide(context),
     'create-admin-session': CreateAdminSession.provide(context),
+    'create-checkout-session': CreateCheckoutSession.provide(context),
   }
 }

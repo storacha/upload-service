@@ -77,4 +77,22 @@ export class PlansStorage {
       }
     }
   }
+
+  /**
+   * @param {Types.AccountDID} account
+   * @returns {Promise<import('@ucanto/interface').Result<import('../types.js').PlanCreateCheckoutSessionSuccess, import('../types.js').PlanCreateCheckoutSessionFailure>>}
+   */
+  async createCheckoutSession(account) {
+    if (account === 'did:mailto:example.com:erroruser') {
+      return {
+        // @ts-ignore ignore "cause" error
+        error: {
+          name: 'UnexpectedError',
+          message: 'error creating checkout session!',
+        },
+      }
+    } else {
+      return { ok: { url: 'https://example.com/checkout-session' } }
+    }
+  }
 }

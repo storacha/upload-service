@@ -8,6 +8,8 @@ import {
   PlanSetSuccess,
   PlanCreateAdminSessionFailure,
   PlanCreateAdminSessionSuccess,
+  PlanCreateCheckoutSessionFailure,
+  PlanCreateCheckoutSessionSuccess,
   UnexpectedError,
 } from '../types.js'
 
@@ -18,6 +20,12 @@ export interface CustomerExists extends Ucanto.Failure {
 }
 
 type PlanInitializeFailure = CustomerExists | UnexpectedError
+
+export interface PlanCreateCheckoutSessionOptions {
+  successURL: string
+  cancelURL: string
+  freeTrial: boolean
+}
 
 /**
  * Stores subscription plan information.
@@ -61,7 +69,7 @@ export interface PlansStorage {
   ) => Promise<Ucanto.Result<PlanSetSuccess, PlanSetFailure>>
 
   /**
-   * Set a customer's billing email. Update our systems and any third party billing systems.
+   * Create an "admin session" for the user so they can update their billing information.
    *
    * May not be possible with all billing providers - this is designed with
    * https://docs.stripe.com/api/customer_portal/sessions/create in mind.
@@ -73,5 +81,24 @@ export interface PlansStorage {
     returnURL: string
   ) => Promise<
     Ucanto.Result<PlanCreateAdminSessionSuccess, PlanCreateAdminSessionFailure>
+  >
+
+  /**
+   * Create a "checkout session"
+   *
+   * May not be possible with all billing providers - this is designed with
+   * https://docs.stripe.com/api/checkout/sessions in mind.
+   *
+   * @param account account DID
+   */
+  createCheckoutSession: (
+    account: AccountDID,
+    plan: PlanID,
+    options: PlanCreateCheckoutSessionOptions
+  ) => Promise<
+    Ucanto.Result<
+      PlanCreateCheckoutSessionSuccess,
+      PlanCreateCheckoutSessionFailure
+    >
   >
 }
