@@ -930,7 +930,7 @@ importers:
         specifier: ^8.0.2
         version: 8.0.2(typescript@5.9.3)
       '@lit-protocol/auth':
-        specifier: ^8.1.1
+        specifier: ^8.1.2
         version: 8.1.2(@types/react@19.2.7)(react@19.2.1)(tslib@2.8.1)(typescript@5.9.3)(use-sync-external-store@1.6.0(react@19.2.1))(viem@2.41.2(typescript@5.9.3)(zod@3.24.3))
       '@lit-protocol/auth-helpers':
         specifier: ^8.1.0
@@ -954,8 +954,8 @@ importers:
         specifier: ^7.3.1
         version: 7.3.1(encoding@0.1.13)(typescript@5.9.3)
       '@lit-protocol/networks':
-        specifier: ^8.2.0
-        version: 8.3.1(@types/react@19.2.7)(react@19.2.1)(typescript@5.9.3)(use-sync-external-store@1.6.0(react@19.2.1))(viem@2.41.2(typescript@5.9.3)(zod@3.24.3))
+        specifier: ^8.3.2
+        version: 8.3.2(@types/react@19.2.7)(react@19.2.1)(typescript@5.9.3)(use-sync-external-store@1.6.0(react@19.2.1))(viem@2.41.2(typescript@5.9.3)(zod@3.24.3))
       '@storacha/capabilities':
         specifier: workspace:^
         version: link:../capabilities
@@ -4678,6 +4678,11 @@ packages:
 
   '@lit-protocol/networks@8.3.1':
     resolution: {integrity: sha512-tOlFdW9aJLPLEkQeY/k+51Pp2Rxf2lA3J2ZiRXSdXeUrcEWqp3N5krHRejPxIHFRttAFeqcHJpeKLqlu2DrWwQ==}
+    peerDependencies:
+      viem: 2.38.x
+
+  '@lit-protocol/networks@8.3.2':
+    resolution: {integrity: sha512-WK02Ff11cvY7wr6s9XkOtHSFfa6Vcu66Td+1DZgZykgdjCXYN4LJTSrz6jgFFIuvoAXGxNICbt/i15e08X+9pQ==}
     peerDependencies:
       viem: 2.38.x
 
@@ -19866,6 +19871,57 @@ snapshots:
       - utf-8-validate
       - valibot
 
+  '@lit-protocol/networks@8.3.2(@types/react@19.2.7)(react@19.2.1)(typescript@5.9.3)(use-sync-external-store@1.6.0(react@19.2.1))(viem@2.41.2(typescript@5.9.3)(zod@3.24.3))':
+    dependencies:
+      '@ethersproject/contracts': 5.8.0
+      '@ethersproject/providers': 5.7.0
+      '@ethersproject/transactions': 5.7.0
+      '@jest/globals': 30.2.0
+      '@lit-protocol/access-control-conditions': 8.0.2(typescript@5.9.3)
+      '@lit-protocol/access-control-conditions-schemas': 8.0.2(typescript@5.9.3)
+      '@lit-protocol/auth-helpers': 8.1.1(@types/react@19.2.7)(react@19.2.1)(typescript@5.9.3)(use-sync-external-store@1.6.0(react@19.2.1))(viem@2.41.2(typescript@5.9.3)(zod@3.24.3))
+      '@lit-protocol/constants': 8.0.8(typescript@5.9.3)
+      '@lit-protocol/contracts': 0.8.2(typescript@5.9.3)
+      '@lit-protocol/crypto': 8.0.2(typescript@5.9.3)
+      '@lit-protocol/logger': 8.0.2
+      '@lit-protocol/nacl': 7.1.1
+      '@lit-protocol/schemas': 8.0.2(typescript@5.9.3)
+      '@lit-protocol/types': 8.0.2(typescript@5.9.3)
+      '@lit-protocol/uint8arrays': 7.1.1(typescript@5.9.3)
+      '@lit-protocol/wasm': 8.1.0
+      '@noble/curves': 1.9.7
+      '@noble/hashes': 1.8.0
+      '@openagenda/verror': 3.1.4
+      '@t3-oss/env-core': 0.13.8(typescript@5.9.3)(zod@3.24.3)
+      '@typechain/ethers-v6': 0.5.1(ethers@5.7.1)(typechain@8.3.2(typescript@5.9.3))(typescript@5.9.3)
+      '@wagmi/core': 2.22.1(@types/react@19.2.7)(react@19.2.1)(typescript@5.9.3)(use-sync-external-store@1.6.0(react@19.2.1))(viem@2.41.2(typescript@5.9.3)(zod@3.24.3))
+      ajv: 8.17.1
+      bs58: 6.0.0
+      ethers: 5.7.1
+      node-localstorage: 3.0.5
+      pako: 2.1.0
+      pino: 9.14.0
+      pino-caller: 4.0.0
+      siwe: 2.3.2(ethers@5.7.1)
+      siwe-recap: 0.0.2-alpha.0(ethers@5.7.1)
+      tslib: 2.8.1
+      typechain: 8.3.2(typescript@5.9.3)
+      viem: 2.41.2(typescript@5.9.3)(zod@3.24.3)
+      zod: 3.24.3
+      zod-validation-error: 3.4.0(zod@3.24.3)
+    transitivePeerDependencies:
+      - '@tanstack/query-core'
+      - '@types/react'
+      - arktype
+      - bufferutil
+      - immer
+      - react
+      - supports-color
+      - typescript
+      - use-sync-external-store
+      - utf-8-validate
+      - valibot
+
   '@lit-protocol/schemas@8.0.2(typescript@5.9.3)':
     dependencies:
       '@lit-protocol/access-control-conditions-schemas': 8.0.2(typescript@5.9.3)
@@ -27130,7 +27186,7 @@ snapshots:
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.49.0(eslint@8.57.1)(typescript@5.9.3))(eslint@8.57.1))(eslint@8.57.1)
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.49.0(eslint@8.57.1)(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.49.0(eslint@8.57.1)(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.49.0(eslint@8.57.1)(typescript@5.9.3))(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
       eslint-plugin-jsx-a11y: 6.10.2(eslint@8.57.1)
       eslint-plugin-react: 7.37.5(eslint@8.57.1)
       eslint-plugin-react-hooks: 7.0.1(eslint@8.57.1)
@@ -27204,7 +27260,7 @@ snapshots:
       tinyglobby: 0.2.15
       unrs-resolver: 1.11.1
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.49.0(eslint@8.57.1)(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.49.0(eslint@8.57.1)(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.49.0(eslint@8.57.1)(typescript@5.9.3))(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -27277,7 +27333,7 @@ snapshots:
       - eslint-import-resolver-webpack
       - supports-color
 
-  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.49.0(eslint@8.57.1)(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1):
+  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.49.0(eslint@8.57.1)(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.49.0(eslint@8.57.1)(typescript@5.9.3))(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.9

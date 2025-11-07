@@ -24,7 +24,7 @@ async function main() {
 
   // encrypted content CID
   const cid = CID.parse(
-    'bafyreif4q4ngn7bpunxqncwrgnpshjfiosakpimqtsqyvcyde5w45cd4u4'
+    'bafyreibridc66652gxdxe4bfh2v5ezsryvnjbswxff62od5oxsx6fkaroa'
   )
 
   const delegationCarBuffer = fs.readFileSync('delegation.car')
@@ -85,7 +85,7 @@ async function main() {
   })
   console.log('Current Balance: ', balance.totalBalance)
   // const depositReceipt = await paymentManager.deposit({
-  //   amountInEth: '5',
+  //   amountInEth: '1',
   // })
 
   // console.log(`Deposit successful: ${depositReceipt.hash}`)
