@@ -1,3 +1,3 @@
 export const STORACHA_LIT_ACTION_CID =
-  'QmWSLN9m2Noj3kp8rx76yfQ9U7U1Mzjj3kGVpCr891Mjn1'
+  'QmWAGbeJZWCeYCRuQ27NCpcLsxkx6MB7Kro2FhskuFvzkm'
 export const GATEWAY_URL = new URL('https://storacha.link')
