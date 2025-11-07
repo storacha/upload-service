@@ -83,12 +83,11 @@ export class PlansStorage {
    * @returns {Promise<import('@ucanto/interface').Result<import('../types.js').PlanCreateCheckoutSessionSuccess, import('../types.js').PlanCreateCheckoutSessionFailure>>}
    */
   async createCheckoutSession(account) {
-    if (this.plans[account]) {
-      return { ok: { url: 'https://example.com/checkout-session' } }
+    if (account === "did:mailto:example.com:erroruser"){
+      // @ts-ignore ignore "cause" error
+      return { error: { name: 'UnexpectedError', message: 'error creating checkout session!' } }
     } else {
-      return {
-        error: { name: 'CustomerNotFound', message: `${account} not found` },
-      }
+      return { ok: { url: 'https://example.com/checkout-session' } }
     }
   }
 }
