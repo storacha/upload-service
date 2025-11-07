@@ -63,9 +63,10 @@ export const createCheckoutSession = capability({
   with: AccountDID,
   nb: struct({
     planID: Schema.DID,
-    successURL: Schema.string(),
-    cancelURL: Schema.string(),
-    freeTrial: Schema.boolean(),
+    redirectAfterCompletion: Schema.boolean().optional(),
+    successURL: Schema.string().optional(),
+    cancelURL: Schema.string().optional(),
+    freeTrial: Schema.boolean().optional(),
   }),
   derives: (child, parent) => {
     return (

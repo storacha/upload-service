@@ -1,5 +1,4 @@
-import { createElement, ReactNode } from 'react'
-import Script from 'next/script'
+import { ReactNode } from 'react'
 import { DID, useW3 } from '@storacha/ui-react'
 
 interface PickerProps {
@@ -70,23 +69,41 @@ function PlanPicker({
   )
 }
 
-export default function StripePricingTable({ className = '' }) {
+interface PricingTableProps {
+  freeTrial?: boolean
+  redirectAfterCheckout?: boolean
+}
+
+interface CreateCheckoutSessionProps {
+  planID: DID
+  freeTrial?: boolean
+  successURL?: string
+  cancelURL?: string
+  redirectAfterCompletion?: boolean
+}
+
+export default function StripePricingTable({ freeTrial = false, redirectAfterCheckout = true }: PricingTableProps) {
   const [{ accounts, client }] = useW3()
   const account = accounts[0]
-  async function startCheckoutSession(planID: DID, freeTrial: boolean) {
+  async function startCheckoutSession(planID: DID) {
     if (!client) {
       throw new Error(
         'tried to create checkout session but storacha client is not defined'
       )
     } else {
+      const checkoutProps: CreateCheckoutSessionProps = {
+        planID,
+        freeTrial,
+      }
+      if (redirectAfterCheckout){
+        checkoutProps.successURL = location.href
+        checkoutProps.cancelURL = location.href
+      } else {
+        checkoutProps.redirectAfterCompletion = false
+      }
       const response = await client?.capability.plan.createCheckoutSession(
         account.did(),
-        {
-          successURL: location.href,
-          cancelURL: location.href,
-          planID,
-          freeTrial,
-        }
+        checkoutProps
       )
       window.open(response.url)
     }
@@ -101,7 +118,7 @@ export default function StripePricingTable({ className = '' }) {
         overage={0.15}
         planID="did:web:starter.storacha.network"
         pick={startCheckoutSession}
-        freeTrial={true}
+        freeTrial={freeTrial}
       />
       <PlanPicker
         name="Medium"
@@ -111,7 +128,7 @@ export default function StripePricingTable({ className = '' }) {
         overage={0.05}
         planID="did:web:lite.storacha.network"
         pick={startCheckoutSession}
-        freeTrial={true}
+        freeTrial={freeTrial}
       />
       <PlanPicker
         name="Extra Spicy"
@@ -121,49 +138,17 @@ export default function StripePricingTable({ className = '' }) {
         overage={0.03}
         planID="did:web:business.storacha.network"
         pick={startCheckoutSession}
-        freeTrial={true}
+        freeTrial={freeTrial}
       />
     </div>
   )
 }
 
 export function StripeTrialPricingTable({ className = '' }) {
-  const [{ accounts }] = useW3()
-  return (
-    <>
-      <Script src="https://js.stripe.com/v3/pricing-table.js" />
-      {createElement(
-        'stripe-pricing-table',
-        {
-          'pricing-table-id':
-            process.env.NEXT_PUBLIC_STRIPE_TRIAL_PRICING_TABLE_ID,
-          'publishable-key': process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
-          'customer-email': accounts[0]?.toEmail(),
-          className,
-        },
-        ''
-      )}
-    </>
-  )
+  return (<StripePricingTable freeTrial={true} />)
 }
 
 export function SSOIframeStripePricingTable({ className = '' }) {
-  const [{ accounts }] = useW3()
-  return (
-    <>
-      <Script src="https://js.stripe.com/v3/pricing-table.js" />
-      {createElement(
-        'stripe-pricing-table',
-        {
-          'pricing-table-id':
-            process.env.NEXT_PUBLIC_SSO_IFRAME_STRIPE_PRICING_TABLE_ID,
-          'publishable-key':
-            process.env.NEXT_PUBLIC_SSO_IFRAME_STRIPE_PRICING_TABLE_PUB_KEY,
-          'customer-email': accounts[0]?.toEmail(),
-          className,
-        },
-        ''
-      )}
-    </>
-  )
+  return <StripePricingTable redirectAfterCheckout={false} />
+
 }

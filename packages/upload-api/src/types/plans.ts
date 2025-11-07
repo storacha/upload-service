@@ -22,9 +22,10 @@ export interface CustomerExists extends Ucanto.Failure {
 type PlanInitializeFailure = CustomerExists | UnexpectedError
 
 export interface PlanCreateCheckoutSessionOptions {
-  successURL: string
-  cancelURL: string
-  freeTrial: boolean
+  redirectAfterCompletion?: boolean
+  successURL?: string
+  cancelURL?: string
+  freeTrial?: boolean
 }
 
 /**
