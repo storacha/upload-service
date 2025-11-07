@@ -9,7 +9,12 @@ import * as Result from '../../src/result.js'
  * @param {(email: {url: string | URL}) => Promise<void>} grantAccess
  * @param {`${string}@${string}`} email
  */
-async function initializeAccount(client, mail, grantAccess, email = 'alice@web.mail') {
+async function initializeAccount(
+  client,
+  mail,
+  grantAccess,
+  email = 'alice@web.mail'
+) {
   const login = Account.login(client, email)
   const message = await mail.take()
   await grantAccess(message)
@@ -143,30 +148,31 @@ export const PlanClient = Test.withContext({
     ) => {
       const account = await initializeAccount(client, mail, grantAccess)
 
-      
       const session = await client.capability.plan.createCheckoutSession(
-          account.did(),
-          {
-            successURL: 'https://example.com/return-url',
-            cancelURL: 'https://example.com/cancel-url',
-            planID: 'did:web:example.com',
-            freeTrial: false
-          }
-        )
+        account.did(),
+        {
+          successURL: 'https://example.com/return-url',
+          cancelURL: 'https://example.com/cancel-url',
+          planID: 'did:web:example.com',
+          freeTrial: false,
+        }
+      )
 
       assert.ok(session.url)
 
-      const errorUser = await initializeAccount(client, mail, grantAccess, 'erroruser@example.com')
-        await assert.rejects(
-          client.capability.plan.createCheckoutSession(
-            errorUser.did(),
-            {
-              successURL: 'https://example.com/return-url',
-              cancelURL: 'https://example.com/cancel-url',
-              planID: 'did:web:example.com',
-              freeTrial: false
-            }
-          )
+      const errorUser = await initializeAccount(
+        client,
+        mail,
+        grantAccess,
+        'erroruser@example.com'
+      )
+      await assert.rejects(
+        client.capability.plan.createCheckoutSession(errorUser.did(), {
+          successURL: 'https://example.com/return-url',
+          cancelURL: 'https://example.com/cancel-url',
+          planID: 'did:web:example.com',
+          freeTrial: false,
+        })
       )
     },
   },
