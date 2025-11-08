@@ -177,7 +177,16 @@ export const createAdminSession = async (
  */
 export const createCheckoutSession = async (
   { agent },
-  { account, planID, successURL, cancelURL, redirectAfterCompletion = true, freeTrial = false, nonce, proofs = [] }
+  {
+    account,
+    planID,
+    successURL,
+    cancelURL,
+    redirectAfterCompletion = true,
+    freeTrial = false,
+    nonce,
+    proofs = [],
+  }
 ) => {
   const receipt = await agent.invokeAndExecute(Plan.createCheckoutSession, {
     with: account,
