@@ -23,5 +23,6 @@ const createCheckoutSession = async ({ capability }, context) =>
       successURL: capability.nb.successURL,
       cancelURL: capability.nb.cancelURL,
       freeTrial: capability.nb.freeTrial,
+      redirectAfterCompletion: capability.nb.redirectAfterCompletion
     }
   )

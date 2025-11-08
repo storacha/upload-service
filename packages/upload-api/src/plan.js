@@ -50,6 +50,7 @@ export class CustomerExists extends Failure {
 
 /**
  * @param {Types.PlanServiceContext} context
+ * @returns {Types.Service['plan']}
  */
 export const createService = (context) => {
   return {
