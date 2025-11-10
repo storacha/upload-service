@@ -1,3 +1,13 @@
+## 2.5.0 (2025-11-10)
+
+### 🚀 Features
+
+- feat: introduce new checkout session creation invocation ([#524](https://github.com/storacha/upload-service/pull/524))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 2.4.8 (2025-10-30)
 
 ### 🩹 Fixes
