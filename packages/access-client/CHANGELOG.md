@@ -1,3 +1,9 @@
+## 1.6.3 (2025-11-10)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/capabilities to 1.11.0
+
 ## 1.6.2 (2025-10-24)
 
 ### 🩹 Fixes
