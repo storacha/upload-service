@@ -15,12 +15,12 @@ import { useRecordRefcode } from '@/lib/referrals/hooks'
 const PricingTable = ({
   email,
   referredBy,
+  isIframe,
 }: {
   email: string
   referredBy?: string
+  isIframe?: boolean
 }) => {
-  const { isIframe } = useIframe()
-
   return (
     <div className="flex flex-col justify-center items-center min-h-screen">
       <div className="my-6">
@@ -82,7 +82,7 @@ const PricingTable = ({
 export function PlanGate({ children }: { children: ReactNode }): ReactNode {
   const [{ accounts }] = useW3()
   const account = accounts[0]
-  const { isDetectionComplete } = useIframe()
+  const { isDetectionComplete, isIframe } = useIframe()
 
   // Always call hooks at the top level
   const email = useMemo(() => account?.toEmail() || '', [account])
@@ -104,7 +104,22 @@ export function PlanGate({ children }: { children: ReactNode }): ReactNode {
   // Handle errors from the hook
   if (error) {
     if (error.cause?.name === 'PlanNotFound') {
-      return <PricingTable email={email} referredBy={referredBy} />
+      return (
+        <div>
+          <h1>Natural table</h1>
+          <PricingTable
+            email={email}
+            referredBy={referredBy}
+            isIframe={isIframe}
+          />
+          <h1>Plain table</h1>
+          <PricingTable email={email} />
+          <h1>Free Trial Table</h1>
+          <PricingTable email={email} referredBy={'travis'} />
+          <h1>Iframe table</h1>
+          <PricingTable email={email} isIframe={true} />
+        </div>
+      )
     } else {
       return (
         <div className="flex flex-col justify-center items-center min-h-screen">
@@ -137,4 +152,3 @@ export function PlanGate({ children }: { children: ReactNode }): ReactNode {
 
   return children
 }
-

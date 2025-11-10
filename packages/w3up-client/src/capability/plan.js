@@ -69,9 +69,10 @@ export class PlanClient extends Base {
    * @param {API.AccountDID} account
    * @param {object} options
    * @param {API.DID} options.planID
-   * @param {string} options.successURL
-   * @param {string} options.cancelURL
-   * @param {boolean} options.freeTrial
+   * @param {string} [options.successURL]
+   * @param {string} [options.cancelURL]
+   * @param {boolean} [options.redirectAfterCompletion]
+   * @param {boolean} [options.freeTrial]
    * @param {string} [options.nonce]
    */
   async createCheckoutSession(account, options) {
@@ -167,15 +168,25 @@ export const createAdminSession = async (
  * @param {object} options
  * @param {API.AccountDID} options.account
  * @param {API.DID} options.planID
- * @param {string} options.successURL
- * @param {string} options.cancelURL
- * @param {boolean} options.freeTrial
+ * @param {string} [options.successURL]
+ * @param {string} [options.cancelURL]
+ * @param {boolean} [options.freeTrial]
+ * @param {boolean} [options.redirectAfterCompletion]
  * @param {string} [options.nonce]
  * @param {API.Delegation[]} [options.proofs]
  */
 export const createCheckoutSession = async (
   { agent },
-  { account, planID, successURL, cancelURL, freeTrial, nonce, proofs = [] }
+  {
+    account,
+    planID,
+    successURL,
+    cancelURL,
+    redirectAfterCompletion = true,
+    freeTrial = false,
+    nonce,
+    proofs = [],
+  }
 ) => {
   const receipt = await agent.invokeAndExecute(Plan.createCheckoutSession, {
     with: account,
@@ -185,6 +196,7 @@ export const createCheckoutSession = async (
       planID,
       successURL,
       cancelURL,
+      redirectAfterCompletion,
       freeTrial,
     },
   })
