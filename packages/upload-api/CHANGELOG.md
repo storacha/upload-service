@@ -1,3 +1,12 @@
+## 2.5.1 (2025-11-10)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.6.3
+- Updated @storacha/capabilities to 1.11.0
+- Updated @storacha/filecoin-api to 1.1.15
+- Updated @storacha/blob-index to 1.2.3
+
 ## 2.5.0 (2025-11-10)
 
 ### 🚀 Features

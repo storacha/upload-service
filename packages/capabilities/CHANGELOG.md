@@ -1,3 +1,13 @@
+## 1.11.0 (2025-11-10)
+
+### 🚀 Features
+
+- feat: add new "create checkout session" invocation ([#526](https://github.com/storacha/upload-service/pull/526))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 1.10.0 (2025-10-24)
 
 ### 🚀 Features

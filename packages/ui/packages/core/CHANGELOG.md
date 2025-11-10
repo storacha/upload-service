@@ -1,3 +1,10 @@
+## 2.4.141 (2025-11-10)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.6.3
+- Updated @storacha/client to 1.8.14
+
 ## 2.4.140 (2025-11-10)
 
 ### 🧱 Updated Dependencies
