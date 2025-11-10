@@ -1069,9 +1069,13 @@ export interface PlanNotFound extends Ucanto.Failure {
   name: 'PlanNotFound'
 }
 
+export interface CustomerExists extends Ucanto.Failure {
+  name: 'CustomerExists'
+}
+
 export type PlanCreateCheckoutSessionFailure =
+  | CustomerExists
   | SessionCreationError
-  | CustomerNotFound
   | PlanNotFound
   | UnexpectedError
 
