@@ -19,31 +19,32 @@ export const usePrivateSpacesAccess = () => {
   const { data: plan, isLoading } = usePlan(account, planOptions)
   const email = account?.toEmail()
   
-  // Get allowed domains from environment variable
+  // Domains eligible for access to private spaces
   const allowedDomains = useMemo(() => 
     process.env.NEXT_PUBLIC_PRIVATE_SPACES_DOMAINS?.split(',') || 
     ['dmail.ai', 'storacha.network']
   , [])
-  
-  // Check if user is a Storacha user (always has access)
-  const isStorachaUser = useMemo(() => 
-    email?.endsWith('@storacha.network') ?? false
-  , [email])
 
-  const isZKAGIUser = useMemo(() => 
-    email?.endsWith('@zkagi.ai') ?? false
-  , [email])
+  // Domains eligible for free trial access to private spaces
+  const freeTrialDomains = useMemo(() => 
+    process.env.NEXT_PUBLIC_PRIVATE_SPACES_FREE_TRIAL_DOMAINS?.split(',') || 
+    ['storacha.network']
+  , [])
 
-  
+  // Check if user is a free trial user (always has free access to private spaces)
+  const isFreeTrialUser = useMemo(() => 
+    email ? freeTrialDomains.some(domain => email.endsWith(`@${domain}`)) : false
+  , [email, freeTrialDomains])
+
   // Check if user has a paid plan
   const isPaidUser = useMemo(() => {
-    if (isStorachaUser || isZKAGIUser) return true
+    if (isFreeTrialUser) return true
     if (!plan?.product) return false
     return plan.product === PLANS.lite || 
            plan.product === PLANS.business
-  }, [plan, isStorachaUser, isZKAGIUser])
+  }, [plan, isFreeTrialUser])
   
-  // Check if user's email domain is in the allowed domains list
+  // Check if user's email domain is in the allowed domains list to access private spaces
   const isEligibleDomain = useMemo(() => 
     email ? allowedDomains.some(domain => email.endsWith(`@${domain}`)) : false
   , [email, allowedDomains])
@@ -51,13 +52,12 @@ export const usePrivateSpacesAccess = () => {
   // Debug logging
   const debugInfo = useCallback(() => ({
     email,
-    isStorachaUser,
-    isZKAGIUser,
+    isFreeTrialUser,
     isPaidUser,
     isEligibleDomain,
     plan: plan?.product,
     planLoading: isLoading
-  }), [email, isStorachaUser, isZKAGIUser, isPaidUser, isEligibleDomain, plan, isLoading])
+  }), [email, isFreeTrialUser, isPaidUser, isEligibleDomain, plan, isLoading])
   
   if (process.env.NODE_ENV === 'development') {
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -68,7 +68,7 @@ export const usePrivateSpacesAccess = () => {
   
   return {
     canAccessPrivateSpaces: isEligibleDomain && isPaidUser,
-    shouldShowUpgradePrompt: isEligibleDomain && !isPaidUser && !isStorachaUser && !isZKAGIUser,
+    shouldShowUpgradePrompt: isEligibleDomain && !isPaidUser && !isFreeTrialUser,
     shouldShowPrivateSpacesTab: isEligibleDomain,
     email,
     plan,
