@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.16.0](https://github.com/storacha/upload-service/compare/console-v2.15.0...console-v2.16.0) (2025-11-11)
+
+
+### Features
+
+* add "no redirect" to checkout session capability ([#522](https://github.com/storacha/upload-service/issues/522)) ([51fe726](https://github.com/storacha/upload-service/commit/51fe7263e315170143aab4522561d4c3816d4565))
+* cyberlife privacy free trial ([#528](https://github.com/storacha/upload-service/issues/528)) ([6139695](https://github.com/storacha/upload-service/commit/61396950cc53bb8df04dc997680ef9a9da5512f5))
+* new checkout session invocation and custom pricing table ([#453](https://github.com/storacha/upload-service/issues/453)) ([9c822ef](https://github.com/storacha/upload-service/commit/9c822efe5551dfb04622c78fd9d5e4b0fa2a558a))
+
 ## [2.15.0](https://github.com/storacha/upload-service/compare/console-v2.14.0...console-v2.15.0) (2025-11-05)
 
 
