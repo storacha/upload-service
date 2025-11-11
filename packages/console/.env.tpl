@@ -33,9 +33,13 @@ NEXT_PUBLIC_HUMANODE_CLIENT_ID=c9f6c85e-5ccc-4a86-8584-37522d146480
 NEXT_PUBLIC_HUMANODE_OAUTH_CALLBACK_URL=https://staging.up.storacha.network/oauth/humanode/callback
 
 # SSO
+## Domains that are eligible for accessing private spaces
 NEXT_PUBLIC_PRIVATE_SPACES_DOMAINS=storacha.network
+## Domains that are eligible for accessing private spaces for free
+NEXT_PUBLIC_PRIVATE_SPACES_FREE_TRIAL_DOMAINS=
 NEXT_PUBLIC_UCAN_KMS_URL=https://staging.kms.storacha.network
 NEXT_PUBLIC_UCAN_KMS_DID=did:web:staging.kms.storacha.network
+## Domains that are eligible for SSO via iframe integration
 NEXT_PUBLIC_SSO_ALLOWED_ORIGINS=
 
 # SSO Iframe Stripe settings (for iframe-based SSO checkout)
