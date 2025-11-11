@@ -80,7 +80,7 @@ export const poll = async (context, receipt, putTask) => {
   const acceptReceipt = await configure.ok.invocation.execute(
     configure.ok.connection
   )
-  
+
   // Create receipt for legacy `web3.storage/blob/accept`. The old client
   // `@web3-storage/w3up-client` will poll for a receipt for this task, so
   // we create one whose result is simply the result of the actual `blob/accept`

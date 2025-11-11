@@ -6,10 +6,7 @@ import type {
   Failure,
   Unit,
 } from '@ucanto/interface'
-import {
-  Multihash,
-  BlobReplicaAllocate,
-} from '@storacha/capabilities/types'
+import { Multihash, BlobReplicaAllocate } from '@storacha/capabilities/types'
 import { MultihashDigest } from 'multiformats'
 import { DID, ListResponse, SpaceDID, UCANLink } from '../types.js'
 import { Storage } from './storage.js'

@@ -230,7 +230,7 @@ export const handleAggregateInsertToPieceAcceptQueue = async (
   const results = await map(
     pieces,
     /**
-     * @param piece
+     * @param {import('@web3-storage/data-segment').PieceView} piece
      * @returns {Promise<import('@ucanto/interface').Result<import('@ucanto/interface').Unit, RangeError|import('../types.js').QueueAddError>>}
      */
     async (piece) => {

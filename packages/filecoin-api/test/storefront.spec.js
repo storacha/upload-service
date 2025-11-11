@@ -45,7 +45,7 @@ describe('storefront', () => {
         ).connection
         const pdpStore = createPDPStore()
         const router = createRouter(storefrontSigner, [
-          await StorageNode.activate({ pdpStore })
+          await StorageNode.activate({ pdpStore }),
         ])
         await test(
           {
