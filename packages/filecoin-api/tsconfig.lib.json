@@ -6,6 +6,9 @@
       "path": "../capabilities/tsconfig.lib.json"
     },
     {
+      "path": "../router/tsconfig.lib.json"
+    },
+    {
       "path": "../filecoin-client/tsconfig.lib.json"
     },
     {

@@ -110,6 +110,7 @@
     "@arethetypeswrong/cli": "catalog:",
     "@storacha/eslint-config": "workspace:^",
     "@storacha/filecoin-client": "workspace:^",
+    "@storacha/router": "workspace:^",
     "@storacha/one-webcrypto": "catalog:",
     "@types/assert": "^1.5.10",
     "@types/mocha": "^10.0.1",

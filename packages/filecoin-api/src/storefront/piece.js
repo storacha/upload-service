@@ -30,7 +30,7 @@ export async function computePieceCid(stream) {
     hasher.free()
     const multihashDigest = Digest.decode(digest)
     // @ts-expect-error some properties from PieceDigest are not present in MultihashDigest
-    piece = Piece.fromDigest(multihashDigest)
+    piece = Piece.fromDigest(multihashDigest).link
   } catch (/** @type {any} */ error) {
     return {
       error: new ComputePieceFailed(`failed to compute piece CID for bytes`, {

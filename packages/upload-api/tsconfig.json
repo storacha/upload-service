@@ -3,10 +3,7 @@
   "files": [],
   "references": [
     {
-      "path": "./tsconfig.lib.json"
-    },
-    {
-      "path": "./tsconfig.spec.json"
+      "path": "../router"
     },
     {
       "path": "../filecoin-api"
@@ -25,6 +22,12 @@
     },
     {
       "path": "../blob-index"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
     }
   ]
 }

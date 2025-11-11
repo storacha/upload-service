@@ -1,24 +1,24 @@
-import * as API from '../../types.js'
+import * as API from '@storacha/router/types'
 import { ok, error, Failure } from '@ucanto/core'
 import { Invocation, Delegation } from '@ucanto/core'
 import { base58btc } from 'multiformats/bases/base58'
 
 /**
  * @typedef {{
- *   id: API.Signer,
- *   connection: API.Connection<API.BlobAPI.BlobService>
+ *   id: import('@ucanto/interface').Signer,
+ *   connection: import('@ucanto/interface').ConnectionView<API.StorageService>
  * }} StorageProvider
  */
 
-/** @type {Map<string, API.Principal>} */
+/** @type {Map<string, import('@ucanto/interface').Principal>} */
 const stickySelect = new Map()
 
 /**
- * @param {API.Signer} serviceID
+ * @param {import('@ucanto/interface').Signer} serviceID
  * @param {Array<StorageProvider>} storageProviders
  */
 export const create = (serviceID, storageProviders) =>
-  /** @type {API.BlobAPI.RoutingService} */
+  /** @type {API.RoutingService} */
   ({
     selectStorageProvider: async (digest) => {
       // ensure we pick the same provider for a given digest within a test
@@ -53,14 +53,14 @@ export const create = (serviceID, storageProviders) =>
 
       if (filteredProviders.length < count) {
         return error(
-          /** @type {API.BlobAPI.CandidateUnavailable} */ ({
+          /** @type {API.CandidateUnavailable} */ ({
             name: 'CandidateUnavailable',
             message: `Wanted ${count} but only ${filteredProviders.length} are available`,
           })
         )
       }
 
-      /** @type {API.Principal[]} */
+      /** @type {import('@ucanto/interface').Principal[]} */
       const selectedProviders = []
       for (let i = 0; i < count; i++) {
         const index = getRandomInt(filteredProviders.length - 1)

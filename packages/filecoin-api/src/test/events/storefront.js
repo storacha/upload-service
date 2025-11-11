@@ -52,6 +52,38 @@ export const test = {
     assert.ok(hasStoredPiece.ok)
     assert.equal(hasStoredPiece.ok?.status, 'submitted')
   },
+  'handles filecoin submit messages with pdp information': async (
+    assert,
+    context
+  ) => {
+    // Generate piece for test
+    const [cargo] = await randomCargo(1, 128)
+
+    // Store piece into store
+    const message = {
+      piece: cargo.link.link(),
+      content: cargo.content.link(),
+      group: context.id.did(),
+      pdpInfoSuccess: {
+        piece: cargo.link.link(),
+        aggregates: [],
+      },
+    }
+
+    // not stored in datastore -- much get piece from pdp info
+
+    // Handle message
+    const handledMessageRes =
+      await StorefrontEvents.handleFilecoinSubmitMessage(context, message)
+    assert.ok(handledMessageRes.ok)
+
+    // Verify store
+    const hasStoredPiece = await context.pieceStore.get({
+      piece: cargo.link.link(),
+    })
+    assert.ok(hasStoredPiece.ok)
+    assert.equal(hasStoredPiece.ok?.status, 'submitted')
+  },
   'handles filecoin submit messages with error if blob of content is not stored':
     async (assert, context) => {
       // Generate piece for test

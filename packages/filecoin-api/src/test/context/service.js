@@ -16,7 +16,8 @@ import { mockService } from './mocks.js'
 
 export { getStoreImplementations } from './store-implementations.js'
 export { getQueueImplementations } from './queue-implementations.js'
-
+export { create as createRouter } from '@storacha/router/test/router'
+export { StorageNode, createPDPStore } from './storage-node.js'
 /**
  * Mocked w3filecoin services
  */
@@ -244,8 +245,8 @@ export function getMockService() {
 }
 
 /**
- * @param {any} service
  * @param {any} id
+ * @param {any} service
  */
 export function getConnection(id, service) {
   const server = Server.create({

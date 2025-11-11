@@ -6,12 +6,6 @@
       "path": "../capabilities"
     },
     {
-      "path": "../router"
-    },
-    {
-      "path": "../filecoin-client"
-    },
-    {
       "path": "../eslint-config-w3up"
     },
     {
