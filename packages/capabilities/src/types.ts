@@ -45,6 +45,7 @@ import * as UCANCaps from './ucan.js'
 import * as PlanCaps from './plan.js'
 import * as UsageCaps from './usage.js'
 import * as AccountUsageCaps from './account/usage.js'
+import * as PDPCaps from './pdp.js'
 
 export type ISO8601Date = string
 
@@ -1000,6 +1001,51 @@ export type AggregateAccept = InferInvokedCapability<
 >
 export type DealInfo = InferInvokedCapability<typeof DealTrackerCaps.dealInfo>
 
+// PDP
+export type PDPAccept = InferInvokedCapability<typeof PDPCaps.accept>
+export type PDPInfo = InferInvokedCapability<typeof PDPCaps.info>
+
+export interface PDPAcceptSuccess {
+  /**
+   * CID of the aggregate piece containing the blob.
+   */
+  aggregate: PieceLink
+  /**
+   * Proof the blob is included in the aggregate.
+   */
+  inclusionProof: ProofData
+  /**
+   * CID of the piece.
+   */
+  piece: PieceLink
+}
+
+export type PDPAcceptFailure = Ucanto.Failure
+
+export interface PDPInfoAcceptedAggregate {
+  /**
+   * CID of the aggregate piece.
+   */
+  aggregate: PieceLink
+  /**
+   * Proof the blob is included in the aggregate.
+   */
+  inclusionProof: ProofData
+}
+
+export interface PDPInfoSuccess {
+  /**
+   * CID of the piece.
+   */
+  piece: PieceLink
+  /**
+   * List of aggregates containing the blob with inclusion proofs.
+   */
+  aggregates: PDPInfoAcceptedAggregate[]
+}
+
+export type PDPInfoFailure = Ucanto.Failure
+
 // Plan
 
 export type PlanGet = InferInvokedCapability<typeof PlanCaps.get>
@@ -1161,7 +1207,9 @@ export type ServiceAbilityArray = [
   SpaceIndex['can'],
   SpaceIndexAdd['can'],
   AccountUsage['can'],
-  AccountUsageGet['can']
+  AccountUsageGet['can'],
+  PDPAccept['can'],
+  PDPInfo['can']
 ]
 
 /**

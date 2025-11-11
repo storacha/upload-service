@@ -27,6 +27,7 @@ import * as SpaceBlob from './space/blob.js'
 import * as W3sBlob from './web3.storage/blob.js'
 import * as HTTP from './http.js'
 import * as AccountUsage from './account/usage.js'
+import * as PDP from './pdp.js'
 
 export {
   Access,
@@ -58,6 +59,7 @@ export {
   W3sBlob,
   HTTP,
   AccountUsage,
+  PDP,
 }
 
 /** @type {import('./types.js').ServiceAbility[]} */
@@ -130,4 +132,6 @@ export const abilitiesAsStrings = [
   SpaceIndex.index.can,
   SpaceIndex.add.can,
   AccountUsage.get.can,
+  PDP.accept.can,
+  PDP.info.can,
 ]
