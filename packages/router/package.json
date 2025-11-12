@@ -1,6 +1,6 @@
 {
   "name": "@storacha/router",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Routing service types and utilities for storacha.network",
   "publishConfig": {
     "access": "public"

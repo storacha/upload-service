@@ -1,3 +1,17 @@
+## 1.12.0 (2025-11-12)
+
+### 🚀 Features
+
+- support filecoin reconciliation via PDP ([3f27e174](https://github.com/storacha/upload-service/commit/3f27e174))
+
+### 🩹 Fixes
+
+- fix pdp capitalization ([a74346b1](https://github.com/storacha/upload-service/commit/a74346b1))
+
+### ❤️ Thank You
+
+- hannahhoward
+
 ## 1.11.0 (2025-11-10)
 
 ### 🚀 Features
