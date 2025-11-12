@@ -142,7 +142,7 @@ export const test = {
         nb: {
           piece: cargo.link.link(),
           content: cargo.content.link(),
-          pdp: pdpOfferInv.link(),
+          PDP: pdpOfferInv.link(),
         },
       })
 

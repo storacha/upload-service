@@ -34,7 +34,7 @@ const toPDPAccept = (root, blocks) => {
  * @returns {Promise<API.UcantoInterface.Result<API.FilecoinOfferSuccess, API.FilecoinOfferFailure> | API.UcantoInterface.JoinBuilder<API.FilecoinOfferSuccess>>}
  */
 export const filecoinOffer = async ({ capability, invocation }, context) => {
-  const { piece, content, pdp } = capability.nb
+  const { piece, content, PDP } = capability.nb
 
   // dedupe
   const hasRes = await context.pieceStore.has({ piece })
@@ -47,8 +47,8 @@ export const filecoinOffer = async ({ capability, invocation }, context) => {
   if (!hasRes.ok) {
     /** @type {API.PDPInfoSuccess | undefined} */
     let pdpInfoSuccess
-    if (pdp) {
-      const pdpAccept = toPDPAccept(pdp, invocation.export())
+    if (PDP) {
+      const pdpAccept = toPDPAccept(PDP, invocation.export())
       const cap = PDPCaps.info.create({
         with: pdpAccept.issuer.did(),
         nb: {
