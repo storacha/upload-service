@@ -47,7 +47,7 @@ export const filecoinOffer = capability({
     /**
      * Link to a pdp/accept invocation included returned when blob was accepted
      */
-    pdp: Schema.link({ version: 1 }).optional(),
+    PDP: Schema.link({ version: 1 }).optional(),
   }),
   derives: (claim, from) => {
     return (
