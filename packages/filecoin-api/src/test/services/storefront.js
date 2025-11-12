@@ -3,6 +3,7 @@ import * as Server from '@ucanto/server'
 import { CBOR } from '@ucanto/core'
 import * as Signer from '@ucanto/principal/ed25519'
 import * as DealTrackerCaps from '@storacha/capabilities/filecoin/deal-tracker'
+import * as PDPCaps from '@storacha/capabilities/pdp'
 import pWaitFor from 'p-wait-for'
 
 import * as API from '../../types.js'
@@ -27,7 +28,7 @@ import { getConnection } from '../context/service.js'
  */
 
 /**
- * @type {API.Tests<StorefrontApi.ServiceContext>}
+ * @type {API.Tests<StorefrontApi.TestServiceContext>}
  */
 export const test = {
   'filecoin/offer inserts piece into submission queue if not in piece store and returns effects':
@@ -93,6 +94,108 @@ export const test = {
       // Validate queue and store
       await pWaitFor(
         () => context.queuedMessages.get('filecoinSubmitQueue')?.length === 1
+      )
+
+      // Piece not yet stored
+      const hasStoredPiece = await context.pieceStore.get({
+        piece: cargo.link.link(),
+      })
+      assert.ok(!hasStoredPiece.ok)
+    },
+  'filecoin/offer inserts piece into submission queue with pdp info if passed':
+    async (assert, context) => {
+      const { agent } = await getServiceContext(context.id)
+      const connection = connect({
+        id: context.id,
+        channel: createServer(context),
+      })
+
+      // Generate piece for test
+      const [cargo] = await randomCargo(1, 128)
+
+      const pdpInfoSuccess = {
+        piece: cargo.link,
+        aggregates: [],
+      }
+      await context.storageProviders[0].addPDPInfo(
+        cargo.content.multihash,
+        pdpInfoSuccess
+      )
+
+      const pdpOfferInv = await PDPCaps.accept
+        .invoke({
+          issuer: context.storageProviders[0].id,
+          audience: context.storageProviders[0].id,
+          with: context.storageProviders[0].id.did(),
+          nb: {
+            blob: cargo.content.multihash.bytes,
+          },
+        })
+        .delegate()
+
+      // agent invocation
+      const filecoinAddInv = Filecoin.offer.invoke({
+        issuer: agent,
+        audience: connection.id,
+        with: agent.did(),
+        proofs: [pdpOfferInv],
+        nb: {
+          piece: cargo.link.link(),
+          content: cargo.content.link(),
+          pdp: pdpOfferInv.link(),
+        },
+      })
+
+      const response = await filecoinAddInv.execute(connection)
+      if (response.out.error) {
+        throw new Error('invocation failed', { cause: response.out.error })
+      }
+      assert.ok(response.out.ok)
+      assert.ok(response.out.ok.piece.equals(cargo.link.link()))
+
+      // Validate effects in receipt
+      const fxFork = await Filecoin.submit
+        .invoke({
+          issuer: context.id,
+          audience: context.id,
+          with: context.id.did(),
+          nb: {
+            piece: cargo.link.link(),
+            content: cargo.content.link(),
+          },
+          expiration: Infinity,
+        })
+        .delegate()
+      const fxJoin = await Filecoin.accept
+        .invoke({
+          issuer: context.id,
+          audience: context.id,
+          with: context.id.did(),
+          nb: {
+            piece: cargo.link.link(),
+            content: cargo.content.link(),
+          },
+          expiration: Infinity,
+        })
+        .delegate()
+
+      assert.ok(response.fx.join)
+      assert.ok(fxJoin.link().equals(response.fx.join?.link()))
+      assert.equal(response.fx.fork.length, 1)
+      assert.ok(fxFork.link().equals(response.fx.fork[0].link()))
+
+      // Validate queue and store
+      await pWaitFor(
+        () => context.queuedMessages.get('filecoinSubmitQueue')?.length === 1
+      )
+
+      const submittedMessage =
+        /** @type {import('../../storefront/api.js').FilecoinSubmitMessage} */ (
+          context.queuedMessages.get('filecoinSubmitQueue')?.[0]
+        )
+      assert.ok(submittedMessage)
+      assert.ok(
+        submittedMessage.pdpInfoSuccess?.piece.equals(pdpInfoSuccess.piece)
       )
 
       // Piece not yet stored
@@ -726,8 +829,8 @@ async function getServiceContext(serviceSigner) {
 }
 
 /**
- * @param {API.Test<StorefrontApi.ServiceContext>} testFn
- * @param {(context: StorefrontApi.ServiceContext) => Promise<StorefrontApi.ServiceContext>} mockContextFunction
+ * @param {API.Test<StorefrontApi.TestServiceContext>} testFn
+ * @param {(context: StorefrontApi.TestServiceContext) => Promise<StorefrontApi.TestServiceContext>} mockContextFunction
  */
 function wichMockableContext(testFn, mockContextFunction) {
   // @ts-ignore

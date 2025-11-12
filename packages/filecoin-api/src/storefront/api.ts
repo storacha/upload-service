@@ -9,6 +9,7 @@ import type {
   Proof,
   ConnectionView,
   Result,
+  MultihashDigest,
 } from '@ucanto/interface'
 import { PieceLink } from '@web3-storage/data-segment'
 import {
@@ -72,6 +73,15 @@ export interface ServiceContext {
    * Routing service to configure invocations to storage nodes.
    */
   router: RoutingService
+}
+
+export interface TestStorageNode {
+  id: Signer
+  addPDPInfo(digest: MultihashDigest, info: PDPInfoSuccess): Promise<void>
+}
+
+export interface TestServiceContext extends ServiceContext {
+  storageProviders: Array<TestStorageNode>
 }
 
 export interface FilecoinSubmitMessageContext

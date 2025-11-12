@@ -47,6 +47,7 @@ const createService = ({ id, pdpStore }) => ({
         }
 
         const pdpInfo = await pdpStore.getPDPInfo(digest)
+        console.log('PDP Info retrieved:', pdpInfo)
         if (!pdpInfo) {
           return error({
             name: 'PDPInfoNotAvailable',

@@ -44,9 +44,8 @@ describe('storefront', () => {
           service
         ).connection
         const pdpStore = createPDPStore()
-        const router = createRouter(storefrontSigner, [
-          await StorageNode.activate({ pdpStore }),
-        ])
+        const storageProviders = [await StorageNode.activate({ pdpStore })]
+        const router = createRouter(storefrontSigner, storageProviders)
         await test(
           {
             equal: assert.strictEqual,
@@ -62,6 +61,7 @@ describe('storefront', () => {
               },
             },
             router,
+            storageProviders,
             pieceStore,
             filecoinSubmitQueue,
             pieceOfferQueue,
