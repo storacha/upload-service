@@ -1,3 +1,21 @@
+## 2.6.0 (2025-11-12)
+
+### 🚀 Features
+
+- support filecoin reconciliation via PDP ([3f27e174](https://github.com/storacha/upload-service/commit/3f27e174))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.6.4
+- Updated @storacha/capabilities to 1.12.0
+- Updated @storacha/filecoin-api to 1.2.0
+- Updated @storacha/blob-index to 1.2.4
+- Updated @storacha/router to 1.0.0
+
+### ❤️ Thank You
+
+- hannahhoward
+
 ## 2.5.1 (2025-11-10)
 
 ### 🧱 Updated Dependencies
