@@ -113,14 +113,18 @@ async function allocate({ context, blob, space, cause }) {
 }
 
 /**
+ * @typedef {object} PutAllocation
+ * @property {API.Receipt<API.W3sBlobAllocateSuccess, API.W3sBlobAllocateFailure>} receipt
+ */
+
+/**
  * Create put task and check if there is a receipt for it already.
  * A `http/put` should be task is stored by the service, if it does not exist
  * and a receipt is fetched if already available.
  *
  * @param {object} put
  * @param {API.BlobModel} put.blob
- * @param {object} put.allocation
- * @param {API.Receipt<API.W3sBlobAllocateSuccess, API.W3sBlobAllocateFailure>} put.allocation.receipt
+ * @param {PutAllocation} put.allocation
  */
 async function put({ blob, allocation }) {
   // Derive the principal that will provide the blob from the blob digest.
@@ -194,6 +198,12 @@ async function put({ blob, allocation }) {
 }
 
 /**
+ * @typedef {object} InputDelivery
+ * @property {API.Invocation<API.HTTPPut>} task
+ * @property {API.Receipt|null} receipt
+ */
+
+/**
  * Create accept and run task if there is no receipt.
  * A accept task can run when `http/put` receipt already exists.
  *
@@ -202,9 +212,7 @@ async function put({ blob, allocation }) {
  * @param {API.BlobModel} input.blob
  * @param {API.DIDKey} input.space
  * @param {API.Link} input.cause Original `space/blob/add` invocation.
- * @param {object} input.delivery
- * @param {API.Invocation<API.HTTPPut>} input.delivery.task
- * @param {API.Receipt|null} input.delivery.receipt
+ * @param {InputDelivery} input.delivery
  */
 async function accept({ context, blob, space, cause, delivery }) {
   // 1. Create web3.storage/blob/accept invocation and task

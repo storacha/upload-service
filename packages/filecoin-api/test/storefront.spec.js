@@ -9,6 +9,9 @@ import {
   getConnection,
   getStoreImplementations,
   getQueueImplementations,
+  createRouter,
+  StorageNode,
+  createPDPStore,
 } from '../src/test/context/service.js'
 import { validateAuthorization } from '../src/test/utils.js'
 
@@ -40,7 +43,9 @@ describe('storefront', () => {
           dealTrackerSigner,
           service
         ).connection
-
+        const pdpStore = createPDPStore()
+        const storageProviders = [await StorageNode.activate({ pdpStore })]
+        const router = createRouter(storefrontSigner, storageProviders)
         await test(
           {
             equal: assert.strictEqual,
@@ -55,6 +60,8 @@ describe('storefront', () => {
                 assert.fail(error)
               },
             },
+            router,
+            storageProviders,
             pieceStore,
             filecoinSubmitQueue,
             pieceOfferQueue,

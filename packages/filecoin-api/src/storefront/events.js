@@ -42,23 +42,29 @@ export const handleFilecoinSubmitMessage = async (context, message) => {
 
   // read and compute piece for content
   // TODO: needs to be hooked with location claims
-  const contentStreamRes = await context.contentStore.stream(message.content)
-  if (contentStreamRes.error) {
-    return { error: new BlobNotFound(contentStreamRes.error.message) }
-  }
+  /** @type {API.PieceLink} */
+  let computedPiece
+  if (message.pdpInfoSuccess) {
+    // if we have pdp info, use the piece from there
+    computedPiece = message.pdpInfoSuccess.piece
+  } else {
+    const contentStreamRes = await context.contentStore.stream(message.content)
+    if (contentStreamRes.error) {
+      return { error: new BlobNotFound(contentStreamRes.error.message) }
+    }
 
-  const computedPieceCid = await computePieceCid(contentStreamRes.ok)
-  if (computedPieceCid.error) {
-    return computedPieceCid
+    const computedPieceCid = await computePieceCid(contentStreamRes.ok)
+    if (computedPieceCid.error) {
+      return computedPieceCid
+    }
+    computedPiece = computedPieceCid.ok.piece
   }
 
   // check provided piece equals the one computed
-  if (!message.piece.equals(computedPieceCid.ok.piece.link)) {
+  if (!message.piece.equals(computedPiece)) {
     return {
       error: new UnexpectedPiece(
-        `provided piece ${message.piece.toString()} is not the same as computed ${
-          computedPieceCid.ok.piece
-        }`
+        `provided piece ${message.piece.toString()} is not the same as computed ${computedPiece}`
       ),
     }
   }

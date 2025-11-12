@@ -9,6 +9,7 @@ import type {
   Proof,
   ConnectionView,
   Result,
+  MultihashDigest,
 } from '@ucanto/interface'
 import { PieceLink } from '@web3-storage/data-segment'
 import {
@@ -16,6 +17,7 @@ import {
   StorefrontService,
   DealTrackerService,
 } from '@storacha/filecoin-client/types'
+import { RoutingService } from '@storacha/router/types'
 import {
   Store,
   UpdatableStore,
@@ -23,6 +25,7 @@ import {
   Queue,
   ServiceConfig,
   StoreGetError,
+  PDPInfoSuccess,
 } from '../types.js'
 
 export type PieceStore = Store<PieceRecordKey, PieceRecord> &
@@ -66,6 +69,19 @@ export interface ServiceContext {
    * Deal tracker connection to find out available deals for an aggregate.
    */
   dealTrackerService: ServiceConfig<DealTrackerService>
+  /**
+   * Routing service to configure invocations to storage nodes.
+   */
+  router: RoutingService
+}
+
+export interface TestStorageNode {
+  id: Signer
+  addPDPInfo(digest: MultihashDigest, info: PDPInfoSuccess): Promise<void>
+}
+
+export interface TestServiceContext extends ServiceContext {
+  storageProviders: Array<TestStorageNode>
 }
 
 export interface FilecoinSubmitMessageContext
@@ -168,6 +184,10 @@ export interface FilecoinSubmitMessage {
    * Grouping information for submitted piece.
    */
   group: string
+  /**
+   * Info from the PDP node about the piece.
+   */
+  pdpInfoSuccess?: PDPInfoSuccess
 }
 
 export interface PieceOfferMessage {

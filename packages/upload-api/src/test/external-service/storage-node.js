@@ -1,5 +1,6 @@
 import * as API from '../../types.js'
 import * as BlobCapabilities from '@storacha/capabilities/blob'
+import * as PDPCapabilities from '@storacha/capabilities/pdp'
 import * as BlobReplicaCapabilities from '@storacha/capabilities/blob/replica'
 import * as ClaimCapabilities from '@storacha/capabilities/claim'
 import { base64pad } from 'multiformats/bases/base64'
@@ -28,7 +29,7 @@ import { createLocationCommitment } from '../helpers/blob.js'
  *   has: (digest: API.MultihashDigest) => Promise<boolean>
  *   add: (digest: API.MultihashDigest) => Promise<void>
  * }} AllocationStore
- * @typedef {import('../../types/blob.js').BlobService} BlobService
+ * @typedef {import('../../types/blob.js').StorageService} StorageService
  */
 
 export const MaxUploadSize = 127 * (1 << 25)
@@ -53,7 +54,7 @@ const contentDigest = (key) =>
  *   contentStore: Omit<ContentStore, 'set'>
  *   allocationStore: AllocationStore
  * }} config
- * @returns {BlobService}
+ * @returns {StorageService}
  */
 const createService = ({
   id,
@@ -62,6 +63,29 @@ const createService = ({
   contentStore,
   allocationStore,
 }) => ({
+  pdp: {
+    info: Server.provideAdvanced({
+      capability: PDPCapabilities.info,
+      handler: async ({ capability }) => {
+        const digest = Digest.decode(capability.nb.blob)
+        const hasBlob = await contentStore.has(digest)
+        if (!hasBlob) {
+          return error({
+            name: 'BlobNotFound',
+            message: `blob with digest ${base58btc.encode(
+              digest.bytes
+            )} not found`,
+          })
+        }
+        return error({
+          name: 'PDPInfoNotAvailable',
+          message: `PDP info for blob with digest ${base58btc.encode(
+            digest.bytes
+          )} not available`,
+        })
+      },
+    }),
+  },
   blob: {
     allocate: Server.provideAdvanced({
       capability: BlobCapabilities.allocate,
@@ -282,7 +306,7 @@ export class BrowserStorageNode {
   /**
    * @param {{
    *   id: API.Signer
-   *   connection: import('@ucanto/interface').ConnectionView<BlobService>
+   *   connection: import('@ucanto/interface').ConnectionView<StorageService>
    *   baseURL: URL
    * }} config
    */
@@ -416,7 +440,7 @@ export class StorageNode {
   /**
    * @param {{
    *   id: API.Signer
-   *   connection: import('@ucanto/interface').ConnectionView<BlobService>
+   *   connection: import('@ucanto/interface').ConnectionView<StorageService>
    *   server: import('http').Server
    * }} config
    */

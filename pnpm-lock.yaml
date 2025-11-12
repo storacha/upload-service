@@ -1051,6 +1051,9 @@ importers:
       '@storacha/one-webcrypto':
         specifier: 'catalog:'
         version: 1.0.1
+      '@storacha/router':
+        specifier: workspace:^
+        version: link:../router
       '@types/assert':
         specifier: ^1.5.10
         version: 1.5.11
@@ -1154,6 +1157,67 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 5.8.3
+
+  packages/router:
+    dependencies:
+      '@storacha/capabilities':
+        specifier: workspace:^
+        version: link:../capabilities
+      '@ucanto/client':
+        specifier: ^9.0.2
+        version: 9.0.2
+      '@ucanto/core':
+        specifier: ^10.4.5
+        version: 10.4.5
+      '@ucanto/interface':
+        specifier: ^11.0.1
+        version: 11.0.1
+      '@ucanto/principal':
+        specifier: ^9.0.3
+        version: 9.0.3
+      '@ucanto/server':
+        specifier: ^11.0.3
+        version: 11.0.3
+      '@ucanto/transport':
+        specifier: ^9.2.1
+        version: 9.2.1
+      multiformats:
+        specifier: 'catalog:'
+        version: 13.3.6
+    devDependencies:
+      '@arethetypeswrong/cli':
+        specifier: 'catalog:'
+        version: 0.17.4
+      '@storacha/eslint-config':
+        specifier: workspace:^
+        version: link:../eslint-config-w3up
+      '@types/assert':
+        specifier: ^1.5.6
+        version: 1.5.11
+      '@types/mocha':
+        specifier: ^10.0.0
+        version: 10.0.10
+      '@types/node':
+        specifier: ^20.8.4
+        version: 20.17.14
+      '@typescript-eslint/eslint-plugin':
+        specifier: 'catalog:'
+        version: 8.26.1(@typescript-eslint/parser@8.46.3(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
+      assert:
+        specifier: 'catalog:'
+        version: 2.1.0
+      mocha:
+        specifier: ^10.2.0
+        version: 10.8.2
+      playwright-test:
+        specifier: 'catalog:'
+        version: 12.6.1
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
+      watch:
+        specifier: 'catalog:'
+        version: 1.0.2
 
   packages/ucn:
     dependencies:
@@ -1619,6 +1683,9 @@ importers:
       '@storacha/indexing-service-client':
         specifier: ^2.6.5
         version: 2.6.5
+      '@storacha/router':
+        specifier: workspace:^
+        version: link:../router
       '@ucanto/client':
         specifier: ^9.0.2
         version: 9.0.2
@@ -20290,7 +20357,7 @@ snapshots:
       graphemer: 1.4.0
       ignore: 5.3.2
       natural-compare: 1.4.0
-      ts-api-utils: 2.0.1(typescript@4.9.5)
+      ts-api-utils: 2.1.0(typescript@4.9.5)
       typescript: 4.9.5
     transitivePeerDependencies:
       - supports-color
@@ -20307,7 +20374,7 @@ snapshots:
       graphemer: 1.4.0
       ignore: 5.3.2
       natural-compare: 1.4.0
-      ts-api-utils: 2.0.1(typescript@5.9.3)
+      ts-api-utils: 2.1.0(typescript@5.9.3)
       typescript: 5.9.3
     transitivePeerDependencies:
       - supports-color
@@ -20324,7 +20391,7 @@ snapshots:
       graphemer: 1.4.0
       ignore: 5.3.2
       natural-compare: 1.4.0
-      ts-api-utils: 2.0.1(typescript@5.8.3)
+      ts-api-utils: 2.1.0(typescript@5.8.3)
       typescript: 5.8.3
     transitivePeerDependencies:
       - supports-color
@@ -20424,7 +20491,7 @@ snapshots:
       '@typescript-eslint/utils': 8.26.1(eslint@8.57.1)(typescript@4.9.5)
       debug: 4.4.0(supports-color@8.1.1)
       eslint: 8.57.1
-      ts-api-utils: 2.0.1(typescript@4.9.5)
+      ts-api-utils: 2.1.0(typescript@4.9.5)
       typescript: 4.9.5
     transitivePeerDependencies:
       - supports-color
@@ -20435,7 +20502,7 @@ snapshots:
       '@typescript-eslint/utils': 8.26.1(eslint@8.57.1)(typescript@5.8.3)
       debug: 4.4.0(supports-color@8.1.1)
       eslint: 8.57.1
-      ts-api-utils: 2.0.1(typescript@5.8.3)
+      ts-api-utils: 2.1.0(typescript@5.8.3)
       typescript: 5.8.3
     transitivePeerDependencies:
       - supports-color
@@ -20446,7 +20513,7 @@ snapshots:
       '@typescript-eslint/utils': 8.26.1(eslint@8.57.1)(typescript@5.9.3)
       debug: 4.4.0(supports-color@8.1.1)
       eslint: 8.57.1
-      ts-api-utils: 2.0.1(typescript@5.9.3)
+      ts-api-utils: 2.1.0(typescript@5.9.3)
       typescript: 5.9.3
     transitivePeerDependencies:
       - supports-color
@@ -20543,7 +20610,7 @@ snapshots:
 
   '@typescript-eslint/utils@5.62.0(eslint@8.57.1)(typescript@4.9.5)':
     dependencies:
-      '@eslint-community/eslint-utils': 4.4.1(eslint@8.57.1)
+      '@eslint-community/eslint-utils': 4.9.0(eslint@8.57.1)
       '@types/json-schema': 7.0.15
       '@types/semver': 7.5.8
       '@typescript-eslint/scope-manager': 5.62.0
@@ -20558,7 +20625,7 @@ snapshots:
 
   '@typescript-eslint/utils@8.26.1(eslint@8.57.1)(typescript@4.9.5)':
     dependencies:
-      '@eslint-community/eslint-utils': 4.4.1(eslint@8.57.1)
+      '@eslint-community/eslint-utils': 4.9.0(eslint@8.57.1)
       '@typescript-eslint/scope-manager': 8.26.1
       '@typescript-eslint/types': 8.26.1
       '@typescript-eslint/typescript-estree': 8.26.1(typescript@4.9.5)
@@ -20569,7 +20636,7 @@ snapshots:
 
   '@typescript-eslint/utils@8.26.1(eslint@8.57.1)(typescript@5.8.3)':
     dependencies:
-      '@eslint-community/eslint-utils': 4.4.1(eslint@8.57.1)
+      '@eslint-community/eslint-utils': 4.9.0(eslint@8.57.1)
       '@typescript-eslint/scope-manager': 8.26.1
       '@typescript-eslint/types': 8.26.1
       '@typescript-eslint/typescript-estree': 8.26.1(typescript@5.8.3)
@@ -20580,7 +20647,7 @@ snapshots:
 
   '@typescript-eslint/utils@8.26.1(eslint@8.57.1)(typescript@5.9.3)':
     dependencies:
-      '@eslint-community/eslint-utils': 4.4.1(eslint@8.57.1)
+      '@eslint-community/eslint-utils': 4.9.0(eslint@8.57.1)
       '@typescript-eslint/scope-manager': 8.26.1
       '@typescript-eslint/types': 8.26.1
       '@typescript-eslint/typescript-estree': 8.26.1(typescript@5.9.3)
@@ -21668,7 +21735,7 @@ snapshots:
 
   acorn-loose@8.4.0:
     dependencies:
-      acorn: 8.14.0
+      acorn: 8.15.0
 
   acorn-walk@8.3.2: {}
 
@@ -24260,7 +24327,7 @@ snapshots:
   eslint-plugin-unicorn@45.0.2(eslint@8.57.1):
     dependencies:
       '@babel/helper-validator-identifier': 7.25.9
-      '@eslint-community/eslint-utils': 4.4.1(eslint@8.57.1)
+      '@eslint-community/eslint-utils': 4.9.0(eslint@8.57.1)
       ci-info: 3.9.0
       clean-regexp: 1.0.0
       eslint: 8.57.1
@@ -29939,9 +30006,17 @@ snapshots:
     dependencies:
       typescript: 5.9.3
 
+  ts-api-utils@2.1.0(typescript@4.9.5):
+    dependencies:
+      typescript: 4.9.5
+
   ts-api-utils@2.1.0(typescript@5.8.3):
     dependencies:
       typescript: 5.8.3
+
+  ts-api-utils@2.1.0(typescript@5.9.3):
+    dependencies:
+      typescript: 5.9.3
 
   ts-interface-checker@0.1.13: {}
 
