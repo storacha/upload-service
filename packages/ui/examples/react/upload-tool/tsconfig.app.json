@@ -6,6 +6,13 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "skipLibCheck": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "references": [
+    {
+      "path": "../components/tsconfig.lib.json"
+    },
+    {
+      "path": "../../../packages/react/tsconfig.lib.json"
+    }
+  ]
 }
-
