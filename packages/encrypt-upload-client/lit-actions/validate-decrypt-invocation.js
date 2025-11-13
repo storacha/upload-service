@@ -39,11 +39,11 @@ const Decrypt = capability({
 
 /**
  * Validates a decrypt delegation from an invocation if it exists
- * @param {Delegation} decryptDelegation - The delegation to validate
+ * @param {Delegation} wrappedInvocation - The delegation to validate
  * @param {string} spaceDID - The target space DID
  * @throws {Error} If the invocation or the delegation is invalid
  */
-const validateDecryptDelegation = (wrappedInvocation, spaceDID) => {
+function validateDecryptDelegation(wrappedInvocation, spaceDID) {
   const decryptCapability = wrappedInvocation.capabilities.find(
     (cap) => cap.can === Decrypt.can
   )
@@ -93,7 +93,8 @@ const validateDecryptDelegation = (wrappedInvocation, spaceDID) => {
  * Decrypts content using Lit Protocol
  * @returns {Promise<void>}
  */
-const decrypt = async () => {
+async function decrypt() {
+  console.log('Starting decryption process...')
   try {
     const {
       identityBoundCiphertext,
@@ -109,6 +110,7 @@ const decrypt = async () => {
         `Issue on extracting the wrapped invocation! Error message: ${wrappedInvocationResult.error}`
       )
     }
+    console.log('Extracted wrapped invocation successfully')
 
     const wrappedInvocation = wrappedInvocationResult.ok
     validateDecryptDelegation(wrappedInvocation, spaceDID)
