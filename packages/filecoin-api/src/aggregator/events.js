@@ -48,38 +48,45 @@ export const handlePieceMessage = async (context, message) => {
  * @param {import('./api.js').PieceRecord[]} records
  */
 export const handlePiecesInsert = async (context, records) => {
-  // TODO: separate buffers per group after MVP
-  const { group } = records[0]
+  const byGroup = records.reduce((acc, record) => {
+    if (!acc[record.group]) {
+      acc[record.group] = []
+    }
+    acc[record.group].push(record)
+    return acc
+  }, /** @type {Record<string, import('./api.js').PieceRecord[]>} */ ({}))
 
-  /** @type {import('./api.js').Buffer} */
-  const buffer = {
-    pieces: records.map((p) => ({
-      piece: p.piece,
-      insertedAt: p.insertedAt,
-      // Set policy as insertion
-      policy: /** @type {import('./api.js').PiecePolicy} */ (0),
-    })),
-    group,
-  }
-  const block = await CBOR.write(buffer)
+  for (const [group, groupRecords] of Object.entries(byGroup)) {
+    /** @type {import('./api.js').Buffer} */
+    const buffer = {
+      pieces: groupRecords.map((p) => ({
+        piece: p.piece,
+        insertedAt: p.insertedAt,
+        // Set policy as insertion
+        policy: /** @type {import('./api.js').PiecePolicy} */ (0),
+      })),
+      group,
+    }
+    const block = await CBOR.write(buffer)
 
-  // Store block in buffer store
-  const bufferStorePut = await context.bufferStore.put({
-    buffer,
-    block: block.cid,
-  })
-  if (bufferStorePut.error) {
-    return bufferStorePut
-  }
+    // Store block in buffer store
+    const bufferStorePut = await context.bufferStore.put({
+      buffer,
+      block: block.cid,
+    })
+    if (bufferStorePut.error) {
+      return bufferStorePut
+    }
 
-  // Propagate message
-  const bufferQueueAdd = await context.bufferQueue.add({
-    pieces: block.cid,
-    group,
-  })
-  if (bufferQueueAdd.error) {
-    return {
-      error: new QueueOperationFailed(bufferQueueAdd.error.message),
+    // Propagate message
+    const bufferQueueAdd = await context.bufferQueue.add({
+      pieces: block.cid,
+      group,
+    })
+    if (bufferQueueAdd.error) {
+      return {
+        error: new QueueOperationFailed(bufferQueueAdd.error.message),
+      }
     }
   }
 
@@ -99,68 +106,74 @@ export const handlePiecesInsert = async (context, records) => {
  */
 export const handleBufferQueueMessage = async (context, records) => {
   // Get reduced buffered pieces
-  const buffers = records.map((r) => r.pieces)
-  const { error: errorGetBufferedPieces, ok: okGetBufferedPieces } =
-    await getBufferedPieces(buffers, context.bufferStore)
-  if (errorGetBufferedPieces) {
-    return { error: errorGetBufferedPieces }
-  }
+  const byGroup = records.reduce((acc, record) => {
+    if (!acc[record.group]) {
+      acc[record.group] = []
+    }
+    acc[record.group].push(record.pieces)
+    return acc
+  }, /** @type {Record<string, import('@ucanto/interface').Link[]>} */ ({}))
 
-  const { bufferedPieces, group } = okGetBufferedPieces
-
-  // Attempt to aggregate buffered pieces within the ranges.
-  // In case it is possible, included pieces and remaining pieces are returned
-  // so that they can be propagated to respective stores/queues.
-  const aggregateInfo = aggregatePieces(bufferedPieces, {
-    maxAggregateSize: context.config.maxAggregateSize,
-    minAggregateSize: context.config.minAggregateSize,
-    minUtilizationFactor: context.config.minUtilizationFactor,
-    prependBufferedPieces: context.config.prependBufferedPieces,
-    hasher: context.config.hasher,
-    maxAggregatePieces: context.config.maxAggregatePieces,
-  })
-
-  // Store buffered pieces if not enough to do aggregate and re-queue them
-  if (!aggregateInfo) {
-    const { error: errorHandleBufferReducingWithoutAggregate } =
-      await handleBufferReducingWithoutAggregate({
-        buffer: {
-          pieces: bufferedPieces,
-          group,
-        },
-        bufferStore: context.bufferStore,
-        bufferQueue: context.bufferQueue,
-      })
-
-    if (errorHandleBufferReducingWithoutAggregate) {
-      return { error: errorHandleBufferReducingWithoutAggregate }
+  let aggregatedPieces = 0
+  for (const [group, buffers] of Object.entries(byGroup)) {
+    const { error: errorGetBufferedPieces, ok: okGetBufferedPieces } =
+      await getBufferedPieces(buffers, context.bufferStore)
+    if (errorGetBufferedPieces) {
+      return { error: errorGetBufferedPieces }
     }
 
-    // No pieces were aggregate
-    return {
-      ok: {
-        aggregatedPieces: 0,
-      },
-    }
-  }
-
-  // Store buffered pieces to do aggregate and re-queue remaining ones
-  const { error: errorHandleBufferReducingWithAggregate } =
-    await handleBufferReducingWithAggregate({
-      aggregateInfo,
-      bufferStore: context.bufferStore,
-      bufferQueue: context.bufferQueue,
-      aggregateOfferQueue: context.aggregateOfferQueue,
-      group,
+    const bufferedPieces = okGetBufferedPieces.bufferedPieces
+    // Attempt to aggregate buffered pieces within the ranges.
+    // In case it is possible, included pieces and remaining pieces are returned
+    // so that they can be propagated to respective stores/queues.
+    const aggregateInfo = aggregatePieces(bufferedPieces, {
+      maxAggregateSize: context.config.maxAggregateSize,
+      minAggregateSize: context.config.minAggregateSize,
+      minUtilizationFactor: context.config.minUtilizationFactor,
+      prependBufferedPieces: context.config.prependBufferedPieces,
+      hasher: context.config.hasher,
+      maxAggregatePieces: context.config.maxAggregatePieces,
     })
 
-  if (errorHandleBufferReducingWithAggregate) {
-    return { error: errorHandleBufferReducingWithAggregate }
+    // Store buffered pieces if not enough to do aggregate and re-queue them
+    if (!aggregateInfo) {
+      const { error: errorHandleBufferReducingWithoutAggregate } =
+        await handleBufferReducingWithoutAggregate({
+          buffer: {
+            pieces: bufferedPieces,
+            group,
+          },
+          bufferStore: context.bufferStore,
+          bufferQueue: context.bufferQueue,
+        })
+
+      if (errorHandleBufferReducingWithoutAggregate) {
+        return { error: errorHandleBufferReducingWithoutAggregate }
+      }
+
+      // No pieces were aggregated, move on to next group
+      continue
+    }
+
+    // Store buffered pieces to do aggregate and re-queue remaining ones
+    const { error: errorHandleBufferReducingWithAggregate } =
+      await handleBufferReducingWithAggregate({
+        aggregateInfo,
+        bufferStore: context.bufferStore,
+        bufferQueue: context.bufferQueue,
+        aggregateOfferQueue: context.aggregateOfferQueue,
+        group,
+      })
+
+    if (errorHandleBufferReducingWithAggregate) {
+      return { error: errorHandleBufferReducingWithAggregate }
+    }
+    aggregatedPieces += aggregateInfo.addedBufferedPieces.length
   }
 
   return {
     ok: {
-      aggregatedPieces: aggregateInfo.addedBufferedPieces.length,
+      aggregatedPieces,
     },
   }
 }

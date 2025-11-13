@@ -11,7 +11,7 @@ import { UnexpectedState } from '../errors.js'
  * @typedef {import('./api.js').BufferMessage} BufferMessage
  * @typedef {import('./api.js').AggregateOfferMessage} AggregateOfferMessage
  * @typedef {import('../types.js').StoreGetError} StoreGetError
- * @typedef {{ bufferedPieces: BufferedPiece[], group: string }} GetBufferedPieces
+ * @typedef {{ bufferedPieces: BufferedPiece[] }} GetBufferedPieces
  * @typedef {import('../types.js').Result<GetBufferedPieces, StoreGetError | UnexpectedState>} GetBufferedPiecesResult
  *
  * @typedef {object} AggregateInfo
@@ -270,10 +270,6 @@ export async function getBufferedPieces(bufferPieces, bufferStore) {
   return {
     ok: {
       bufferedPieces,
-      // extract group from one entry
-      // TODO: needs to change to support multi group buffering
-      // @ts-expect-error typescript does not understand with find that no error and group MUST exist
-      group: getBufferRes[0].ok.buffer.group,
     },
   }
 }

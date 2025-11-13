@@ -116,6 +116,75 @@ export const test = {
       pieces.map((p) => p.link.toString())
     )
   },
+  'handles pieces insert batch with different groups successfully': async (
+    assert,
+    context
+  ) => {
+    const group1 = context.id.did()
+    const group2 = 'did:example:another-group'
+    const { pieces } = await randomAggregate(100, 128)
+
+    const piecesGroup1 =
+      /** @type {import('../services/aggregator.js').PieceRecord[]} */ (
+        pieces.slice(0, 50).map((p) => ({
+          piece: p.link,
+          group: group1,
+          status: 'offered',
+          insertedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }))
+      )
+
+    const piecesGroup2 =
+      /** @type {import('../services/aggregator.js').PieceRecord[]} */ (
+        pieces.slice(50).map((p) => ({
+          piece: p.link,
+          group: group2,
+          status: 'offered',
+          insertedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }))
+      )
+
+    // Handle event
+    const handledPieceInsertsRes = await AggregatorEvents.handlePiecesInsert(
+      context,
+      [...piecesGroup1, ...piecesGroup2]
+    )
+    assert.ok(handledPieceInsertsRes.ok)
+
+    // Validate queue and store
+    await pWaitFor(
+      () => context.queuedMessages.get('bufferQueue')?.length === 2
+    )
+    /** @type {BufferMessage} */
+    // @ts-expect-error cannot infer buffer message
+    const group1Message = context.queuedMessages.get('bufferQueue')?.find(
+      // @ts-expect-error cannot infer buffer message
+      (msg) => msg.group === group1
+    )
+    const bufferGet1 = await context.bufferStore.get(group1Message.pieces)
+    assert.ok(bufferGet1.ok)
+    assert.ok(bufferGet1.ok?.block.equals(group1Message.pieces))
+    assert.deepEqual(
+      bufferGet1.ok?.buffer.pieces.map((p) => p.piece.toString()),
+      piecesGroup1.map((p) => p.piece.toString())
+    )
+
+    /** @type {BufferMessage} */
+    // @ts-expect-error cannot infer buffer message
+    const group2Message = context.queuedMessages.get('bufferQueue')?.find(
+      // @ts-expect-error cannot infer buffer message
+      (msg) => msg.group === group2
+    )
+    const bufferGet2 = await context.bufferStore.get(group2Message.pieces)
+    assert.ok(bufferGet2.ok)
+    assert.ok(bufferGet2.ok?.block.equals(group2Message.pieces))
+    assert.deepEqual(
+      bufferGet2.ok?.buffer.pieces.map((p) => p.piece.toString()),
+      piecesGroup2.map((p) => p.piece.toString())
+    )
+  },
   'handles piece insert event errors when fails to access buffer store':
     wichMockableContext(
       async (assert, context) => {
@@ -255,6 +324,94 @@ export const test = {
       }, 0)
     )
   },
+  'handles buffer queue messages successfully across groups to requeue bigger buffer but does not merge':
+    async (assert, context) => {
+      const group1 = context.id.did()
+      const { buffers, blocks } = await getBuffers(2, group1)
+      const group2 = 'did:example:another-group'
+      const { buffers: buffers2, blocks: blocks2 } = await getBuffers(2, group2)
+      // Store buffers
+      for (let i = 0; i < blocks.length; i++) {
+        const putBufferRes = await context.bufferStore.put({
+          buffer: buffers[i],
+          block: blocks[i].cid,
+        })
+        assert.ok(putBufferRes.ok)
+      }
+      for (let i = 0; i < blocks2.length; i++) {
+        const putBufferRes = await context.bufferStore.put({
+          buffer: buffers2[i],
+          block: blocks2[i].cid,
+        })
+        assert.ok(putBufferRes.ok)
+      }
+      // Handle messages
+      const handledMessageRes = await AggregatorEvents.handleBufferQueueMessage(
+        {
+          ...context,
+          config: {
+            minAggregateSize: 2 ** 34,
+            minUtilizationFactor: 4,
+            maxAggregateSize: 2 ** 35,
+          },
+        },
+        blocks
+          .map((b) => ({
+            pieces: b.cid,
+            group: group1,
+          }))
+          .concat(
+            blocks2.map((b) => ({
+              pieces: b.cid,
+              group: group2,
+            }))
+          )
+      )
+      assert.ok(handledMessageRes.ok)
+      assert.equal(handledMessageRes.ok?.aggregatedPieces, 0)
+
+      // Validate queue and store
+      await pWaitFor(
+        () => context.queuedMessages.get('bufferQueue')?.length === 2
+      )
+      /** @type {BufferMessage} */
+      // @ts-expect-error cannot infer buffer message
+      const group1Message = context.queuedMessages.get('bufferQueue')?.find(
+        // @ts-expect-error cannot infer buffer message
+        (msg) => msg.group === group1
+      )
+      const bufferGet = await context.bufferStore.get(group1Message.pieces)
+      assert.ok(bufferGet.ok)
+      assert.ok(bufferGet.ok?.block.equals(group1Message.pieces))
+      assert.equal(bufferGet.ok?.buffer.group, group1)
+      assert.ok(!bufferGet.ok?.buffer.aggregate)
+      assert.equal(
+        bufferGet.ok?.buffer.pieces.length,
+        buffers.reduce((acc, v) => {
+          acc += v.pieces.length
+          return acc
+        }, 0)
+      )
+
+      /** @type {BufferMessage} */
+      // @ts-expect-error cannot infer buffer message
+      const group2Message = context.queuedMessages.get('bufferQueue')?.find(
+        // @ts-expect-error cannot infer buffer message
+        (msg) => msg.group === group2
+      )
+      const bufferGet2 = await context.bufferStore.get(group2Message.pieces)
+      assert.ok(bufferGet2.ok)
+      assert.ok(bufferGet2.ok?.block.equals(group2Message.pieces))
+      assert.equal(bufferGet2.ok?.buffer.group, group2)
+      assert.ok(!bufferGet2.ok?.buffer.aggregate)
+      assert.equal(
+        bufferGet2.ok?.buffer.pieces.length,
+        buffers2.reduce((acc, v) => {
+          acc += v.pieces.length
+          return acc
+        }, 0)
+      )
+    },
   'handles buffer queue messages with failure when fails to read them from store':
     async (assert, context) => {
       const group = context.id.did()
@@ -398,6 +555,139 @@ export const test = {
       message.minPieceInsertedAt
     )
   },
+  'handles buffer queue messages successfully to queue aggregates across groups':
+    async (assert, context) => {
+      const group1 = context.id.did()
+      const { buffers, blocks } = await getBuffers(2, group1, {
+        length: 100,
+        size: 128,
+      })
+      const group2 = 'did:example:another-group'
+      const { buffers: buffers2, blocks: blocks2 } = await getBuffers(
+        2,
+        group2,
+        {
+          length: 100,
+          size: 128,
+        }
+      )
+      const totalPiecesGroup1 = buffers.reduce((acc, v) => {
+        acc += v.pieces.length
+        return acc
+      }, 0)
+      const totalPiecesGroup2 = buffers2.reduce((acc, v) => {
+        acc += v.pieces.length
+        return acc
+      }, 0)
+
+      // Store buffers
+      for (let i = 0; i < blocks.length; i++) {
+        const putBufferRes = await context.bufferStore.put({
+          buffer: buffers[i],
+          block: blocks[i].cid,
+        })
+        assert.ok(putBufferRes.ok)
+      }
+      for (let i = 0; i < blocks2.length; i++) {
+        const putBufferRes = await context.bufferStore.put({
+          buffer: buffers2[i],
+          block: blocks2[i].cid,
+        })
+        assert.ok(putBufferRes.ok)
+      }
+
+      // Handle messages
+      const handledMessageRes = await AggregatorEvents.handleBufferQueueMessage(
+        {
+          ...context,
+          config: {
+            minAggregateSize: 2 ** 19,
+            minUtilizationFactor: 10e5,
+            maxAggregateSize: 2 ** 35,
+          },
+        },
+        blocks
+          .map((b) => ({
+            pieces: b.cid,
+            group: group1,
+          }))
+          .concat(
+            blocks2.map((b) => ({
+              pieces: b.cid,
+              group: group2,
+            }))
+          )
+      )
+      assert.ok(handledMessageRes.ok)
+      assert.equal(
+        handledMessageRes.ok?.aggregatedPieces,
+        totalPiecesGroup1 + totalPiecesGroup2
+      )
+
+      // Validate queue and store
+      await pWaitFor(
+        () =>
+          context.queuedMessages.get('bufferQueue')?.length === 0 &&
+          context.queuedMessages.get('aggregateOfferQueue')?.length === 2
+      )
+
+      /** @type {AggregateOfferMessage} */
+      // @ts-expect-error cannot infer buffer message
+      const group1Message = context.queuedMessages
+        .get('aggregateOfferQueue')
+        ?.find(
+          // @ts-expect-error cannot infer buffer message
+          (msg) => msg.group === group1
+        )
+      const bufferGet = await context.bufferStore.get(group1Message.buffer)
+      assert.ok(bufferGet.ok)
+      assert.ok(bufferGet.ok?.block.equals(group1Message.buffer))
+      assert.equal(bufferGet.ok?.buffer.group, group1)
+      assert.ok(group1Message.aggregate.equals(bufferGet.ok?.buffer.aggregate))
+      assert.equal(bufferGet.ok?.buffer.pieces.length, totalPiecesGroup1)
+      // Validate min piece date
+      assert.ok(group1Message.minPieceInsertedAt)
+
+      const minPieceInsertedAtDate = new Date(
+        Math.min(
+          ...(bufferGet.ok?.buffer.pieces?.map((bf) =>
+            new Date(bf.insertedAt).getTime()
+          ) || [])
+        )
+      )
+      assert.equal(
+        minPieceInsertedAtDate.toISOString(),
+        group1Message.minPieceInsertedAt
+      )
+      /** @type {AggregateOfferMessage} */
+      // @ts-expect-error cannot infer buffer message
+      const group2Message = context.queuedMessages
+        .get('aggregateOfferQueue')
+        ?.find(
+          // @ts-expect-error cannot infer buffer message
+          (msg) => msg.group === group2
+        )
+      const bufferGet2 = await context.bufferStore.get(group2Message.buffer)
+      assert.ok(bufferGet2.ok)
+      assert.ok(bufferGet2.ok?.block.equals(group2Message.buffer))
+      assert.equal(bufferGet2.ok?.buffer.group, group2)
+      assert.ok(group2Message.aggregate.equals(bufferGet2.ok?.buffer.aggregate))
+      assert.equal(bufferGet2.ok?.buffer.pieces.length, totalPiecesGroup2)
+      // Validate min piece date
+      assert.ok(group2Message.minPieceInsertedAt)
+
+      const minPieceInsertedAtDate2 = new Date(
+        Math.min(
+          ...(bufferGet2.ok?.buffer.pieces?.map((bf) =>
+            new Date(bf.insertedAt).getTime()
+          ) || [])
+        )
+      )
+      assert.equal(
+        minPieceInsertedAtDate2.toISOString(),
+        group2Message.minPieceInsertedAt
+      )
+    },
   'handles buffer queue messages successfully to queue aggregate prepended with a buffer piece':
     async (assert, context) => {
       const group = context.id.did()
@@ -545,6 +835,112 @@ export const test = {
           (remainingBufferGet.ok?.buffer.pieces.length || 0),
         totalPieces
       )
+    },
+  'handles buffer queue messages successfully where only some groups have aggregates':
+    async (assert, context) => {
+      const group1 = context.id.did()
+      const { buffers, blocks } = await getBuffers(2, group1, {
+        length: 100,
+        size: 128,
+      })
+      const group2 = 'did:example:another-group'
+      const { buffers: buffers2, blocks: blocks2 } = await getBuffers(
+        2,
+        group2,
+        {
+          length: 10,
+          size: 128,
+        }
+      )
+      const totalPiecesGroup1 = buffers.reduce((acc, v) => {
+        acc += v.pieces.length
+        return acc
+      }, 0)
+      const totalPiecesGroup2 = buffers2.reduce((acc, v) => {
+        acc += v.pieces.length
+        return acc
+      }, 0)
+
+      // Store buffers
+      for (let i = 0; i < blocks.length; i++) {
+        const putBufferRes = await context.bufferStore.put({
+          buffer: buffers[i],
+          block: blocks[i].cid,
+        })
+        assert.ok(putBufferRes.ok)
+      }
+      for (let i = 0; i < blocks2.length; i++) {
+        const putBufferRes = await context.bufferStore.put({
+          buffer: buffers2[i],
+          block: blocks2[i].cid,
+        })
+        assert.ok(putBufferRes.ok)
+      }
+
+      // Handle messages
+      const handledMessageRes = await AggregatorEvents.handleBufferQueueMessage(
+        {
+          ...context,
+          config: {
+            minAggregateSize: 2 ** 19,
+            minUtilizationFactor: 10e5,
+            maxAggregateSize: 2 ** 35,
+          },
+        },
+        blocks
+          .map((b) => ({
+            pieces: b.cid,
+            group: group1,
+          }))
+          .concat(
+            blocks2.map((b) => ({
+              pieces: b.cid,
+              group: group2,
+            }))
+          )
+      )
+      assert.ok(handledMessageRes.ok)
+      assert.equal(handledMessageRes.ok?.aggregatedPieces, totalPiecesGroup1)
+
+      // Validate queue and store
+      await pWaitFor(
+        () =>
+          context.queuedMessages.get('bufferQueue')?.length === 1 &&
+          context.queuedMessages.get('aggregateOfferQueue')?.length === 1
+      )
+
+      /** @type {AggregateOfferMessage} */
+      // @ts-expect-error cannot infer buffer message
+      const group1Message = context.queuedMessages.get('aggregateOfferQueue')[0]
+      const bufferGet = await context.bufferStore.get(group1Message.buffer)
+      assert.ok(bufferGet.ok)
+      assert.ok(bufferGet.ok?.block.equals(group1Message.buffer))
+      assert.equal(bufferGet.ok?.buffer.group, group1)
+      assert.ok(group1Message.aggregate.equals(bufferGet.ok?.buffer.aggregate))
+      assert.equal(bufferGet.ok?.buffer.pieces.length, totalPiecesGroup1)
+      // Validate min piece date
+      assert.ok(group1Message.minPieceInsertedAt)
+
+      const minPieceInsertedAtDate = new Date(
+        Math.min(
+          ...(bufferGet.ok?.buffer.pieces?.map((bf) =>
+            new Date(bf.insertedAt).getTime()
+          ) || [])
+        )
+      )
+      assert.equal(
+        minPieceInsertedAtDate.toISOString(),
+        group1Message.minPieceInsertedAt
+      )
+      /** @type {BufferMessage} */
+      // @ts-expect-error cannot infer buffer message
+      const group2Message = context.queuedMessages.get('bufferQueue')?.[0]
+      const bufferGet2 = await context.bufferStore.get(group2Message.pieces)
+      assert.ok(bufferGet2.ok)
+      assert.ok(bufferGet2.ok?.block.equals(group2Message.pieces))
+      assert.equal(bufferGet2.ok?.buffer.group, group2)
+      assert.ok(!bufferGet2.ok?.buffer.aggregate)
+      assert.equal(bufferGet2.ok?.buffer.pieces.length, totalPiecesGroup2)
     },
   'handles buffer queue messages successfully when max aggregate pieces is exceeded':
     async (assert, context) => {
