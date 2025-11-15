@@ -28,6 +28,7 @@ import * as AgentMessage from './utils/agent-message.js'
 
 export * from './types.js'
 export { AgentMessage }
+export { VIC_DEBUG_VERSION } from './debug-version.js'
 
 /**
  * @param {Omit<Types.UcantoServerContext, 'validateAuthorization'>} options
