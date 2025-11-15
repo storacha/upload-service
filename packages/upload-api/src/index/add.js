@@ -20,9 +20,11 @@ export const provide = (context) =>
  * @returns {Promise<API.Result<API.SpaceIndexAddSuccess, API.SpaceIndexAddFailure>>}
  */
 const add = async ({ capability }, context) => {
+  console.error('add called with capability:', capability);
   const space = capability.with
   const idxLink = capability.nb.index
 
+  console.error('assertRegistered')
   const [providersRes, idxAllocRes] = await Promise.all([
     context.provisionsStorage.getStorageProviders(space),
     // ensure the index was stored in the agent's space
@@ -31,6 +33,7 @@ const add = async ({ capability }, context) => {
   if (providersRes.error) return providersRes
   if (idxAllocRes.error) return idxAllocRes
 
+  console.error('fetching the index from the network')
   // fetch the index from the network
   const idxBlobRes = await context.blobRetriever.stream(idxLink.multihash)
   if (!idxBlobRes.ok) {
@@ -43,6 +46,7 @@ const add = async ({ capability }, context) => {
     return idxBlobRes
   }
 
+  console.error('parsing index')
   /** @type {Uint8Array[]} */
   const chunks = []
 
@@ -60,9 +64,11 @@ const add = async ({ capability }, context) => {
     console.warn('failed to stream index blob', err)
   }
 
+  console.error('extracting index')
   const idxRes = ShardedDAGIndex.extract(concat(chunks))
   if (!idxRes.ok) return idxRes
 
+  console.error('ensuring indexed shards are allocated in the agent\'s space')
   // ensure indexed shards are allocated in the agent's space
   const shardDigests = [...idxRes.ok.shards.keys()]
   const shardAllocRes = await Promise.all(
@@ -75,6 +81,9 @@ const add = async ({ capability }, context) => {
   }
 
   // TODO: randomly validate slices in the index correspond to slices in the blob
+
+  console.error(context.ipniService ? 'publish to IPNI' : 'skip IPNI')
+  console.error('publishing index claim')
 
   const publishRes = await Promise.all([
     // publish the index data to IPNI
@@ -135,9 +144,12 @@ const publishIndexClaim = async (ctx, { content, index, providers }) => {
       .invoke({ ...ctx.claimsService.invocationConfig, ...params })
       .execute(ctx.claimsService.connection)
   } else {
+    console.error('publishing index claim to indexing service')
     res = await Assert.index
       .invoke({ ...ctx.indexingService.invocationConfig, ...params })
       .execute(ctx.indexingService.connection)
   }
+
+  console.error('published index claim', res.out)
   return res.out
 }
