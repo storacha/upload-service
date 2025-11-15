@@ -1,3 +1,10 @@
+## 1.6.28 (2025-11-15)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.16
+- Updated @storacha/upload-api to 2.6.1
+
 ## 1.6.27 (2025-11-12)
 
 ### 🧱 Updated Dependencies
