@@ -20,100 +20,76 @@
   ],
   "exports": {
     ".": {
-      "types": "./dist/lib.d.ts",
-      "import": "./dist/lib.js"
+      "import": "./src/lib.js"
     },
     "./types": {
-      "types": "./dist/types.d.ts",
-      "import": "./dist/types.js"
+      "import": "./src/types.js"
     },
     "./access": {
-      "types": "./dist/access.d.ts",
-      "import": "./dist/access.js"
+      "import": "./src/access.js"
     },
     "./admin": {
-      "types": "./dist/admin.d.ts",
-      "import": "./dist/admin.js"
+      "import": "./src/admin.js"
     },
     "./blob": {
-      "types": "./dist/blob.d.ts",
-      "import": "./dist/blob.js"
+      "import": "./src/blob.js"
     },
     "./console": {
-      "types": "./dist/console.d.ts",
-      "import": "./dist/console.js"
+      "import": "./src/console.js"
     },
     "./consumer": {
-      "types": "./dist/consumer.d.ts",
-      "import": "./dist/consumer.js"
+      "import": "./src/consumer.js"
     },
     "./customer": {
-      "types": "./dist/customer.d.ts",
-      "import": "./dist/customer.js"
+      "import": "./src/customer.js"
     },
     "./errors": {
-      "types": "./dist/errors.d.ts",
-      "import": "./dist/errors.js"
+      "import": "./src/errors.js"
     },
     "./index": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./src/index.js"
     },
     "./plan": {
-      "types": "./dist/plan.d.ts",
-      "import": "./dist/plan.js"
+      "import": "./src/plan.js"
     },
     "./provider": {
-      "types": "./dist/provider.d.ts",
-      "import": "./dist/provider.js"
+      "import": "./src/provider.js"
     },
     "./rate-limit": {
-      "types": "./dist/rate-limit.d.ts",
-      "import": "./dist/rate-limit.js"
+      "import": "./src/rate-limit.js"
     },
     "./space": {
-      "types": "./dist/space.d.ts",
-      "import": "./dist/space.js"
+      "import": "./src/space.js"
     },
     "./subscription": {
-      "types": "./dist/subscription.d.ts",
-      "import": "./dist/subscription.js"
+      "import": "./src/subscription.js"
     },
     "./ucan": {
-      "types": "./dist/ucan.d.ts",
-      "import": "./dist/ucan.js"
+      "import": "./src/ucan.js"
     },
     "./upload": {
-      "types": "./dist/upload.d.ts",
-      "import": "./dist/upload.js"
+      "import": "./src/upload.js"
     },
     "./usage": {
-      "types": "./dist/usage.d.ts",
-      "import": "./dist/usage.js"
+      "import": "./src/usage.js"
     },
     "./utils/revocation": {
-      "types": "./dist/utils/revocation.d.ts",
-      "import": "./dist/utils/revocation.js"
+      "import": "./src/utils/revocation.js"
     },
     "./validate": {
-      "types": "./dist/validate.d.ts",
-      "import": "./dist/validate.js"
+      "import": "./src/validate.js"
     },
     "./test": {
-      "types": "./dist/test/lib.d.ts",
-      "import": "./dist/test/lib.js"
+      "import": "./src/test/lib.js"
     },
     "./test/context": {
-      "types": "./dist/test/helpers/context.d.ts",
-      "import": "./dist/test/helpers/context.js"
+      "import": "./src/test/helpers/context.js"
     },
     "./test/external-service": {
-      "types": "./dist/test/external-service/index.d.ts",
-      "import": "./dist/test/external-service/index.js"
+      "import": "./src/test/external-service/index.js"
     },
     "./test/utils": {
-      "types": "./dist/test/helpers/utils.d.ts",
-      "import": "./dist/test/helpers/utils.js"
+      "import": "./src/test/helpers/utils.js"
     }
   },
   "scripts": {
