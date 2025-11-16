@@ -1,38 +1,176 @@
 {
-  "name": "storacha",
-  "version": "0.0.0",
-  "private": true,
-  "packageManager": "pnpm@10.1.0+sha512.c89847b0667ddab50396bbbd008a2a43cf3b581efd59cf5d9aa8923ea1fb4b8106c041d540d08acb095037594d73ebc51e1ec89ee40c88b30b8a66c0fae0ac1b",
-  "scripts": {},
+  "name": "@storacha/upload-api",
+  "description": "The upload api for storacha.network",
+  "publishConfig": {
+    "access": "public"
+  },
+  "version": "2.3.2",
+  "type": "module",
+  "main": "packages/upload-api/./src/lib.js",
+  "homepage": "https://storacha.network",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storacha/upload-service.git",
+    "directory": "packages/upload-api"
+  },
+  "files": [
+    "src",
+    "dist",
+    "!dist/**/*.js.map"
+  ],
+  "exports": {
+    ".": {
+      "import": "./packages/upload-api/src/lib.js"
+    },
+    "./types": {
+      "import": "./packages/upload-api/src/types.js"
+    },
+    "./access": {
+      "import": "./packages/upload-api/src/access.js"
+    },
+    "./admin": {
+      "import": "./packages/upload-api/src/admin.js"
+    },
+    "./blob": {
+      "import": "./packages/upload-api/src/blob.js"
+    },
+    "./console": {
+      "import": "./packages/upload-api/src/console.js"
+    },
+    "./consumer": {
+      "import": "./packages/upload-api/src/consumer.js"
+    },
+    "./customer": {
+      "import": "./packages/upload-api/src/customer.js"
+    },
+    "./errors": {
+      "import": "./packages/upload-api/src/errors.js"
+    },
+    "./index": {
+      "import": "./packages/upload-api/src/index.js"
+    },
+    "./plan": {
+      "import": "./packages/upload-api/src/plan.js"
+    },
+    "./provider": {
+      "import": "./packages/upload-api/src/provider.js"
+    },
+    "./rate-limit": {
+      "import": "./packages/upload-api/src/rate-limit.js"
+    },
+    "./space": {
+      "import": "./packages/upload-api/src/space.js"
+    },
+    "./subscription": {
+      "import": "./packages/upload-api/src/subscription.js"
+    },
+    "./ucan": {
+      "import": "./packages/upload-api/src/ucan.js"
+    },
+    "./upload": {
+      "import": "./packages/upload-api/src/upload.js"
+    },
+    "./usage": {
+      "import": "./packages/upload-api/src/usage.js"
+    },
+    "./utils/revocation": {
+      "import": "./packages/upload-api/src/utils/revocation.js"
+    },
+    "./validate": {
+      "import": "./packages/upload-api/src/validate.js"
+    },
+    "./test": {
+      "import": "./packages/upload-api/src/test/lib.js"
+    },
+    "./test/context": {
+      "import": "./packages/upload-api/src/test/helpers/context.js"
+    },
+    "./test/external-service": {
+      "import": "./packages/upload-api/src/test/external-service/index.js"
+    },
+    "./test/utils": {
+      "import": "./packages/upload-api/src/test/helpers/utils.js"
+    }
+  },
+  "scripts": {
+    "dev": "tsc --build --watch --preserveWatchOutput",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+    "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+    "test": "mocha --bail --timeout 10s -n no-warnings -n experimental-vm-modules -n experimental-fetch 'test/**/*.spec.js'",
+    "test-watch": "pnpm build && mocha --bail --timeout 10s --watch --parallel -n no-warnings -n experimental-vm-modules -n experimental-fetch --watch-files src,test",
+    "attw": "attw --pack .",
+    "build": "tsc --build",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "@storacha/access": "workspace:^",
+    "@storacha/blob-index": "workspace:^",
+    "@storacha/capabilities": "workspace:^",
+    "@storacha/did-mailto": "workspace:^",
+    "@storacha/filecoin-api": "workspace:^",
+    "@storacha/indexing-service-client": "2.2.0-rc.3",
+    "@ucanto/client": "catalog:",
+    "@ucanto/interface": "catalog:",
+    "@ucanto/principal": "catalog:",
+    "@ucanto/server": "catalog:",
+    "@ucanto/transport": "catalog:",
+    "@ucanto/validator": "catalog:",
+    "@web3-storage/content-claims": "catalog:",
+    "@web3-storage/upload-api": "catalog:",
+    "multiformats": "catalog:",
+    "uint8arrays": "^5.0.3"
+  },
   "devDependencies": {
-    "@nx/devkit": "20.3.2",
-    "@nx/js": "catalog:",
-    "@nx/next": "20.3.2",
-    "@types/npm-registry-fetch": "^8.0.7",
-    "depcheck": "catalog:",
-    "eslint": "catalog:",
-    "lint-staged": "catalog:",
-    "loglevel": "^1.9.2",
-    "next": "catalog:",
-    "npm-registry-fetch": "^18.0.2",
-    "nx": "catalog:",
-    "octokit": "^4.1.2",
-    "prettier": "2.8.3",
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "simple-git": "^3.27.0",
-    "tsx": "^4.19.3",
+    "@arethetypeswrong/cli": "catalog:",
+    "@ipld/car": "^5.1.1",
+    "@ipld/dag-ucan": "^3.4.5",
+    "@storacha/blob-index": "workspace:^",
+    "@storacha/eslint-config": "workspace:^",
+    "@storacha/one-webcrypto": "catalog:",
+    "@types/mocha": "^10.0.1",
+    "@typescript-eslint/eslint-plugin": "catalog:",
+    "@ucanto/core": "catalog:",
+    "@web-std/blob": "catalog:",
+    "@web3-storage/sigv4": "^1.0.2",
+    "is-subset": "catalog:",
+    "mocha": "^10.2.0",
     "typescript": "catalog:"
   },
-  "engines": {
-    "node": ">=16"
-  },
-  "pnpm": {
-    "overrides": {
-      "hd-scripts>@typescript-eslint/eslint-plugin": "catalog:",
-      "hd-scripts>@typescript-eslint/parser": "catalog:",
-      "eslint-config-standard-with-typescript>@typescript-eslint/eslint-plugin": "catalog:",
-      "eslint-config-standard-with-typescript>@typescript-eslint/parser": "catalog:"
+  "eslintConfig": {
+    "extends": [
+      "@storacha/eslint-config"
+    ],
+    "env": {
+      "es2022": true,
+      "mocha": true,
+      "browser": true,
+      "node": true
+    },
+    "ignorePatterns": [
+      "dist",
+      "coverage",
+      "src/types.js",
+      "src/test/types.js"
+    ],
+    "rules": {
+      "@typescript-eslint/no-empty-object-type": "off"
     }
+  },
+  "depcheck": {
+    "specials": [
+      "bin"
+    ],
+    "ignorePatterns": [
+      "dist"
+    ],
+    "ignores": [
+      "dist",
+      "@types/*",
+      "@storacha/eslint-config"
+    ]
+  },
+  "engines": {
+    "node": ">=16.15"
   }
 }
