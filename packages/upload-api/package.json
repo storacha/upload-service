@@ -100,8 +100,7 @@
     "test": "mocha --bail --timeout 10s -n no-warnings -n experimental-vm-modules -n experimental-fetch 'test/**/*.spec.js'",
     "test-watch": "pnpm build && mocha --bail --timeout 10s --watch --parallel -n no-warnings -n experimental-vm-modules -n experimental-fetch --watch-files src,test",
     "attw": "attw --pack .",
-    "build": "tsc --build",
-    "prepare": "npm run build"
+    "build": "tsc --build"
   },
   "dependencies": {
     "@storacha/access": "workspace:^",
