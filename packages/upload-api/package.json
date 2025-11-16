@@ -14,6 +14,7 @@
     "directory": "packages/upload-api"
   },
   "files": [
+    "src",
     "dist",
     "!dist/**/*.js.map"
   ],
