@@ -1,3 +1,4 @@
+process.env.LOG_LEVEL = 'info'
 import * as fs from 'fs'
 import dotenv from 'dotenv'
 import { CID } from 'multiformats'
@@ -24,7 +25,7 @@ async function main() {
 
   // encrypted content CID
   const cid = CID.parse(
-    'bafyreibridc66652gxdxe4bfh2v5ezsryvnjbswxff62od5oxsx6fkaroa'
+    'bafyreigmpvb4rhs6uod7qzxw65fxgruagg5x37swmf5p434cto36nlz7a4'
   )
 
   const delegationCarBuffer = fs.readFileSync('delegation.car')
