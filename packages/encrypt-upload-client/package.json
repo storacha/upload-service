@@ -76,13 +76,10 @@
     "@ipld/schema": "catalog:",
     "@lit-protocol/access-control-conditions": "^8.0.2",
     "@lit-protocol/auth": "^8.1.2",
-    "@lit-protocol/auth-helpers": "^8.1.0",
-    "@lit-protocol/constants": "^8.0.4",
-    "@lit-protocol/contracts-sdk": "^7.3.1",
-    "@lit-protocol/encryption": "^7.3.1",
-    "@lit-protocol/lit-auth-client": "^7.3.1",
+    "@lit-protocol/auth-helpers": "^8.1.1",
+    "@lit-protocol/constants": "^8.0.8",
     "@lit-protocol/lit-client": "^8.2.3",
-    "@lit-protocol/lit-node-client": "^7.3.1",
+    "@lit-protocol/logger": "^8.0.2",
     "@lit-protocol/networks": "^8.3.2",
     "@storacha/capabilities": "workspace:^",
     "@storacha/client": "workspace:^",
@@ -100,7 +97,7 @@
     "ethers": "5.7.1",
     "ipfs-unixfs-exporter": "catalog:",
     "multiformats": "catalog:",
-    "viem": "^2.38.5"
+    "viem": "^2.39.0"
   },
   "devDependencies": {
     "@lit-protocol/schemas": "^8.0.2",
