@@ -197,7 +197,11 @@ export function aggregatePieces(bufferedPieces, config) {
 
   for (const [i, bufferedPiece] of bufferedPieces.entries()) {
     // If buffer pieces were already prepended ignore them.
-    if (prependBufferedPieces.some(p => p.piece.toString() == bufferedPiece.piece.toString())) {
+    if (
+      prependBufferedPieces.some(
+        (p) => p.piece.toString() == bufferedPiece.piece.toString()
+      )
+    ) {
       continue
     }
     const p = Piece.fromLink(bufferedPiece.piece)
