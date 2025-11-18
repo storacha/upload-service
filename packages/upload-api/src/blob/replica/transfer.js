@@ -79,9 +79,13 @@ export const poll = async (context, receipt, transferTask) => {
 
   const transferParams = transferMatch.ok.value.nb
   const allocParams = allocMatch.ok.value.nb
+  const sizeMismatch =
+    transferParams.blob.size !== allocParams.blob.size &&
+    transferParams.blob.size !== 0 // zero indicates the storage node already allocated the data
+
   if (
     !equals(transferParams.blob.digest, allocParams.blob.digest) ||
-    transferParams.blob.size !== allocParams.blob.size ||
+    sizeMismatch ||
     transferParams.space.did() !== allocParams.space.did()
   ) {
     return Server.error({
