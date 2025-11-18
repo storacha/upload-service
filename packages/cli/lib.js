@@ -389,6 +389,7 @@ we won't charge your credit card, but we do need a card on file before we will s
 
 Pick a plan below and complete the Stripe checkout flow to get started!
  ______________________________________________________________________________________
+|                            |                            |                            | 
 | Starter (MILD)             | Lite (MEDIUM!)             | Business (SPICY!!)         |
 |____________________________|____________________________|____________________________|
 |                            |                            |                            |
