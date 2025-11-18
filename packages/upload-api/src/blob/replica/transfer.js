@@ -33,6 +33,7 @@ export const poll = async (context, receipt, transferTask) => {
   const allocTaskGetRes = await context.agentStore.invocations.get(
     allocTaskLink
   )
+
   if (allocTaskGetRes.error) {
     return allocTaskGetRes
   }
@@ -76,12 +77,28 @@ export const poll = async (context, receipt, transferTask) => {
   if (authRes.error) {
     return authRes
   }
-
+  const allocReceiptGetRes = await context.agentStore.receipts.get(
+    allocTaskLink
+  )
+  if (allocReceiptGetRes.error) {
+    return allocReceiptGetRes
+  }
+  const allocReceipt = allocReceiptGetRes.ok
+  if (allocReceipt.out.error) {
+    return Server.error({
+      name: 'ReplicaAllocationFailed',
+      message: 'Allocation associated with this transfer has failed',
+    })
+  }
+  const allocReceiptOut = /** @type {API.BlobReplicaAllocateSuccess} */ (
+    allocReceipt.out.ok
+  )
   const transferParams = transferMatch.ok.value.nb
   const allocParams = allocMatch.ok.value.nb
   if (
     !equals(transferParams.blob.digest, allocParams.blob.digest) ||
-    transferParams.blob.size !== allocParams.blob.size ||
+    // Use receipt for size, since allocation may have been for piece that was already there
+    transferParams.blob.size !== allocReceiptOut.size ||
     transferParams.space.did() !== allocParams.space.did()
   ) {
     return Server.error({
