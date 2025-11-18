@@ -53,7 +53,10 @@ export async function handleBufferReducingWithAggregate({
   const minPieceInsertedAtDate = new Date(
     Math.min(
       ...aggregateInfo.addedBufferedPieces.map((bf) =>
-        new Date(bf.insertedAt).getTime()
+        // Buffered pieces should always have an insertedAt field, but for some
+        // reason, one of them in the pipeline does not. This allows this rogue
+        // buffer piece to pass through the pipeline.
+        bf.insertedAt ? new Date(bf.insertedAt).getTime() : Date.now()
       )
     )
   )
@@ -180,7 +183,8 @@ export function aggregatePieces(bufferedPieces, config) {
   const remainingBufferedPieces = []
 
   // start by adding prepend buffered pieces if available
-  for (const bufferedPiece of config.prependBufferedPieces || []) {
+  const prependBufferedPieces = config.prependBufferedPieces || []
+  for (const bufferedPiece of prependBufferedPieces) {
     const p = Piece.fromLink(bufferedPiece.piece)
     if (builder.estimate(p).error) {
       throw new Error(
@@ -192,6 +196,10 @@ export function aggregatePieces(bufferedPieces, config) {
   }
 
   for (const [i, bufferedPiece] of bufferedPieces.entries()) {
+    // If buffer pieces were already prepended ignore them.
+    if (prependBufferedPieces.some(p => p.piece.toString() == bufferedPiece.piece.toString())) {
+      continue
+    }
     const p = Piece.fromLink(bufferedPiece.piece)
     if (builder.estimate(p).error) {
       remainingBufferedPieces.push(bufferedPiece)
