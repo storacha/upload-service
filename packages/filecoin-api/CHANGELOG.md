@@ -1,3 +1,13 @@
+## 1.3.1 (2025-11-18)
+
+### 🩹 Fixes
+
+- fix: buffer piece without `insertedAt` date ([#540](https://github.com/storacha/upload-service/pull/540))
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.1.15 (2025-11-10)
 
 ### 🧱 Updated Dependencies
