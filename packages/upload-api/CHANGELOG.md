@@ -1,3 +1,13 @@
+## 2.6.2 (2025-11-18)
+
+### 🩹 Fixes
+
+- fix transfer/replicate alignment ([78c3ca47](https://github.com/storacha/upload-service/commit/78c3ca47))
+
+### ❤️ Thank You
+
+- hannahhoward
+
 ## 2.6.1 (2025-11-15)
 
 ### 🧱 Updated Dependencies
