@@ -12,11 +12,7 @@ import type {
   SigAlg,
   UploadOptions,
 } from '@storacha/client/types'
-import type {
-  AuthData,
-  EoaAuthContextSchema,
-  PKPAuthContextSchema,
-} from '@lit-protocol/schemas'
+import type { AuthData } from '@lit-protocol/schemas'
 
 export type { IPLDBlock } from '@ucanto/interface'
 export type { SpaceDID } from '@storacha/capabilities/types'
@@ -28,15 +24,16 @@ export type { UploadOptions } from '@storacha/client/types'
 // Import SpaceDID for use in interfaces
 import type { SpaceDID } from '@storacha/capabilities/types'
 import { Account } from 'viem'
-import {
-  createAuthManager,
-  getEoaAuthContext,
-  getPkpAuthContext,
-} from '@lit-protocol/auth'
+import { createAuthManager } from '@lit-protocol/auth'
 
 export type AuthManager = ReturnType<typeof createAuthManager>
-export type EoaAuthContext = ReturnType<typeof getEoaAuthContext>
-export type PkpAuthContext = ReturnType<typeof getPkpAuthContext>
+// Use the actual types that Lit Protocol expects for auth contexts
+export type EoaAuthContext = Awaited<
+  ReturnType<AuthManager['createEoaAuthContext']>
+>
+export type PkpAuthContext = Awaited<
+  ReturnType<AuthManager['createPkpAuthContext']>
+>
 export type AuthenticationContext = EoaAuthContext | PkpAuthContext
 
 export interface FileMetadata {
@@ -300,8 +297,10 @@ export interface ExecuteUcanValidationOptions {
   wrappedInvocationJSON: string
 }
 
+export type AuthContext = EoaAuthContext | PkpAuthContext
+
 export interface ExecuteUcanValidationActionOptions {
-  authContext: EoaAuthContextSchema | PKPAuthContextSchema
+  authContext: AuthContext
   spaceDID: `did:key:${string}`
   identityBoundCiphertext: string
   plaintextKeyHash: string

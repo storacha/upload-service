@@ -119,6 +119,7 @@ export class LitCryptoAdapter {
     const expiration = new Date(Date.now() + 1000 * 60 * 5).toISOString() // 5 min
 
     // Step 2. Get Auth Context for decryption
+    /** @type {Type.AuthContext} */
     let authContext
     if (decryptionConfig.wallet) {
       authContext = await Lit.createEoaAuthContext(
