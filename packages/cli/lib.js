@@ -16,6 +16,8 @@ import * as Service from '@storacha/client/service'
 import { StoreConf } from '@storacha/client/stores/conf'
 import * as DIDMailto from '@storacha/did-mailto'
 import { CarReader } from '@ipld/car'
+import { select } from '@inquirer/prompts'
+import { Account } from '@storacha/client/account'
 
 /**
  * @typedef {import('@storacha/client/types').AnyLink} AnyLink
@@ -373,4 +375,33 @@ export const parseAccessFromOptions = (options) => {
       encryption: { provider, algorithm },
     }
   }
+}
+
+/**
+ * 
+ * @param {Account} account 
+ * @returns {Promise<import('@ucanto/interface').Result<{planID: import('@ipld/dag-ucan').DID}, Error>>}
+ */
+export async function chooseBillingPlanAndCheckout(account){
+    console.log("You do not appear to have a Storacha billing plan.")
+    /** @type {import('@ipld/dag-ucan').DID} */
+    const selectedPlan = await select({
+      message: 'Please choose a plan:',
+      choices: [
+        { name: 'Mild 🌶️', value: 'did:web:starter.storacha.network' },
+        { name: 'Medium 🌶️🌶️', value: 'did:web:lite.storacha.network' },
+        { name: 'Spicy! 🌶️🌶️🌶️', value: 'did:web:business.storacha.network' }
+      ],
+    })
+    const checkoutSessionResponse = await account.plan.createCheckoutSession(
+      account.did(),
+      {
+        planID: selectedPlan,
+        redirectAfterCompletion: false
+      })
+    if (checkoutSessionResponse.error) {
+      return checkoutSessionResponse
+    }
+    console.log(`Excellent choice! Please visit ${checkoutSessionResponse.ok?.url} to enter payment details. Come back here once you've successfully checked out.`)
+    return { ok: { planID: selectedPlan }}
 }

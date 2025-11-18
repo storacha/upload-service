@@ -4,7 +4,7 @@ import * as W3Account from '@storacha/client/account'
 import * as UcantoClient from '@ucanto/client'
 import { HTTP } from '@ucanto/transport'
 import * as CAR from '@ucanto/transport/car'
-import { getClient, parseEmail } from './lib.js'
+import { chooseBillingPlanAndCheckout, getClient, parseEmail } from './lib.js'
 import process from 'node:process'
 import * as DIDMailto from '@storacha/did-mailto'
 import * as Account from './account.js'
@@ -222,6 +222,9 @@ const setupBilling = async (
     : await selectAccount(client)
 
   if (account) {
+    console.log("You do not appear to have a Storacha billing plan.")
+    const checkoutResponse = await chooseBillingPlanAndCheckout(account)
+    if (checkoutResponse.error) return { error: { reason: 'error', cause: checkoutResponse.error } }
     const spinner = ora(waitMessage).start()
 
     let plan = null
