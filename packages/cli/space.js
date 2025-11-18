@@ -69,7 +69,6 @@ export const create = async (name, options) => {
   }
 
   if (options.customer !== false) {
-    console.log('🏗️ To serve this space we need to set a billing account')
     const setup = await setupBilling(client, {
       customer: options.customer,
       space: space.did(),
@@ -218,11 +217,10 @@ const setupBilling = async (
   }
 ) => {
   const account = customer
-    ? await useAccount(client, { email: customer })
+    ? useAccount(client, { email: customer })
     : await selectAccount(client)
 
   if (account) {
-    console.log("You do not appear to have a Storacha billing plan.")
     const checkoutResponse = await chooseBillingPlanAndCheckout(account)
     if (checkoutResponse.error) return { error: { reason: 'error', cause: checkoutResponse.error } }
     const spinner = ora(waitMessage).start()
