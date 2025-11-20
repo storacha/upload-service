@@ -12,14 +12,20 @@ import { STORACHA_LIT_ACTION_CID } from '../config/constants.js'
  * @returns {import('@lit-protocol/access-control-conditions').AccessControlConditions} - The access control conditions
  */
 export const getAccessControlConditions = (spaceDID) => {
-  const acc = createAccBuilder()
-    .requireLitAction(
-      STORACHA_LIT_ACTION_CID,
-      'decrypt',
-      [':currentActionIpfsId', spaceDID],
-      STORACHA_LIT_ACTION_CID
-    )
-    .build()
+  const rawAcc = {
+    conditionType: 'evmBasic',
+    contractAddress: '',
+    standardContractType: '',
+    chain: 'ethereum',
+    method: '',
+    parameters: [':currentActionIpfsId', spaceDID],
+    returnValueTest: {
+      comparator: '=',
+      value: STORACHA_LIT_ACTION_CID,
+    },
+  }
+
+  const acc = createAccBuilder().unifiedAccs(rawAcc).build()
 
   console.log('Access Control Conditions:\n', acc)
 

@@ -96,35 +96,67 @@ export const extractFileMetadata = async (decryptedStream) => {
     const lengthView = new DataView(header.buffer, 0, 4)
     const metadataLength = lengthView.getUint32(0, true)
 
-    // Validate length
-    if (metadataLength < 0 || metadataLength > METADATA_HEADER_SIZE - 4) {
-      throw new Error('Invalid metadata length')
-    }
+    // Detect if this is a valid metadata header or raw file content
+    // Valid metadata length should be 0-1020, anything else indicates no metadata header
+    const hasValidMetadataHeader =
+      metadataLength >= 0 && metadataLength <= METADATA_HEADER_SIZE - 4
 
     let fileMetadata = undefined
-    if (metadataLength > 0) {
-      // Extract and parse metadata
-      const metadataBytes = header.slice(4, 4 + metadataLength)
-      const metadataJson = new TextDecoder('utf-8', { fatal: true }).decode(
-        metadataBytes
+    let headerBytesToInclude = null
+
+    if (hasValidMetadataHeader) {
+      // Valid metadata header detected
+      if (metadataLength > 0) {
+        try {
+          // Extract and parse metadata
+          const metadataBytes = header.slice(4, 4 + metadataLength)
+          const metadataJson = new TextDecoder('utf-8', { fatal: true }).decode(
+            metadataBytes
+          )
+          const parsedMetadata = secureJsonParse(metadataJson)
+
+          // Use existing validation - if it throws, treat as no metadata
+          validateMetadataStructure(parsedMetadata)
+          fileMetadata = parsedMetadata
+        } catch (error) {
+          // JSON parsing or validation failed - treat as no metadata
+          console.warn(
+            'Metadata parsing/validation failed - treating as file without metadata:',
+            error
+          )
+          headerBytesToInclude = header
+        }
+      }
+      // If metadataLength is 0, header is consumed normally (no metadata but valid header)
+    } else {
+      // Invalid metadata length - treat entire stream as file content without metadata
+      console.warn(
+        `Detected file without metadata header (apparent length: ${metadataLength})`
       )
-      fileMetadata = secureJsonParse(metadataJson)
-      validateMetadataStructure(fileMetadata)
+      // Include the "header" bytes as part of file content
+      headerBytesToInclude = header
     }
 
-    // Create file stream (header is consumed, continue with rest)
-    // Include any remainder bytes from the header read first
+    // Create file stream (reusing logic for both cases)
     let remainderEnqueued = false
+    let headerEnqueued = !headerBytesToInclude // Skip header injection if no header to include
     const fileStream = new ReadableStream({
       async pull(controller) {
-        // First, enqueue any remainder bytes from header read
+        // First, enqueue header bytes if this file has no metadata header
+        if (!headerEnqueued && headerBytesToInclude) {
+          controller.enqueue(headerBytesToInclude)
+          headerEnqueued = true
+          return
+        }
+
+        // Then, enqueue any remainder bytes from the header read
         if (!remainderEnqueued && remainder) {
           controller.enqueue(remainder)
           remainderEnqueued = true
           return
         }
 
-        // Then continue with the reader
+        // Finally, continue with the reader
         const { done, value } = await reader.read()
         if (done) {
           controller.close()
