@@ -111,7 +111,7 @@ export default function StripePricingTable({ freeTrial = false, redirectAfterChe
   return (
     <div className="flex flex-col md:flex-row gap-8">
       <PlanPicker
-        name="Mild"
+        name="Starter"
         peppers={1}
         price={0}
         storage="5GB"
@@ -121,7 +121,7 @@ export default function StripePricingTable({ freeTrial = false, redirectAfterChe
         freeTrial={freeTrial}
       />
       <PlanPicker
-        name="Medium"
+        name="Lite"
         peppers={2}
         price={10}
         storage="100GB"
@@ -131,7 +131,7 @@ export default function StripePricingTable({ freeTrial = false, redirectAfterChe
         freeTrial={freeTrial}
       />
       <PlanPicker
-        name="Extra Spicy"
+        name="Business"
         peppers={3}
         price={100}
         storage="2TB"
@@ -149,6 +149,5 @@ export function StripeTrialPricingTable({ className = '' }) {
 }
 
 export function SSOIframeStripePricingTable({ className = '' }) {
-  return <StripePricingTable redirectAfterCheckout={false} />
-
+  return (<StripePricingTable redirectAfterCheckout={false} />)
 }
