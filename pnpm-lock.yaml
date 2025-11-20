@@ -941,9 +941,6 @@ importers:
       '@lit-protocol/lit-client':
         specifier: ^8.2.3
         version: 8.2.3(@types/react@19.2.7)(encoding@0.1.13)(react@19.2.1)(typescript@5.9.3)(use-sync-external-store@1.6.0(react@19.2.1))(viem@2.41.2(typescript@5.9.3)(zod@3.24.3))
-      '@lit-protocol/logger':
-        specifier: ^8.0.2
-        version: 8.0.2
       '@lit-protocol/networks':
         specifier: 8.3.1
         version: 8.3.1(@types/react@19.2.7)(react@19.2.1)(typescript@5.9.3)(use-sync-external-store@1.6.0(react@19.2.1))(viem@2.41.2(typescript@5.9.3)(zod@3.24.3))

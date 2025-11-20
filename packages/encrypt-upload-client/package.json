@@ -79,7 +79,6 @@
     "@lit-protocol/auth-helpers": "^8.1.1",
     "@lit-protocol/constants": "^8.0.8",
     "@lit-protocol/lit-client": "^8.2.3",
-    "@lit-protocol/logger": "^8.0.2",
     "@lit-protocol/networks": "8.3.1",
     "@storacha/capabilities": "workspace:^",
     "@storacha/client": "workspace:^",
