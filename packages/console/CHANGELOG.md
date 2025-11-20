@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.16.1](https://github.com/storacha/upload-service/compare/console-v2.16.0...console-v2.16.1) (2025-11-20)
+
+
+### Fixes
+
+* two improvements to new plan gate ([#543](https://github.com/storacha/upload-service/issues/543)) ([5297f9c](https://github.com/storacha/upload-service/commit/5297f9ca0542b1c397676bc5593b67f26f15b050))
+
 ## [2.16.0](https://github.com/storacha/upload-service/compare/console-v2.15.0...console-v2.16.0) (2025-11-11)
 
 
