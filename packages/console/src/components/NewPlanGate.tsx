@@ -97,7 +97,7 @@ export function PlanGate({ children }: { children: ReactNode }): ReactNode {
   }
 
   // Show loader while waiting for plan, regardless of iframe context
-  if (isLoading) {
+  if (!plan && isLoading) {
     return <TopLevelLoader />
   }
 
