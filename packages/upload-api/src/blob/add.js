@@ -171,7 +171,27 @@ async function allocate({ context, blob, space, cause }) {
   }
 
   const task = await configure.ok.invocation.delegate()
-  const receipt = await configure.ok.invocation.execute(configure.ok.connection)
+
+  let receipt
+  try {
+    receipt = await configure.ok.invocation.execute(configure.ok.connection)
+  } catch (error) {
+    const endpoint =
+      'url' in configure.ok.connection.channel
+        ? configure.ok.connection.channel.url
+        : '(endpoint unknown)'
+    console.error(
+      'Blob allocation failed on',
+      configure.ok.invocation.audience.did(),
+      endpoint,
+      error
+    )
+    return Server.error({
+      name: 'AllocationFailed',
+      message: 'Blob allocation failed',
+      cause: error,
+    })
+  }
 
   // record the invocation and the receipt, so we can retrieve it later when we
   // get a http/put receipt in ucan/conclude
