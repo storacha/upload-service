@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.17.0](https://github.com/storacha/upload-service/compare/console-v2.16.1...console-v2.17.0) (2025-11-21)
+
+
+### Features
+
+* add "default checkout confirmation" page ([#547](https://github.com/storacha/upload-service/issues/547)) ([27e3af4](https://github.com/storacha/upload-service/commit/27e3af404ae7f2c1e7e75dba01e20be0d5413fd8))
+
 ## [2.16.1](https://github.com/storacha/upload-service/compare/console-v2.16.0...console-v2.16.1) (2025-11-20)
 
 
