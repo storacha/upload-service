@@ -53,9 +53,11 @@ const nextConfig = {
 
 /** @type {(phase: string) => Promise<import('next').NextConfig & import('@nx/next/plugins/with-nx').WithNxOptions & import('@sentry/nextjs').WithSentryConfig>} */
 const withCustom = async (phase) => {
-  const nxConfig = withNx(nextConfig)
-  const config = await nxConfig(phase)
-  return withSentryConfig(config,  { ...sentryWebpackPluginOptions, ...sentryOptions })
+  const nxConfigCreator = withNx(nextConfig)
+  const nxConfig = await nxConfigCreator(phase)
+  const config = withSentryConfig(nxConfig,  { ...sentryWebpackPluginOptions, ...sentryOptions })
+  if ("eslint" in config) delete config.eslint;
+  return config
 }
 
 module.exports = withCustom
