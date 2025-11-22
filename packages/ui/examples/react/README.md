@@ -17,3 +17,7 @@ Example projects for using w3ui with [React](https://reactjs.org).
 - [**Uploads List**](https://github.com/storacha/upload-service/tree/packages/ui/examples/react/uploads-list)
 
   A demo of the list of uploads that have been made to an account.
+
+- [**Upload Tool**](https://github.com/storacha/upload-service/tree/packages/ui/examples/react/upload-tool)
+
+  A complete, production-ready upload interface with type selection (File/Directory/CAR), drag-and-drop, progress tracking, and configurable options. Perfect for embedding Storacha upload functionality into any Web3 application.
