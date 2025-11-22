@@ -390,7 +390,7 @@ we won't charge your credit card, but we do need a card on file before we will s
 Pick a plan below and complete the Stripe checkout flow to get started!
  ______________________________________________________________________________________
 |                            |                            |                            | 
-| Starter (MILD)             | Lite (MEDIUM!)             | Business (SPICY!!)         |
+| MILD                       | MEDIUM                     | EXTRA SPICY                |
 |____________________________|____________________________|____________________________|
 |                            |                            |                            |
 | $0/mo                      | $10/mo                     | $100/mo                    | 
@@ -407,9 +407,9 @@ NOTE: Prices may have changed since this CLI was installed - please see https://
   const selectedPlan = await select({
     message: 'Please choose a plan:',
     choices: [
-      { name: 'Starter  🌶️', value: 'did:web:starter.storacha.network' },
-      { name: 'Lite     🌶️ 🌶️', value: 'did:web:lite.storacha.network' },
-      { name: 'Business 🌶️ 🌶️ 🌶️', value: 'did:web:business.storacha.network' }
+      { name: 'Mild        🌶️', value: 'did:web:starter.storacha.network' },
+      { name: 'Medium      🌶️ 🌶️', value: 'did:web:lite.storacha.network' },
+      { name: 'Extra Spicy 🌶️ 🌶️ 🌶️', value: 'did:web:business.storacha.network' }
     ],
   })
   const checkoutSessionResponse = await account.plan.createCheckoutSession(
