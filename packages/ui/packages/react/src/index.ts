@@ -1,5 +1,6 @@
 export * from '@storacha/ui-core'
 export * from './providers/Provider.js'
+export * from './UploaderUI.js'
 export * from './Authenticator.js'
 export * from './Uploader.js'
 export * from './hooks.js'

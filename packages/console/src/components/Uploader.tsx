@@ -1,16 +1,18 @@
 import type {
   OnUploadComplete,
-  ProgressStatus,
-  UploadProgress,
-  CARMetadata,
-  AnyLink
 } from '@storacha/ui-react'
-import { ArrowPathIcon, CloudArrowUpIcon } from '@heroicons/react/24/outline'
+import { CloudArrowUpIcon } from '@heroicons/react/24/outline'
 import {
   UploadStatus,
   Uploader as W3Uploader,
   WrapInDirectoryCheckbox,
-  useUploader
+  useUploader,
+  Uploading as SharedUploading,
+  Errored as SharedErrored,
+  Done as SharedDone,
+  FileDisplay,
+  UploaderConsole as SharedUploaderConsole,
+  humanFileSize
 } from '@storacha/ui-react'
 import { ipfsGatewayURLStr } from '../components/services'
 import { useEffect, useState, type JSX } from 'react';
@@ -18,98 +20,51 @@ import { RadioGroup } from '@headlessui/react'
 import { H2 } from './Text'
 import { logAndCaptureError } from '@/sentry'
 
-function StatusLoader ({ progressStatus }: { progressStatus: ProgressStatus }) {
-  const { total, loaded, lengthComputable } = progressStatus
-  if (lengthComputable) {
-    const percentComplete = Math.floor((loaded / total) * 100)
-    return (
-      <div className='relative w-80 h-4 border border-solid border-white'>
-        <div className='bg-white h-full' style={{ width: `${percentComplete}%` }}>
-        </div>
-      </div>
-    )
-  } else {
-    return <ArrowPathIcon className='animate-spin h-5 w-5' />
-  }
-}
-
-function Loader ({ uploadProgress }: { uploadProgress: UploadProgress }): JSX.Element {
-  return (
-    <div className='flex flex-col my-2'>
-      {Object.values(uploadProgress).map(
-        status => <StatusLoader progressStatus={status} key={status.url} />
-      )}
-    </div>
-  )
-}
-
-export const Uploading = ({
-  file,
-  storedDAGShards,
-  uploadProgress
-}: {
-  file?: File
-  storedDAGShards?: CARMetadata[]
-  uploadProgress: UploadProgress
-}): JSX.Element => (
-  <div className='flex flex-col items-center w-full'>
-    <H2>Uploading {file?.name}</H2>
-    <Loader uploadProgress={uploadProgress} />
-    {storedDAGShards?.map(({ cid, size }) => (
-      <p className='text-xs max-w-full overflow-hidden text-ellipsis' key={cid.toString()}>
-        shard {cid.toString()} ({humanFileSize(size)}) uploaded
+export const Uploading: typeof SharedUploading = (props) => (
+  <SharedUploading
+    {...props}
+    className="text-white"
+    renderTitle={(file) => <H2>Uploading {file?.name}</H2>}
+    renderShardInfo={(shard) => (
+      <p className='text-xs max-w-full overflow-hidden text-ellipsis text-white'>
+        shard {shard.cid.toString()} ({humanFileSize(shard.size)}) uploaded
       </p>
-    ))}
-  </div>
+    )}
+  />
 )
 
-export const Errored = ({ error }: { error: any }): JSX.Element => {
-  useEffect(() => {
-    if (error != null) {
-      // eslint-disable-next-line no-console
+export const Errored: typeof SharedErrored = (props) => (
+  <SharedErrored
+    {...props}
+    className="text-white"
+    onError={(error) => {
       logAndCaptureError(new Error(`Uploader Error: ${error.message}`, { cause: error }))
-    }
-  }, [error])
+    }}
+  />
+)
 
-  return (
-    (<div className='flex flex-col items-center'>
-      <h1>
-        ⚠️ Error: failed to upload file: {error.message}
-      </h1>
-      <p>Check the browser console for details.</p>
-    </div>)
-  );
-}
-
-interface DoneProps {
-  file?: File
-  dataCID?: AnyLink
-  storedDAGShards?: CARMetadata[]
-}
-
-export const Done = ({ dataCID }: DoneProps): JSX.Element => {
+export const Done: typeof SharedDone = (props) => {
   const [, { setFile }] = useUploader()
-  const cid: string = dataCID?.toString() ?? ''
+  
   return (
-    <div className='flex flex-col items-center w-full'>
-      <H2>Uploaded</H2>
-      <a
-        className='font-mono text-xs max-w-full overflow-hidden no-wrap text-ellipsis'
-        href={ipfsGatewayURLStr(cid)}
-      >
-        {cid}
-      </a>
-      <div className='my-4'>
-        <button
-          className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap'
-          onClick={() => {
-            setFile(undefined)
-          }}
-        >
-          Upload Another
-        </button>
-      </div>
-    </div>
+    <SharedDone
+      {...props}
+      className="text-white"
+      renderCIDDisplay={(cid) => (
+        <div className="text-center">
+          <H2 className="mb-2">Uploaded</H2>
+          <a
+            className='font-mono text-xs max-w-full overflow-hidden no-wrap text-ellipsis text-white hover:text-hot-red'
+            href={ipfsGatewayURLStr(cid)}
+          >
+            {cid}
+          </a>
+        </div>
+      )}
+      onUploadAnother={() => {
+        setFile(undefined)
+      }}
+    />
   )
 }
 
@@ -134,7 +89,7 @@ function uploadPrompt (uploadType: UploadType) {
 }
 
 interface UploaderFormProps {
-  space?: any // should be Space, but type not available
+  space?: any
 }
 
 const UploaderForm = ({ space }: UploaderFormProps): JSX.Element => {
@@ -144,9 +99,6 @@ const UploaderForm = ({ space }: UploaderFormProps): JSX.Element => {
   const isPrivateSpace = space?.access?.type === 'private'
   useEffect(() => {
     if (isPrivateSpace) {
-      // For now we load the KMS config from environment variables,
-      // but in the future we can allow the user to configure it via UI
-      // and store it in the space metadata, and load it from there
       setKmsConfig({
         keyManagerServiceURL: process.env.NEXT_PUBLIC_UCAN_KMS_URL as string,
         keyManagerServiceDID: process.env.NEXT_PUBLIC_UCAN_KMS_DID as string,
@@ -258,25 +210,6 @@ const UploaderForm = ({ space }: UploaderFormProps): JSX.Element => {
   )
 }
 
-function pickFileIconLabel (file: File): string | undefined {
-  const type = file.type.split('/')
-  if (type.length === 0 || type.at(0) === '') {
-    const ext = file.name.split('.').at(-1)
-    if (ext !== undefined && ext.length < 5) {
-      return ext
-    }
-    return 'Data'
-  }
-  if (type.at(0) === 'image') {
-    return type.at(-1)
-  }
-  return type.at(0)
-}
-
-function humanFileSize (bytes: number): string {
-  const size = (bytes / (1024 * 1024)).toFixed(2)
-  return `${size} MiB`
-}
 
 const UploaderContents = (): JSX.Element => {
   const [{ status, file }] = useUploader()
@@ -285,17 +218,10 @@ const UploaderContents = (): JSX.Element => {
     return hasFile
       ? (
         <>
-          <div className='flex flex-row'>
-            <div className='w-12 h-12 py-0.5 flex flex-col justify-center items-center bg-hot-red-light text-black text-xs uppercase text-center text-ellipsis rounded-xs mr-4' title={file.type}>
-              {pickFileIconLabel(file)}
-            </div>
-            <div className='flex flex-col justify-around'>
-              <span className='text-sm'>{file.name}</span>
-              <span className='text-xs opacity-50 font-mono'>
-                {humanFileSize(file.size)}
-              </span>
-            </div>
-          </div>
+          <FileDisplay 
+            file={file} 
+            className="text-white"
+          />
           <div className='p-4'>
             <button type='submit' className='inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap' disabled={file === undefined}>
               <CloudArrowUpIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{ marginTop: -4 }} /> Start Upload
@@ -314,30 +240,22 @@ const UploaderContents = (): JSX.Element => {
 }
 
 const UploaderConsole = (): JSX.Element => {
-  const [{ status, file, error, dataCID, storedDAGShards, uploadProgress }] =
-    useUploader()
-
-  switch (status) {
-    case UploadStatus.Uploading: {
-      return <Uploading file={file} storedDAGShards={storedDAGShards} uploadProgress={uploadProgress} />
-    }
-    case UploadStatus.Succeeded: {
-      return (
-        <Done file={file} dataCID={dataCID} storedDAGShards={storedDAGShards} />
-      )
-    }
-    case UploadStatus.Failed: {
-      return <Errored error={error} />
-    }
-    default: {
-      return <></>
-    }
-  }
+  return (
+    <SharedUploaderConsole
+      className="text-white"
+      onError={(error) => {
+        logAndCaptureError(new Error(`Uploader Error: ${error.message}`, { cause: error }))
+      }}
+      renderUploading={(props) => <Uploading {...props} />}
+      renderError={(props) => <Errored {...props} />}
+      renderDone={(props) => <Done {...props} />}
+    />
+  )
 }
 
 export interface SimpleUploaderProps {
   onUploadComplete?: OnUploadComplete
-  space?: any // should be Space, but type not available
+  space?: any
 }
 
 export const Uploader = ({
