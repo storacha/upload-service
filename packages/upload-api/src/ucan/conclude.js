@@ -90,7 +90,7 @@ export function createConcludeInvocation(id, serviceDid, receipt) {
     expiration: Infinity,
     facts: [
       {
-        ...receiptCids.values(),
+        ...[...receiptCids.values()],
       },
     ],
   })
