@@ -155,8 +155,11 @@ async function allocate({ context, blob, space, cause }) {
   let provider, task, receipt
   /** @type {Principal[]} */
   let exclude = []
+  // eslint-disable-next-line no-constant-condition
   while (true) {
-    const candidate = await router.selectStorageProvider(digest, blob.size, { exclude })
+    const candidate = await router.selectStorageProvider(digest, blob.size, {
+      exclude,
+    })
     if (candidate.error) {
       return candidate
     }
@@ -175,7 +178,7 @@ async function allocate({ context, blob, space, cause }) {
 
     const configure = await router.configureInvocation(candidate.ok, cap, {
       expiration: Infinity,
-      channel: { fetch: fetchWithTimeout(allocateExecTimeout) }
+      channel: { fetch: fetchWithTimeout(allocateExecTimeout) },
     })
     if (configure.error) {
       return configure
@@ -186,11 +189,20 @@ async function allocate({ context, blob, space, cause }) {
       task = await configure.ok.invocation.delegate()
       receipt = await configure.ok.invocation.execute(configure.ok.connection)
       if (receipt.out.error) {
-        throw new Error(`allocation failed: ${receipt.out.error.message}`, { cause: receipt.out.error })
+        throw new Error(`allocation failed: ${receipt.out.error.message}`, {
+          cause: receipt.out.error,
+        })
       }
       break
     } catch (err) {
-      console.error(`executing ${Blob.allocate.can} on ${provider?.did()} for blob ${base58btc.encode(blob.digest)} (${blob.size} bytes)`, err)
+      console.error(
+        `executing ${
+          Blob.allocate.can
+        } on ${provider?.did()} for blob ${base58btc.encode(blob.digest)} (${
+          blob.size
+        } bytes)`,
+        err
+      )
       exclude.push(candidate.ok)
       // loop until we run out of candidates
     }

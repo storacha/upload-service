@@ -106,7 +106,8 @@ export interface SelectStorageProviderOptions {
   exclude?: Principal[]
 }
 
-export interface SelectReplicationProvidersOptions extends SelectStorageProviderOptions {}
+export interface SelectReplicationProvidersOptions
+  extends SelectStorageProviderOptions {}
 
 export interface AgentMessageFetch {
   (url: string, init: HTTPRequest<AgentMessage<unknown>>): Await<FetchResponse>
@@ -117,7 +118,8 @@ export interface ChannelOptions {
   headers?: Record<string, string>
 }
 
-export interface ConfigureInvocationOptions extends Omit<UCANOptions, 'audience'> {
+export interface ConfigureInvocationOptions
+  extends Omit<UCANOptions, 'audience'> {
   /**
    * Options for configuring the channel.
    */

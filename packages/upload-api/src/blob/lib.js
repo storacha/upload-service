@@ -175,15 +175,14 @@ export const toLocationCommitment = (root, blocks) => {
  * @param {number} timeout
  * @returns {AgentMessageFetch}
  */
-export const fetchWithTimeout = (timeout) =>
-  async (url, init) => {
-    if (timeout <= 0) throw new Error('timeout must be greater than 0')
-    const controller = new AbortController()
-    const id = setTimeout(() => controller.abort(), timeout)
-    try {
-      // @ts-expect-error body is ByteView (Uint8Array) which is fine to pass
-      return await fetch(url, { ...init, signal: controller.signal })
-    } finally {
-      clearTimeout(id)
-    }
+export const fetchWithTimeout = (timeout) => async (url, init) => {
+  if (timeout <= 0) throw new Error('timeout must be greater than 0')
+  const controller = new AbortController()
+  const id = setTimeout(() => controller.abort(), timeout)
+  try {
+    // @ts-expect-error body is ByteView (Uint8Array) which is fine to pass
+    return await fetch(url, { ...init, signal: controller.signal })
+  } finally {
+    clearTimeout(id)
   }
+}
