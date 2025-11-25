@@ -20,7 +20,7 @@ const stickySelect = new Map()
 export const create = (serviceID, storageProviders) =>
   /** @type {API.RoutingService} */
   ({
-    selectStorageProvider: async (digest) => {
+    selectStorageProvider: async (digest, size, options) => {
       // ensure we pick the same provider for a given digest within a test
       const key = base58btc.encode(digest.bytes)
       let provider = stickySelect.get(key)
@@ -30,9 +30,23 @@ export const create = (serviceID, storageProviders) =>
       ) {
         provider = undefined
       }
+
+      const exclude = options?.exclude ?? []
+      const filteredProviders = storageProviders
+        .filter(p => !exclude.some(e => e.did() === p.id.did()))
+      
+      if (!filteredProviders.length) {
+        return error(
+          /** @type {API.CandidateUnavailable} */ ({
+            name: 'CandidateUnavailable',
+            message: 'no candidates available for blob allocation',
+          })
+        )
+      }
+
       if (!provider) {
         provider =
-          storageProviders[getRandomInt(storageProviders.length - 1)].id
+          filteredProviders[getRandomInt(filteredProviders.length - 1)].id
         stickySelect.set(key, provider)
       }
       return ok(provider)
