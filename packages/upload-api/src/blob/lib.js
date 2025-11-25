@@ -180,7 +180,6 @@ export const fetchWithTimeout = (timeout) => async (url, init) => {
   const controller = new AbortController()
   const id = setTimeout(() => controller.abort(), timeout)
   try {
-    // @ts-expect-error body is ByteView (Uint8Array) which is fine to pass
     return await fetch(url, { ...init, signal: controller.signal })
   } finally {
     clearTimeout(id)
