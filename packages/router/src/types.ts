@@ -7,7 +7,11 @@ import type {
   IssuedInvocationView,
   ConnectionView,
   Principal,
+  HTTPRequest,
+  AgentMessage,
+  Await,
 } from '@ucanto/interface'
+import type { FetchResponse } from '@ucanto/transport/http'
 import type { MultihashDigest } from 'multiformats'
 import type {
   BlobAllocate,
@@ -21,6 +25,32 @@ import type {
   PDPInfoSuccess,
   PDPInfoFailure,
 } from '@storacha/capabilities/types'
+
+export type {
+  Capability,
+  Failure,
+  Result,
+  ServiceMethod,
+  UCANOptions,
+  IssuedInvocationView,
+  ConnectionView,
+  Principal,
+  HTTPRequest,
+  AgentMessage,
+  Await,
+  FetchResponse,
+  MultihashDigest,
+  BlobAllocate,
+  BlobAccept,
+  BlobAllocateSuccess,
+  BlobAcceptSuccess,
+  BlobReplicaAllocate,
+  BlobReplicaAllocateSuccess,
+  BlobReplicaAllocateFailure,
+  PDPInfo,
+  PDPInfoSuccess,
+  PDPInfoFailure,
+}
 
 /**
  * Service interface for blob operations.
@@ -68,12 +98,30 @@ export interface CandidateUnavailable extends Failure {
   name: 'CandidateUnavailable'
 }
 
-export interface SelectReplicationProvidersOptions {
+export interface SelectStorageProviderOptions {
   /**
    * A list of storage providers, in addition to the primary, that should be
    * excluded from the results.
    */
   exclude?: Principal[]
+}
+
+export interface SelectReplicationProvidersOptions extends SelectStorageProviderOptions {}
+
+export interface AgentMessageFetch {
+  (url: string, init: HTTPRequest<AgentMessage<unknown>>): Await<FetchResponse>
+}
+
+export interface ChannelOptions {
+  fetch?: AgentMessageFetch
+  headers?: Record<string, string>
+}
+
+export interface ConfigureInvocationOptions extends Omit<UCANOptions, 'audience'> {
+  /**
+   * Options for configuring the channel.
+   */
+  channel?: ChannelOptions
 }
 
 /**
@@ -87,7 +135,8 @@ export interface RoutingService {
    */
   selectStorageProvider(
     digest: MultihashDigest,
-    size: number
+    size: number,
+    options?: SelectStorageProviderOptions
   ): Promise<Result<Principal, CandidateUnavailable | Failure>>
   /**
    * Select multiple storage nodes that can replicate the passed hash.
@@ -115,6 +164,6 @@ export interface RoutingService {
   >(
     provider: Principal,
     capability: C,
-    options?: Omit<UCANOptions, 'audience'>
+    options?: ConfigureInvocationOptions
   ): Promise<Result<Configuration<C>, ProofUnavailable | Failure>>
 }
