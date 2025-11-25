@@ -4,11 +4,11 @@ import { Absentee, ed25519 } from '@ucanto/principal'
 import { Receipt } from '@ucanto/core'
 import * as CAR from '@ucanto/transport/car'
 import * as SpaceBlobCapabilities from '@storacha/capabilities/space/blob'
+import { CandidateUnavailableError } from '@storacha/router'
 import { createServer, connect } from '../../../../lib.js'
 import { alice, createSpace, registerSpace } from '../../../util.js'
 import { createConcludeInvocation } from '../../../../ucan/conclude.js'
 import { parseBlobAddReceiptNext, uploadBlob } from '../../../helpers/blob.js'
-import { BlobSizeLimitExceededError } from '../../../../blob.js'
 import { MAX_UPLOAD_SIZE } from '../../../../web3.storage/blob/constants.js'
 import { provisionProvider } from '../../../helpers/utils.js'
 
@@ -463,25 +463,16 @@ export const test = {
         proofs: [proof],
       })
       const blobAdd = await invocation.execute(connection)
-      if (blobAdd.out.error) {
-        throw new Error('invocation should not have failed')
-      }
 
-      const work = parseBlobAddReceiptNext(blobAdd)
-      assert.ok(work.allocate.task)
-      assert.ok(work.allocate.receipt.out.error, 'allocation has failed')
+      // The error reported back to upload service is
+      // BlobSizeOutsideOfSupportedRange but it manifests as
+      // CandidateUnavailable due to retries with other storage nodes until
+      // we eventually run out.
+      assert.equal(blobAdd.out.ok, undefined)
       assert.equal(
-        work.allocate.receipt.out.error?.name,
-        BlobSizeLimitExceededError.name,
-        'allocation failed with BlobSizeOutsideOfSupportedRange error'
-      )
-      assert.ok(work.put.task, 'put task was scheduled')
-      assert.ok(work.put.receipt, 'put receipt was received')
-      assert.ok(work.put.receipt?.out.error, 'put receipt has an error')
-      assert.ok(
-        String(work.put.receipt?.out.error?.message).match(
-          /Awaited bafy.* at .out.ok.address.url/
-        )
+        blobAdd.out.error?.name,
+        CandidateUnavailableError.name,
+        'space/blob/add failed with CandidateUnavailable error'
       )
     },
   'space/blob/add fails when there is not enough space left unallocated on a limited plan':

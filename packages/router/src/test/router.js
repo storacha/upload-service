@@ -1,7 +1,8 @@
 import * as API from '@storacha/router/types'
-import { ok, error, Failure } from '@ucanto/core'
+import { ok, error } from '@ucanto/core'
 import { Invocation, Delegation } from '@ucanto/core'
 import { base58btc } from 'multiformats/bases/base58'
+import { CandidateUnavailableError, ProofUnavailableError } from '../index.js'
 
 /**
  * @typedef {{
@@ -32,16 +33,12 @@ export const create = (serviceID, storageProviders) =>
       }
 
       const exclude = options?.exclude ?? []
-      const filteredProviders = storageProviders
-        .filter(p => !exclude.some(e => e.did() === p.id.did()))
-      
+      const filteredProviders = storageProviders.filter(
+        (p) => !exclude.some((e) => e.did() === p.id.did())
+      )
+
       if (!filteredProviders.length) {
-        return error(
-          /** @type {API.CandidateUnavailable} */ ({
-            name: 'CandidateUnavailable',
-            message: 'no candidates available for blob allocation',
-          })
-        )
+        return error(new CandidateUnavailableError())
       }
 
       if (!provider) {
@@ -67,10 +64,9 @@ export const create = (serviceID, storageProviders) =>
 
       if (filteredProviders.length < count) {
         return error(
-          /** @type {API.CandidateUnavailable} */ ({
-            name: 'CandidateUnavailable',
-            message: `Wanted ${count} but only ${filteredProviders.length} are available`,
-          })
+          new CandidateUnavailableError(
+            `Wanted ${count} but only ${filteredProviders.length} are available`
+          )
         )
       }
 
@@ -111,21 +107,3 @@ export const create = (serviceID, storageProviders) =>
 
 /** @param {number} max */
 const getRandomInt = (max) => Math.floor(Math.random() * max)
-
-export class ProofUnavailableError extends Failure {
-  static name = 'ProofUnavailable'
-
-  get name() {
-    return ProofUnavailableError.name
-  }
-
-  /** @param {string} [reason] */
-  constructor(reason) {
-    super()
-    this.reason = reason
-  }
-
-  describe() {
-    return this.reason ?? 'proof unavailable'
-  }
-}
