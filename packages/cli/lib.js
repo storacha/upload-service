@@ -378,11 +378,11 @@ export const parseAccessFromOptions = (options) => {
 }
 
 /**
- * 
- * @param {Account} account 
+ *
+ * @param {Account} account
  * @returns {Promise<import('@ucanto/interface').Result<{planID: import('@ipld/dag-ucan').DID}, Error>>}
  */
-export async function chooseBillingPlanAndCheckout(account){
+export async function chooseBillingPlanAndCheckout(account) {
   console.log(`\u001b[1;31m 
 To get started uploading data you'll need to sign up for a subscription. If you choose the Starter plan
 we won't charge your credit card, but we do need a card on file before we will store your bits.
@@ -409,18 +409,24 @@ NOTE: Prices may have changed since this CLI was installed - please see https://
     choices: [
       { name: 'Mild        🌶️', value: 'did:web:starter.storacha.network' },
       { name: 'Medium      🌶️ 🌶️', value: 'did:web:lite.storacha.network' },
-      { name: 'Extra Spicy 🌶️ 🌶️ 🌶️', value: 'did:web:business.storacha.network' }
+      {
+        name: 'Extra Spicy 🌶️ 🌶️ 🌶️',
+        value: 'did:web:business.storacha.network',
+      },
     ],
   })
   const checkoutSessionResponse = await account.plan.createCheckoutSession(
     account.did(),
     {
       planID: selectedPlan,
-      redirectAfterCompletion: false
-    })
+      redirectAfterCompletion: false,
+    }
+  )
   if (checkoutSessionResponse.error) {
     return checkoutSessionResponse
   }
-  console.log(`Excellent choice! Please visit ${checkoutSessionResponse.ok?.url} to enter payment details. Come back here once you've successfully checked out.`)
-  return { ok: { planID: selectedPlan }}
+  console.log(
+    `Excellent choice! Please visit ${checkoutSessionResponse.ok?.url} to enter payment details. Come back here once you've successfully checked out.`
+  )
+  return { ok: { planID: selectedPlan } }
 }

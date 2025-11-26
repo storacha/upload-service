@@ -86,11 +86,15 @@ export const setupPlan = async (email = '') => {
   if (account) {
     const { error } = await chooseBillingPlanAndCheckout(account)
     if (error) {
-      console.error(`Sorry, there was an error setting up your billing plan - ${error.message}`)
+      console.error(
+        `Sorry, there was an error setting up your billing plan - ${error.message}`
+      )
       process.exit(1)
     }
   } else {
-    console.error(`Please log in with storacha login before setting up your storage plan.`)
+    console.error(
+      `Please log in with storacha login before setting up your storage plan.`
+    )
     process.exit(1)
   }
 }
