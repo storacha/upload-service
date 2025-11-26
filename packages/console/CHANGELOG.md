@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.18.1](https://github.com/storacha/upload-service/compare/console-v2.18.0...console-v2.18.1) (2025-11-26)
+
+
+### Fixes
+
+* trigger console release ([#561](https://github.com/storacha/upload-service/issues/561)) ([87d0829](https://github.com/storacha/upload-service/commit/87d08294f7494e7ab14c88387aee6b7be6c8e7e1))
+
 ## [2.18.0](https://github.com/storacha/upload-service/compare/console-v2.17.0...console-v2.18.0) (2025-11-26)
 
 
