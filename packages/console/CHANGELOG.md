@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.18.2](https://github.com/storacha/upload-service/compare/console-v2.18.1...console-v2.18.2) (2025-11-26)
+
+
+### Fixes
+
+* Revert "Fix/revert plan change ([#560](https://github.com/storacha/upload-service/issues/560))" ([#563](https://github.com/storacha/upload-service/issues/563)) ([ba3c96c](https://github.com/storacha/upload-service/commit/ba3c96cf6f63167046e548b5fcb1f86666d27783))
+
 ## [2.18.1](https://github.com/storacha/upload-service/compare/console-v2.18.0...console-v2.18.1) (2025-11-26)
 
 
