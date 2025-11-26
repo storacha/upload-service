@@ -4,7 +4,7 @@ import * as W3Account from '@storacha/client/account'
 import * as UcantoClient from '@ucanto/client'
 import { HTTP } from '@ucanto/transport'
 import * as CAR from '@ucanto/transport/car'
-import { chooseBillingPlanAndCheckout, getClient, parseEmail } from './lib.js'
+import { getClient, parseEmail } from './lib.js'
 import process from 'node:process'
 import * as DIDMailto from '@storacha/did-mailto'
 import * as Account from './account.js'
@@ -69,6 +69,7 @@ export const create = async (name, options) => {
   }
 
   if (options.customer !== false) {
+    console.log('🏗️ To serve this space we need to set a billing account')
     const setup = await setupBilling(client, {
       customer: options.customer,
       space: space.did(),
@@ -217,12 +218,10 @@ const setupBilling = async (
   }
 ) => {
   const account = customer
-    ? useAccount(client, { email: customer })
+    ? await useAccount(client, { email: customer })
     : await selectAccount(client)
 
   if (account) {
-    const checkoutResponse = await chooseBillingPlanAndCheckout(account)
-    if (checkoutResponse.error) return { error: { reason: 'error', cause: checkoutResponse.error } }
     const spinner = ora(waitMessage).start()
 
     let plan = null

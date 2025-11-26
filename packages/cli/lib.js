@@ -16,8 +16,6 @@ import * as Service from '@storacha/client/service'
 import { StoreConf } from '@storacha/client/stores/conf'
 import * as DIDMailto from '@storacha/did-mailto'
 import { CarReader } from '@ipld/car'
-import { select } from '@inquirer/prompts'
-import { Account } from '@storacha/client/account'
 
 /**
  * @typedef {import('@storacha/client/types').AnyLink} AnyLink
@@ -375,52 +373,4 @@ export const parseAccessFromOptions = (options) => {
       encryption: { provider, algorithm },
     }
   }
-}
-
-/**
- * 
- * @param {Account} account 
- * @returns {Promise<import('@ucanto/interface').Result<{planID: import('@ipld/dag-ucan').DID}, Error>>}
- */
-export async function chooseBillingPlanAndCheckout(account){
-  console.log(`\u001b[1;31m 
-To get started uploading data you'll need to sign up for a subscription. If you choose the Starter plan
-we won't charge your credit card, but we do need a card on file before we will store your bits.
-
-Pick a plan below and complete the Stripe checkout flow to get started!
- ______________________________________________________________________________________
-|                            |                            |                            | 
-| MILD                       | MEDIUM                     | EXTRA SPICY                |
-|____________________________|____________________________|____________________________|
-|                            |                            |                            |
-| $0/mo                      | $10/mo                     | $100/mo                    | 
-| 5GB Storage                | 100GB Storage              | 2000GB Storage             |
-| Add'l storage $0.15 GB/mo. | Add'l storage $0.05 GB/mo. | Add'l storage $0.03 GB/mo. |
-| 5GB Egress                 | 100GB Egress               | 2000GB Egress.             |
-| Add'l egress $0.15 GB/mo.  | Add'l egress $0.05 GB/mo.  | Add'l egress $0.03 GB/mo.  |
-|____________________________|____________________________|____________________________|
-
-NOTE: Prices may have changed since this CLI was installed - please see https://storacha.network/#pricing for our latest plan pricing.
-`)
-
-  /** @type {import('@ipld/dag-ucan').DID} */
-  const selectedPlan = await select({
-    message: 'Please choose a plan:',
-    choices: [
-      { name: 'Mild        🌶️', value: 'did:web:starter.storacha.network' },
-      { name: 'Medium      🌶️ 🌶️', value: 'did:web:lite.storacha.network' },
-      { name: 'Extra Spicy 🌶️ 🌶️ 🌶️', value: 'did:web:business.storacha.network' }
-    ],
-  })
-  const checkoutSessionResponse = await account.plan.createCheckoutSession(
-    account.did(),
-    {
-      planID: selectedPlan,
-      redirectAfterCompletion: false
-    })
-  if (checkoutSessionResponse.error) {
-    return checkoutSessionResponse
-  }
-  console.log(`Excellent choice! Please visit ${checkoutSessionResponse.ok?.url} to enter payment details. Come back here once you've successfully checked out.`)
-  return { ok: { planID: selectedPlan }}
 }
