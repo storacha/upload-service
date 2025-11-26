@@ -48,5 +48,9 @@ const collect = (stream) => {
 
 // eslint-disable-next-line no-console
 server.listen(port, () => console.log(`Listening on :${port}`))
+  .on('error', (err) => {
+    console.error(`Failed to start server on port ${port}:`, err.message)
+    process.exit(1)
+  })
 
 process.on('SIGTERM', () => process.exit(0))
