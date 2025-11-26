@@ -109,7 +109,7 @@ export default function StripePricingTable({ freeTrial = false, redirectAfterChe
     }
   }
   return (
-    <div className="flex flex-col md:flex-row gap-8 justify-center m-8">
+    <div className="flex flex-col md:flex-row gap-8">
       <PlanPicker
         name="Starter"
         peppers={1}
