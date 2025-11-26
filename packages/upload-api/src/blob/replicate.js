@@ -194,7 +194,8 @@ export const blobReplicateProvider = (context) => {
         const allocRes = await Promise.all(
           selectRes.ok.map(async (candidate) => {
             let task, receipt, execError
-            while (true) { // eslint-disable-line no-constant-condition
+            while (true) {
+              // eslint-disable-line no-constant-condition
               const cap = BlobReplica.allocate.create({
                 with: candidate.did(),
                 nb: {
@@ -250,7 +251,8 @@ export const blobReplicateProvider = (context) => {
               // a candidate, as it may have made it onto the list while it was
               // being selected, in which case we try again.
               let candidateUnavailable = false
-              while (true) { // eslint-disable-line no-constant-condition
+              while (true) {
+                // eslint-disable-line no-constant-condition
                 const selectRes = await router.selectReplicationProviders(
                   locClaim.issuer,
                   1,
@@ -275,7 +277,7 @@ export const blobReplicateProvider = (context) => {
                   return selectRes
                 }
                 // did someone select this candidate while we were gone?
-                if (exclude.some(e => e.did() == selectRes.ok[0].did())) {
+                if (exclude.some((e) => e.did() == selectRes.ok[0].did())) {
                   continue
                 }
                 candidate = selectRes.ok[0]
