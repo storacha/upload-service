@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.18.0](https://github.com/storacha/upload-service/compare/console-v2.17.0...console-v2.18.0) (2025-11-26)
+
+
+### Features
+
+* use new pricing tables on main plan gate ([#553](https://github.com/storacha/upload-service/issues/553)) ([6003a9f](https://github.com/storacha/upload-service/commit/6003a9fd33aab9b18dc7c488ec8164d0ea636cf4))
+
 ## [2.17.0](https://github.com/storacha/upload-service/compare/console-v2.16.1...console-v2.17.0) (2025-11-21)
 
 
