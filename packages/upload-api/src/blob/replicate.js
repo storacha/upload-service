@@ -194,8 +194,7 @@ export const blobReplicateProvider = (context) => {
         const allocRes = await Promise.all(
           selectRes.ok.map(async (candidate) => {
             let task, receipt, execError
-            // eslint-disable-next-line no-constant-condition
-            while (true) {
+            while (true) { // eslint-disable-line no-constant-condition
               const cap = BlobReplica.allocate.create({
                 with: candidate.did(),
                 nb: {
@@ -245,39 +244,53 @@ export const blobReplicateProvider = (context) => {
                 )
               }
 
-              // select a new provider
-              const selectRes = await router.selectReplicationProviders(
-                locClaim.issuer,
-                1,
-                digest,
-                nb.blob.size,
-                { exclude }
-              )
-              if (selectRes.error) {
-                console.error(
-                  'selecting replication provider for blob %s (%d bytes)',
-                  base58btc.encode(nb.blob.digest),
+              // select a new provider, we have to loop because other candidates
+              // could fail and try to select a new candidate at the same time.
+              // the loop allows us to check the exclusion list after selecting
+              // a candidate, as it may have made it onto the list while it was
+              // being selected, in which case we try again.
+              let candidateUnavailable = false
+              while (true) { // eslint-disable-line no-constant-condition
+                const selectRes = await router.selectReplicationProviders(
+                  locClaim.issuer,
+                  1,
+                  digest,
                   nb.blob.size,
-                  selectRes.error
+                  { exclude }
                 )
-                // we ran out of candidates!
-                // we allow continuation here so failure can be recorded and a
-                // retry will not select the same provider
-                if (selectRes.error.name == CandidateUnavailableError.name) {
-                  break
+                if (selectRes.error) {
+                  console.error(
+                    'selecting replication provider for blob %s (%d bytes)',
+                    base58btc.encode(nb.blob.digest),
+                    nb.blob.size,
+                    selectRes.error
+                  )
+                  // we ran out of candidates!
+                  // we allow continuation here so failure can be recorded and a
+                  // retry will not select the same provider
+                  if (selectRes.error.name == CandidateUnavailableError.name) {
+                    candidateUnavailable = true
+                    break
+                  }
+                  return selectRes
                 }
-                return selectRes
+                // did someone select this candidate while we were gone?
+                if (exclude.some(e => e.did() == selectRes.ok[0].did())) {
+                  continue
+                }
+                candidate = selectRes.ok[0]
+                exclude.push(candidate)
+                break
               }
 
-              candidate = selectRes.ok[0]
+              if (candidateUnavailable) break
               task = receipt = execError = undefined
-              exclude.push(candidate)
               // loop until we run out of candidates
             }
 
-            // this is mostly for TS - if we made it out of the loop we have
-            // almost certainly set task to a non-undefined value - it's
-            // possible for `allocInv.delegate()` to fail, but very unlikely
+            // if we made it out of the loop we have almost certainly set task
+            // to a non-undefined value, it's possible for `allocInv.delegate()`
+            // to fail, but unlikely...
             if (!task) {
               return Server.error({
                 name: 'AllocationExecutionFailure',
