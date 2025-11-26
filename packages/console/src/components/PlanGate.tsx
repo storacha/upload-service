@@ -5,7 +5,7 @@ import { useW3 } from '@storacha/ui-react'
 import StripePricingTable, {
   StripeTrialPricingTable,
   SSOIframeStripePricingTable,
-} from './PricingTable'
+} from './NewPricingTable'
 import { TopLevelLoader } from './Loader'
 import { Logo } from '@/brand'
 import { useConditionalPlan } from '@/hooks'
@@ -56,7 +56,7 @@ const PricingTable = ({
           </>
         ) : (
           <>
-            <div className="px-6 py-6 lg:px-24">
+            <div className="px-6 lg:px-24">
               <h1 className="my-4 font-bold">Welcome, {email}!</h1>
               <p className="my-4">
                 To get started you&apos;ll need to sign up for a subscription.
@@ -99,7 +99,7 @@ export function PlanGate({ children }: { children: ReactNode }): ReactNode {
   }
 
   // Show loader while waiting for plan, regardless of iframe context
-  if (isLoading) {
+  if (!plan && !error && isLoading) {
     return <TopLevelLoader />
   }
 
