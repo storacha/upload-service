@@ -22,23 +22,22 @@ export const create = (serviceID, storageProviders) =>
   /** @type {API.RoutingService} */
   ({
     selectStorageProvider: async (digest, size, options) => {
+      const exclude = options?.exclude ?? []
+      const filteredProviders = storageProviders.filter(
+        (p) => !exclude.some((e) => e.did() === p.id.did())
+      )
+      if (!filteredProviders.length) {
+        return error(new CandidateUnavailableError())
+      }
+
       // ensure we pick the same provider for a given digest within a test
       const key = base58btc.encode(digest.bytes)
       let provider = stickySelect.get(key)
       if (
         provider &&
-        !storageProviders.some((p) => p.id.did() === provider?.did())
+        !filteredProviders.some((p) => p.id.did() === provider?.did())
       ) {
         provider = undefined
-      }
-
-      const exclude = options?.exclude ?? []
-      const filteredProviders = storageProviders.filter(
-        (p) => !exclude.some((e) => e.did() === p.id.did())
-      )
-
-      if (!filteredProviders.length) {
-        return error(new CandidateUnavailableError())
       }
 
       if (!provider) {
