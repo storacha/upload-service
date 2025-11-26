@@ -30,9 +30,9 @@ interface PlanSectionProps {
 }
 
 export const PLANS: Record<string, DID<'web'>> = {
-  starter: 'did:web:starter.storacha.network',
-  lite: 'did:web:lite.storacha.network',
-  business: 'did:web:business.storacha.network',
+  starter: 'did:web:starter.web3.storage',
+  lite: 'did:web:lite.web3.storage',
+  business: 'did:web:business.web3.storage',
 }
 
 const planRanks: Record<string, number> = {
