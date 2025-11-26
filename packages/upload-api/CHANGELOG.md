@@ -1,3 +1,18 @@
+## 2.7.0 (2025-11-26)
+
+### 🚀 Features
+
+- feat: allocation timeout and retry with alternate candidate ([#552](https://github.com/storacha/upload-service/pull/552))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-api to 1.3.2
+- Updated @storacha/router to 1.1.0
+
+### ❤️ Thank You
+
+- ash
+
 ## 2.6.3 (2025-11-18)
 
 ### 🧱 Updated Dependencies
