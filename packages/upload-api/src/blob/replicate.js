@@ -12,8 +12,11 @@ import { now } from '@ipld/dag-ucan'
 import * as DID from '@ipld/dag-ucan/did'
 import * as API from '../types.js'
 import { AgentMessage } from '../lib.js'
-import { toLocationCommitment } from './lib.js'
+import { fetchWithTimeout, toLocationCommitment } from './lib.js'
 import { createConcludeInvocation } from '../ucan/conclude.js'
+import { CandidateUnavailableError } from '@storacha/router'
+
+/** @import { Principal } from '@ucanto/interface' */
 
 // Replication invocation timeout in seconds.
 //
@@ -21,6 +24,9 @@ import { createConcludeInvocation } from '../ucan/conclude.js'
 // invocation as proof for obtaining a retrieval delegation, and we want to
 // allow for retries and/or job queue delays.
 const allocationTimeout = 60 * 60 // 1h
+
+// maximum time to allow a replica allocate invocation to take before aborting
+const allocateExecTimeout = 5_000 // 5s
 
 /**
  * @param {API.BlobServiceContext} context
@@ -150,22 +156,26 @@ export const blobReplicateProvider = (context) => {
           )
         }
 
+        // do not include any nodes where we already have replications or
+        // nodes we have previously failed to replicate to
+        /** @type {Principal[]} */
+        const exclude = [...activeReplicas, ...failedReplicas].map((r) =>
+          DID.parse(r.provider)
+        )
+
         const selectRes = await router.selectReplicationProviders(
           locClaim.issuer,
           newReplicasCount,
           digest,
           nb.blob.size,
-          {
-            // do not include any nodes where we already have replications or
-            // nodes we have previously failed to replicate to
-            exclude: [...activeReplicas, ...failedReplicas].map((r) =>
-              DID.parse(r.provider)
-            ),
-          }
+          { exclude }
         )
         if (selectRes.error) {
           return selectRes
         }
+
+        // do not include any of the initial selections in subsequent attempts
+        exclude.push(...selectRes.ok)
 
         // if the claim consists of more than one block, add the other
         // blocks to facts so that they can be attached.
@@ -183,43 +193,97 @@ export const blobReplicateProvider = (context) => {
 
         const allocRes = await Promise.all(
           selectRes.ok.map(async (candidate) => {
-            const candidateDID = candidate.did()
-            const cap = BlobReplica.allocate.create({
-              with: candidateDID,
-              nb: {
-                blob: nb.blob,
-                space: DID.parse(space),
-                site: nb.site,
-                cause: invocation.cid,
-              },
-            })
-            const confRes = await router.configureInvocation(candidate, cap, {
-              facts: allocFacts,
-              // set the expiration now so that we get the same CID for the task
-              // when we call delegate/execute.
-              expiration: now() + allocationTimeout,
-            })
-            if (confRes.error) {
-              return confRes
+            let task, receipt, execError
+            // eslint-disable-next-line no-constant-condition
+            while (true) {
+              const cap = BlobReplica.allocate.create({
+                with: candidate.did(),
+                nb: {
+                  blob: nb.blob,
+                  space: DID.parse(space),
+                  site: nb.site,
+                  cause: invocation.cid,
+                },
+              })
+              const confRes = await router.configureInvocation(candidate, cap, {
+                facts: allocFacts,
+                // set the expiration now so that we get the same CID for the task
+                // when we call delegate/execute.
+                expiration: now() + allocationTimeout,
+                channel: { fetch: fetchWithTimeout(allocateExecTimeout) },
+              })
+              if (confRes.error) {
+                return confRes
+              }
+
+              const { connection, invocation: allocInv } = confRes.ok
+
+              // attach the location commitment to the allocation invocation
+              for (const b of locClaimBlocks) {
+                allocInv.attach(b)
+              }
+
+              try {
+                task = await allocInv.delegate()
+                receipt = await allocInv.execute(connection)
+                if (receipt.out.error) {
+                  throw new Error(
+                    `replica allocation failed: ${receipt.out.error.message}`,
+                    { cause: receipt.out.error }
+                  )
+                }
+                break
+              } catch (/** @type {any} */ err) {
+                execError = err
+                console.error(
+                  'executing %s on %s for blob %s (%d bytes)',
+                  BlobReplica.allocate.can,
+                  candidate.did(),
+                  base58btc.encode(nb.blob.digest),
+                  nb.blob.size,
+                  err
+                )
+              }
+
+              // select a new provider
+              const selectRes = await router.selectReplicationProviders(
+                locClaim.issuer,
+                1,
+                digest,
+                nb.blob.size,
+                { exclude }
+              )
+              if (selectRes.error) {
+                console.error(
+                  'selecting replication provider for blob %s (%d bytes)',
+                  base58btc.encode(nb.blob.digest),
+                  nb.blob.size,
+                  selectRes.error
+                )
+                // we ran out of candidates!
+                // we allow continuation here so failure can be recorded and a
+                // retry will not select the same provider
+                if (selectRes.error.name == CandidateUnavailableError.name) {
+                  break
+                }
+                return selectRes
+              }
+
+              candidate = selectRes.ok[0]
+              task = receipt = execError = undefined
+              exclude.push(candidate)
+              // loop until we run out of candidates
             }
 
-            const { connection, invocation: allocInv } = confRes.ok
-
-            // attach the location commitment to the allocation invocation
-            for (const b of locClaimBlocks) {
-              allocInv.attach(b)
+            // this is mostly for TS - if we made it out of the loop we have
+            // almost certainly set task to a non-undefined value - it's
+            // possible for `allocInv.delegate()` to fail, but very unlikely
+            if (!task) {
+              return Server.error({
+                name: 'AllocationExecutionFailure',
+                message: `failed allocation invocation execution to ${candidate.did()}`,
+              })
             }
-
-            let receipt, execError
-            try {
-              receipt = await allocInv.execute(connection)
-            } catch (/** @type {any} */ err) {
-              // allow continuation so failure can be recorded and a retry will
-              // not select the same node
-              console.warn(`allocating ${candidateDID}`, err)
-              execError = err
-            }
-            const task = await allocInv.delegate()
 
             // record the invocation and the receipt, so we can retrieve it later
             // when we get a blob/replica/transfer receipt in ucan/conclude
@@ -239,7 +303,7 @@ export const blobReplicateProvider = (context) => {
             const addRes = await replicaStore.add({
               space,
               digest,
-              provider: candidateDID,
+              provider: candidate.did(),
               status: !receipt || receipt.out.error ? 'failed' : 'allocated',
               cause:
                 /** @type {API.UCANLink<[API.BlobReplicaAllocate]>} */
@@ -253,7 +317,7 @@ export const blobReplicateProvider = (context) => {
             if (!receipt) {
               return Server.error({
                 name: 'AllocationExecutionFailure',
-                message: `failed allocation invocation execution to ${candidateDID}: ${execError}`,
+                message: `failed allocation invocation execution to ${candidate.did()}: ${execError}`,
               })
             }
 
