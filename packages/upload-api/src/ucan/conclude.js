@@ -75,10 +75,10 @@ export function getConcludeReceipt(concludeFx) {
  */
 export function createConcludeInvocation(id, serviceDid, receipt) {
   const receiptBlocks = []
-  const receiptCids = []
+  const receiptCids = new Map()
   for (const block of receipt.iterateIPLDBlocks()) {
     receiptBlocks.push(block)
-    receiptCids.push(block.cid)
+    receiptCids.set(block.cid.toString(), block.cid)
   }
   const concludeAllocatefx = conclude.invoke({
     issuer: id,
@@ -90,7 +90,7 @@ export function createConcludeInvocation(id, serviceDid, receipt) {
     expiration: Infinity,
     facts: [
       {
-        ...receiptCids,
+        ...[...receiptCids.values()],
       },
     ],
   })
