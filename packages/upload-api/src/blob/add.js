@@ -6,14 +6,20 @@ import * as SpaceBlob from '@storacha/capabilities/space/blob'
 import * as W3sBlob from '@storacha/capabilities/web3.storage/blob'
 import * as HTTP from '@storacha/capabilities/http'
 import * as Digest from 'multiformats/hashes/digest'
+import { base58btc } from 'multiformats/bases/base58'
 import * as DID from '@ipld/dag-ucan/did'
 import * as API from '../types.js'
 import { allocate as spaceAllocate } from '../space-allocate.js'
 import { createConcludeInvocation } from '../ucan/conclude.js'
-import { AwaitError, deriveDID } from './lib.js'
+import { AwaitError, deriveDID, fetchWithTimeout } from './lib.js'
 import { AgentMessage } from '../lib.js'
 import * as W3sBlobAdd from '../web3.storage/blob/add.js'
 import { isW3sProvider } from '../web3.storage/blob/lib.js'
+
+/** @import { Principal } from '@ucanto/interface' */
+
+// maximum time to allow an allocation invocation to take before aborting
+const allocateExecTimeout = 5_000 // 5s
 
 /**
  * @param {API.Receipt} receipt
@@ -146,37 +152,70 @@ async function allocate({ context, blob, space, cause }) {
   const { router } = context
   const digest = Digest.decode(blob.digest)
 
-  const candidate = await router.selectStorageProvider(digest, blob.size)
-  if (candidate.error) {
-    return candidate
-  }
+  let provider, task, receipt
+  /** @type {Principal[]} */
+  let exclude = []
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    console.log(
+      'excluding list:',
+      exclude.map((e) => e.did())
+    )
+    const candidate = await router.selectStorageProvider(digest, blob.size, {
+      exclude,
+    })
+    if (candidate.error) {
+      return candidate
+    }
 
-  const cap = Blob.allocate.create({
-    with: candidate.ok.did(),
-    nb: {
-      blob: {
-        digest: blob.digest,
-        size: blob.size,
+    const cap = Blob.allocate.create({
+      with: candidate.ok.did(),
+      nb: {
+        blob: {
+          digest: blob.digest,
+          size: blob.size,
+        },
+        space: DID.parse(space),
+        cause,
       },
-      space: DID.parse(space),
-      cause,
-    },
-  })
+    })
 
-  const configure = await router.configureInvocation(candidate.ok, cap, {
-    expiration: Infinity,
-  })
-  if (configure.error) {
-    return configure
+    const configure = await router.configureInvocation(candidate.ok, cap, {
+      expiration: Infinity,
+      channel: { fetch: fetchWithTimeout(allocateExecTimeout) },
+    })
+    if (configure.error) {
+      return configure
+    }
+
+    try {
+      provider = candidate.ok
+      task = await configure.ok.invocation.delegate()
+      receipt = await configure.ok.invocation.execute(configure.ok.connection)
+      if (receipt.out.error) {
+        throw new Error(`allocation failed: ${receipt.out.error.message}`, {
+          cause: receipt.out.error,
+        })
+      }
+      break
+    } catch (err) {
+      console.error(
+        `executing ${
+          Blob.allocate.can
+        } on ${provider?.did()} for blob ${base58btc.encode(blob.digest)} (${
+          blob.size
+        } bytes)`,
+        err
+      )
+      exclude.push(candidate.ok)
+      // loop until we run out of candidates
+    }
   }
-
-  const task = await configure.ok.invocation.delegate()
-  const receipt = await configure.ok.invocation.execute(configure.ok.connection)
 
   // record the invocation and the receipt, so we can retrieve it later when we
   // get a http/put receipt in ucan/conclude
   const message = await Message.build({
-    invocations: [configure.ok.invocation],
+    invocations: [task],
     receipts: [receipt],
   })
   const messageWrite = await context.agentStore.messages.write({
@@ -196,7 +235,7 @@ async function allocate({ context, blob, space, cause }) {
   )
 
   return Server.ok({
-    provider: candidate.ok,
+    provider,
     task,
     receipt,
     fx: [await concludeAllocate.delegate()],

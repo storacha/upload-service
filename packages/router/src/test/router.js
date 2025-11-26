@@ -1,7 +1,8 @@
 import * as API from '@storacha/router/types'
-import { ok, error, Failure } from '@ucanto/core'
+import { ok, error } from '@ucanto/core'
 import { Invocation, Delegation } from '@ucanto/core'
 import { base58btc } from 'multiformats/bases/base58'
+import { CandidateUnavailableError, ProofUnavailableError } from '../index.js'
 
 /**
  * @typedef {{
@@ -20,19 +21,28 @@ const stickySelect = new Map()
 export const create = (serviceID, storageProviders) =>
   /** @type {API.RoutingService} */
   ({
-    selectStorageProvider: async (digest) => {
+    selectStorageProvider: async (digest, size, options) => {
+      const exclude = options?.exclude ?? []
+      const filteredProviders = storageProviders.filter(
+        (p) => !exclude.some((e) => e.did() === p.id.did())
+      )
+      if (!filteredProviders.length) {
+        return error(new CandidateUnavailableError())
+      }
+
       // ensure we pick the same provider for a given digest within a test
       const key = base58btc.encode(digest.bytes)
       let provider = stickySelect.get(key)
       if (
         provider &&
-        !storageProviders.some((p) => p.id.did() === provider?.did())
+        !filteredProviders.some((p) => p.id.did() === provider?.did())
       ) {
         provider = undefined
       }
+
       if (!provider) {
         provider =
-          storageProviders[getRandomInt(storageProviders.length - 1)].id
+          filteredProviders[getRandomInt(filteredProviders.length - 1)].id
         stickySelect.set(key, provider)
       }
       return ok(provider)
@@ -53,10 +63,9 @@ export const create = (serviceID, storageProviders) =>
 
       if (filteredProviders.length < count) {
         return error(
-          /** @type {API.CandidateUnavailable} */ ({
-            name: 'CandidateUnavailable',
-            message: `Wanted ${count} but only ${filteredProviders.length} are available`,
-          })
+          new CandidateUnavailableError(
+            `Wanted ${count} but only ${filteredProviders.length} are available`
+          )
         )
       }
 
@@ -97,21 +106,3 @@ export const create = (serviceID, storageProviders) =>
 
 /** @param {number} max */
 const getRandomInt = (max) => Math.floor(Math.random() * max)
-
-export class ProofUnavailableError extends Failure {
-  static name = 'ProofUnavailable'
-
-  get name() {
-    return ProofUnavailableError.name
-  }
-
-  /** @param {string} [reason] */
-  constructor(reason) {
-    super()
-    this.reason = reason
-  }
-
-  describe() {
-    return this.reason ?? 'proof unavailable'
-  }
-}
