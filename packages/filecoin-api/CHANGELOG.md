@@ -1,3 +1,9 @@
+## 1.3.2 (2025-11-26)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/router to 1.1.0
+
 ## 1.3.1 (2025-11-18)
 
 ### 🩹 Fixes
