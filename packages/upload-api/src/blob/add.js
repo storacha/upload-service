@@ -157,10 +157,6 @@ async function allocate({ context, blob, space, cause }) {
   let exclude = []
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    console.log(
-      'excluding list:',
-      exclude.map((e) => e.did())
-    )
     const candidate = await router.selectStorageProvider(digest, blob.size, {
       exclude,
     })
