@@ -73,7 +73,9 @@ cli
 cli
   .command('plan setup [email]')
   .example('plan setup user@example.com')
-  .describe('Select a Storacha data storage plan and provide payment details on the web.')
+  .describe(
+    'Select a Storacha data storage plan and provide payment details on the web.'
+  )
   .action(setupPlan)
 
 cli

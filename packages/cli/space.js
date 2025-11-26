@@ -222,7 +222,8 @@ const setupBilling = async (
 
   if (account) {
     const checkoutResponse = await chooseBillingPlanAndCheckout(account)
-    if (checkoutResponse.error) return { error: { reason: 'error', cause: checkoutResponse.error } }
+    if (checkoutResponse.error)
+      return { error: { reason: 'error', cause: checkoutResponse.error } }
     const spinner = ora(waitMessage).start()
 
     let plan = null
