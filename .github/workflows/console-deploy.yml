@@ -43,18 +43,7 @@ jobs:
         working-directory: .
         run: |
           find packages -name "*.tsbuildinfo" -delete
-          pnpm nx reset
-      # pre-build console to get around some odd bugs that seem to be related to nx 21
-      # TODO: Try to get rid of this later. If the build ever succeeds without
-      # running this step first, it's working correctly, and we can delete this.
-      - name: Pre-build console
-        shell: bash
-        working-directory: ./packages/console
-        run: |
-          pnpm install
-          pnpm nx build @storacha/ui-core
-          pnpm nx build @storacha/ui-react
-          pnpm build              
+          pnpm nx reset           
       - name: Build all dependencies
         shell: bash
         run: pnpm nx build
@@ -175,18 +164,7 @@ jobs:
         working-directory: .
         run: |
           find packages -name "*.tsbuildinfo" -delete
-          pnpm nx reset
-      # pre-build console to get around some odd bugs that seem to be related to nx 21
-      # TODO: Try to get rid of this later. If the build ever succeeds without
-      # running this step first, it's working correctly, and we can delete this.
-      - name: Pre-build console
-        shell: bash
-        working-directory: ./packages/console
-        run: |
-          pnpm install
-          pnpm nx build @storacha/ui-core
-          pnpm nx build @storacha/ui-react
-          pnpm build          
+          pnpm nx reset         
       - name: Build all dependencies
         shell: bash
         run: pnpm nx build
