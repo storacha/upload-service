@@ -1,3 +1,17 @@
+## 1.1.63 (2025-11-27)
+
+### 🩹 Fixes
+
+- fix: rebuild to fix CI ([#558](https://github.com/storacha/upload-service/pull/558))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 1.8.20
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 1.1.62 (2025-11-26)
 
 ### 🧱 Updated Dependencies
