@@ -1,0 +1,94 @@
+{
+  "name": "@storacha/principal-resolver",
+  "version": "0.0.0",
+  "description": "Principal resolvers that resolve to did:key",
+  "publishConfig": {
+    "access": "public"
+  },
+  "homepage": "https://storacha.network",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storacha/upload-service.git",
+    "directory": "packages/principal-resolver"
+  },
+  "license": "Apache-2.0 OR MIT",
+  "type": "module",
+  "types": "dist/src/index.d.ts",
+  "main": "dist/index.js",
+  "scripts": {
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+    "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+    "test:node": "mocha 'test/**/*.test.js' -n experimental-vm-modules -n no-warnings",
+    "test:browser": "playwright-test 'test/**/!(*.node).test.js'"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    },
+    "./http": {
+      "types": "./dist/http.d.ts",
+      "import": "./dist/http.js"
+    },
+    "./map": {
+      "types": "./dist/map.d.ts",
+      "import": "./dist/map.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.js.map"
+  ],
+  "dependencies": {
+    "@ipld/dag-ucan": "catalog:",
+    "@ucanto/interface": "catalog:",
+    "@ucanto/validator": "catalog:"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "catalog:",
+    "@storacha/eslint-config": "workspace:^",
+    "@types/assert": "^1.5.6",
+    "@types/mocha": "^10.0.0",
+    "@types/node": "^20.8.4",
+    "@typescript-eslint/eslint-plugin": "catalog:",
+    "assert": "catalog:",
+    "mocha": "^10.2.0",
+    "playwright-test": "catalog:",
+    "typescript": "catalog:"
+  },
+  "eslintConfig": {
+    "extends": [
+      "@storacha/eslint-config"
+    ],
+    "env": {
+      "es2022": true,
+      "mocha": true,
+      "browser": true,
+      "node": true
+    },
+    "ignorePatterns": [
+      "dist",
+      "docs",
+      "coverage",
+      "src/types.js"
+    ],
+    "rules": {
+      "@typescript-eslint/no-empty-object-type": "off"
+    }
+  },
+  "depcheck": {
+    "specials": [
+      "bin"
+    ],
+    "ignores": [
+      "@types/*",
+      "assert",
+      "@storacha/eslint-config"
+    ]
+  }
+}
