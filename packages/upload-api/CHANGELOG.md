@@ -1,3 +1,10 @@
+## 2.7.1 (2025-11-27)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-api to 1.3.3
+- Updated @storacha/router to 1.1.1
+
 ## 2.7.0 (2025-11-26)
 
 ### 🚀 Features

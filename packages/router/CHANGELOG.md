@@ -1,3 +1,13 @@
+## 1.1.1 (2025-11-27)
+
+### 🩹 Fixes
+
+- fix: rebuild to fix CI ([#558](https://github.com/storacha/upload-service/pull/558))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 1.1.0 (2025-11-26)
 
 ### 🚀 Features
