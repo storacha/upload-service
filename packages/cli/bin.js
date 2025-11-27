@@ -27,7 +27,6 @@ import {
   getPlan,
   createKey,
   reset,
-  setupPlan,
 } from './index.js'
 import {
   blobAdd,
@@ -69,12 +68,6 @@ cli
   .example('plan get user@example.com')
   .describe('Displays plan given account is on')
   .action(getPlan)
-
-cli
-  .command('plan setup [email]')
-  .example('plan setup user@example.com')
-  .describe('Select a Storacha data storage plan and provide payment details on the web.')
-  .action(setupPlan)
 
 cli
   .command('account ls')
