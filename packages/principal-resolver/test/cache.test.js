@@ -14,7 +14,7 @@ describe('cache', () => {
         return did === 'did:web:alice.example.com'
           ? { ok: ['did:key:alice'] }
           : { error: new DIDResolutionError(did) }
-      }
+      },
     }
     const resolver = CacheResolver.create(mockResolver, { ttl: 1000 })
 
@@ -44,7 +44,7 @@ describe('cache', () => {
       resolveDIDKey: async (did) => {
         resolveCount++
         return { error: new DIDResolutionError(did) }
-      }
+      },
     }
     const resolver = CacheResolver.create(mockResolver, { ttl: 1000 })
 

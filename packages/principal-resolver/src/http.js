@@ -8,7 +8,7 @@ import { parse } from '@ipld/dag-ucan/did'
 
 const didKeyPrefix = 'did:key:'
 const didWebPrefix = 'did:web:'
-const wellKnownDIDPath = "/.well-known/did.json"
+const wellKnownDIDPath = '/.well-known/did.json'
 const defaultTimeout = 5_000
 
 /**
@@ -23,13 +23,13 @@ export const create = (allowlist, options) => {
   const fetch = options?.fetch ?? globalThis.fetch.bind(globalThis)
   const timeout = options?.timeout ?? defaultTimeout
   return {
-    async resolveDIDKey (did) {
+    async resolveDIDKey(did) {
       if (!Schema.did({ method: 'web' }).is(did)) {
         return error(did, new Error('not resolvable by did:web resolver'))
       }
       let allowed = false
       for (const entry of allowlist) {
-        if ((did === entry) || (entry instanceof RegExp && entry.test(did))) {
+        if (did === entry || (entry instanceof RegExp && entry.test(did))) {
           allowed = true
           break
         }
@@ -51,24 +51,44 @@ export const create = (allowlist, options) => {
       try {
         const res = await fetch(url, { signal: AbortSignal.timeout(timeout) })
         if (!res.ok) {
-          return { error: new DIDResolutionError(did, new Error(`fetching DID document from: ${url}, status: ${res.status}`)) }
+          return error(
+            did,
+            new Error(
+              `fetching DID document from: ${url}, status: ${res.status}`
+            )
+          )
         }
         didDoc = await res.json()
       } catch (err) {
-        return error(did, new Error(`fetching DID document from: ${url}`, { cause: err }))
+        return error(
+          did,
+          new Error(`fetching DID document from: ${url}`, { cause: err })
+        )
       }
 
       if (didDoc == null || typeof didDoc !== 'object') {
         return error(did, new Error('parsing DID document: not an object'))
       }
-      if (!('verificationMethod' in didDoc) || !Array.isArray(didDoc.verificationMethod)) {
-        return error(did, new Error('parsing DID document: verificationMethod missing or not an array'))
+      if (
+        !('verificationMethod' in didDoc) ||
+        !Array.isArray(didDoc.verificationMethod)
+      ) {
+        return error(
+          did,
+          new Error(
+            'parsing DID document: verificationMethod missing or not an array'
+          )
+        )
       }
 
       /** @type {Set<DID<'key'>>} */
       const keys = new Set()
       for (const vm of didDoc.verificationMethod) {
-        if (vm == null || typeof vm !== 'object' || !('publicKeyMultibase' in vm)) {
+        if (
+          vm == null ||
+          typeof vm !== 'object' ||
+          !('publicKeyMultibase' in vm)
+        ) {
           continue
         }
         try {
@@ -82,11 +102,14 @@ export const create = (allowlist, options) => {
       }
 
       if (!keys.size) {
-        return error(did, new Error('no valid verification methods found in DID document'))
+        return error(
+          did,
+          new Error('no valid verification methods found in DID document')
+        )
       }
 
       return { ok: [...keys] }
-    }
+    },
   }
 }
 

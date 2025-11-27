@@ -10,7 +10,7 @@ const defaultTTL = 60 * 60 * 1000 // 1 hour
  * the configured time-to-live (TTL). Note: entries are not purged from the
  * cache after they expire.
  *
- * @param {Required<PrincipalResolver>} resolver 
+ * @param {Required<PrincipalResolver>} resolver
  * @param {{ ttl?: number }} [options]
  * @returns {Required<PrincipalResolver>}
  */
@@ -19,7 +19,7 @@ export const create = (resolver, options) => {
   /** @type {Map<DID, { keys: Array<DID<'key'>>, expiresAt: number }>} */
   const cache = new Map()
   return {
-    async resolveDIDKey (did) {
+    async resolveDIDKey(did) {
       const entry = cache.get(did)
       if (entry && entry.expiresAt > Date.now()) {
         return { ok: entry.keys }
@@ -29,6 +29,6 @@ export const create = (resolver, options) => {
         cache.set(did, { keys: result.ok, expiresAt: Date.now() + ttl })
       }
       return result
-    }
+    },
   }
 }
