@@ -161,6 +161,12 @@ async function allocate({ context, blob, space, cause }) {
       exclude,
     })
     if (candidate.error) {
+      console.error(
+        'selecting storage provider for blob %s (%d bytes)',
+        base58btc.encode(blob.digest),
+        blob.size,
+        candidate.error
+      )
       return candidate
     }
 
@@ -196,11 +202,11 @@ async function allocate({ context, blob, space, cause }) {
       break
     } catch (err) {
       console.error(
-        `executing ${
-          Blob.allocate.can
-        } on ${provider?.did()} for blob ${base58btc.encode(blob.digest)} (${
-          blob.size
-        } bytes)`,
+        'executing %s on %s for blob %s (%d bytes)',
+        Blob.allocate.can,
+        provider?.did(),
+        base58btc.encode(blob.digest),
+        blob.size,
         err
       )
       exclude.push(candidate.ok)
