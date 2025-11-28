@@ -31,6 +31,10 @@
       "types": "./dist/types.d.ts",
       "import": "./dist/types.js"
     },
+    "./cache": {
+      "types": "./dist/cache.d.ts",
+      "import": "./dist/cache.js"
+    },
     "./http": {
       "types": "./dist/http.d.ts",
       "import": "./dist/http.js"
@@ -38,6 +42,10 @@
     "./map": {
       "types": "./dist/map.d.ts",
       "import": "./dist/map.js"
+    },
+    "./tiered": {
+      "types": "./dist/tiered.d.ts",
+      "import": "./dist/tiered.js"
     }
   },
   "files": [
