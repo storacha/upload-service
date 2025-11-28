@@ -11,7 +11,7 @@ describe('tiered', () => {
       resolveDIDKey: async (did) =>
         did === 'did:web:alice.example.com'
           ? { ok: ['did:key:alice'] }
-          : { error: new DIDResolutionError(did) }
+          : { error: new DIDResolutionError(did) },
     }
 
     /** @type {PrincipalResolver} */
@@ -19,10 +19,13 @@ describe('tiered', () => {
       resolveDIDKey: async (did) =>
         did === 'did:web:bob.example.com'
           ? { ok: ['did:key:bob'] }
-          : { error: new DIDResolutionError(did) }
+          : { error: new DIDResolutionError(did) },
     }
 
-    const resolver = TieredResolver.create([mockResolverTier0, mockResolverTier1])
+    const resolver = TieredResolver.create([
+      mockResolverTier0,
+      mockResolverTier1,
+    ])
 
     // resolve from tier 0
     let result = await resolver.resolveDIDKey('did:web:alice.example.com')

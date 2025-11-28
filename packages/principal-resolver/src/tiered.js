@@ -17,5 +17,5 @@ export const create = (resolvers) => ({
       if (result.ok) return result
     }
     return result ?? { error: new DIDResolutionError(did) }
-  }
+  },
 })
