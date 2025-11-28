@@ -215,8 +215,7 @@ export const handleCronTick = async (context) => {
     const updatedResponses = await Promise.all(
       submittedPieces.ok.results.map((pieceRecord) =>
         updatePiecesWithDeal({
-          id: context.id,
-          aggregatorId: context.aggregatorId,
+          invocationConfig: context.aggregatorInvocationConfig,
           pieceRecord,
           pieceStore: context.pieceStore,
           taskStore: context.taskStore,
@@ -253,16 +252,14 @@ export const handleCronTick = async (context) => {
  * Update its status if there is an accepted aggregate.
  *
  * @param {object} context
- * @param {import('@ucanto/interface').Signer} context.id
- * @param {import('@ucanto/interface').Principal} context.aggregatorId
+ * @param {import('@storacha/filecoin-client/types').InvocationConfig} context.invocationConfig
  * @param {PieceRecord} context.pieceRecord
  * @param {PieceStore} context.pieceStore
  * @param {API.Store<import('@ucanto/interface').UnknownLink, API.UcantoInterface.Invocation>} context.taskStore
  * @param {API.Store<import('@ucanto/interface').UnknownLink, API.UcantoInterface.Receipt>} context.receiptStore
  */
 async function updatePiecesWithDeal({
-  id,
-  aggregatorId,
+  invocationConfig,
   pieceRecord,
   pieceStore,
   taskStore,
@@ -270,18 +267,23 @@ async function updatePiecesWithDeal({
 }) {
   let aggregateAcceptReceipt
 
+  if (!invocationConfig.audience) {
+    throw new Error('Missing audience in aggregator invocation config');
+  }
+
   let task = /** @type {API.UcantoInterface.Link} */ (
     (
       await AggregatorCaps.pieceOffer
         .invoke({
-          issuer: id,
-          audience: aggregatorId,
-          with: id.did(),
+          issuer: invocationConfig.issuer,
+          audience: invocationConfig.audience,
+          with: invocationConfig.with,
           nb: {
             piece: pieceRecord.piece,
             group: pieceRecord.group,
           },
           expiration: Infinity,
+          proofs: invocationConfig.proofs,
         })
         .delegate()
     ).cid

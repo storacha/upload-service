@@ -16,6 +16,7 @@ import {
   AggregatorService,
   StorefrontService,
   DealTrackerService,
+  InvocationConfig,
 } from '@storacha/filecoin-client/types'
 import { RoutingService } from '@storacha/router/types'
 import {
@@ -37,14 +38,6 @@ export type TaskStore = Store<UnknownLink, Invocation>
 export type ReceiptStore = Store<UnknownLink, Receipt>
 
 export interface ServiceContext {
-  /**
-   * Service signer
-   */
-  id: Signer
-  /**
-   * Principal for aggregator service
-   */
-  aggregatorId: Principal
   /**
    * Stores pieces that have been offered to the Storefront.
    */
@@ -137,8 +130,13 @@ export interface ClaimsClientContext {
 export interface CronContext
   extends Pick<
     ServiceContext,
-    'id' | 'pieceStore' | 'receiptStore' | 'taskStore' | 'aggregatorId'
-  > {}
+    'pieceStore' | 'receiptStore' | 'taskStore'
+  > {
+  /**
+   * Aggregator invocation config to produce valid effects for aggregator-related tasks.
+   */
+  aggregatorInvocationConfig: InvocationConfig
+}
 
 export interface PieceRecord {
   /**
@@ -169,7 +167,7 @@ export interface PieceRecord {
    */
   updatedAt: string
 }
-export interface PieceRecordKey extends Pick<PieceRecord, 'piece'> {}
+export interface PieceRecordKey extends Pick<PieceRecord, 'piece'> { }
 
 export interface FilecoinSubmitMessage {
   /**
