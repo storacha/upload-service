@@ -72,6 +72,9 @@
     },
     {
       "path": "./packages/router"
+    },
+    {
+      "path": "./packages/principal-resolver"
     }
   ]
 }
