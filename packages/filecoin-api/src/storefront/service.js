@@ -426,6 +426,7 @@ export const createServer = (context) =>
     service: createService(context),
     catch: (error) => context.errorReporter.catch(error),
     validateAuthorization: (auth) => context.validateAuthorization(auth),
+    resolveDIDKey: context.resolveDIDKey,
   })
 
 /**
