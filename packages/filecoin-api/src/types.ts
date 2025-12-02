@@ -10,6 +10,7 @@ import type {
   Unit,
   Result,
   ConnectionView,
+  PrincipalResolver,
 } from '@ucanto/interface'
 import type { ProviderInput } from '@ucanto/server'
 import { InvocationConfig } from '@storacha/filecoin-client/types'
@@ -131,7 +132,9 @@ export interface EncodeRecordFailed extends Error {
 
 // Service utils
 
-export interface UcantoServerContext extends RevocationChecker {
+export interface UcantoServerContext
+  extends PrincipalResolver,
+    RevocationChecker {
   id: Signer
   codec?: InboundCodec
   errorReporter: ErrorReporter
