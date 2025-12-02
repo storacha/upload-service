@@ -1,6 +1,6 @@
 {
   "name": "@storacha/principal-resolver",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Principal resolvers that resolve to did:key",
   "publishConfig": {
     "access": "public"
