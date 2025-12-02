@@ -66,16 +66,26 @@ export async function createInvocationsAndReceiptsForDealDataProofChain({
       expiration: Infinity,
     })
     .delegate()
+
+  const aggregatorToStorefrontProof = await AggregatorCaps.pieceOffer
+    .delegate({
+      issuer: aggregator,
+      audience: storefront,
+      with: aggregator.did(),
+      expiration: Infinity,
+    })
+
   const pieceOfferInvocation = await AggregatorCaps.pieceOffer
     .invoke({
       issuer: storefront,
       audience: aggregator,
-      with: storefront.did(),
+      with: aggregator.did(),
       nb: {
         piece,
         group,
       },
       expiration: Infinity,
+      proofs: [aggregatorToStorefrontProof],
     })
     .delegate()
   const pieceAcceptInvocation = await AggregatorCaps.pieceAccept

@@ -81,6 +81,7 @@ export interface TestStorageNode {
 }
 
 export interface TestServiceContext extends ServiceContext {
+  aggregatorId: Signer
   storageProviders: Array<TestStorageNode>
 }
 

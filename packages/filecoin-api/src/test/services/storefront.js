@@ -2,6 +2,7 @@ import { Filecoin, Aggregator } from '@storacha/capabilities'
 import * as Server from '@ucanto/server'
 import { CBOR } from '@ucanto/core'
 import * as Signer from '@ucanto/principal/ed25519'
+import * as AggregatorCaps from '@storacha/capabilities/filecoin/aggregator'
 import * as DealTrackerCaps from '@storacha/capabilities/filecoin/deal-tracker'
 import * as PDPCaps from '@storacha/capabilities/pdp'
 import pWaitFor from 'p-wait-for'
@@ -394,17 +395,26 @@ export const test = {
       assert.ok(response.out.ok)
       assert.ok(response.out.ok.piece.equals(cargo.link.link()))
 
+      const aggregatorServiceProof = await AggregatorCaps.pieceOffer
+        .delegate({
+          issuer: context.aggregatorId,
+          audience: context.id,
+          with: context.aggregatorId.did(),
+          expiration: Infinity,
+        })
+
       // Validate effects in receipt
       const fxJoin = await Aggregator.pieceOffer
         .invoke({
           issuer: context.id,
           audience: context.aggregatorId,
-          with: context.id.did(),
+          with: context.aggregatorId.did(),
           nb: {
             piece: cargo.link.link(),
             group: context.id.did(),
           },
           expiration: Infinity,
+          proofs: [aggregatorServiceProof],
         })
         .delegate()
 
@@ -449,11 +459,26 @@ export const test = {
       context.id
     )
     const group = context.id.did()
+    const aggregatorServiceProof = await AggregatorCaps.pieceOffer
+      .delegate({
+        issuer: aggregator,
+        audience: storefront,
+        with: aggregator.did(),
+        expiration: Infinity,
+      })
     const connection = connect({
       id: context.id,
       channel: createServer({
         ...context,
-        aggregatorId: aggregator,
+        aggregatorService: {
+          connection: context.aggregatorService.connection,
+          invocationConfig: {
+            issuer: storefront,
+            with: aggregator.did(),
+            audience: aggregator,
+            proofs: [aggregatorServiceProof],
+          },
+        },
       }),
     })
 

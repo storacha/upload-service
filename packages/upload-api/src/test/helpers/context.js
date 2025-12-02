@@ -1,4 +1,6 @@
 import * as Signer from '@ucanto/principal/ed25519'
+import * as AggregatorCaps from '@storacha/capabilities/filecoin/aggregator'
+
 import {
   getConnection,
   getMockService,
@@ -32,6 +34,19 @@ export const createContext = async (
   const id = signer.withDID('did:web:test.up.storacha.network')
 
   const service = getMockService()
+
+  const aggregatorServiceConnection = getConnection(
+    aggregatorSigner,
+    service
+  ).connection
+  const aggregatorServiceProof = await AggregatorCaps.pieceOffer
+    .delegate({
+      issuer: aggregatorSigner,
+      audience: signer,
+      with: aggregatorSigner.did(),
+      expiration: Infinity,
+    })
+
   const dealTrackerConnection = getConnection(
     dealTrackerSigner,
     service
@@ -57,7 +72,6 @@ export const createContext = async (
   /** @type { import('../../types.js').UcantoServerContext } */
   const serviceContext = {
     id,
-    aggregatorId: aggregatorSigner,
     signer: id,
     email,
     requirePaymentPlan,
@@ -83,6 +97,15 @@ export const createContext = async (
     pieceStore,
     receiptStore,
     taskStore,
+    aggregatorService: {
+      connection: aggregatorServiceConnection,
+      invocationConfig: {
+        issuer: signer,
+        with: signer.did(),
+        audience: aggregatorSigner,
+        proofs: [aggregatorServiceProof],
+      },
+    },
     dealTrackerService: {
       connection: dealTrackerConnection,
       invocationConfig: {
