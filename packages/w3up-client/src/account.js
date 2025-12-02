@@ -376,7 +376,7 @@ export class AccountPlan {
    *
    * @param {import('@storacha/access').AccountDID} accountDID
    * @param {object} options
-   * @param {import('@storacha/did-mailto').DidMailto} options.planID
+   * @param {API.DID} options.planID
    * @param {string} options.successURL
    * @param {string} options.cancelURL
    * @param {boolean} options.freeTrial
