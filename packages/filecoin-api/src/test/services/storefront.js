@@ -395,13 +395,12 @@ export const test = {
       assert.ok(response.out.ok)
       assert.ok(response.out.ok.piece.equals(cargo.link.link()))
 
-      const aggregatorServiceProof = await AggregatorCaps.pieceOffer
-        .delegate({
-          issuer: context.aggregatorId,
-          audience: context.id,
-          with: context.aggregatorId.did(),
-          expiration: Infinity,
-        })
+      const aggregatorServiceProof = await AggregatorCaps.pieceOffer.delegate({
+        issuer: context.aggregatorId,
+        audience: context.id,
+        with: context.aggregatorId.did(),
+        expiration: Infinity,
+      })
 
       // Validate effects in receipt
       const fxJoin = await Aggregator.pieceOffer
@@ -459,13 +458,12 @@ export const test = {
       context.id
     )
     const group = context.id.did()
-    const aggregatorServiceProof = await AggregatorCaps.pieceOffer
-      .delegate({
-        issuer: aggregator,
-        audience: storefront,
-        with: aggregator.did(),
-        expiration: Infinity,
-      })
+    const aggregatorServiceProof = await AggregatorCaps.pieceOffer.delegate({
+      issuer: aggregator,
+      audience: storefront,
+      with: aggregator.did(),
+      expiration: Infinity,
+    })
     const connection = connect({
       id: context.id,
       channel: createServer({

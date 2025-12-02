@@ -45,13 +45,14 @@ describe('storefront', () => {
           aggregatorSigner,
           service
         ).connection
-        const aggregatorServiceProof = await AggregatorCaps.pieceOffer
-          .delegate({
+        const aggregatorServiceProof = await AggregatorCaps.pieceOffer.delegate(
+          {
             issuer: aggregatorSigner,
             audience: storefrontSigner,
             with: aggregatorSigner.did(),
             expiration: Infinity,
-          })
+          }
+        )
 
         const dealTrackerConnection = getConnection(
           dealTrackerSigner,
@@ -130,13 +131,14 @@ describe('storefront', () => {
           aggregatorSigner,
           service
         ).connection
-        const aggregatorServiceProof = await AggregatorCaps.pieceOffer
-          .delegate({
+        const aggregatorServiceProof = await AggregatorCaps.pieceOffer.delegate(
+          {
             issuer: aggregatorSigner,
             audience: storefrontSigner,
             with: aggregatorSigner.did(),
             expiration: Infinity,
-          })
+          }
+        )
 
         const claimsConnection = getConnection(claimsSigner, service).connection
 

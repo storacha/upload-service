@@ -39,13 +39,12 @@ export const createContext = async (
     aggregatorSigner,
     service
   ).connection
-  const aggregatorServiceProof = await AggregatorCaps.pieceOffer
-    .delegate({
-      issuer: aggregatorSigner,
-      audience: signer,
-      with: aggregatorSigner.did(),
-      expiration: Infinity,
-    })
+  const aggregatorServiceProof = await AggregatorCaps.pieceOffer.delegate({
+    issuer: aggregatorSigner,
+    audience: signer,
+    with: aggregatorSigner.did(),
+    expiration: Infinity,
+  })
 
   const dealTrackerConnection = getConnection(
     dealTrackerSigner,

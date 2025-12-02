@@ -91,10 +91,7 @@ export interface FilecoinSubmitMessageContext
 }
 
 export interface PieceOfferMessageContext
-  extends Pick<
-    ServiceContext,
-    'aggregatorService'
-  > { }
+  extends Pick<ServiceContext, 'aggregatorService'> {}
 
 export interface StorefrontClientContext {
   /**
@@ -138,7 +135,7 @@ export interface CronContext
   extends Pick<
     ServiceContext,
     'id' | 'pieceStore' | 'receiptStore' | 'taskStore' | 'aggregatorService'
-  > { }
+  > {}
 
 export interface PieceRecord {
   /**
@@ -169,7 +166,7 @@ export interface PieceRecord {
    */
   updatedAt: string
 }
-export interface PieceRecordKey extends Pick<PieceRecord, 'piece'> { }
+export interface PieceRecordKey extends Pick<PieceRecord, 'piece'> {}
 
 export interface FilecoinSubmitMessage {
   /**

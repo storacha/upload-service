@@ -153,10 +153,10 @@ export const filecoinSubmit = async ({ capability }, context) => {
     }
   }
 
-  const aggregatorInvConfig = context.aggregatorService.invocationConfig;
+  const aggregatorInvConfig = context.aggregatorService.invocationConfig
 
   if (!aggregatorInvConfig.audience) {
-    throw new Error('Aggregator service invocation config audience must be set');
+    throw new Error('Aggregator service invocation config audience must be set')
   }
 
   // Create effect for receipt
@@ -200,13 +200,13 @@ export const filecoinAccept = async ({ capability }, context) => {
 
   const { group } = getPieceRes.ok
 
-  const aggregatorInvConfig = context.aggregatorService.invocationConfig;
+  const aggregatorInvConfig = context.aggregatorService.invocationConfig
 
   if (!aggregatorInvConfig.audience) {
-    throw new Error('Aggregator service invocation config audience must be set');
+    throw new Error('Aggregator service invocation config audience must be set')
   }
 
-  const aggregatorService = aggregatorInvConfig.audience;
+  const aggregatorService = aggregatorInvConfig.audience
   const aggregatorServiceProofs = aggregatorInvConfig.proofs
 
   const fx = await AggregatorCaps.pieceOffer

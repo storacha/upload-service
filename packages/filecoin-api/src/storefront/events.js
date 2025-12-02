@@ -268,7 +268,7 @@ async function updatePiecesWithDeal({
   let aggregateAcceptReceipt
 
   if (!aggregatorInvConfig.audience) {
-    throw new Error('Missing audience in aggregator invocation config');
+    throw new Error('Missing audience in aggregator invocation config')
   }
 
   let task = /** @type {API.UcantoInterface.Link} */ (
