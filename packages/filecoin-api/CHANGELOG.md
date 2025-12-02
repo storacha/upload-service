@@ -1,3 +1,13 @@
+## 1.3.4 (2025-12-02)
+
+### 🩹 Fixes
+
+- fix: pass principal resolver function to service constructors ([#569](https://github.com/storacha/upload-service/pull/569))
+
+### ❤️ Thank You
+
+- ash
+
 ## 1.3.3 (2025-11-27)
 
 ### 🧱 Updated Dependencies

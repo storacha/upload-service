@@ -4,7 +4,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "2.7.1",
+  "version": "2.7.2",
   "type": "module",
   "main": "./src/lib.js",
   "homepage": "https://storacha.network",
