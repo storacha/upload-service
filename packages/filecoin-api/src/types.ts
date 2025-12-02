@@ -132,7 +132,9 @@ export interface EncodeRecordFailed extends Error {
 
 // Service utils
 
-export interface UcantoServerContext extends PrincipalResolver, RevocationChecker {
+export interface UcantoServerContext
+  extends PrincipalResolver,
+    RevocationChecker {
   id: Signer
   codec?: InboundCodec
   errorReporter: ErrorReporter
