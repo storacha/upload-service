@@ -377,9 +377,9 @@ export class AccountPlan {
    * @param {import('@storacha/access').AccountDID} accountDID
    * @param {object} options
    * @param {API.DID} options.planID
-   * @param {string} options.successURL
-   * @param {string} options.cancelURL
-   * @param {boolean} options.freeTrial
+   * @param {string} [options.successURL]
+   * @param {string} [options.cancelURL]
+   * @param {boolean} [options.freeTrial]
    * @param {string} [options.nonce]
    */
   async createCheckoutSession(accountDID, options) {
