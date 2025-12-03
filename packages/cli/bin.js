@@ -27,6 +27,7 @@ import {
   getPlan,
   createKey,
   reset,
+  setupPlan,
 } from './index.js'
 import {
   blobAdd,
@@ -68,6 +69,14 @@ cli
   .example('plan get user@example.com')
   .describe('Displays plan given account is on')
   .action(getPlan)
+
+cli
+  .command('plan setup [email]')
+  .example('plan setup user@example.com')
+  .describe(
+    'Select a Storacha data storage plan and provide payment details on the web.'
+  )
+  .action(setupPlan)
 
 cli
   .command('account ls')
@@ -134,6 +143,7 @@ cli
   .describe('Create a new storacha space')
   .option('-nr, --no-recovery', 'Skips recovery key setup')
   .option('-n, --no-caution', 'Prints out recovery key without confirmation')
+  .option('-nps, --no-plan-selection', 'Skip plan selection')
   .option('-nc, --no-customer', 'Skip billing setup')
   .option('-c, --customer <email>', 'Billing account email')
   .option('-na, --no-account', 'Skip account setup')
@@ -195,6 +205,7 @@ cli
       skipGatewayAuthorization: options['gateway-authorization'] === false,
       // default to empty array if not set, so the client will validate the gateway services
       authorizeGatewayServices: authorizeGatewayServices || [],
+      skipPlanSelection: options['plan-selection'] === false,
       // pass through the access object
       access,
     }

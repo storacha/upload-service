@@ -4,7 +4,7 @@ import * as W3Account from '@storacha/client/account'
 import * as UcantoClient from '@ucanto/client'
 import { HTTP } from '@ucanto/transport'
 import * as CAR from '@ucanto/transport/car'
-import { getClient, parseEmail } from './lib.js'
+import { chooseBillingPlanAndCheckout, getClient, parseEmail } from './lib.js'
 import process from 'node:process'
 import * as DIDMailto from '@storacha/did-mailto'
 import * as Account from './account.js'
@@ -22,6 +22,7 @@ import * as Result from '@storacha/client/result'
  * @property {DIDMailto.EmailAddress|false} [customer]
  * @property {string|false} [account]
  * @property {Array<{id: import('@ucanto/interface').DID, serviceEndpoint: string}>} [authorizeGatewayServices] - The DID Key or DID Web and URL of the Gateway to authorize to serve content from the created space.
+ * @property {boolean} [skipPlanSelection] - Whether to prompt the user with the plan selection screen.
  * @property {boolean} [skipGatewayAuthorization] - Whether to skip the Gateway authorization. It means that the content of the space will not be served by any Gateway.
  * @property {import('@storacha/access/types').SpaceAccessType} [access] - The access configuration for the space. Defaults to { type: 'public' }.
  *
@@ -71,6 +72,7 @@ export const create = async (name, options) => {
   if (options.customer !== false) {
     console.log('🏗️ To serve this space we need to set a billing account')
     const setup = await setupBilling(client, {
+      skipPlanSelection: options.skipPlanSelection,
       customer: options.customer,
       space: space.did(),
       message: '🚜 Setting a billing account',
@@ -203,6 +205,7 @@ const getRecoveryMnemonic = async () => {
  * @param {import('@storacha/client').Client} client
  * @param {object} options
  * @param {import('@storacha/client/types').SpaceDID} options.space
+ * @param {boolean} [options.skipPlanSelection]
  * @param {DIDMailto.EmailAddress} [options.customer]
  * @param {string} [options.message]
  * @param {string} [options.waitMessage]
@@ -211,6 +214,7 @@ const getRecoveryMnemonic = async () => {
 const setupBilling = async (
   client,
   {
+    skipPlanSelection,
     customer,
     space,
     message = 'Setting up a billing account',
@@ -218,10 +222,16 @@ const setupBilling = async (
   }
 ) => {
   const account = customer
-    ? await useAccount(client, { email: customer })
+    ? useAccount(client, { email: customer })
     : await selectAccount(client)
 
   if (account) {
+    if (!skipPlanSelection){
+      const checkoutResponse = await chooseBillingPlanAndCheckout(account)
+      if (checkoutResponse.error) {
+        return { error: { reason: 'error', cause: checkoutResponse.error } }
+      }
+    }
     const spinner = ora(waitMessage).start()
 
     let plan = null

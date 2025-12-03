@@ -25,6 +25,7 @@ import {
   readProofFromBytes,
   uploadListResponseToString,
   startOfLastMonth,
+  chooseBillingPlanAndCheckout,
 } from './lib.js'
 import * as ucanto from '@ucanto/core'
 import { ed25519 } from '@ucanto/principal'
@@ -68,6 +69,32 @@ export const getPlan = async (email = '') => {
       process.exit(1)
     }
   } else {
+    process.exit(1)
+  }
+}
+
+/**
+ * @param {string} email
+ */
+export const setupPlan = async (email = '') => {
+  const client = await getClient()
+  const account =
+    email === ''
+      ? await Space.selectAccount(client)
+      : Space.useAccount(client, { email })
+
+  if (account) {
+    const { error } = await chooseBillingPlanAndCheckout(account)
+    if (error) {
+      console.error(
+        `Sorry, there was an error setting up your billing plan - ${error.message}`
+      )
+      process.exit(1)
+    }
+  } else {
+    console.error(
+      `Please log in with storacha login before setting up your storage plan.`
+    )
     process.exit(1)
   }
 }

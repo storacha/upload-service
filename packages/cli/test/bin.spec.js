@@ -102,7 +102,7 @@ export const testAccount = {
 export const testSpace = {
   'storacha space create': test(async (assert, context) => {
     const command = storacha
-      .args(['space', 'create', '--no-gateway-authorization'])
+      .args(['space', 'create', '--no-gateway-authorization', '--no-plan-selection'])
       .env(context.env.alice)
       .fork()
 
@@ -115,7 +115,7 @@ export const testSpace = {
 
   'storacha space create home': test(async (assert, context) => {
     const create = storacha
-      .args(['space', 'create', 'home', '--no-gateway-authorization'])
+      .args(['space', 'create', 'home', '--no-gateway-authorization', '--no-plan-selection'])
       .env(context.env.alice)
       .fork()
 
@@ -142,6 +142,7 @@ export const testSpace = {
         'home',
         '--no-caution',
         '--no-gateway-authorization',
+        '--no-plan-selection',
       ])
       .env(context.env.alice)
       .fork()
@@ -172,6 +173,7 @@ export const testSpace = {
           'home',
           '--no-recovery',
           '--no-gateway-authorization',
+          '--no-plan-selection',
         ])
         .env(context.env.alice)
         .fork()
@@ -197,11 +199,12 @@ export const testSpace = {
           'home',
           '--no-recovery',
           '--no-gateway-authorization',
+          '--no-plan-selection',
         ])
         .env(context.env.alice)
         .fork()
 
-      const lines = await create.output.lines().take(2).text()
+      const lines = await create.output.lines().take(3).text()
 
       assert.match(lines, /billing account is set/i)
 
@@ -221,6 +224,7 @@ export const testSpace = {
           'my-space',
           '--no-recovery',
           '--no-gateway-authorization',
+          '--no-plan-selection',
         ])
         .env(context.env.alice)
         .fork()
@@ -253,6 +257,7 @@ export const testSpace = {
           'unknown@web.mail',
           '--no-account',
           '--no-gateway-authorization',
+          '--no-plan-selection',
         ])
         .join()
         .catch()
@@ -274,6 +279,7 @@ export const testSpace = {
           'home',
           '--no-recovery',
           '--no-gateway-authorization',
+          '--no-plan-selection',
           '--customer',
           'alice@web.mail',
           '--no-account',
@@ -304,6 +310,7 @@ export const testSpace = {
           'home',
           '--no-recovery',
           '--no-gateway-authorization',
+          '--no-plan-selection',
           '--customer',
           email,
           '--account',
@@ -343,6 +350,7 @@ export const testSpace = {
           'home',
           '--no-recovery',
           '--no-gateway-authorization',
+          '--no-plan-selection',
         ])
         .join()
 
@@ -378,6 +386,7 @@ export const testSpace = {
           'create',
           'home',
           '--no-recovery',
+          '--no-plan-selection',
           '--customer',
           email,
           '--account',
@@ -794,6 +803,7 @@ export const testStorachaUp = {
         '--no-recovery',
         '--no-account',
         '--no-gateway-authorization',
+        '--no-plan-selection',
         '--customer',
         email,
       ])
@@ -827,6 +837,7 @@ export const testStorachaUp = {
         '--no-recovery',
         '--no-account',
         '--no-gateway-authorization',
+        '--no-plan-selection',
         '--customer',
         email,
       ])
@@ -860,6 +871,7 @@ export const testStorachaUp = {
         '--no-recovery',
         '--no-account',
         '--no-gateway-authorization',
+        '--no-plan-selection',
         '--customer',
         email,
       ])
@@ -892,6 +904,7 @@ export const testStorachaUp = {
         '--no-recovery',
         '--no-account',
         '--no-gateway-authorization',
+        '--no-plan-selection',
         '--customer',
         email,
       ])
@@ -1517,6 +1530,7 @@ export const createSpace = async (
       '--no-recovery',
       '--no-account',
       '--no-gateway-authorization',
+      '--no-plan-selection',
       ...(customer ? ['--customer', customer] : ['--no-customer']),
     ])
     .env(env)
