@@ -12,7 +12,6 @@ import { useConditionalPlan } from '@/hooks'
 import { useSearchParams } from 'next/navigation'
 import { useIframe } from '@/contexts/IframeContext'
 import { useRecordRefcode } from '@/lib/referrals/hooks'
-import { PlanGate as NewPlanGate } from './NewPlanGate'
 
 const PricingTable = ({
   email,
@@ -148,11 +147,9 @@ export function MaybePlanGate({
   const params = useSearchParams()
   if (
     process.env.NEXT_PUBLIC_DISABLE_PLAN_GATE == 'true' ||
-    params.get('checkout.session')
+    (params.get('checkout-success') === 'true')
   ) {
     return children
-  } else if (params.get('new-plan-gate')) {
-    return <NewPlanGate>{children}</NewPlanGate>
   } else {
     return <PlanGate>{children}</PlanGate>
   }

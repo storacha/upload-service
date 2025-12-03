@@ -16,7 +16,7 @@ export const usePrivateSpacesAccess = () => {
     refreshInterval: isIframe ? 0 : undefined,
   }), [isIframe])
   
-  const { data: plan, isLoading } = usePlan(account, planOptions)
+  const { data: plan, error: planError, isLoading } = usePlan(account, planOptions)
   const email = account?.toEmail()
   
   // Domains eligible for access to private spaces
@@ -49,6 +49,10 @@ export const usePrivateSpacesAccess = () => {
     email ? allowedDomains.some(domain => email.endsWith(`@${domain}`)) : false
   , [email, allowedDomains])
   
+  // true if the plan is loading for the first time - ie, if isLoading is true and plan and error
+  // are still undefined
+  const planLoading = !plan && !planError && isLoading
+
   // Debug logging
   const debugInfo = useCallback(() => ({
     email,
@@ -56,7 +60,7 @@ export const usePrivateSpacesAccess = () => {
     isPaidUser,
     isEligibleDomain,
     plan: plan?.product,
-    planLoading: isLoading
+    planLoading
   }), [email, isFreeTrialUser, isPaidUser, isEligibleDomain, plan, isLoading])
   
   if (process.env.NODE_ENV === 'development') {
@@ -72,7 +76,7 @@ export const usePrivateSpacesAccess = () => {
     shouldShowPrivateSpacesTab: isEligibleDomain,
     email,
     plan,
-    planLoading: isLoading,
+    planLoading,
     debugInfo // Export for debugging
   }
 }

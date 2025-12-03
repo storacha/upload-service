@@ -82,6 +82,19 @@ interface CreateCheckoutSessionProps {
   redirectAfterCompletion?: boolean
 }
 
+function createSuccessUrl(){
+  const u = new URL(location.href)
+  u.searchParams.append("checkout-success", "true")
+  return u.href
+}
+
+function createCancelUrl() {
+  const u = new URL(location.href)
+  u.searchParams.append("checkout-success", "false")
+  return u.href
+}
+
+
 export default function StripePricingTable({ freeTrial = false, redirectAfterCheckout = true }: PricingTableProps) {
   const [{ accounts, client }] = useW3()
   const account = accounts[0]
@@ -96,8 +109,8 @@ export default function StripePricingTable({ freeTrial = false, redirectAfterChe
         freeTrial,
       }
       if (redirectAfterCheckout){
-        checkoutProps.successURL = location.href
-        checkoutProps.cancelURL = location.href
+        checkoutProps.successURL = createSuccessUrl()
+        checkoutProps.cancelURL = createCancelUrl()
       } else {
         checkoutProps.redirectAfterCompletion = false
       }
