@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.19.0](https://github.com/storacha/upload-service/compare/console-v2.18.2...console-v2.19.0) (2025-12-03)
+
+
+### Features
+
+* cleanup and bugfixing in the signup flow ([#576](https://github.com/storacha/upload-service/issues/576)) ([f4e4984](https://github.com/storacha/upload-service/commit/f4e49847f1df55c550827eb68e593f17f6912d81))
+
 ## [2.18.2](https://github.com/storacha/upload-service/compare/console-v2.18.1...console-v2.18.2) (2025-11-26)
 
 
