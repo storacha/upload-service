@@ -102,7 +102,12 @@ export const testAccount = {
 export const testSpace = {
   'storacha space create': test(async (assert, context) => {
     const command = storacha
-      .args(['space', 'create', '--no-gateway-authorization', '--no-plan-selection'])
+      .args([
+        'space',
+        'create',
+        '--no-gateway-authorization',
+        '--no-plan-selection',
+      ])
       .env(context.env.alice)
       .fork()
 
@@ -115,7 +120,13 @@ export const testSpace = {
 
   'storacha space create home': test(async (assert, context) => {
     const create = storacha
-      .args(['space', 'create', 'home', '--no-gateway-authorization', '--no-plan-selection'])
+      .args([
+        'space',
+        'create',
+        'home',
+        '--no-gateway-authorization',
+        '--no-plan-selection',
+      ])
       .env(context.env.alice)
       .fork()
 

@@ -226,7 +226,7 @@ const setupBilling = async (
     : await selectAccount(client)
 
   if (account) {
-    if (!skipPlanSelection){
+    if (!skipPlanSelection) {
       const checkoutResponse = await chooseBillingPlanAndCheckout(account)
       if (checkoutResponse.error) {
         return { error: { reason: 'error', cause: checkoutResponse.error } }
