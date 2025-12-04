@@ -18,10 +18,6 @@ const Plans: Record<`did:${string}`, { name: string, limit: number }> = {
   'did:web:lite.web3.storage': { name: 'Lite', limit: 100 * GB },
   'did:web:business.web3.storage': { name: 'Business', limit: 2 * TB },
   'did:web:free.web3.storage': { name: 'Free', limit: Infinity },
-  'did:web:starter.storacha.network': { name: 'Mild', limit: 5 * GB },
-  'did:web:lite.storacha.network': { name: 'Medium', limit: 100 * GB },
-  'did:web:business.storacha.network': { name: 'Extra Spicy', limit: 2 * TB },
-  'did:web:free.storacha.network': { name: 'Free', limit: Infinity },
   'did:web:trial.storacha.network': { name: 'Trial', limit: 100 * MB },
 }
 
