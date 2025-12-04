@@ -1,3 +1,15 @@
+# 2.0.0 (2025-12-04)
+
+### ⚠️  Breaking Changes
+
+- Add pricing table and plan picker to the CLI ([#578](https://github.com/storacha/upload-service/pull/578))
+
+  This includes a new `plan setup` command that will allow users to set up a plan for their account without leaving the terminal.
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 1.6.33 (2025-12-02)
 
 ### 🧱 Updated Dependencies
