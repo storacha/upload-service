@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.19.1](https://github.com/storacha/upload-service/compare/console-v2.19.0...console-v2.19.1) (2025-12-04)
+
+
+### Fixes
+
+* add Plans records for new storacha.network plans ([fc4ed43](https://github.com/storacha/upload-service/commit/fc4ed431fb3480d5c15de9a30a5be6f0eb6c8cb2))
+* add Plans records for new storacha.network plans ([#581](https://github.com/storacha/upload-service/issues/581)) ([afb80df](https://github.com/storacha/upload-service/commit/afb80dfdc8b97a217a115fc3505e07ed22cf0af2))
+
 ## [2.19.0](https://github.com/storacha/upload-service/compare/console-v2.18.2...console-v2.19.0) (2025-12-03)
 
 
