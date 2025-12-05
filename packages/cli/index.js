@@ -364,12 +364,26 @@ export async function useSpace(did) {
  */
 export async function spaceInfo(opts) {
   const client = await getClient()
-  const spaceDID = opts.space ?? client.currentSpace()?.did()
+  if (typeof opts.space === 'boolean') {
+    console.error(
+      'Error: --space requires a DID value (e.g. --space did:key:...)'
+    )
+    process.exit(2)
+  }
+
+  // opts.space is set to `true` if --space is not specified - in this case we should call back to the DID of the current space
+  const spaceDID = (!opts.space || (opts.space === true)) ? client.currentSpace()?.did() : opts.space
   if (!spaceDID) {
     console.error(
       'Error: no current space and no space given: please use "--space" to specify a space or select one using "space use"'
     )
     process.exit(1)
+  }
+
+  // validate the value early for a clearer error
+  if (typeof spaceDID !== 'string' || !spaceDID.startsWith('did:')) {
+    console.error('Error: invalid DID. Expected something like "did:key:...".')
+    process.exit(2)
   }
 
   /** @type {import('@storacha/access/types').SpaceInfoResult} */
