@@ -132,10 +132,9 @@ export interface ClaimsClientContext {
 }
 
 export interface CronContext
-  extends Pick<
-    ServiceContext,
-    'id' | 'pieceStore' | 'receiptStore' | 'taskStore' | 'aggregatorService'
-  > {}
+  extends Pick<ServiceContext, 'pieceStore' | 'receiptStore' | 'taskStore'> {
+  aggregatorService: Pick<ServiceConfig<AggregatorService>, 'invocationConfig'>
+}
 
 export interface PieceRecord {
   /**

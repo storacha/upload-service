@@ -41,7 +41,9 @@ export interface StorefrontTestEventsContext
     StorefrontInterface.PieceOfferMessageContext,
     StorefrontInterface.StorefrontClientContext,
     StorefrontInterface.ClaimsClientContext,
-    StorefrontInterface.CronContext {
+    // use the aggregatorService property from PieceOfferMessageContext which includes
+    // both invocationConfig and connection. The one in CronContext only has invocationConfig.
+    Omit<StorefrontInterface.CronContext, 'aggregatorService'> {
   id: Signer
   aggregatorId: Signer
   testContentStore: TestContentStore<UnknownLink, Uint8Array>
