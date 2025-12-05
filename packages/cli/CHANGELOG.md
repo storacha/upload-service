@@ -1,3 +1,13 @@
+## 2.0.1 (2025-12-05)
+
+### 🩹 Fixes
+
+- Fix bug where plan selection screen would show even for users with a plan ([#583](https://github.com/storacha/upload-service/pull/583))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 # 2.0.0 (2025-12-04)
 
 ### ⚠️  Breaking Changes
