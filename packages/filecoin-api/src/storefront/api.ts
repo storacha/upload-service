@@ -42,10 +42,6 @@ export interface ServiceContext {
    */
   id: Signer
   /**
-   * Principal for aggregator service
-   */
-  aggregatorId: Principal
-  /**
    * Stores pieces that have been offered to the Storefront.
    */
   pieceStore: PieceStore
@@ -66,6 +62,10 @@ export interface ServiceContext {
    */
   receiptStore: ReceiptStore
   /**
+   * Aggregator connection to move pieces into the pipeline.
+   */
+  aggregatorService: ServiceConfig<AggregatorService>
+  /**
    * Deal tracker connection to find out available deals for an aggregate.
    */
   dealTrackerService: ServiceConfig<DealTrackerService>
@@ -81,6 +81,7 @@ export interface TestStorageNode {
 }
 
 export interface TestServiceContext extends ServiceContext {
+  aggregatorId: Signer
   storageProviders: Array<TestStorageNode>
 }
 
@@ -89,12 +90,8 @@ export interface FilecoinSubmitMessageContext
   contentStore: ContentStore<UnknownLink, Uint8Array>
 }
 
-export interface PieceOfferMessageContext {
-  /**
-   * Aggregator connection to moves pieces into the pipeline.
-   */
-  aggregatorService: ServiceConfig<AggregatorService>
-}
+export interface PieceOfferMessageContext
+  extends Pick<ServiceContext, 'aggregatorService'> {}
 
 export interface StorefrontClientContext {
   /**
@@ -135,10 +132,9 @@ export interface ClaimsClientContext {
 }
 
 export interface CronContext
-  extends Pick<
-    ServiceContext,
-    'id' | 'pieceStore' | 'receiptStore' | 'taskStore' | 'aggregatorId'
-  > {}
+  extends Pick<ServiceContext, 'pieceStore' | 'receiptStore' | 'taskStore'> {
+  aggregatorService: Pick<ServiceConfig<AggregatorService>, 'invocationConfig'>
+}
 
 export interface PieceRecord {
   /**
