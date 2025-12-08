@@ -78,17 +78,18 @@ if (process.env.STORACHA_TRACING_ENABLED) {
 
   for (const [k, action] of Object.entries(actions)) {
     /** @param {any[]} args */
-    actions[k] = (...args) => tracer.startActiveSpan(k, async span => {
-      try {
-        await action(...args)
-      } catch (/** @type {any} */ err) {
-        span.recordException(err)
-        span.setStatus({ code: SpanStatusCode.ERROR, message: err.message })
-        throw err
-      } finally {
-        span.end()
-      }
-    })
+    actions[k] = (...args) =>
+      tracer.startActiveSpan(k, async (span) => {
+        try {
+          await action(...args)
+        } catch (/** @type {any} */ err) {
+          span.recordException(err)
+          span.setStatus({ code: SpanStatusCode.ERROR, message: err.message })
+          throw err
+        } finally {
+          span.end()
+        }
+      })
   }
 }
 
