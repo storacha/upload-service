@@ -44,6 +44,54 @@ const pkg = getPkg()
 
 updateNotifier({ pkg }).notify({ isGlobal: true })
 
+/** @type {Record<string, (...args: any[]) => Promise<void>>} */
+const actions = {
+  accountLogin: Account.login,
+  getPlan,
+  setupPlan,
+  accountList: Account.list,
+  upload,
+  list,
+  remove,
+  spaceProvision: Space.provision,
+  addSpace,
+  listSpaces,
+  spaceInfo,
+  revokeDelegation,
+  usageReport,
+  blobAdd,
+  blobList,
+  blobRemove,
+  indexAdd,
+  uploadAdd,
+  uploadList,
+  uploadRemove,
+  filecoinInfo,
+}
+
+if (process.env.STORACHA_TRACING_ENABLED) {
+  const telemetry = await import('./telemetry.js')
+  telemetry.setup()
+
+  const { trace, SpanStatusCode } = await import('@opentelemetry/api')
+  const tracer = trace.getTracer(pkg.name)
+
+  for (const [k, action] of Object.entries(actions)) {
+    /** @param {any[]} args */
+    actions[k] = (...args) => tracer.startActiveSpan(k, async span => {
+      try {
+        await action(...args)
+      } catch (/** @type {any} */ err) {
+        span.recordException(err)
+        span.setStatus({ code: SpanStatusCode.ERROR, message: err.message })
+        throw err
+      } finally {
+        span.end()
+      }
+    })
+  }
+}
+
 const cli = sade('storacha')
 
 cli
@@ -62,13 +110,13 @@ cli
     'Use GitHub to authenticate. GitHub developer accounts automatically gain access to a trial plan.',
     false
   )
-  .action(Account.login)
+  .action(actions.accountLogin)
 
 cli
   .command('plan get [email]')
   .example('plan get user@example.com')
   .describe('Displays plan given account is on')
-  .action(getPlan)
+  .action(actions.getPlan)
 
 cli
   .command('plan setup [email]')
@@ -76,13 +124,13 @@ cli
   .describe(
     'Select a Storacha data storage plan and provide payment details on the web.'
   )
-  .action(setupPlan)
+  .action(actions.setupPlan)
 
 cli
   .command('account ls')
   .alias('account list')
   .describe('List accounts this agent has been authorized to act on behalf of.')
-  .action(Account.list)
+  .action(actions.accountList)
 
 cli
   .command('up [file]')
@@ -106,7 +154,7 @@ cli
     '--shard-size',
     'Shard uploads into CAR files of approximately this size in bytes.'
   )
-  .action(upload)
+  .action(actions.upload)
 
 cli
   .command('open <cid>')
@@ -119,7 +167,7 @@ cli
   .describe('List uploads in the current space')
   .option('--json', 'Format as newline delimited JSON')
   .option('--shards', 'Pretty print with shards in output')
-  .action(list)
+  .action(actions.list)
 
 cli
   .command('rm <root-cid>')
@@ -131,7 +179,7 @@ cli
     '--shards',
     'Remove all shards referenced by the upload from the store. Use with caution and ensure other uploads do not reference the same shards.'
   )
-  .action(remove)
+  .action(actions.remove)
 
 cli
   .command('whoami')
@@ -252,26 +300,26 @@ cli
     '-p, --provider',
     'The storage provider to associate with this space.'
   )
-  .action(Space.provision)
+  .action(actions.spaceProvision)
 
 cli
   .command('space add <proof>')
   .describe(
     'Import a space from a proof: a CAR encoded UCAN delegating capabilities to this agent. proof is a filesystem path, or a base64 encoded cid string.'
   )
-  .action(addSpace)
+  .action(actions.addSpace)
 
 cli
   .command('space ls')
   .describe('List spaces known to the agent')
-  .action(listSpaces)
+  .action(actions.listSpaces)
 
 cli
   .command('space info')
   .describe('Show information about a space. Defaults to the current space.')
   .option('-s, --space', 'The space to print information about.')
   .option('--json', 'Format as newline delimited JSON')
-  .action(spaceInfo)
+  .action(actions.spaceInfo)
 
 cli
   .command('space use <did>')
@@ -349,7 +397,7 @@ cli
     '-p, --proof',
     'Name of a file containing the delegation and any additional proofs needed to prove authority to revoke'
   )
-  .action(revokeDelegation)
+  .action(actions.revokeDelegation)
 
 cli
   .command('proof add <proof>')
@@ -369,7 +417,7 @@ cli
   .describe('Display report of current space usage in bytes.')
   .option('--human', 'Format human readable values.', false)
   .option('--json', 'Format as newline delimited JSON', false)
-  .action(usageReport)
+  .action(actions.usageReport)
 
 cli
   .command('can access claim')
@@ -379,7 +427,7 @@ cli
 cli
   .command('can blob add [data-path]')
   .describe('Store a blob with the service.')
-  .action(blobAdd)
+  .action(actions.blobAdd)
 
 cli
   .command('can blob ls')
@@ -390,24 +438,24 @@ cli
     '--cursor',
     'An opaque string included in a prior blob/list response that allows the service to provide the next "page" of results'
   )
-  .action(blobList)
+  .action(actions.blobList)
 
 cli
   .command('can blob rm <multihash>')
   .describe('Remove a blob from the store by base58btc encoded multihash.')
-  .action(blobRemove)
+  .action(actions.blobRemove)
 
 cli
   .command('can index add <cid>')
   .describe('Register an "index" with the service.')
-  .action(indexAdd)
+  .action(actions.indexAdd)
 
 cli
   .command('can upload add <root-cid> <shard-cid>')
   .describe(
     'Register an upload - a DAG with the given root data CID that is stored in the given CAR shard(s), identified by CAR CIDs.'
   )
-  .action(uploadAdd)
+  .action(actions.uploadAdd)
 
 cli
   .command('can upload ls')
@@ -420,17 +468,17 @@ cli
     'An opaque string included in a prior upload/list response that allows the service to provide the next "page" of results'
   )
   .option('--pre', 'If true, return the page of results preceding the cursor')
-  .action(uploadList)
+  .action(actions.uploadList)
 
 cli
   .command('can upload rm <root-cid>')
   .describe('Remove an upload from the uploads listing.')
-  .action(uploadRemove)
+  .action(actions.uploadRemove)
 
 cli
   .command('can filecoin info <piece-cid>')
   .describe('Get filecoin information for given PieceCid.')
-  .action(filecoinInfo)
+  .action(actions.filecoinInfo)
 
 cli
   .command('key create')
