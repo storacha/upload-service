@@ -1,3 +1,13 @@
+## 2.8.0 (2025-12-05)
+
+### 🚀 Features
+
+- feat: replica allocation timeout and retry with alternate candidate ([1f3f8b08](https://github.com/storacha/upload-service/commit/1f3f8b08))
+
+### ❤️ Thank You
+
+- Alan Shaw
+
 ## 2.7.2 (2025-12-02)
 
 ### 🧱 Updated Dependencies
