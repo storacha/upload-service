@@ -310,6 +310,18 @@ The URL at which UCAN receipts issued by the service may be fetched.
 
 Default `https://up.storacha.network/receipt/`
 
+### `STORACHA_TRACING_ENABLED`
+
+Enable collection of OTEL telemetry.
+
+### `STORACHA_TRACES_ENDPOINT`
+
+Customise the endpoint traces are sent to.
+
+## `STORACHA_TRACES_SAMPLER_ARG`
+
+Configure the sampler with a ratio between 0 and 1 (inclusive). Default: 1.
+
 ## FAQ
 
 ### Where are my keys and delegations stored?
