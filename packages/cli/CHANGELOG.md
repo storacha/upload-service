@@ -1,3 +1,13 @@
+## 2.0.3 (2025-12-09)
+
+### 🩹 Fixes
+
+- feat(cli): add opt-in basic telemetry ([d169e491](https://github.com/storacha/upload-service/commit/d169e491))
+
+### ❤️ Thank You
+
+- Alan Shaw
+
 ## 2.0.2 (2025-12-05)
 
 ### 🧱 Updated Dependencies
