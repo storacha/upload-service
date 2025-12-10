@@ -1,6 +1,9 @@
 import type {
   HandlerExecutionError,
   Signer,
+  Principal,
+  DID,
+  Proof,
   InboundCodec,
   CapabilityParser,
   ParsedCapability,
@@ -96,6 +99,25 @@ export interface QueryableStore<Query, Rec> {
 
 export interface QueueMessageOptions {
   messageGroupId?: string
+}
+
+export interface InvocationIssuanceConfig {
+  /**
+   * Signing authority that is issuing the UCAN invocation(s).
+   */
+  issuer: Signer
+  /**
+   * The principal that is requested to execute the invocation.
+   */
+  audience: Principal
+  /**
+   * The resource the invocation applies to.
+   */
+  with: DID
+  /**
+   * Proof(s) the issuer has the capability to perform the action.
+   */
+  proofs?: Proof[]
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

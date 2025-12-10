@@ -468,14 +468,11 @@ export const test = {
       id: context.id,
       channel: createServer({
         ...context,
-        aggregatorService: {
-          connection: context.aggregatorService.connection,
-          invocationConfig: {
-            issuer: storefront,
-            with: aggregator.did(),
-            audience: aggregator,
-            proofs: [aggregatorServiceProof],
-          },
+        aggregatorInvocationConfig: {
+          issuer: storefront,
+          with: aggregator.did(),
+          audience: aggregator,
+          proofs: [aggregatorServiceProof],
         },
       }),
     })

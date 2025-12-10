@@ -6,14 +6,14 @@ import { StorePutError } from '../types.js'
 
 export interface AggregatorTestEventsContext
   extends AggregatorInterface.PieceMessageContext,
-    AggregatorInterface.PieceAcceptMessageContext,
-    AggregatorInterface.AggregateOfferMessageContext,
-    AggregatorInterface.PieceInsertEventContext,
-    AggregatorInterface.InclusionInsertEventToUpdateState,
-    AggregatorInterface.InclusionInsertEventToIssuePieceAccept,
-    AggregatorInterface.AggregateInsertEventToAggregateOfferContext,
-    AggregatorInterface.AggregateInsertEventToPieceAcceptQueueContext,
-    AggregatorInterface.BufferMessageContext {
+  AggregatorInterface.PieceAcceptMessageContext,
+  AggregatorInterface.AggregateOfferMessageContext,
+  AggregatorInterface.PieceInsertEventContext,
+  AggregatorInterface.InclusionInsertEventToUpdateState,
+  AggregatorInterface.InclusionInsertEventToIssuePieceAccept,
+  AggregatorInterface.AggregateInsertEventToAggregateOfferContext,
+  AggregatorInterface.AggregateInsertEventToPieceAcceptQueueContext,
+  AggregatorInterface.BufferMessageContext {
   id: Signer
   service: Partial<{
     filecoin: Partial<import('../types.js').StorefrontService['filecoin']>
@@ -25,8 +25,8 @@ export interface AggregatorTestEventsContext
 
 export interface DealerTestEventsContext
   extends DealerInterface.AggregateInsertEventContext,
-    DealerInterface.AggregateUpdatedStatusEventContext,
-    DealerInterface.CronContext {
+  DealerInterface.AggregateUpdatedStatusEventContext,
+  DealerInterface.CronContext {
   id: Signer
   service: Partial<{
     filecoin: Partial<import('../types.js').StorefrontService['filecoin']>
@@ -38,12 +38,10 @@ export interface DealerTestEventsContext
 
 export interface StorefrontTestEventsContext
   extends StorefrontInterface.FilecoinSubmitMessageContext,
-    StorefrontInterface.PieceOfferMessageContext,
-    StorefrontInterface.StorefrontClientContext,
-    StorefrontInterface.ClaimsClientContext,
-    // use the aggregatorService property from PieceOfferMessageContext which includes
-    // both invocationConfig and connection. The one in CronContext only has invocationConfig.
-    Omit<StorefrontInterface.CronContext, 'aggregatorService'> {
+  StorefrontInterface.PieceOfferMessageContext,
+  StorefrontInterface.StorefrontClientContext,
+  StorefrontInterface.ClaimsClientContext,
+  StorefrontInterface.CronContext {
   id: Signer
   aggregatorId: Signer
   testContentStore: TestContentStore<UnknownLink, Uint8Array>

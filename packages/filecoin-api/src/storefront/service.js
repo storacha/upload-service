@@ -153,24 +153,18 @@ export const filecoinSubmit = async ({ capability }, context) => {
     }
   }
 
-  const aggregatorInvConfig = context.aggregatorService.invocationConfig
-
-  if (!aggregatorInvConfig.audience) {
-    throw new Error('Aggregator service invocation config audience must be set')
-  }
-
   // Create effect for receipt
   const fx = await AggregatorCaps.pieceOffer
     .invoke({
-      issuer: aggregatorInvConfig.issuer,
-      audience: aggregatorInvConfig.audience,
-      with: aggregatorInvConfig.with,
+      issuer: context.aggregatorInvocationConfig.issuer,
+      audience: context.aggregatorInvocationConfig.audience,
+      with: context.aggregatorInvocationConfig.with,
       nb: {
         piece,
         group,
       },
       expiration: Infinity,
-      proofs: aggregatorInvConfig.proofs,
+      proofs: context.aggregatorInvocationConfig.proofs,
     })
     .delegate()
 
@@ -200,26 +194,17 @@ export const filecoinAccept = async ({ capability }, context) => {
 
   const { group } = getPieceRes.ok
 
-  const aggregatorInvConfig = context.aggregatorService.invocationConfig
-
-  if (!aggregatorInvConfig.audience) {
-    throw new Error('Aggregator service invocation config audience must be set')
-  }
-
-  const aggregatorService = aggregatorInvConfig.audience
-  const aggregatorServiceProofs = aggregatorInvConfig.proofs
-
   const fx = await AggregatorCaps.pieceOffer
     .invoke({
-      issuer: context.id,
-      audience: aggregatorService,
-      with: aggregatorService.did(),
+      issuer: context.aggregatorInvocationConfig.issuer,
+      audience: context.aggregatorInvocationConfig.audience,
+      with: context.aggregatorInvocationConfig.with,
       nb: {
         piece,
         group,
       },
       expiration: Infinity,
-      proofs: aggregatorServiceProofs,
+      proofs: context.aggregatorInvocationConfig.proofs,
     })
     .delegate()
 

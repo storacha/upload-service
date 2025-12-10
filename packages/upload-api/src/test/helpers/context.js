@@ -35,10 +35,6 @@ export const createContext = async (
 
   const service = getMockService()
 
-  const aggregatorServiceConnection = getConnection(
-    aggregatorSigner,
-    service
-  ).connection
   const aggregatorServiceProof = await AggregatorCaps.pieceOffer.delegate({
     issuer: aggregatorSigner,
     audience: signer,
@@ -96,14 +92,11 @@ export const createContext = async (
     pieceStore,
     receiptStore,
     taskStore,
-    aggregatorService: {
-      connection: aggregatorServiceConnection,
-      invocationConfig: {
-        issuer: signer,
-        with: signer.did(),
-        audience: aggregatorSigner,
-        proofs: [aggregatorServiceProof],
-      },
+    aggregatorInvocationConfig: {
+      issuer: signer,
+      with: signer.did(),
+      audience: aggregatorSigner,
+      proofs: [aggregatorServiceProof],
     },
     dealTrackerService: {
       connection: dealTrackerConnection,

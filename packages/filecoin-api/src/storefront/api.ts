@@ -26,6 +26,7 @@ import {
   ServiceConfig,
   StoreGetError,
   PDPInfoSuccess,
+  InvocationIssuanceConfig,
 } from '../types.js'
 
 export type PieceStore = Store<PieceRecordKey, PieceRecord> &
@@ -64,7 +65,7 @@ export interface ServiceContext {
   /**
    * Aggregator connection to move pieces into the pipeline.
    */
-  aggregatorService: ServiceConfig<AggregatorService>
+  aggregatorInvocationConfig: InvocationIssuanceConfig
   /**
    * Deal tracker connection to find out available deals for an aggregate.
    */
@@ -90,8 +91,9 @@ export interface FilecoinSubmitMessageContext
   contentStore: ContentStore<UnknownLink, Uint8Array>
 }
 
-export interface PieceOfferMessageContext
-  extends Pick<ServiceContext, 'aggregatorService'> {}
+export interface PieceOfferMessageContext {
+  aggregatorService: ServiceConfig<AggregatorService>
+}
 
 export interface StorefrontClientContext {
   /**
@@ -132,9 +134,7 @@ export interface ClaimsClientContext {
 }
 
 export interface CronContext
-  extends Pick<ServiceContext, 'pieceStore' | 'receiptStore' | 'taskStore'> {
-  aggregatorService: Pick<ServiceConfig<AggregatorService>, 'invocationConfig'>
-}
+  extends Pick<ServiceContext, 'pieceStore' | 'receiptStore' | 'taskStore' | 'aggregatorInvocationConfig'> { }
 
 export interface PieceRecord {
   /**
@@ -165,7 +165,7 @@ export interface PieceRecord {
    */
   updatedAt: string
 }
-export interface PieceRecordKey extends Pick<PieceRecord, 'piece'> {}
+export interface PieceRecordKey extends Pick<PieceRecord, 'piece'> { }
 
 export interface FilecoinSubmitMessage {
   /**

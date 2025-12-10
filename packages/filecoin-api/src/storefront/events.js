@@ -215,7 +215,7 @@ export const handleCronTick = async (context) => {
     const updatedResponses = await Promise.all(
       submittedPieces.ok.results.map((pieceRecord) =>
         updatePiecesWithDeal({
-          aggregatorInvConfig: context.aggregatorService.invocationConfig,
+          aggregatorInvConfig: context.aggregatorInvocationConfig,
           pieceRecord,
           pieceStore: context.pieceStore,
           taskStore: context.taskStore,
@@ -252,7 +252,7 @@ export const handleCronTick = async (context) => {
  * Update its status if there is an accepted aggregate.
  *
  * @param {object} context
- * @param {import('@storacha/filecoin-client/types').InvocationConfig} context.aggregatorInvConfig
+ * @param {import('@storacha/filecoin-api/types').InvocationIssuanceConfig} context.aggregatorInvConfig
  * @param {PieceRecord} context.pieceRecord
  * @param {PieceStore} context.pieceStore
  * @param {API.Store<import('@ucanto/interface').UnknownLink, API.UcantoInterface.Invocation>} context.taskStore
@@ -266,10 +266,6 @@ async function updatePiecesWithDeal({
   receiptStore,
 }) {
   let aggregateAcceptReceipt
-
-  if (!aggregatorInvConfig.audience) {
-    throw new Error('Missing audience in aggregator invocation config')
-  }
 
   let task = /** @type {API.UcantoInterface.Link} */ (
     (
