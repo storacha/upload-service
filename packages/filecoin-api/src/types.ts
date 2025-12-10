@@ -15,7 +15,6 @@ import type {
   ConnectionView,
 } from '@ucanto/interface'
 import type { ProviderInput } from '@ucanto/server'
-import { InvocationConfig } from '@storacha/filecoin-client/types'
 
 export * as UcantoInterface from '@ucanto/interface'
 export type { Result, Variant } from '@ucanto/interface'
