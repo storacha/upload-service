@@ -95,6 +95,8 @@
     "dotenv": "^17.2.3",
     "ipfs-unixfs-exporter": "catalog:",
     "multiformats": "catalog:",
+    "p-queue": "^9.0.1",
+    "p-retry": "catalog:",
     "viem": "^2.39.0"
   },
   "devDependencies": {

@@ -50,15 +50,6 @@ export async function createEoaAuthContext(
     capabilityAuthSigs,
   }
 ) {
-  const authManager = createAuthManager({
-    storage: storagePlugins.localStorageNode({
-      appName: 'my-app',
-      networkName: 'naga-local',
-      storagePath: './lit-auth-local',
-    }),
-  })
-
-  // TODO: need to check if this will work, because '@lit-protocol/types' and '@lit-protocol/access-control-conditions AccessControlConditions are different
   const accsResourceString =
     await LitAccessControlConditionResource.generateResourceString(
       /** @type {import('@lit-protocol/types').AccessControlConditions} */ (
@@ -106,14 +97,6 @@ export async function createPkpAuthContext(
     capabilityAuthSigs,
   }
 ) {
-  const authManager = createAuthManager({
-    storage: storagePlugins.localStorageNode({
-      appName: 'my-app',
-      networkName: 'naga-local',
-      storagePath: './lit-auth-local',
-    }),
-  })
-
   const accsResourceString =
     await LitAccessControlConditionResource.generateResourceString(
       /** @type {import('@lit-protocol/types').AccessControlConditions} */ (
@@ -169,9 +152,27 @@ export const executeUcanValidationAction = async (litClient, options) => {
   const decryptedData = parsedResponse.decryptedString
 
   if (!decryptedData) {
-    let errorMsg
-    if (parsedResponse.error) errorMsg = parsedResponse.error
-    throw new Error(`Decrypted data does not exist! Error message: ${errorMsg}`)
+    if (parsedResponse.error) {
+      throw new Error(`Decryption failed: ${parsedResponse.error}`)
+    }
+
+    if (parsedResponse.validateAccess) {
+      const parsedValidateAccess = JSON.parse(
+        /** @type string*/ (parsedResponse.validateAccess)
+      )
+      if (parsedValidateAccess.error) {
+        throw new Error(
+          `Access validation failed: ${
+            parsedValidateAccess.error.message ||
+            JSON.stringify(parsedValidateAccess.error)
+          }`
+        )
+      }
+    }
+
+    throw new Error(
+      `Decryption failed: No decrypted data in response despite successful validation`
+    )
   }
 
   return decryptedData
