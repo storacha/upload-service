@@ -63,7 +63,7 @@ export interface ServiceContext {
    */
   receiptStore: ReceiptStore
   /**
-   * Aggregator connection to move pieces into the pipeline.
+   * Invocation config to use when re-creating invocations to the aggregator.
    */
   aggregatorInvocationConfig: InvocationIssuanceConfig
   /**
@@ -92,6 +92,9 @@ export interface FilecoinSubmitMessageContext
 }
 
 export interface PieceOfferMessageContext {
+  /**
+   * Aggregator connection to move pieces into the pipeline.
+   */
   aggregatorService: ServiceConfig<AggregatorService>
 }
 
@@ -134,7 +137,10 @@ export interface ClaimsClientContext {
 }
 
 export interface CronContext
-  extends Pick<ServiceContext, 'pieceStore' | 'receiptStore' | 'taskStore' | 'aggregatorInvocationConfig'> { }
+  extends Pick<
+    ServiceContext,
+    'pieceStore' | 'receiptStore' | 'taskStore' | 'aggregatorInvocationConfig'
+  > {}
 
 export interface PieceRecord {
   /**
@@ -165,7 +171,7 @@ export interface PieceRecord {
    */
   updatedAt: string
 }
-export interface PieceRecordKey extends Pick<PieceRecord, 'piece'> { }
+export interface PieceRecordKey extends Pick<PieceRecord, 'piece'> {}
 
 export interface FilecoinSubmitMessage {
   /**
