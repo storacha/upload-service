@@ -85,6 +85,11 @@ async function main() {
     userAddress: wallet.address,
   })
   console.log('Current Balance: ', balance.totalBalance)
+
+  /**
+   *  Uncomment to deposit funds from your wallet to the Lit Payment Manager contract so you can pay for Lit Actions
+   *  If you need testLPX tokens, please visit the faucet: https://chronicle-yellowstone-faucet.getlit.dev/
+   */
   // const depositReceipt = await paymentManager.deposit({
   //   amountInEth: '1',
   // })

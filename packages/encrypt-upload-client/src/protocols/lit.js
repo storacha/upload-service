@@ -12,6 +12,7 @@ import { STORACHA_LIT_ACTION_CID } from '../config/constants.js'
  * @returns {import('@lit-protocol/access-control-conditions').AccessControlConditions} - The access control conditions
  */
 export const getAccessControlConditions = (spaceDID) => {
+  /** @type {import('@lit-protocol/access-control-conditions').UnifiedAccessControlCondition} */
   const rawAcc = {
     conditionType: 'evmBasic',
     contractAddress: '',
@@ -49,7 +50,6 @@ export async function createEoaAuthContext(
     capabilityAuthSigs,
   }
 ) {
-  // TODO: need to check if this will work, because '@lit-protocol/types' and '@lit-protocol/access-control-conditions AccessControlConditions are different
   const accsResourceString =
     await LitAccessControlConditionResource.generateResourceString(
       /** @type {import('@lit-protocol/types').AccessControlConditions} */ (

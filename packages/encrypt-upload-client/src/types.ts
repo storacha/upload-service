@@ -1,8 +1,7 @@
-import { Wallet } from 'ethers' // TODO: remove it
 import { UnknownLink } from 'multiformats'
 import { Client as StorachaClient } from '@storacha/client'
 import { Result, Failure, Block, Proof } from '@ucanto/interface'
-import { AuthMethod, AuthSig, SessionSigsMap } from '@lit-protocol/types' // TODO: remove AuthMethod
+import { AuthSig, SessionSigsMap } from '@lit-protocol/types' // TODO: remove AuthMethod
 import { AccessControlConditions } from '@lit-protocol/access-control-conditions'
 import type {
   BlobLike,
@@ -258,7 +257,7 @@ export interface EoaAuthContextOptions {
   accessControlConditions: AccessControlConditions
   dataToEncryptHash: string
   expiration?: string
-  capabilityAuthSigs?: AuthSig[] // Required if the capacity credit is delegated to the decrypting user
+  capabilityAuthSigs?: AuthSig[] 
 }
 
 export interface PkpAuthContextOptions {
@@ -267,16 +266,7 @@ export interface PkpAuthContextOptions {
   accessControlConditions: AccessControlConditions
   dataToEncryptHash: string
   expiration?: string
-  capabilityAuthSigs?: AuthSig[] // Required if the capacity credit is delegated to the decrypting user
-}
-
-export interface LitPkpSigner {
-  pkpPublicKey: string
-  authMethod: AuthMethod
-}
-
-export interface LitWalletSigner {
-  wallet: Wallet
+  capabilityAuthSigs?: AuthSig[]
 }
 
 export interface CreateDecryptWrappedInvocationOptions {
