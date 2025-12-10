@@ -257,7 +257,7 @@ export interface EoaAuthContextOptions {
   accessControlConditions: AccessControlConditions
   dataToEncryptHash: string
   expiration?: string
-  capabilityAuthSigs?: AuthSig[] 
+  capabilityAuthSigs?: AuthSig[]
 }
 
 export interface PkpAuthContextOptions {
