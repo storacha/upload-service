@@ -1,3 +1,9 @@
+## 1.8.23 (2025-12-10)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/upload-api to 2.8.1
+
 ## 1.8.22 (2025-12-05)
 
 ### 🧱 Updated Dependencies
