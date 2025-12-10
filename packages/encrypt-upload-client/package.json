@@ -92,8 +92,7 @@
     "@ucanto/validator": "catalog:",
     "blockstore-core": "catalog:",
     "carstream": "catalog:",
-    "dotenv": "catalog:",
-    "ethers": "5.7.1",
+    "dotenv": "^17.2.3",
     "ipfs-unixfs-exporter": "catalog:",
     "multiformats": "catalog:",
     "viem": "^2.39.0"

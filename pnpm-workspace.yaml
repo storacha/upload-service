@@ -98,4 +98,3 @@ catalog:
   vite: '^5.0.0'
   vitest: '^1.0.1'
   watch: '^1.0.2'
-  dotenv: '^17.2.3'
