@@ -1,5 +1,6 @@
 import * as assert from 'assert'
 import * as Signer from '@ucanto/principal/ed25519'
+import * as AggregatorCaps from '@storacha/capabilities/filecoin/aggregator'
 
 import * as StorefrontService from '../src/test/services/storefront.js'
 import * as StorefrontEvents from '../src/test/events/storefront.js'
@@ -39,6 +40,23 @@ describe('storefront', () => {
           storefront: { pieceStore, receiptStore, taskStore },
         } = getStoreImplementations()
         const service = getMockService()
+
+        const aggregatorServiceProof = await AggregatorCaps.pieceOffer.delegate(
+          {
+            issuer: aggregatorSigner,
+            audience: storefrontSigner,
+            with: aggregatorSigner.did(),
+            expiration: Infinity,
+          }
+        )
+
+        const aggregatorInvocationConfig = {
+          issuer: storefrontSigner,
+          with: aggregatorSigner.did(),
+          audience: aggregatorSigner,
+          proofs: [aggregatorServiceProof],
+        }
+
         const dealTrackerConnection = getConnection(
           dealTrackerSigner,
           service
@@ -67,6 +85,7 @@ describe('storefront', () => {
             pieceOfferQueue,
             taskStore,
             receiptStore,
+            aggregatorInvocationConfig,
             dealTrackerService: {
               connection: dealTrackerConnection,
               invocationConfig: {
@@ -102,10 +121,26 @@ describe('storefront', () => {
           storefrontSigner,
           service
         ).connection
-        const aggregatorConnection = getConnection(
+
+        const aggregatorServiceConnection = getConnection(
           aggregatorSigner,
           service
         ).connection
+        const aggregatorServiceProof = await AggregatorCaps.pieceOffer.delegate(
+          {
+            issuer: aggregatorSigner,
+            audience: storefrontSigner,
+            with: aggregatorSigner.did(),
+            expiration: Infinity,
+          }
+        )
+        const aggregatorInvocationConfig = {
+          issuer: storefrontSigner,
+          with: aggregatorSigner.did(),
+          audience: aggregatorSigner,
+          proofs: [aggregatorServiceProof],
+        }
+
         const claimsConnection = getConnection(claimsSigner, service).connection
 
         // context
@@ -135,13 +170,10 @@ describe('storefront', () => {
                 audience: storefrontSigner,
               },
             },
+            aggregatorInvocationConfig,
             aggregatorService: {
-              connection: aggregatorConnection,
-              invocationConfig: {
-                issuer: storefrontSigner,
-                with: storefrontSigner.did(),
-                audience: aggregatorSigner,
-              },
+              connection: aggregatorServiceConnection,
+              invocationConfig: aggregatorInvocationConfig,
             },
             claimsService: {
               connection: claimsConnection,

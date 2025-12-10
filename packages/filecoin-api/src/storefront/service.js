@@ -156,14 +156,15 @@ export const filecoinSubmit = async ({ capability }, context) => {
   // Create effect for receipt
   const fx = await AggregatorCaps.pieceOffer
     .invoke({
-      issuer: context.id,
-      audience: context.aggregatorId,
-      with: context.id.did(),
+      issuer: context.aggregatorInvocationConfig.issuer,
+      audience: context.aggregatorInvocationConfig.audience,
+      with: context.aggregatorInvocationConfig.with,
       nb: {
         piece,
         group,
       },
       expiration: Infinity,
+      proofs: context.aggregatorInvocationConfig.proofs,
     })
     .delegate()
 
@@ -192,16 +193,18 @@ export const filecoinAccept = async ({ capability }, context) => {
   }
 
   const { group } = getPieceRes.ok
+
   const fx = await AggregatorCaps.pieceOffer
     .invoke({
-      issuer: context.id,
-      audience: context.aggregatorId,
-      with: context.id.did(),
+      issuer: context.aggregatorInvocationConfig.issuer,
+      audience: context.aggregatorInvocationConfig.audience,
+      with: context.aggregatorInvocationConfig.with,
       nb: {
         piece,
         group,
       },
       expiration: Infinity,
+      proofs: context.aggregatorInvocationConfig.proofs,
     })
     .delegate()
 

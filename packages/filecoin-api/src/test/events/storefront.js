@@ -139,7 +139,7 @@ export const test = {
     assert.equal(hasStoredPiece.ok?.updatedAt, pieceRecord.updatedAt)
   },
   'handles filecoin submit messages errors when fails to access piece store':
-    wichMockableContext(
+    withMockableContext(
       async (assert, context) => {
         // Generate piece for test
         const [cargo] = await randomCargo(1, 128)
@@ -194,7 +194,7 @@ export const test = {
     )
   },
   'handles piece offer messages erroring when fails to invoke piece offer':
-    wichMockableContext(
+    withMockableContext(
       async (assert, context) => {
         // Generate piece for test
         const [cargo] = await randomCargo(1, 128)
@@ -519,7 +519,7 @@ export const test = {
     )
   },
   'handles cron tick error attempting to find pieces to track':
-    wichMockableContext(
+    withMockableContext(
       async (assert, context) => {
         // Cron ticks with no deals or receipts still available
         const handledCronTickResBeforeAnyReceipt =
@@ -541,7 +541,7 @@ export const test = {
  * @param {API.Test<TestAPI.StorefrontTestEventsContext>} testFn
  * @param {(context: TestAPI.StorefrontTestEventsContext) => Promise<TestAPI.StorefrontTestEventsContext>} mockContextFunction
  */
-function wichMockableContext(testFn, mockContextFunction) {
+function withMockableContext(testFn, mockContextFunction) {
   // @ts-ignore
   return async function (...args) {
     const modifiedArgs = [args[0], await mockContextFunction(args[1])]

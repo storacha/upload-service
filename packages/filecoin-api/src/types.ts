@@ -1,6 +1,9 @@
 import type {
   HandlerExecutionError,
   Signer,
+  Principal,
+  DID,
+  Proof,
   InboundCodec,
   CapabilityParser,
   ParsedCapability,
@@ -13,7 +16,6 @@ import type {
   PrincipalResolver,
 } from '@ucanto/interface'
 import type { ProviderInput } from '@ucanto/server'
-import { InvocationConfig } from '@storacha/filecoin-client/types'
 
 export * as UcantoInterface from '@ucanto/interface'
 export type { Result, Variant } from '@ucanto/interface'
@@ -97,6 +99,25 @@ export interface QueryableStore<Query, Rec> {
 
 export interface QueueMessageOptions {
   messageGroupId?: string
+}
+
+export interface InvocationConfig {
+  /**
+   * Signing authority that is issuing the UCAN invocation(s).
+   */
+  issuer: Signer
+  /**
+   * The principal that is requested to execute the invocation.
+   */
+  audience: Principal
+  /**
+   * The resource the invocation applies to.
+   */
+  with: DID
+  /**
+   * Proof(s) the issuer has the capability to perform the action.
+   */
+  proofs?: Proof[]
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
