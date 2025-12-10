@@ -101,7 +101,7 @@ export interface QueueMessageOptions {
   messageGroupId?: string
 }
 
-export interface InvocationIssuanceConfig {
+export interface InvocationConfig {
   /**
    * Signing authority that is issuing the UCAN invocation(s).
    */

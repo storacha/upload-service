@@ -252,7 +252,7 @@ export const handleCronTick = async (context) => {
  * Update its status if there is an accepted aggregate.
  *
  * @param {object} context
- * @param {import('@storacha/filecoin-api/types').InvocationIssuanceConfig} context.aggregatorInvConfig
+ * @param {import('@storacha/filecoin-api/types').InvocationConfig} context.aggregatorInvConfig
  * @param {PieceRecord} context.pieceRecord
  * @param {PieceStore} context.pieceStore
  * @param {API.Store<import('@ucanto/interface').UnknownLink, API.UcantoInterface.Invocation>} context.taskStore

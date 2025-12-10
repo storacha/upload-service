@@ -26,7 +26,7 @@ import {
   ServiceConfig,
   StoreGetError,
   PDPInfoSuccess,
-  InvocationIssuanceConfig,
+  InvocationConfig,
 } from '../types.js'
 
 export type PieceStore = Store<PieceRecordKey, PieceRecord> &
@@ -65,7 +65,7 @@ export interface ServiceContext {
   /**
    * Invocation config to use when re-creating invocations to the aggregator.
    */
-  aggregatorInvocationConfig: InvocationIssuanceConfig
+  aggregatorInvocationConfig: InvocationConfig
   /**
    * Deal tracker connection to find out available deals for an aggregate.
    */
