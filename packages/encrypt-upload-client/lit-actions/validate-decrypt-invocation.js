@@ -39,11 +39,11 @@ const Decrypt = capability({
 
 /**
  * Validates a decrypt delegation from an invocation if it exists
- * @param {Delegation} decryptDelegation - The delegation to validate
+ * @param {Delegation} wrappedInvocation - The delegation to validate
  * @param {string} spaceDID - The target space DID
  * @throws {Error} If the invocation or the delegation is invalid
  */
-const validateDecryptDelegation = (wrappedInvocation, spaceDID) => {
+function validateDecryptDelegation(wrappedInvocation, spaceDID) {
   const decryptCapability = wrappedInvocation.capabilities.find(
     (cap) => cap.can === Decrypt.can
   )
@@ -93,8 +93,16 @@ const validateDecryptDelegation = (wrappedInvocation, spaceDID) => {
  * Decrypts content using Lit Protocol
  * @returns {Promise<void>}
  */
-const decrypt = async () => {
+async function decrypt() {
+  console.log('Starting decryption process...')
   try {
+    const {
+      identityBoundCiphertext,
+      accessControlConditions,
+      plaintextKeyHash,
+      spaceDID,
+      wrappedInvocationJSON,
+    } = jsParams
     const wrappedInvocationCar = dagJSON.parse(wrappedInvocationJSON)
     const wrappedInvocationResult = await extract(wrappedInvocationCar)
     if (wrappedInvocationResult.error) {
@@ -102,6 +110,7 @@ const decrypt = async () => {
         `Issue on extracting the wrapped invocation! Error message: ${wrappedInvocationResult.error}`
       )
     }
+    console.log('Extracted wrapped invocation successfully')
 
     const wrappedInvocation = wrappedInvocationResult.ok
     validateDecryptDelegation(wrappedInvocation, spaceDID)
@@ -118,7 +127,7 @@ const decrypt = async () => {
     if (authorization.ok) {
       response.validateAccess = 'ok'
       console.log('Delegation authorized successfully!')
-      const decryptedString = await Lit.Actions.decryptAndCombine({
+      const decryptedString = await LitActions.decryptAndCombine({
         accessControlConditions,
         ciphertext: identityBoundCiphertext,
         dataToEncryptHash: plaintextKeyHash,
@@ -130,10 +139,14 @@ const decrypt = async () => {
     } else {
       response.validateAccess = JSON.stringify(authorization)
     }
-    return Lit.Actions.setResponse({ response: JSON.stringify(response) })
+    return LitActions.setResponse({
+      response: JSON.stringify(response),
+      success: true,
+    })
   } catch (/** @type any*/ error) {
-    return Lit.Actions.setResponse({
+    return LitActions.setResponse({
       response: JSON.stringify({ error: error.message }),
+      success: false,
     })
   }
 }

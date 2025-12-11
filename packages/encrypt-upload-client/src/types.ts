@@ -1,13 +1,8 @@
-import { Wallet } from 'ethers'
 import { UnknownLink } from 'multiformats'
 import { Client as StorachaClient } from '@storacha/client'
 import { Result, Failure, Block, Proof } from '@ucanto/interface'
-import {
-  AccessControlConditions,
-  AuthMethod,
-  AuthSig,
-  SessionSigsMap,
-} from '@lit-protocol/types'
+import { AuthSig, SessionSigsMap } from '@lit-protocol/types' // TODO: remove AuthMethod
+import { AccessControlConditions } from '@lit-protocol/access-control-conditions'
 import type {
   BlobLike,
   AnyLink,
@@ -16,6 +11,7 @@ import type {
   SigAlg,
   UploadOptions,
 } from '@storacha/client/types'
+import type { AuthData } from '@lit-protocol/schemas'
 
 export type { IPLDBlock } from '@ucanto/interface'
 export type { SpaceDID } from '@storacha/capabilities/types'
@@ -26,6 +22,18 @@ export type { UploadOptions } from '@storacha/client/types'
 
 // Import SpaceDID for use in interfaces
 import type { SpaceDID } from '@storacha/capabilities/types'
+import { Account } from 'viem'
+import { createAuthManager } from '@lit-protocol/auth'
+
+export type AuthManager = ReturnType<typeof createAuthManager>
+// Use the actual types that Lit Protocol expects for auth contexts
+export type EoaAuthContext = Awaited<
+  ReturnType<AuthManager['createEoaAuthContext']>
+>
+export type PkpAuthContext = Awaited<
+  ReturnType<AuthManager['createPkpAuthContext']>
+>
+export type AuthenticationContext = EoaAuthContext | PkpAuthContext
 
 export interface FileMetadata {
   name: string // Full filename with extension
@@ -153,11 +161,11 @@ export interface DecryptionConfig {
   proofs?: Proof[]
   // User-provided options
   // Lit-specific (signer information)
-  wallet?: Wallet
+  wallet?: Account
   sessionSigs?: SessionSigsMap
   // Lit PKP-specific (signer information)
   pkpPublicKey?: string
-  authMethod?: AuthMethod
+  authData?: AuthData
 }
 
 export interface EncryptedKeyResult {
@@ -244,30 +252,21 @@ export interface DecodeFailure extends Failure {
   name: 'DecodeFailure'
 }
 
-export interface SessionSignatureOptions {
-  wallet: Wallet
+export interface EoaAuthContextOptions {
+  wallet: Account
   accessControlConditions: AccessControlConditions
   dataToEncryptHash: string
   expiration?: string
-  capabilityAuthSigs?: AuthSig[] // Required if the capacity credit is delegated to the decrypting user
+  capabilityAuthSigs?: AuthSig[]
 }
 
-export interface PkpSessionSignatureOptions {
+export interface PkpAuthContextOptions {
   pkpPublicKey: string
-  authMethod: AuthMethod
+  authData: AuthData
   accessControlConditions: AccessControlConditions
   dataToEncryptHash: string
   expiration?: string
-  capabilityAuthSigs?: AuthSig[] // Required if the capacity credit is delegated to the decrypting user
-}
-
-export interface LitPkpSigner {
-  pkpPublicKey: string
-  authMethod: AuthMethod
-}
-
-export interface LitWalletSigner {
-  wallet: Wallet
+  capabilityAuthSigs?: AuthSig[]
 }
 
 export interface CreateDecryptWrappedInvocationOptions {
@@ -281,6 +280,17 @@ export interface CreateDecryptWrappedInvocationOptions {
 
 export interface ExecuteUcanValidationOptions {
   sessionSigs: SessionSigsMap
+  spaceDID: `did:key:${string}`
+  identityBoundCiphertext: string
+  plaintextKeyHash: string
+  accessControlConditions: AccessControlConditions
+  wrappedInvocationJSON: string
+}
+
+export type AuthContext = EoaAuthContext | PkpAuthContext
+
+export interface ExecuteUcanValidationActionOptions {
+  authContext: AuthContext
   spaceDID: `did:key:${string}`
   identityBoundCiphertext: string
   plaintextKeyHash: string

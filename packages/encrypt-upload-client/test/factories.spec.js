@@ -5,10 +5,8 @@ import assert from 'node:assert'
 import {
   createGenericKMSAdapter,
   createGenericLitAdapter,
-  createNodeLitAdapter,
 } from '../src/crypto/factories.node.js'
 import { GenericAesCtrStreamingCrypto } from '../src/crypto/symmetric/generic-aes-ctr-streaming-crypto.js'
-import { NodeAesCbcCrypto } from '../src/crypto/symmetric/node-aes-cbc-crypto.js'
 import { LitCryptoAdapter } from '../src/crypto/adapters/lit-crypto-adapter.js'
 import { KMSCryptoAdapter } from '../src/crypto/adapters/kms-crypto-adapter.js'
 
@@ -18,10 +16,16 @@ const mockLitClient = /** @type {any} */ ({
   disconnect: () => Promise.resolve(),
 })
 
+const mockAuthManager = /** @type {any} */ (
+  {
+    // Add mock methods as needed
+  }
+)
+
 await describe('Crypto Factory Functions', async () => {
   await describe('createBrowserLitAdapter', async () => {
     await test('should create LitCryptoAdapter with streaming crypto', async () => {
-      const adapter = createGenericLitAdapter(mockLitClient)
+      const adapter = createGenericLitAdapter(mockLitClient, mockAuthManager)
 
       // Verify adapter type
       assert(
@@ -44,7 +48,7 @@ await describe('Crypto Factory Functions', async () => {
     })
 
     await test('should create adapter with required interface methods', async () => {
-      const adapter = createGenericLitAdapter(mockLitClient)
+      const adapter = createGenericLitAdapter(mockLitClient, mockAuthManager)
 
       // Verify adapter has all required methods
       assert(
@@ -75,35 +79,13 @@ await describe('Crypto Factory Functions', async () => {
 
     await test('should handle null or undefined lit client gracefully', async () => {
       // This should still create the adapter (validation happens at runtime)
-      const adapter = createGenericLitAdapter(/** @type {any} */ (null))
+      const adapter = createGenericLitAdapter(
+        /** @type {any} */ (null),
+        mockAuthManager
+      )
       assert(
         adapter instanceof LitCryptoAdapter,
         'Should create adapter even with null client'
-      )
-    })
-  })
-
-  await describe('createNodeLitAdapter', async () => {
-    await test('should create LitCryptoAdapter with Node crypto', async () => {
-      const adapter = createNodeLitAdapter(mockLitClient)
-
-      // Verify adapter type
-      assert(
-        adapter instanceof LitCryptoAdapter,
-        'Should create LitCryptoAdapter instance'
-      )
-
-      // Verify symmetric crypto implementation
-      assert(
-        adapter.symmetricCrypto instanceof NodeAesCbcCrypto,
-        'Should use NodeAesCbcCrypto for Node.js environment'
-      )
-
-      // Verify lit client is passed through
-      assert.strictEqual(
-        adapter.litClient,
-        mockLitClient,
-        'Should pass through the lit client'
       )
     })
   })
@@ -223,7 +205,7 @@ await describe('Crypto Factory Functions', async () => {
 
   await describe('Factory Function Consistency', async () => {
     await test('browser factories should use streaming crypto', async () => {
-      const litAdapter = createGenericLitAdapter(mockLitClient)
+      const litAdapter = createGenericLitAdapter(mockLitClient, mockAuthManager)
       const kmsAdapter = createGenericKMSAdapter(
         'https://gateway.example.com',
         'did:web:gateway.example.com'
@@ -241,19 +223,9 @@ await describe('Crypto Factory Functions', async () => {
       )
     })
 
-    await test('node factories should use Node crypto', async () => {
-      const litAdapter = createNodeLitAdapter(mockLitClient)
-
-      assert(
-        litAdapter.symmetricCrypto.constructor.name === 'NodeAesCbcCrypto',
-        'Node Lit adapter should use Node crypto'
-      )
-    })
-
     await test('all adapters should implement the same interface', async () => {
       const adapters = [
-        createGenericLitAdapter(mockLitClient),
-        createNodeLitAdapter(mockLitClient),
+        createGenericLitAdapter(mockLitClient, mockAuthManager),
         createGenericKMSAdapter(
           'https://gateway.example.com',
           'did:web:gateway.example.com'
@@ -286,7 +258,7 @@ await describe('Crypto Factory Functions', async () => {
 
   await describe('Memory Usage Verification', async () => {
     await test('browser adapters should use memory-efficient streaming crypto', async () => {
-      const litAdapter = createGenericLitAdapter(mockLitClient)
+      const litAdapter = createGenericLitAdapter(mockLitClient, mockAuthManager)
       const kmsAdapter = createGenericKMSAdapter(
         'https://gateway.example.com',
         'did:web:gateway.example.com'

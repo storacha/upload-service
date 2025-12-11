@@ -1,31 +1,32 @@
 import * as fs from 'fs'
 import dotenv from 'dotenv'
-import { CarReader } from '@ipld/car'
+import { DID } from '@ucanto/server'
 import * as Client from '@storacha/client'
-import { importDAG } from '@ucanto/core/delegation'
+import * as Proof from '@storacha/client/proof'
 import * as Signer from '@ucanto/principal/ed25519'
 import { StoreMemory } from '@storacha/client/stores/memory'
+import { decrypt } from '@storacha/capabilities/space'
+
+import { nagaTest } from '@lit-protocol/networks'
+import { createLitClient } from '@lit-protocol/lit-client'
 
 import * as EncryptClient from '../src/index.js'
 import { serviceConf, receiptsEndpoint } from '../src/config/service.js'
-import { createNodeLitAdapter } from '../src/crypto/factories.node.js'
-import { LitNodeClient } from '@lit-protocol/lit-node-client'
+import { createGenericLitAdapter } from '../src/crypto/factories.node.js'
+// import { CID } from 'multiformats'
+import { createAuthManager, storagePlugins } from '@lit-protocol/auth'
 
 dotenv.config()
 
-/** @param {string} data Base64 encoded CAR file */
-export async function parseProof(data) {
-  const blocks = []
-  const reader = await CarReader.fromBytes(Buffer.from(data, 'base64'))
-  for await (const block of reader.blocks()) {
-    blocks.push(block)
-  }
-  return importDAG(blocks)
-}
+const PROOF = process.env.PROOF || ''
+const AGENT_PK = process.env.AGENT_PK || ''
+const AUDIENCE_DID = process.env.AUDIENCE_DID || ''
 
 async function main() {
+  console.log('Starting encrypt-upload-client example...')
   // set up storacha client with a new agent
-  const principal = Signer.parse(process.env.AGENT_PK || '')
+  const principal = Signer.parse(AGENT_PK)
+  console.log(`Using agent: ${principal.did()}`)
   const store = new StoreMemory()
 
   const client = await Client.create({
@@ -36,23 +37,32 @@ async function main() {
   })
 
   // now give Agent the delegation from the Space
-  const proof = await parseProof(process.env.PROOF || '')
+  const proof = await Proof.parse(PROOF)
   const space = await client.addSpace(proof)
   await client.setCurrentSpace(space.did())
 
+  console.log(`Using space: ${space.did()}, creating lit client...`)
+
   // Set up Lit client
-  const litClient = new LitNodeClient({
-    litNetwork: 'datil-dev',
+  const litClient = await createLitClient({
+    network: nagaTest,
   })
-  await litClient.connect()
+
+  const authManager = createAuthManager({
+    storage: storagePlugins.localStorageNode({
+      appName: 'my-app',
+      networkName: 'naga-local',
+      storagePath: './lit-auth-local',
+    }),
+  })
 
   const encryptedClient = await EncryptClient.create({
     storachaClient: client,
-    cryptoAdapter: createNodeLitAdapter(litClient),
+    cryptoAdapter: createGenericLitAdapter(litClient, authManager),
   })
 
   const fileContent = await fs.promises.readFile('./README.md')
-  const blob = new Blob([fileContent])
+  const blob = new Blob([Uint8Array.from(fileContent)])
 
   // Create encryption config
   const encryptionConfig = {
@@ -60,11 +70,47 @@ async function main() {
     spaceDID: space.did(),
   }
 
+  console.log('Encrypting and uploading file...')
+
   const link = await encryptedClient.encryptAndUploadFile(
     blob,
     encryptionConfig
   )
-  console.log(link)
+
+  console.log('Finished uploading file:', link)
+
+  // If we already have a CID
+  // const link = CID.parse(
+  //   'bafyreid6euzw23b5puazg6epubzaxibim7fioavoe6xydffibbzju4feae'
+  // )
+
+  console.log('🔄 Creating decrypt delegation with:')
+
+  const delegationOptions = {
+    issuer: principal,
+    audience: DID.parse(AUDIENCE_DID),
+    with: space.did(),
+    nb: {
+      resource: link,
+    },
+    expiration: new Date(Date.now() + 1000 * 60 * 10).getTime(), // 10 min,
+    proofs: [proof],
+  }
+
+  console.log({
+    ...delegationOptions,
+    issuer: principal.did(),
+    audience: AUDIENCE_DID,
+  })
+
+  const delegation = await decrypt.delegate(delegationOptions)
+  const { ok: bytes } = await delegation.archive()
+
+  fs.writeFileSync(
+    'delegation.car',
+    Buffer.from(/** @type Uint8Array<ArrayBufferLike>**/ (bytes))
+  )
+  console.log(`✅ Delegation written to delegation.car`)
 }
 
 main()

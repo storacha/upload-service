@@ -1,30 +1,38 @@
+process.env.LOG_LEVEL = 'info'
 import * as fs from 'fs'
 import dotenv from 'dotenv'
 import { CID } from 'multiformats'
 import * as Client from '@storacha/client'
 import * as Signer from '@ucanto/principal/ed25519'
 import { StoreMemory } from '@storacha/client/stores/memory'
+import { nagaTest } from '@lit-protocol/networks'
+import { createLitClient } from '@lit-protocol/lit-client'
+import { privateKeyToAccount } from 'viem/accounts'
 
 import { create } from '../src/index.js'
-import { Wallet } from 'ethers'
 import { serviceConf, receiptsEndpoint } from '../src/config/service.js'
-import { createNodeLitAdapter } from '../src/crypto/factories.node.js'
-import { LitNodeClient } from '@lit-protocol/lit-node-client'
+import { createGenericLitAdapter } from '../src/crypto/factories.node.js'
 import { extract } from '@ucanto/core/delegation'
+import { createAuthManager, storagePlugins } from '@lit-protocol/auth'
 
 dotenv.config()
 
+const WALLET_PK = /** @type {`0x${string}`}  */ (process.env.WALLET_PK) || '0x'
+const DELEGATEE_AGENT_PK = process.env.DELEGATEE_AGENT_PK || ''
+
 async function main() {
-  // set up storacha client with a new agent
+  console.log('Starting encrypt-decrypt test example...')
+
+  // encrypted content CID
   const cid = CID.parse(
-    'bafyreifhwqmspdjsy6rgcmcizgodv7bwskgiehjhdx7wukax3z5r7tz5ji'
+    'bafyreigmpvb4rhs6uod7qzxw65fxgruagg5x37swmf5p434cto36nlz7a4'
   )
 
   const delegationCarBuffer = fs.readFileSync('delegation.car')
 
-  const wallet = new Wallet(process.env.WALLET_PK || '')
+  const wallet = privateKeyToAccount(WALLET_PK)
 
-  const principal = Signer.parse(process.env.DELEGATEE_AGENT_PK || '')
+  const principal = Signer.parse(DELEGATEE_AGENT_PK)
   const store = new StoreMemory()
 
   const client = await Client.create({
@@ -35,15 +43,24 @@ async function main() {
   })
 
   // Set up Lit client
-  const litClient = new LitNodeClient({
-    litNetwork: 'datil-dev',
+  const litClient = await createLitClient({
+    network: nagaTest,
   })
-  await litClient.connect()
+
+  const authManager = createAuthManager({
+    storage: storagePlugins.localStorageNode({
+      appName: 'my-app',
+      networkName: 'naga-local',
+      storagePath: './lit-auth-local',
+    }),
+  })
 
   const encryptedClient = await create({
     storachaClient: client,
-    cryptoAdapter: createNodeLitAdapter(litClient),
+    cryptoAdapter: createGenericLitAdapter(litClient, authManager),
   })
+
+  console.log('Extracting delegation from CAR file...')
 
   const res = await extract(delegationCarBuffer)
   if (res.error) {
@@ -60,6 +77,26 @@ async function main() {
   const spaceDID = /** @type {`did:key:${string}`} */ (
     decryptionCapability.with
   )
+
+  const paymentManager = await litClient.getPaymentManager({
+    account: wallet,
+  })
+  const balance = await paymentManager.getBalance({
+    userAddress: wallet.address,
+  })
+  console.log('Current Balance: ', balance.totalBalance)
+
+  /**
+   *  Uncomment to deposit funds from your wallet to the Lit Payment Manager contract so you can pay for Lit Actions
+   *  If you need testLPX tokens, please visit the faucet: https://chronicle-yellowstone-faucet.getlit.dev/
+   */
+  // const depositReceipt = await paymentManager.deposit({
+  //   amountInEth: '1',
+  // })
+
+  // console.log(`Deposit successful: ${depositReceipt.hash}`)
+
+  console.log('Retrieving and decrypting file...')
 
   const decryptionConfig = {
     wallet,

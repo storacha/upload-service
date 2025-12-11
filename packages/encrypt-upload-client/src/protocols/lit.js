@@ -1,126 +1,96 @@
-import { LitNodeClient } from '@lit-protocol/lit-node-client'
-import { LIT_ABILITY } from '@lit-protocol/constants'
-import {
-  generateAuthSig,
-  LitActionResource,
-  createSiweMessage,
-  LitAccessControlConditionResource,
-} from '@lit-protocol/auth-helpers'
+import { LitAccessControlConditionResource } from '@lit-protocol/auth-helpers'
+import { createAccBuilder } from '@lit-protocol/access-control-conditions'
 
-import env from '../config/env.js'
 import * as Type from '../types.js'
 import { STORACHA_LIT_ACTION_CID } from '../config/constants.js'
-
-export { encryptString } from '@lit-protocol/encryption'
 
 /**
  * Create access control conditions required to use Lit Protocol.
  * This ensures that the Storacha Lit Action is used to validate decryption permissions for the specified space DID.
  *
  * @param {Type.SpaceDID} spaceDID - The DID of the space
- * @returns {import('@lit-protocol/types').AccessControlConditions} - The access control conditions
+ * @returns {import('@lit-protocol/access-control-conditions').AccessControlConditions} - The access control conditions
  */
 export const getAccessControlConditions = (spaceDID) => {
-  return [
-    {
-      contractAddress: '',
-      standardContractType: '',
-      chain: 'ethereum',
-      method: '',
-      parameters: [':currentActionIpfsId', spaceDID],
-      returnValueTest: {
-        comparator: '=',
-        value: STORACHA_LIT_ACTION_CID,
-      },
+  /** @type {import('@lit-protocol/access-control-conditions').UnifiedAccessControlCondition} */
+  const rawAcc = {
+    conditionType: 'evmBasic',
+    contractAddress: '',
+    standardContractType: '',
+    chain: 'ethereum',
+    method: '',
+    parameters: [':currentActionIpfsId', spaceDID],
+    returnValueTest: {
+      comparator: '=',
+      value: STORACHA_LIT_ACTION_CID,
     },
-  ]
+  }
+
+  const acc = createAccBuilder().unifiedAccs(rawAcc).build()
+
+  console.log('Access Control Conditions:\n', acc)
+
+  return acc
 }
 
 /**
- * Get a LitClient instance.
+ * @param {import('@lit-protocol/lit-client').LitClientType} litClient
+ * @param {Type.AuthManager} authManager - The Lit Auth Manager instance
+ * @param {Type.EoaAuthContextOptions} param0
+ * @returns {Promise<Type.EoaAuthContext>}
  */
-export async function getLitClient() {
-  const litNodeClient = new LitNodeClient({
-    litNetwork: env.LIT_NETWORK,
-    debug: env.LIT_DEBUG,
-  })
-
-  await litNodeClient.connect()
-  return litNodeClient
-}
-
-/**
- * @param {LitNodeClient} litClient
- * @param {Type.SessionSignatureOptions} param0
- * @returns {Promise<import('@lit-protocol/types').SessionSigsMap>}
- */
-export async function getSessionSigs(
+export async function createEoaAuthContext(
   litClient,
+  authManager,
   {
     wallet,
     accessControlConditions,
-    dataToEncryptHash,
     expiration,
+    dataToEncryptHash,
     capabilityAuthSigs,
   }
 ) {
   const accsResourceString =
     await LitAccessControlConditionResource.generateResourceString(
-      accessControlConditions,
+      /** @type {import('@lit-protocol/types').AccessControlConditions} */ (
+        accessControlConditions
+      ),
       dataToEncryptHash
     )
 
-  const sessionSigs = await litClient.getSessionSigs({
-    chain: 'ethereum',
-    capabilityAuthSigs,
-    expiration,
-    resourceAbilityRequests: [
-      {
-        resource: new LitAccessControlConditionResource(accsResourceString),
-        ability: LIT_ABILITY.AccessControlConditionDecryption,
-      },
-      {
-        resource: new LitActionResource('*'),
-        ability: LIT_ABILITY.LitActionExecution,
-      },
-    ],
-    authNeededCallback: async ({
-      uri,
-      expiration,
-      resourceAbilityRequests,
-    }) => {
-      const toSign = await createSiweMessage({
-        uri,
-        expiration,
-        resources: resourceAbilityRequests,
-        walletAddress: wallet.address,
-        nonce: await litClient.getLatestBlockhash(),
-        litNodeClient: litClient,
-      })
-
-      return await generateAuthSig({
-        signer: wallet,
-        toSign,
-      })
+  const authContext = await authManager.createEoaAuthContext({
+    config: {
+      account: wallet,
     },
+    authConfig: {
+      expiration,
+      resources: [
+        ['access-control-condition-decryption', accsResourceString], // or '*'
+        ['lit-action-execution', '*'],
+      ],
+      capabilityAuthSigs,
+      statement: 'I authorize the Lit Protocol to execute this Lit Action.',
+    },
+    litClient,
   })
 
-  return sessionSigs
+  return authContext
 }
 
 /**
- * Get session signatures for a PKP key and auth method.
- * There is not need to execute the auth callback for this function, because the auth method provided.
+ * Get PKP Auth Context.
  *
- * @param {LitNodeClient} litClient
- * @param {Type.PkpSessionSignatureOptions} options
- * @returns {Promise<import('@lit-protocol/types').SessionSigsMap>}
+ * @param {import('@lit-protocol/lit-client').LitClientType} litClient
+ * @param {Type.AuthManager} authManager - The Lit Auth Manager instance
+ * @param {Type.PkpAuthContextOptions} options
+ * @returns {Promise<Type.PkpAuthContext>}
  */
-export async function getPkpSessionSigs(
+export async function createPkpAuthContext(
   litClient,
+  authManager,
   {
     pkpPublicKey,
-    authMethod,
+    authData,
     accessControlConditions,
     dataToEncryptHash,
     expiration,
@@ -129,44 +99,48 @@ export async function getPkpSessionSigs(
 ) {
   const accsResourceString =
     await LitAccessControlConditionResource.generateResourceString(
-      accessControlConditions,
+      /** @type {import('@lit-protocol/types').AccessControlConditions} */ (
+        accessControlConditions
+      ),
       dataToEncryptHash
     )
 
-  const sessionSigs = await litClient.getPkpSessionSigs({
+  const authContext = await authManager.createPkpAuthContext({
+    authData,
     pkpPublicKey,
-    authMethods: [authMethod],
-    resourceAbilityRequests: [
-      {
-        resource: new LitAccessControlConditionResource(accsResourceString),
-        ability: LIT_ABILITY.AccessControlConditionDecryption,
-      },
-      {
-        resource: new LitActionResource('*'),
-        ability: LIT_ABILITY.LitActionExecution,
-      },
-    ],
-    expiration,
-    capabilityAuthSigs,
+    authConfig: {
+      resources: [
+        ['pkp-signing', '*'], // remove it?
+        ['access-control-condition-decryption', accsResourceString], // or '*'
+        ['lit-action-execution', '*'],
+      ],
+      capabilityAuthSigs,
+      expiration,
+      statement: 'I authorize the Lit Protocol to execute this Lit Action.',
+    },
+    litClient: litClient,
   })
 
-  return sessionSigs
+  return authContext
 }
 
 /**
  *
- * @param {LitNodeClient} litClient
- * @param {Type.ExecuteUcanValidationOptions} options
+ * @param {import('@lit-protocol/lit-client').LitClientType} litClient
+ * @param {Type.ExecuteUcanValidationActionOptions} options
  * @returns
  */
 export const executeUcanValidationAction = async (litClient, options) => {
-  const { sessionSigs, ...jsParams } = options
+  const { authContext, ...jsParams } = options
 
   const litActionResponse = await litClient.executeJs({
     ipfsId: STORACHA_LIT_ACTION_CID,
-    sessionSigs,
+    authContext,
     jsParams,
   })
+
+  console.log('Lit Action Response: \n')
+  console.log(litActionResponse)
 
   if (!litActionResponse.response) {
     throw new Error('Error getting lit action response.')

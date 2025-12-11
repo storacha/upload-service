@@ -1,8 +1,8 @@
 import { base64 } from 'multiformats/bases/base64'
+import * as Type from '../../types.js'
 import * as Lit from '../../protocols/lit.js'
 import * as EncryptedMetadata from '../../core/metadata/encrypted-metadata.js'
 import { createDecryptWrappedInvocation } from '../../utils.js'
-import * as Type from '../../types.js'
 
 /**
  * LitCryptoAdapter implements the complete CryptoAdapter interface using Lit Protocol.
@@ -17,11 +17,13 @@ export class LitCryptoAdapter {
    * Create a new Lit crypto adapter
    *
    * @param {Type.SymmetricCrypto} symmetricCrypto - The symmetric crypto implementation (browser or node)
-   * @param {import('@lit-protocol/lit-node-client').LitNodeClient} litClient - The Lit client instance
+   * @param {import('@lit-protocol/lit-client').LitClientType} litClient - The Lit client instance
+   * @param {Type.AuthManager} authManager - The Lit Auth Manager instance
    */
-  constructor(symmetricCrypto, litClient) {
+  constructor(symmetricCrypto, litClient, authManager) {
     this.symmetricCrypto = symmetricCrypto
     this.litClient = litClient
+    this.authManager = authManager
   }
 
   /**
@@ -64,22 +66,19 @@ export class LitCryptoAdapter {
 
     // Step 3. Encrypt the base64 encoded combined key and IV with Lit
     const dataToEncrypt = base64.encode(combinedKeyAndIV)
-    const { ciphertext, dataToEncryptHash } = await Lit.encryptString(
-      {
-        dataToEncrypt,
-        accessControlConditions,
-      },
-      this.litClient
-    )
+    const encryptedData = await this.litClient.encrypt({
+      dataToEncrypt,
+      unifiedAccessControlConditions: accessControlConditions,
+    })
 
     // Step 4. Return the encrypted key and metadata
     return {
       strategy: /** @type {'lit'} */ ('lit'),
-      encryptedKey: ciphertext,
+      encryptedKey: encryptedData.ciphertext,
       metadata: {
-        plaintextKeyHash: dataToEncryptHash,
+        plaintextKeyHash: encryptedData.dataToEncryptHash,
         accessControlConditions:
-          /** @type {import('@lit-protocol/types').AccessControlConditions} */ (
+          /** @type {import('@lit-protocol/access-control-conditions').AccessControlConditions} */ (
             accessControlConditions
           ),
       },
@@ -90,7 +89,7 @@ export class LitCryptoAdapter {
    * Decrypt a symmetric key using the Lit crypto adapter
    *
    * @param {string} encryptedKey - The encrypted key to decrypt
-   * @param {object} configs - The decryption configuration
+   * @param {object} configs - The decryption configuration object
    * @param {Type.DecryptionConfig} configs.decryptionConfig - The decryption config
    * @param {Type.ExtractedMetadata} configs.metadata - The extracted metadata
    * @param {import('@ucanto/interface').Proof} configs.decryptDelegation - The delegation that gives permission to decrypt (required for both strategies)
@@ -112,41 +111,41 @@ export class LitCryptoAdapter {
 
     // Step 1. Extract spaceDID from access control conditions
     const spaceDID = /** @type {Type.SpaceDID} */ (
-      accessControlConditions[0].parameters[1]
+      /** @type {import('@lit-protocol/access-control-conditions').EvmBasicAcc} */ (
+        accessControlConditions[0]
+      ).parameters[1]
     )
 
-    // Step 2. Create session signatures if not provided
-    let sessionSigs = decryptionConfig.sessionSigs
-    if (!sessionSigs) {
-      const acc =
-        /** @type import('@lit-protocol/types').AccessControlConditions */ (
-          /** @type {unknown} */ (accessControlConditions)
-        )
-      const expiration = new Date(Date.now() + 1000 * 60 * 5).toISOString() // 5 min
+    const expiration = new Date(Date.now() + 1000 * 60 * 5).toISOString() // 5 min
 
-      // Step 2.1. Create session signatures for the wallet if provided
-      if (decryptionConfig.wallet) {
-        sessionSigs = await Lit.getSessionSigs(this.litClient, {
+    // Step 2. Get Auth Context for decryption
+    /** @type {Type.AuthContext} */
+    let authContext
+    if (decryptionConfig.wallet) {
+      authContext = await Lit.createEoaAuthContext(
+        this.litClient,
+        this.authManager,
+        {
           wallet: decryptionConfig.wallet,
+          accessControlConditions,
           dataToEncryptHash: plaintextKeyHash,
           expiration,
-          accessControlConditions: acc,
-        })
-      }
-      // Step 2.2. Otherwise, create session signatures for the PKP if provided
-      else if (decryptionConfig.pkpPublicKey && decryptionConfig.authMethod) {
-        sessionSigs = await Lit.getPkpSessionSigs(this.litClient, {
+        }
+      )
+    } else if (decryptionConfig.pkpPublicKey && decryptionConfig.authData) {
+      authContext = await Lit.createPkpAuthContext(
+        this.litClient,
+        this.authManager,
+        {
           pkpPublicKey: decryptionConfig.pkpPublicKey,
-          authMethod: decryptionConfig.authMethod,
+          authData: decryptionConfig.authData,
+          accessControlConditions,
           dataToEncryptHash: plaintextKeyHash,
           expiration,
-          accessControlConditions: acc,
-        })
-      } else {
-        throw new Error(
-          'Session signatures or signer (wallet/PKP) required for Lit decryption'
-        )
-      }
+        }
+      )
+    } else {
+      throw new Error('Either wallet or PKP authData must be provided')
     }
 
     // Step 3. Create wrapped UCAN invocation
@@ -163,7 +162,7 @@ export class LitCryptoAdapter {
     const decryptedString = await Lit.executeUcanValidationAction(
       this.litClient,
       {
-        sessionSigs,
+        authContext,
         spaceDID,
         identityBoundCiphertext: encryptedKey,
         plaintextKeyHash,

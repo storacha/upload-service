@@ -10,7 +10,7 @@ This library leverages `@storacha/cli` and `@lit-protocol/lit-node-client` to pr
 You can add the `@storacha/encrypt-upload-client` package to your JavaScript or TypeScript project with `npm`:
 
 ```sh
-npm @storacha/encrypt-upload-client
+npm install @storacha/encrypt-upload-client
 ```
 
 ## Usage
