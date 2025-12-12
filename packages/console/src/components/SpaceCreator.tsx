@@ -39,6 +39,7 @@ export function SpaceCreatorForm({
   const [name, setName] = useState('')
   const [space, setSpace] = useState<Space>()
   const [accessType, setAccessType] = useState<'public' | 'private'>('public')
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const plausible = usePlausible()
   
   const { 
@@ -55,7 +56,9 @@ export function SpaceCreatorForm({
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault()
-    if (!client) return
+    if (!client || submitted) return
+
+    setErrorMessage(null)
 
     const account = accounts[0]
     if (!account) {
@@ -68,16 +71,15 @@ export function SpaceCreatorForm({
       return
     }
 
-    const { ok: plan } = await account.plan.get()
-    if (!plan) {
-      throw new Error('a payment plan is required on account to provision a new space.')
-    }
-
     const toWebDID = (input?: string) =>
       UcantoClient.Schema.DID.match({ method: 'web' }).from(input)
 
     setSubmitted(true)
     try {
+      const { ok: plan } = await account.plan.get()
+      if (!plan) {
+        throw new Error('a payment plan is required on account to provision a new space.')
+      }
       const gatewayId = toWebDID(process.env.NEXT_PUBLIC_W3UP_GATEWAY_ID) ?? toWebDID('did:web:w3s.link')
 
       const storachaGateway = UcantoClient.connect({
@@ -128,6 +130,7 @@ export function SpaceCreatorForm({
     } catch (error) {
       setSubmitted(false)
       setCreated(false)
+      setErrorMessage(`Failed to create space: ${error.message}`)
       console.log(error)
       /* eslint-disable-next-line no-console */
       logAndCaptureError(error)
@@ -243,9 +246,15 @@ export function SpaceCreatorForm({
             </div>
           </div>
         )}
-        <button type='submit' className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`}>
+        <button type='submit' className={`inline-block bg-hot-red border border-hot-red hover:bg-white hover:text-hot-red font-epilogue text-white uppercase text-sm px-6 py-2 rounded-full whitespace-nowrap`}
+        disabled={submitted}>
           <FolderPlusIcon className='h-5 w-5 inline-block mr-1 align-middle' style={{ marginTop: -4 }} /> Create {accessType === 'private' ? 'Private' : 'Public'} Space
         </button>
+        {errorMessage && (
+  <p className='mt-3 text-sm text-hot-red'>
+    {errorMessage}
+  </p>
+)}
       </form>
     </div>
   )
