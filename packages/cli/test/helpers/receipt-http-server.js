@@ -24,11 +24,20 @@ export async function createReceiptsServer() {
    * @param {http.ServerResponse} response
    */
   const listener = async (request, response) => {
-    const taskCid = request.url?.split('/')[1] ?? ''
-    const body = await generateReceipt(taskCid)
-    response.writeHead(200)
-    response.end(body)
-    return undefined
+    try {
+      const taskCid = request.url?.split('/')[1] ?? ''
+      const body = await generateReceipt(taskCid)
+      response.writeHead(200)
+      response.end(body)
+      return undefined
+    } catch (error) {
+      process.stderr.write(`Error handling request: ${error}\n`)
+      if (!response.headersSent) {
+        response.writeHead(500)
+      }
+      response.end()
+      return undefined
+    }
   }
 
   const server = http.createServer(listener).listen()
@@ -64,7 +73,6 @@ const generateReceipt = async (taskCid) => {
     fx: {
       fork: [locationClaim],
     },
-    /** @ts-expect-error not a UCAN Link */
     ran: parseLink(taskCid),
     result: {
       ok: {

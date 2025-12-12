@@ -18,31 +18,44 @@ const encodeReceipt = async (taskCid) => {
 }
 
 const server = createServer(async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', '*')
-  res.setHeader('Access-Control-Allow-Headers', '*')
+  try {
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Methods', '*')
+    res.setHeader('Access-Control-Allow-Headers', '*')
 
-  const taskCid = req.url?.split('/')[1]
-  if (!taskCid) {
-    res.writeHead(204)
+    const taskCid = req.url?.split('/')[1]
+    if (!taskCid) {
+      res.writeHead(204)
+      res.end()
+    } else if (taskCid === 'unavailable') {
+      res.writeHead(404)
+      res.end()
+    } else if (taskCid === 'failed') {
+      const body = await encodeReceipt((await randomCAR(128)).cid.toString())
+      res.writeHead(200)
+      res.end(body)
+    } else {
+      const body = await encodeReceipt(taskCid)
+      res.writeHead(200)
+      res.end(body)
+    }
+  } catch (error) {
+    process.stderr.write(`Error handling request: ${error}\n`)
+    if (!res.headersSent) {
+      res.writeHead(500)
+    }
     res.end()
-  } else if (taskCid === 'unavailable') {
-    res.writeHead(404)
-    res.end()
-  } else if (taskCid === 'failed') {
-    const body = await encodeReceipt((await randomCAR(128)).cid.toString())
-    res.writeHead(200)
-    res.end(body)
-  } else {
-    const body = await encodeReceipt(taskCid)
-    res.writeHead(200)
-    res.end(body)
   }
 })
 
-server.listen(port, () => console.log(`Listening on :${port}`))
+server
+  .listen(port, () => {
+    process.stdout.write(`Listening on :${port}\n`)
+  })
   .on('error', (err) => {
-    console.error(`Failed to start server on port ${port}:`, err.message)
+    process.stderr.write(
+      `Failed to start server on port ${port}: ${err.message}\n`
+    )
     process.exit(1)
   })
 

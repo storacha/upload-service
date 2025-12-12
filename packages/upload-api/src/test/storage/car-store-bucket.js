@@ -15,34 +15,44 @@ export class CarStoreBucket {
     const content = new Map()
     if (http) {
       const server = http.createServer(async (request, response) => {
-        if (request.method === 'PUT') {
-          const buffer = new Uint8Array(
-            parseInt(request.headers['content-length'] || '0')
-          )
-          let offset = 0
+        try {
+          if (request.method === 'PUT') {
+            const buffer = new Uint8Array(
+              parseInt(request.headers['content-length'] || '0')
+            )
+            let offset = 0
 
-          for await (const chunk of request) {
-            buffer.set(chunk, offset)
-            offset += chunk.length
-          }
+            for await (const chunk of request) {
+              buffer.set(chunk, offset)
+              offset += chunk.length
+            }
 
-          const hash = await sha256.digest(buffer)
-          const checksum = base64pad.baseEncode(hash.digest)
+            const hash = await sha256.digest(buffer)
+            const checksum = base64pad.baseEncode(hash.digest)
 
-          if (checksum !== request.headers['x-amz-checksum-sha256']) {
-            response.writeHead(400, `checksum mismatch`)
+            if (checksum !== request.headers['x-amz-checksum-sha256']) {
+              response.writeHead(400, `checksum mismatch`)
+            } else {
+              const { pathname } = new URL(request.url || '/', url)
+              content.set(pathname, buffer)
+              response.writeHead(200)
+            }
           } else {
-            const { pathname } = new URL(request.url || '/', url)
-            content.set(pathname, buffer)
-            response.writeHead(200)
+            response.writeHead(405)
           }
-        } else {
-          response.writeHead(405)
-        }
 
-        response.end()
-        // otherwise it keep connection lingering
-        response.destroy()
+          response.end()
+          // otherwise it keep connection lingering
+          response.destroy()
+        } catch (error) {
+          process.stderr.write(`Error handling request: ${error}\n`)
+          if (!response.headersSent) {
+            response.writeHead(500)
+          }
+          response.end()
+          // otherwise it keep connection lingering
+          response.destroy()
+        }
       })
       await new Promise((resolve) => server.listen(resolve))
 

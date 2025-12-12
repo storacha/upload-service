@@ -8,37 +8,46 @@ import { gateway } from '@storacha/upload-api/test/utils'
 const port = 5001
 
 const server = createServer(async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', '*')
-  res.setHeader('Access-Control-Allow-Headers', '*')
-  if (req.method === 'OPTIONS') return res.end()
+  try {
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Methods', '*')
+    res.setHeader('Access-Control-Allow-Headers', '*')
+    if (req.method === 'OPTIONS') return res.end()
 
-  if (req.method === 'POST') {
-    const service = getContentServeMockService()
-    const server = createUcantoServer(gateway, service)
+    if (req.method === 'POST') {
+      const service = getContentServeMockService()
+      const server = createUcantoServer(gateway, service)
 
-    const bodyBuffer = Buffer.concat(await collect(req))
+      const bodyBuffer = Buffer.concat(await collect(req))
 
-    const reqHeaders = /** @type {Record<string, string>} */ (
-      Object.fromEntries(Object.entries(req.headers))
-    )
+      const reqHeaders = /** @type {Record<string, string>} */ (
+        Object.fromEntries(Object.entries(req.headers))
+      )
 
-    const { headers, body, status } = await server.request({
-      body: new Uint8Array(
-        bodyBuffer.buffer,
-        bodyBuffer.byteOffset,
-        bodyBuffer.byteLength
-      ),
-      headers: reqHeaders,
-    })
+      const { headers, body, status } = await server.request({
+        body: new Uint8Array(
+          bodyBuffer.buffer,
+          bodyBuffer.byteOffset,
+          bodyBuffer.byteLength
+        ),
+        headers: reqHeaders,
+      })
 
-    for (const [key, value] of Object.entries(headers)) {
-      res.setHeader(key, value)
+      for (const [key, value] of Object.entries(headers)) {
+        res.setHeader(key, value)
+      }
+      res.writeHead(status ?? 200)
+      res.end(body)
+    } else {
+      res.end()
     }
-    res.writeHead(status ?? 200)
-    res.end(body)
+  } catch (error) {
+    process.stderr.write(`Error handling request: ${error}\n`)
+    if (!res.headersSent) {
+      res.writeHead(500)
+    }
+    res.end()
   }
-  res.end()
 })
 
 /** @param {import('node:stream').Readable} stream */
@@ -53,12 +62,14 @@ const collect = (stream) => {
   )
 }
 
-// eslint-disable-next-line no-console
-server.listen(port, () =>
-  console.log(`[Mock] Gateway Server Listening on :${port}`)
-)
+server
+  .listen(port, () => {
+    process.stdout.write(`[Mock] Gateway Server Listening on :${port}\n`)
+  })
   .on('error', (err) => {
-    console.error(`Failed to start server on port ${port}:`, err.message)
+    process.stderr.write(
+      `Failed to start server on port ${port}: ${err.message}\n`
+    )
     process.exit(1)
   })
 

@@ -12,9 +12,14 @@ const server = createServer((req, res) => {
   res.end()
 })
 
-server.listen(port, () => console.log(`Listening on :${port}`))
+server
+  .listen(port, () => {
+    process.stdout.write(`Listening on :${port}\n`)
+  })
   .on('error', (err) => {
-    console.error(`Failed to start server on port ${port}:`, err.message)
+    process.stderr.write(
+      `Failed to start server on port ${port}: ${err.message}\n`
+    )
     process.exit(1)
   })
 
