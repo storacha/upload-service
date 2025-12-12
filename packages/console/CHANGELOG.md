@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.19.2](https://github.com/storacha/upload-service/compare/console-v2.19.1...console-v2.19.2) (2025-12-12)
+
+
+### Fixes
+
+* handle space creation errors and prevent duplicate submissions ([#586](https://github.com/storacha/upload-service/issues/586)) ([b74bed8](https://github.com/storacha/upload-service/commit/b74bed80f4b4564d06a73ea908cbd9ea9ef7bb5d))
+
 ## [2.19.1](https://github.com/storacha/upload-service/compare/console-v2.19.0...console-v2.19.1) (2025-12-04)
 
 
