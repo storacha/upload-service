@@ -130,7 +130,7 @@ export function SpaceCreatorForm({
     } catch (error) {
       setSubmitted(false)
       setCreated(false)
-      setErrorMessage('Failed to create space, check your connection and try again.')
+      setErrorMessage(`Failed to create space: ${error.message}`)
       console.log(error)
       /* eslint-disable-next-line no-console */
       logAndCaptureError(error)
