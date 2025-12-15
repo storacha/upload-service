@@ -100,6 +100,17 @@ function validateDecryptDelegation(wrappedInvocation, spaceDID) {
 
 /**
  * Checks the revocation endpoint for every delegation in the authorization chain.
+ * RATIONALE:
+ *  This revocation check focuses on three main goals:
+ *   - latency: return as soon as any delegation CID is confirmed revoked (fast positive path).
+ *   - parallelism: run checks concurrently with a controlled level of concurrency (p-queue).
+ *   - robustness: retry transient failures (p-retry with exponential backoff) and fail-closed on service errors.
+ *   Mechanisms used:
+ *   - p-queue: concurrency limit to avoid overwhelming the service and host.
+ *   - p-retry: retry transient 429/5xx/network errors to reduce false negatives.
+ *   - AbortController + queue.clear: cancel remaining work immediately after a revoked CID is found.
+ *   - Promise.any over per-CID promises that fulfill only on revoked results: fast return when a positive is discovered.
+ *   - per-task record-and-rethrow handlers: collect service errors (for fail-closed decisions) and prevent unhandled rejections.
  *
  * @param {API.Authorization} authorization
  */
@@ -166,6 +177,10 @@ async function validateAuthorization(authorization) {
         minTimeout: MIN_TIMEOUT,
         factor: BACKOFF_FACTOR,
         signal: globalAbort.signal,
+        /**
+         * Enable this handler when debugging CID validation retries.
+         * Commented out by default to avoid noisy logs in production.
+         */
         // onFailedAttempt: ({ error, attemptNumber, retriesLeft }) => {
         //   console.warn(
         //     `[validateAuthorization] CID ${cid} attempt ${attemptNumber} failed. ${retriesLeft} retries left. Error: ${
