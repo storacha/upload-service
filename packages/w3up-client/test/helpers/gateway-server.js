@@ -58,4 +58,11 @@ server.listen(port, () =>
   console.log(`[Mock] Gateway Server Listening on :${port}`)
 )
 
+/** @param {Error} err */
+server.on('error', (err) => {
+  // eslint-disable-next-line no-console
+  console.error(`Failed to start gateway server on port ${port}: ${err.message}`)
+  process.exit(1)
+})
+
 process.on('SIGTERM', () => process.exit(0))
