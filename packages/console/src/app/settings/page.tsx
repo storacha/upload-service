@@ -1,5 +1,5 @@
-'use client';
-import { useW3, SpaceDID } from '@storacha/ui-react'
+'use client'
+import { useW3, SpaceDID, Account } from '@storacha/ui-react'
 import useSWR from 'swr'
 import Link from 'next/link'
 import { usePlan } from '@/hooks'
@@ -11,9 +11,9 @@ import { RefcodeLink, ReferralsList, RefcodeCreator } from '../referrals/page'
 import { useReferrals } from '@/lib/referrals/hooks'
 import { logAndCaptureError } from '@/sentry'
 
-import type { JSX } from "react";
+import type { JSX } from 'react'
 
-const Plans: Record<`did:${string}`, { name: string, limit: number }> = {
+const Plans: Record<`did:${string}`, { name: string; limit: number }> = {
   'did:web:starter.web3.storage': { name: 'Starter', limit: 5 * GB },
   'did:web:lite.web3.storage': { name: 'Lite', limit: 100 * GB },
   'did:web:business.web3.storage': { name: 'Business', limit: 2 * TB },
@@ -28,14 +28,14 @@ const Plans: Record<`did:${string}`, { name: string, limit: number }> = {
 const MAX_REFERRALS = 11
 const MAX_CREDITS = 460
 
-export default function SettingsPage (): JSX.Element {
-  const [{ client, accounts }] = useW3()
-  // TODO: introduce account switcher
-  const account = accounts[0]
+function UsageInfo({ account }: { account: Account }) {
+  const [{ client }] = useW3()
 
-  const { data: plan } = usePlan(account)
-
-  const { data: usage } = useSWR<Record<SpaceDID, number> | undefined>(`/usage/${account ?? ''}`, {
+  const {
+    data: usage,
+    error: usageError,
+    isLoading: isUsageLoading,
+  } = useSWR<Record<SpaceDID, number> | undefined>(`/usage/${account ?? ''}`, {
     fetcher: async () => {
       if (!account || !client) return
 
@@ -45,17 +45,100 @@ export default function SettingsPage (): JSX.Element {
         return m
       }, {} as Record<SpaceDID, number>)
     },
-    onError: logAndCaptureError
+    onError: logAndCaptureError,
   })
+  const {
+    data: plan,
+    error: planError,
+    isLoading: isPlanLoading,
+  } = usePlan(account)
 
   const product = plan?.product
-  const planName = product && Plans[product]
-    ? Plans[plan.product].name
-    : 'Unknown'
-  const allocated = Object.values(usage ?? {}).reduce((total, n) => total + n, 0)
-  const limit = plan?.product ? Plans[plan.product]?.limit : 0
+  const planName =
+    product && Plans[product] ? Plans[plan.product].name : 'Unknown'
 
-  const { referrals, referralLink, setReferrerEmail, accountEmail, urlQueryEmail, createRefcode, mutateRefcode, } = useReferrals()
+  const allocated = Object.values(usage ?? {}).reduce(
+    (total, n) => total + n,
+    0
+  )
+  const limit = plan?.product ? Plans[plan.product]?.limit : 0
+  return (
+    <>
+      <H2>{account.toEmail()}</H2>
+      <H3>Plan</H3>
+      {planError ? (
+        <pre>{JSON.stringify(planError)}</pre>
+      ) : plan ? (
+        <p className="font-epilogue mb-4">
+          <span className="text-xl mr-2">{planName}</span>
+          <Link className="underline text-sm" href="/plans/change">
+            change
+          </Link>
+        </p>
+      ) : isPlanLoading ? (
+        <DefaultLoader className="w-6 h-6 inline-block" />
+      ) : (
+        <p>
+          This should never be reached! If you see this message, please contact{' '}
+          <a href="mailto:support@storacha.network">support@storacha.network</a>
+        </p>
+      )}
+      <H2>Usage</H2>
+      {usageError ? (
+        <pre>{JSON.stringify(usageError)}</pre>
+      ) : usage && limit ? (
+        <>
+          <p className="font-epilogue mb-4">
+            <span className="text-xl">{filesize(allocated)}</span>
+            <span className="text-sm">
+              {' '}
+              of {limit === Infinity ? 'Unlimited' : filesize(limit)}
+            </span>
+          </p>
+          <table className="border-collapse table-fixed w-full">
+            {Object.entries(usage)
+              .sort((a, b) => b[1] - a[1])
+              .map(([space, total]) => {
+                return (
+                  <tr
+                    key={space}
+                    className="border-b border-hot-red last:border-b-0"
+                  >
+                    <td className="text-xs font-mono py-2">
+                      <Link href={`/space/${space}`}>{space}</Link>
+                    </td>
+                    <td className="text-xs text-right py-2">
+                      {filesize(total)}
+                    </td>
+                  </tr>
+                )
+              })}
+          </table>
+        </>
+      ) : isUsageLoading ? (
+        <DefaultLoader className="w-6 h-6 inline-block" />
+      ) : (
+        <p>
+          This should never be reached! If you see this message, please contact{' '}
+          <a href="mailto:support@storacha.network">support@storacha.network</a>
+        </p>
+      )}
+    </>
+  )
+}
+
+export default function SettingsPage(): JSX.Element {
+  const [{ accounts }] = useW3()
+
+  const {
+    referrals,
+    referralLink,
+    setReferrerEmail,
+    accountEmail,
+    urlQueryEmail,
+    createRefcode,
+    mutateRefcode,
+  } = useReferrals()
 
   const referred = referrals?.length || 0
 
@@ -67,21 +150,21 @@ export default function SettingsPage (): JSX.Element {
       <SettingsNav />
       <H1>Settings</H1>
       <H2>Rewards</H2>
-      <div className='flex flex-row space-x-2 justify-between max-w-4xl mb-4'>
-        <div className='border border-hot-red rounded-2xl bg-white p-5 flex-grow'>
+      <div className="flex flex-row space-x-2 justify-between max-w-4xl mb-4">
+        <div className="border border-hot-red rounded-2xl bg-white p-5 flex-grow">
           <H3>Referred</H3>
-          <span className='text-4xl'>{referred}</span> / {MAX_REFERRALS}
+          <span className="text-4xl">{referred}</span> / {MAX_REFERRALS}
         </div>
-        <div className='border border-hot-red rounded-2xl bg-white p-5 flex-grow'>
+        <div className="border border-hot-red rounded-2xl bg-white p-5 flex-grow">
           <H3>USD Credits</H3>
-          <span className='text-4xl'>{credits}</span> / {MAX_CREDITS}
+          <span className="text-4xl">{credits}</span> / {MAX_CREDITS}
         </div>
-        <div className='border border-hot-red rounded-2xl bg-white p-5 flex-grow'>
+        <div className="border border-hot-red rounded-2xl bg-white p-5 flex-grow">
           <H3>Racha Points</H3>
-          <span className='text-4xl'>{points}</span>
+          <span className="text-4xl">{points}</span>
         </div>
       </div>
-      <div className='border border-hot-red rounded-2xl bg-white p-5 max-w-4xl mb-4'>
+      <div className="border border-hot-red rounded-2xl bg-white p-5 max-w-4xl mb-4">
         <ReferralsList />
         {referralLink ? (
           <RefcodeLink referralLink={referralLink} />
@@ -91,42 +174,22 @@ export default function SettingsPage (): JSX.Element {
             urlQueryEmail={urlQueryEmail}
             createRefcode={createRefcode}
             mutateRefcode={mutateRefcode}
-            setReferrerEmail={setReferrerEmail} />)}
+            setReferrerEmail={setReferrerEmail}
+          />
+        )}
       </div>
-      <div className='border border-hot-red rounded-2xl bg-white p-5 max-w-4xl'>
-        <H2>Plan</H2>
-        <p className='font-epilogue mb-4'>
-          <span className='text-xl mr-2'>{planName}</span>
-          <Link className='underline text-sm'
-            href='/plans/change'>
-            change
-          </Link>
-        </p>
-        <H2>Usage</H2>
-        {usage && limit ? (
-          <>
-            <p className='font-epilogue mb-4'>
-              <span className='text-xl'>{filesize(allocated)}</span>
-              <span className='text-sm'> of {limit === Infinity ? 'Unlimited' : filesize(limit)}</span>
-            </p>
-            <table className='border-collapse table-fixed w-full'>
-              {Object.entries(usage).sort((a, b) => b[1] - a[1]).map(([space, total]) => {
-                return (
-                  <tr key={space} className='border-b border-hot-red last:border-b-0'>
-                    <td className='text-xs font-mono py-2'><Link href={`/space/${space}`}>{space}</Link></td>
-                    <td className='text-xs text-right py-2'>{filesize(total)}</td>
-                  </tr>
-                )
-              })}
-            </table>
-          </>
-        ) : <DefaultLoader className='w-6 h-6 inline-block' />}
+      <div className="border border-hot-red rounded-2xl bg-white p-5 max-w-4xl">
+        {accounts.map((account) => (
+          <UsageInfo account={account} />
+        ))}
       </div>
-      <div className='border border-hot-red rounded-2xl bg-white p-5 max-w-4xl mt-4'>
+      <div className="border border-hot-red rounded-2xl bg-white p-5 max-w-4xl mt-4">
         <H2>Account Management</H2>
-        <button 
-          onClick={() => window.open('https://forms.gle/QsvfMip2qzJqzEEo9', '_blank')}
-          className='bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200'
+        <button
+          onClick={() =>
+            window.open('https://forms.gle/QsvfMip2qzJqzEEo9', '_blank')
+          }
+          className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
         >
           Request Account Deletion
         </button>
