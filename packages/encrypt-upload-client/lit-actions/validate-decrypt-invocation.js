@@ -125,7 +125,9 @@ async function validateAuthorization(authorization) {
   const cids = Array.from(cidSet)
   console.log(`Found ${cids.length} CIDs for revocation check`)
 
-  if (cids.length === 0) return { ok: {} }
+  if (cids.length === 0) {
+    return { error: new Error('No delegation CIDs to check') }
+  }
 
   const globalAbort = new AbortController()
   const queue = new PQueue({ concurrency: CONCURRENCY })
