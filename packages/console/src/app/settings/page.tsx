@@ -12,6 +12,7 @@ import { useReferrals } from '@/lib/referrals/hooks'
 import { logAndCaptureError } from '@/sentry'
 
 import type { JSX } from 'react'
+import CopyButton from '@/components/CopyButton'
 
 const Plans: Record<`did:${string}`, { name: string; limit: number }> = {
   'did:web:starter.web3.storage': { name: 'Starter', limit: 5 * GB },
@@ -27,6 +28,41 @@ const Plans: Record<`did:${string}`, { name: string; limit: number }> = {
 
 const MAX_REFERRALS = 11
 const MAX_CREDITS = 460
+
+function ErrorComponent({ error }: { error: Error }) {
+  const cause = error.cause as Error | undefined
+  return (
+    <div className="text-sm flex flex-col gap-4 border border-hot-red p-2 rounded w-full overflow-x-scroll">
+      <div className="flex flex-row justify-between">
+        <h3>Error: {error.message ?? 'No error message'}</h3>
+        <CopyButton
+          text={`${error.message}
+
+${error.stack}
+
+${cause?.stack}
+`}
+        />
+      </div>
+      {error.stack ? (
+        <div>
+          <h4 className="uppercase text-hot-red">Stacktrace</h4>
+          <pre className="text-xs">{error.stack}</pre>
+        </div>
+      ) : (
+        ''
+      )}
+      {cause?.stack ? (
+        <div>
+          <h4 className="uppercase text-hot-red">Cause</h4>
+          <pre className="text-xs">{cause?.stack}</pre>
+        </div>
+      ) : (
+        ''
+      )}
+    </div>
+  )
+}
 
 function UsageInfo({ account }: { account: Account }) {
   const [{ client }] = useW3()
@@ -67,7 +103,7 @@ function UsageInfo({ account }: { account: Account }) {
       <H2>{account.toEmail()}</H2>
       <H3>Plan</H3>
       {planError ? (
-        <pre>{JSON.stringify(planError)}</pre>
+        <ErrorComponent error={planError} />
       ) : plan ? (
         <p className="font-epilogue mb-4">
           <span className="text-xl mr-2">{planName}</span>
@@ -85,7 +121,7 @@ function UsageInfo({ account }: { account: Account }) {
       )}
       <H2>Usage</H2>
       {usageError ? (
-        <pre>{JSON.stringify(usageError)}</pre>
+        <ErrorComponent error={usageError} />
       ) : usage && limit ? (
         <>
           <p className="font-epilogue mb-4">
@@ -180,7 +216,7 @@ export default function SettingsPage(): JSX.Element {
       </div>
       <div className="border border-hot-red rounded-2xl bg-white p-5 max-w-4xl">
         {accounts.map((account) => (
-          <UsageInfo account={account} />
+          <UsageInfo account={account} key={account.did()} />
         ))}
       </div>
       <div className="border border-hot-red rounded-2xl bg-white p-5 max-w-4xl mt-4">
@@ -198,18 +234,3 @@ export default function SettingsPage(): JSX.Element {
   )
 }
 
-const startOfMonth = (now: string | number | Date) => {
-  const d = new Date(now)
-  d.setUTCDate(1)
-  d.setUTCHours(0)
-  d.setUTCMinutes(0)
-  d.setUTCSeconds(0)
-  d.setUTCMilliseconds(0)
-  return d
-}
-
-const startOfLastMonth = (now: string | number | Date) => {
-  const d = startOfMonth(now)
-  d.setUTCMonth(d.getUTCMonth() - 1)
-  return d
-}
