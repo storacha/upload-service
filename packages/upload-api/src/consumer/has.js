@@ -14,12 +14,10 @@ export const provide = (context) =>
  * @returns {Promise<API.Result<API.ConsumerHasSuccess, API.ConsumerHasFailure>>}
  */
 export const has = async ({ capability }, context) => {
-  if (capability.with !== context.signer.did()) {
-    return Provider.fail(
-      `Expected with to be ${context.signer.did()}} instead got ${
-        capability.with
-      }`
-    )
+  const provider = capability.with
+
+  if (!context.provisionsStorage.services.includes(provider)) {
+    return Provider.fail(`Unknown provider ${provider}`)
   }
 
   return context.provisionsStorage.hasStorageProvider(capability.nb.consumer)
