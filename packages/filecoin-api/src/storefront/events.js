@@ -64,7 +64,8 @@ export const handleFilecoinSubmitMessage = async (context, message) => {
       },
       cap,
       {
-        expiration: Infinity,
+        // one hour expiration for pdp/info
+        expiration: new Date(Date.now() + 1000 * 60 * 60).getTime(),
       }
     )
 
