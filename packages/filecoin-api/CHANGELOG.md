@@ -1,3 +1,13 @@
+## 2.1.0 (2025-12-16)
+
+### 🚀 Features
+
+- handle pdp/info check asyncronously ([b210b70b](https://github.com/storacha/upload-service/commit/b210b70b))
+
+### ❤️ Thank You
+
+- hannahhoward
+
 ## 1.3.4 (2025-12-02)
 
 ### 🩹 Fixes
