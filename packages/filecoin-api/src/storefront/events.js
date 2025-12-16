@@ -1,7 +1,7 @@
 import { Storefront, Aggregator } from '@storacha/filecoin-client'
 import * as AggregatorCaps from '@storacha/capabilities/filecoin/aggregator'
 import { Assert } from '@web3-storage/content-claims/capability'
-
+import * as PDPCaps from '@storacha/capabilities/pdp'
 import { computePieceCid } from './piece.js'
 // eslint-disable-next-line no-unused-vars
 import * as API from '../types.js'
@@ -47,6 +47,41 @@ export const handleFilecoinSubmitMessage = async (context, message) => {
   if (message.pdpInfoSuccess) {
     // if we have pdp info, use the piece from there
     computedPiece = message.pdpInfoSuccess.piece
+  } else if (message.pdpIssuer) {
+    const cap = PDPCaps.info.create({
+      with: message.pdpIssuer,
+      nb: {
+        blob: message.content.multihash.bytes,
+      },
+    })
+
+    const did = message.pdpIssuer
+    const configure = await context.router.configureInvocation(
+      {
+        did() {
+          return did
+        },
+      },
+      cap,
+      {
+        // one hour expiration for pdp/info
+        expiration: new Date(Date.now() + 1000 * 60 * 60).getTime(),
+      }
+    )
+
+    if (configure.error) {
+      return configure
+    }
+
+    const receipt = await configure.ok.invocation.execute(
+      configure.ok.connection
+    )
+
+    // it's ok if pdp/info fails, we just won't have pdp info
+    if (receipt.out.error) {
+      return receipt.out
+    }
+    computedPiece = receipt.out.ok.piece
   } else {
     const contentStreamRes = await context.contentStore.stream(message.content)
     if (contentStreamRes.error) {

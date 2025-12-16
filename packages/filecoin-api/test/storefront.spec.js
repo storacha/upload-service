@@ -147,7 +147,9 @@ describe('storefront', () => {
         const {
           storefront: { pieceStore, taskStore, receiptStore, contentStore },
         } = getStoreImplementations()
-
+        const pdpStore = createPDPStore()
+        const storageProviders = [await StorageNode.activate({ pdpStore })]
+        const router = createRouter(storefrontSigner, storageProviders)
         await test(
           {
             equal: assert.strictEqual,
@@ -190,6 +192,8 @@ describe('storefront', () => {
                 assert.fail(error)
               },
             },
+            router,
+            storageProviders,
             validateAuthorization,
           }
         )

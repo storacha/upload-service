@@ -87,8 +87,13 @@ export interface TestServiceContext extends ServiceContext {
 }
 
 export interface FilecoinSubmitMessageContext
-  extends Pick<ServiceContext, 'pieceStore'> {
+  extends Pick<ServiceContext, 'pieceStore' | 'router'> {
   contentStore: ContentStore<UnknownLink, Uint8Array>
+}
+
+export interface TestFilecoinSubmitMessageContext
+  extends FilecoinSubmitMessageContext {
+  storageProviders: Array<TestStorageNode>
 }
 
 export interface PieceOfferMessageContext {
@@ -190,6 +195,10 @@ export interface FilecoinSubmitMessage {
    * Info from the PDP node about the piece.
    */
   pdpInfoSuccess?: PDPInfoSuccess
+  /**
+   * Info about the PDP node to query for piece info.
+   */
+  pdpIssuer?: DID
 }
 
 export interface PieceOfferMessage {
