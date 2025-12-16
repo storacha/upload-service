@@ -14,18 +14,19 @@ export const provide = (context) =>
  * @returns {Promise<API.SubscriptionGetResult>}
  */
 const get = async ({ capability }, context) => {
+  const provider = capability.with
   /**
-   * Ensure that resource is the service DID, which implies it's either
+   * Ensure that resource is one of the service DIDs, which implies it's either
    * invoked by service itself or an authorized delegate (like admin).
    * In other words no user will be able to invoke this unless service
    * explicitly delegated capability to them to do so.
    */
-  if (capability.with !== context.signer.did()) {
+  if (!context.provisionsStorage.services.includes(provider)) {
     return { error: new UnknownProvider(capability.with) }
   }
 
   return await context.provisionsStorage.getSubscription(
-    capability.with,
+    provider,
     capability.nb.subscription
   )
 }
