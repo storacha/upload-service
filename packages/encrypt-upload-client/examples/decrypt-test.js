@@ -11,7 +11,7 @@ import { privateKeyToAccount } from 'viem/accounts'
 
 import { create } from '../src/index.js'
 import { serviceConf, receiptsEndpoint } from '../src/config/service.js'
-import { createGenericLitAdapter } from '../src/crypto/factories.node.js'
+import { createGenericLitAdapter } from '../src/crypto/factories.js'
 import { extract } from '@ucanto/core/delegation'
 import { createAuthManager, storagePlugins } from '@lit-protocol/auth'
 
