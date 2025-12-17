@@ -152,9 +152,27 @@ export const executeUcanValidationAction = async (litClient, options) => {
   const decryptedData = parsedResponse.decryptedString
 
   if (!decryptedData) {
-    let errorMsg
-    if (parsedResponse.error) errorMsg = parsedResponse.error
-    throw new Error(`Decrypted data does not exist! Error message: ${errorMsg}`)
+    if (parsedResponse.error) {
+      throw new Error(`Decryption failed: ${parsedResponse.error}`)
+    }
+
+    if (parsedResponse.validateAccess) {
+      const parsedValidateAccess = JSON.parse(
+        /** @type string*/ (parsedResponse.validateAccess)
+      )
+      if (parsedValidateAccess.error) {
+        throw new Error(
+          `Access validation failed: ${
+            parsedValidateAccess.error.message ||
+            JSON.stringify(parsedValidateAccess.error)
+          }`
+        )
+      }
+    }
+
+    throw new Error(
+      `Decryption failed: No decrypted data in response despite successful validation`
+    )
   }
 
   return decryptedData
