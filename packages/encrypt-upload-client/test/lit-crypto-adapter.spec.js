@@ -144,7 +144,7 @@ await describe('LitCryptoAdapter', async () => {
 
     await test('should verify factory function behavior', async () => {
       const { createGenericLitAdapter } = await import(
-        '../src/crypto/factories.node.js'
+        '../src/crypto/factories.js'
       )
 
       const genericAdapter = createGenericLitAdapter(
