@@ -1,3 +1,13 @@
+## 2.8.3 (2025-12-18)
+
+### 🩹 Fixes
+
+- dont excldue failed replicas ([16b07ce1](https://github.com/storacha/upload-service/commit/16b07ce1))
+
+### ❤️ Thank You
+
+- hannahhoward
+
 ## 2.8.2 (2025-12-16)
 
 ### 🧱 Updated Dependencies
