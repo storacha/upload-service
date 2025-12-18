@@ -74,9 +74,6 @@ export const blobReplicateProvider = (context) => {
       // still exists in "allocated", but has actually timed out/failed.
 
       const activeReplicas = []
-      const failedReplicas = replicaListRes.ok.filter(
-        (r) => r.status === 'failed'
-      )
 
       // fetch fx detail for active replicas to include in receipt
       const activeReplicaDetails = await Promise.all(
@@ -156,12 +153,9 @@ export const blobReplicateProvider = (context) => {
           )
         }
 
-        // do not include any nodes where we already have replications or
-        // nodes we have previously failed to replicate to
+        // do not include any nodes where we already have replications
         /** @type {Principal[]} */
-        const exclude = [...activeReplicas, ...failedReplicas].map((r) =>
-          DID.parse(r.provider)
-        )
+        const exclude = [...activeReplicas].map((r) => DID.parse(r.provider))
 
         const selectRes = await router.selectReplicationProviders(
           locClaim.issuer,
