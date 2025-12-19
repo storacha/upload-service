@@ -74,6 +74,9 @@ export const blobReplicateProvider = (context) => {
       // still exists in "allocated", but has actually timed out/failed.
 
       const activeReplicas = []
+      const failedReplicas = replicaListRes.ok.filter(
+        (r) => r.status === 'failed'
+      )
 
       // fetch fx detail for active replicas to include in receipt
       const activeReplicaDetails = await Promise.all(
@@ -309,7 +312,12 @@ export const blobReplicateProvider = (context) => {
               return messageWriteRes
             }
 
-            const addRes = await replicaStore.add({
+            const firstTimeReplica =
+              failedReplicas.findIndex(
+                (r) => r.provider === candidate.did()
+              ) === -1
+            /** @type {Parameters<typeof replicaStore.add>[0]} */
+            const replicaData = {
               space,
               digest,
               provider: candidate.did(),
@@ -317,11 +325,13 @@ export const blobReplicateProvider = (context) => {
               cause:
                 /** @type {API.UCANLink<[API.BlobReplicaAllocate]>} */
                 (task.cid),
-            })
+            }
+            const addRes = firstTimeReplica
+              ? await replicaStore.add(replicaData)
+              : await replicaStore.retry(replicaData)
             if (addRes.error) {
               return addRes
             }
-
             // if there no receipt, then an execution error occurred
             if (!receipt) {
               return Server.error({
