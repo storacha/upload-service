@@ -1,3 +1,13 @@
+## 2.8.4 (2025-12-19)
+
+### 🩹 Fixes
+
+- allow retry on failed replicas ([f2bddade](https://github.com/storacha/upload-service/commit/f2bddade))
+
+### ❤️ Thank You
+
+- hannahhoward
+
 ## 2.8.3 (2025-12-18)
 
 ### 🩹 Fixes
