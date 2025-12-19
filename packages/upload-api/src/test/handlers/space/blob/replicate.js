@@ -7,7 +7,7 @@ import * as SpaceBlobCapabilities from '@storacha/capabilities/space/blob'
 import * as BlobReplicaCapabilities from '@storacha/capabilities/blob/replica'
 import * as UCANCapabilities from '@storacha/capabilities/ucan'
 import { createServer, connect } from '../../../../lib.js'
-import { alice, randomBytes, registerSpace } from '../../../util.js'
+import { alice, randomBytes, randomCID, registerSpace } from '../../../util.js'
 import { createLocationCommitment, uploadBlob } from '../../../helpers/blob.js'
 import * as Result from '../../../helpers/result.js'
 import { toLocationCommitment } from '../../../../blob/lib.js'
@@ -538,4 +538,75 @@ export const test = {
       assert.equal(listRes1.ok?.length, 1)
       assert.equal(listRes1.ok?.[0].status, 'transferred')
     }),
+  'should allow retries of failed replicas': withTestContext(
+    async (assert, context) => {
+      // add failed replications
+      const addResults = await Promise.all(
+        context.storageProviders.map(async (provider) =>
+          context.replicaStore.add({
+            space: context.space,
+            digest: context.digest,
+            provider: provider.id.did(),
+            status: 'failed',
+            cause: await randomCID(),
+          })
+        )
+      )
+      for (const addResult of addResults) {
+        assert.equal(addResult.error, undefined)
+      }
+      const replicateRcpt0 = await SpaceBlobCapabilities.replicate
+        .invoke({
+          issuer: alice,
+          audience: context.id,
+          with: context.space,
+          nb: {
+            blob: {
+              digest: context.digest.bytes,
+              size: context.data.length,
+            },
+            replicas: 2,
+            site: context.site.cid,
+          },
+          proofs: [context.proof, context.site],
+        })
+        .execute(context.connection)
+
+      assert.equal(replicateRcpt0.out.error, undefined)
+      assert.ok(replicateRcpt0.out.ok)
+
+      /** @type {API.Invocation[]} */
+      const allocateFx0 = []
+      for (const fx of replicateRcpt0.fx.fork) {
+        if (!isDelegation(fx)) {
+          continue
+        }
+        const allocateMatch = BlobReplicaCapabilities.allocate.match({
+          // @ts-expect-error unknown is not allocate caps
+          capability: fx.capabilities[0],
+          delegation: fx,
+        })
+        if (allocateMatch.ok) {
+          allocateFx0.push(fx)
+          continue
+        }
+      }
+      // we should have found 1 allocation
+      assert.equal(allocateFx0.length, 1)
+      const storedReplicas = await context.replicaStore.list({
+        space: context.space,
+        digest: context.digest,
+      })
+      assert.equal(storedReplicas.error, undefined)
+      assert.equal(storedReplicas.ok?.length, 3)
+      // should have overwritten the failed replica at least once with the new allocation
+      storedReplicas.ok?.forEach((replica) => {
+        if (allocateFx0[0].audience.did() === replica.provider) {
+          assert.equal(replica.status, 'allocated')
+        } else {
+          assert.equal(replica.status, 'failed')
+        }
+      })
+    }
+  ),
 }
