@@ -12,7 +12,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { createBlobsListKey } from '@/cache'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { logAndCaptureError } from '@/sentry'
-import { BlobsList } from '@/components/BlobsList'
+import { SpaceBlobs } from '@storacha/ui-react'
 import BlobsOrUploads from '@/components/BlobsOrUploads'
 
 const pageSize = 15
@@ -44,11 +44,7 @@ export default function Page(props: PageProps): JSX.Element {
           <BlobsOrUploads space={space.did()} selected="blobs" />
         </>
       )}
-      <SpaceBlobsList
-        space={space}
-        client={client}
-        searchParams={searchParams}
-      />
+      <SpaceBlobsList space={space} client={client} searchParams={searchParams} />
     </>
   )
 }
@@ -108,14 +104,14 @@ function SpaceBlobsList({
       : undefined
   const handleRefresh = () => mutate()
   return (
-    <BlobsList
-      space={space}
+    <SpaceBlobs
       blobs={blobs?.results ?? []}
       loading={isLoading}
       validating={isValidating}
       onNext={handleNext}
       onPrev={handlePrev}
       onRefresh={handleRefresh}
+      uploadHref={`/space/${space.did()}/upload`}
     />
   )
 }
