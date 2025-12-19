@@ -51,6 +51,16 @@ export const UsageClient = Test.withContext({
       assert.equal(record.size.initial, 0)
       assert.ok(record.size.final >= content.size)
       assert.ok(record.events.length > 0)
+
+      // Verify egress data is present
+      assert.ok(usage.egress, 'should have egress data')
+      assert.equal(typeof usage.egress.total, 'number', 'egress total should be a number')
+      assert.ok(usage.egress.spaces, 'should have egress spaces')
+      const egressSpaceReport = usage.egress.spaces[space.did()]
+      assert.ok(egressSpaceReport, 'should have egress for space')
+      const egressRecord = egressSpaceReport.providers[service.did()]
+      assert.ok(egressRecord, 'should have egress record for provider')
+      assert.equal(egressRecord.space, space.did())
     },
   },
 })

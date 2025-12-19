@@ -78,6 +78,17 @@ export const test = {
     assert.equal(report?.size.final, size)
     assert.equal(report?.events.length, 1)
     assert.equal(report?.events[0].delta, size)
+
+    // Verify egress data structure is present
+    assert.ok(usage?.egress)
+    assert.equal(typeof usage?.egress.total, 'number')
+    assert.ok(usage?.egress.spaces)
+    const spaceEgress = usage?.egress.spaces[space.did()]
+    assert.ok(spaceEgress)
+    assert.equal(typeof spaceEgress?.total, 'number')
+    const egressReport = spaceEgress?.providers[context.service.did()]
+    assert.ok(egressReport)
+    assert.equal(egressReport?.space, spaceDid)
   },
 
   'account/usage/get with multiple spaces': async (assert, context) => {
@@ -178,7 +189,6 @@ export const test = {
 
     assert.ok(accountUsageRes.out.ok)
     const usage = accountUsageRes.out.ok
-    console.log(usage)
     assert.equal(usage?.total, size1 + size2)
 
     // Check space 1 usage
@@ -190,6 +200,11 @@ export const test = {
     const space2Usage = usage?.spaces[space2.did()]
     assert.ok(space2Usage)
     assert.equal(space2Usage?.total, size2)
+
+    // Verify egress structure for multiple spaces
+    assert.ok(usage?.egress)
+    assert.ok(usage?.egress.spaces[space1.did()])
+    assert.ok(usage?.egress.spaces[space2.did()])
   },
 
   'account/usage/get with spaces filter': async (assert, context) => {
@@ -303,6 +318,11 @@ export const test = {
     // Should not contain space2
     const space2Usage = usage?.spaces[space2.did()]
     assert.equal(space2Usage, undefined)
+
+    // Egress should also be filtered to space1 only
+    assert.ok(usage?.egress)
+    assert.ok(usage?.egress.spaces[space1.did()])
+    assert.equal(usage?.egress.spaces[space2.did()], undefined)
   },
 
   'account/usage/get should error when space has no provider': async (

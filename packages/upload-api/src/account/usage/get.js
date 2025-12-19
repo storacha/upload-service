@@ -57,9 +57,13 @@ export const get = async ({ capability }, context) => {
   const period = { from, to }
 
   /** @type {API.AccountUsageGetSuccess} */
-  const bySpace = {
+  const result = {
     total: 0,
     spaces: {},
+    egress: {
+      total: 0,
+      spaces: {},
+    },
   }
   for (const [
     space,
@@ -68,21 +72,35 @@ export const get = async ({ capability }, context) => {
     Object.entries(subscriptionsBySpace)
   )) {
     /** @type {API.SpaceUsage} */
-    bySpace.spaces[space] = {
+    result.spaces[space] = {
+      total: 0,
+      providers: {},
+    }
+    /** @type {API.SpaceEgressUsage} */
+    result.egress.spaces[space] = {
       total: 0,
       providers: {},
     }
 
     // lexographically order providers by Provider DID
     for (const provider of providers.sort()) {
-      const res = await context.usageStorage.report(provider, space, period)
-      if (res.error) return res
-      bySpace.spaces[space].providers[provider] = res.ok
-      bySpace.spaces[space].total += res.ok.size.final
-      bySpace.total += res.ok.size.final
+      // Storage usage
+      const [storageRes, egressRes] = await Promise.all([
+        context.usageStorage.report(provider, space, period),
+        context.usageStorage.reportEgress(provider, space, period)
+      ])
+      if (storageRes.error) return storageRes
+      result.spaces[space].providers[provider] = storageRes.ok
+      result.spaces[space].total += storageRes.ok.size.final
+      result.total += storageRes.ok.size.final
+
+      if (egressRes.error) return egressRes
+      result.egress.spaces[space].providers[provider] = egressRes.ok
+      result.egress.spaces[space].total += egressRes.ok.total
+      result.egress.total += egressRes.ok.total
     }
   }
-  return { ok: bySpace }
+  return { ok: result }
 }
 
 class NoSubscriptionError extends Server.Failure {
