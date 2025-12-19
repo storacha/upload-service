@@ -232,30 +232,30 @@ export interface NoSubscriptionError extends Ucanto.Failure {
 export type AccountUsageGetFailure = NoSubscriptionError | Ucanto.Failure
 
 export interface AccountUsageGetSuccess {
-  /** Total storage across all providers and spaces */
+  // total across all providers and spaces
   total: number
-  /** Storage usages by space */
+  // usages by space
   spaces: Record<SpaceDID, SpaceUsage>
-  /** Egress usage data */
+  // egress usage data
   egress: {
-    /** Total egress across all providers and spaces */
+    // total egress across all providers and spaces
     total: number
-    /** Egress usages by space */
+    // egress usages by space
     spaces: Record<SpaceDID, SpaceEgressUsage>
   }
 }
 
 export interface SpaceUsage {
-  /** Total storage across all providers for the space */
+  // total across all providers for the space
   total: number
-  /** Storage usages by provider */
+  // storage usages by provider
   providers: Record<ProviderDID, UsageData>
 }
 
 export interface SpaceEgressUsage {
-  /** Total egress across all providers for the space */
+  // total egress across all providers for the space
   total: number
-  /** Egress usages by provider */
+  // egress usages by provider
   providers: Record<ProviderDID, EgressUsageData>
 }
 
