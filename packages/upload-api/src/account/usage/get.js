@@ -87,7 +87,7 @@ export const get = async ({ capability }, context) => {
       // Storage usage
       const [storageRes, egressRes] = await Promise.all([
         context.usageStorage.report(provider, space, period),
-        context.usageStorage.reportEgress(provider, space, period)
+        context.usageStorage.reportEgress(provider, space, period),
       ])
       if (storageRes.error) return storageRes
       result.spaces[space].providers[provider] = storageRes.ok
