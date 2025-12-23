@@ -12,7 +12,7 @@ import { createLitClient } from '@lit-protocol/lit-client'
 
 import * as EncryptClient from '../src/index.js'
 import { serviceConf, receiptsEndpoint } from '../src/config/service.js'
-import { createGenericLitAdapter } from '../src/crypto/factories.node.js'
+import { createGenericLitAdapter } from '../src/crypto/factories.js'
 // import { CID } from 'multiformats'
 import { createAuthManager, storagePlugins } from '@lit-protocol/auth'
 
