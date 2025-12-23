@@ -14,16 +14,16 @@ import { logAndCaptureError } from '@/sentry'
 import type { JSX } from 'react'
 import CopyButton from '@/components/CopyButton'
 
-const Plans: Record<`did:${string}`, { name: string; limit: number }> = {
-  'did:web:starter.web3.storage': { name: 'Starter', limit: 5 * GB },
-  'did:web:lite.web3.storage': { name: 'Lite', limit: 100 * GB },
-  'did:web:business.web3.storage': { name: 'Business', limit: 2 * TB },
-  'did:web:free.web3.storage': { name: 'Free', limit: Infinity },
-  'did:web:starter.storacha.network': { name: 'Mild', limit: 5 * GB },
-  'did:web:lite.storacha.network': { name: 'Medium', limit: 100 * GB },
-  'did:web:business.storacha.network': { name: 'Extra Spicy', limit: 2 * TB },
-  'did:web:free.storacha.network': { name: 'Free', limit: Infinity },
-  'did:web:trial.storacha.network': { name: 'Trial', limit: 100 * MB },
+const Plans: Record<`did:${string}`, { name: string; limit: number; egressLimit: number }> = {
+  'did:web:starter.web3.storage': { name: 'Starter', limit: 5 * GB, egressLimit: 5 * GB },
+  'did:web:lite.web3.storage': { name: 'Lite', limit: 100 * GB, egressLimit: 25 * GB },
+  'did:web:business.web3.storage': { name: 'Business', limit: 2 * TB, egressLimit: 500 * GB },
+  'did:web:free.web3.storage': { name: 'Free', limit: Infinity, egressLimit: Infinity },
+  'did:web:starter.storacha.network': { name: 'Mild', limit: 5 * GB, egressLimit: 5 * GB },
+  'did:web:lite.storacha.network': { name: 'Medium', limit: 100 * GB, egressLimit: 25 * GB },
+  'did:web:business.storacha.network': { name: 'Extra Spicy', limit: 2 * TB, egressLimit: 500 * GB },
+  'did:web:free.storacha.network': { name: 'Free', limit: Infinity, egressLimit: Infinity },
+  'did:web:trial.storacha.network': { name: 'Trial', limit: 100 * MB, egressLimit: 100 * MB },
 }
 
 const MAX_REFERRALS = 11
@@ -68,18 +68,31 @@ function UsageInfo({ account }: { account: Account }) {
   const [{ client }] = useW3()
 
   const {
-    data: usage,
+    data: usageData,
     error: usageError,
     isLoading: isUsageLoading,
-  } = useSWR<Record<SpaceDID, number> | undefined>(`/usage/${account ?? ''}`, {
+  } = useSWR<{
+    storage: Record<SpaceDID, number>
+    egress: Record<SpaceDID, number>
+    totalStorage: number
+    totalEgress: number
+  } | undefined>(`/usage/${account ?? ''}`, {
     fetcher: async () => {
       if (!account || !client) return
 
       const result = await client.capability.account.usage.get(account.did())
-      return Object.entries(result.spaces).reduce((m, [spaceDID, value]) => {
-        m[spaceDID as SpaceDID] = value.total
-        return m
-      }, {} as Record<SpaceDID, number>)
+      return {
+        storage: Object.entries(result.spaces).reduce((m, [spaceDID, value]) => {
+          m[spaceDID as SpaceDID] = value.total
+          return m
+        }, {} as Record<SpaceDID, number>),
+        egress: Object.entries(result.egress.spaces).reduce((m, [spaceDID, value]) => {
+          m[spaceDID as SpaceDID] = value.total
+          return m
+        }, {} as Record<SpaceDID, number>),
+        totalStorage: result.total,
+        totalEgress: result.egress.total,
+      }
     },
     onError: logAndCaptureError,
   })
@@ -93,11 +106,9 @@ function UsageInfo({ account }: { account: Account }) {
   const planName =
     product && Plans[product] ? Plans[plan.product].name : 'Unknown'
 
-  const allocated = Object.values(usage ?? {}).reduce(
-    (total, n) => total + n,
-    0
-  )
+  const allocated = usageData?.totalStorage ?? 0
   const limit = plan?.product ? Plans[plan.product]?.limit : 0
+  const egressLimit = plan?.product ? Plans[plan.product]?.egressLimit : 0
   return (
     <>
       <H2>{account.toEmail()}</H2>
@@ -119,10 +130,10 @@ function UsageInfo({ account }: { account: Account }) {
           <a href="mailto:support@storacha.network">support@storacha.network</a>
         </p>
       )}
-      <H2>Usage</H2>
+      <H2>Storage</H2>
       {usageError ? (
         <ErrorComponent error={usageError} />
-      ) : usage && limit ? (
+      ) : usageData && limit ? (
         <>
           <p className="font-epilogue mb-4">
             <span className="text-xl">{filesize(allocated)}</span>
@@ -132,7 +143,47 @@ function UsageInfo({ account }: { account: Account }) {
             </span>
           </p>
           <table className="border-collapse table-fixed w-full">
-            {Object.entries(usage)
+            {Object.entries(usageData.storage)
+              .sort((a, b) => b[1] - a[1])
+              .map(([space, total]) => {
+                return (
+                  <tr
+                    key={space}
+                    className="border-b border-hot-red last:border-b-0"
+                  >
+                    <td className="text-xs font-mono py-2">
+                      <Link href={`/space/${space}`}>{space}</Link>
+                    </td>
+                    <td className="text-xs text-right py-2">
+                      {filesize(total)}
+                    </td>
+                  </tr>
+                )
+              })}
+          </table>
+        </>
+      ) : isUsageLoading ? (
+        <DefaultLoader className="w-6 h-6 inline-block" />
+      ) : (
+        <p>
+          This should never be reached! If you see this message, please contact{' '}
+          <a href="mailto:support@storacha.network">support@storacha.network</a>
+        </p>
+      )}
+      <H2 className="mt-6">Egress This Month</H2>
+      {usageError ? (
+        <ErrorComponent error={usageError} />
+      ) : usageData && egressLimit ? (
+        <>
+          <p className="font-epilogue mb-4">
+            <span className="text-xl">{filesize(usageData.totalEgress)}</span>
+            <span className="text-sm">
+              {' '}
+              of {egressLimit === Infinity ? 'Unlimited' : filesize(egressLimit)}
+            </span>
+          </p>
+          <table className="border-collapse table-fixed w-full">
+            {Object.entries(usageData.egress)
               .sort((a, b) => b[1] - a[1])
               .map(([space, total]) => {
                 return (

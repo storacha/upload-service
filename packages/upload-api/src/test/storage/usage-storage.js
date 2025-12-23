@@ -8,9 +8,9 @@ export class UsageStorage {
   constructor(blobRegistry) {
     this.blobRegistry = blobRegistry
     /**
-     * @type {Record<import('../types.js').AccountDID, import('../types.js').EgressData>}
+     * @type {import('../types.js').EgressData[]}
      */
-    this._egressRecords = {}
+    this._egressRecords = []
   }
 
   get items() {
@@ -61,6 +61,34 @@ export class UsageStorage {
   }
 
   /**
+   * @param {import('../types.js').ProviderDID} provider
+   * @param {import('../types.js').SpaceDID} space
+   * @param {{ from: Date, to: Date }} period
+   */
+  async reportEgress(provider, space, period) {
+    const events = this._egressRecords.filter((record) => {
+      const servedAt = new Date(record.servedAt).getTime()
+      return (
+        record.space === space &&
+        servedAt >= period.from.getTime() &&
+        servedAt < period.to.getTime()
+      )
+    })
+
+    return {
+      ok: {
+        provider,
+        space,
+        period: {
+          from: period.from.toISOString(),
+          to: period.to.toISOString(),
+        },
+        total: events.reduce((sum, e) => sum + e.bytes, 0),
+      },
+    }
+  }
+
+  /**
    * Simulate a record of egress data for a customer.
    *
    * @param {import('../types.js').SpaceDID} space
@@ -71,6 +99,7 @@ export class UsageStorage {
    * @param {import('../types.js').UnknownLink} cause
    */
   async record(space, customer, resource, bytes, servedAt, cause) {
+    /** @type {import('../types.js').EgressData} */
     const egressData = {
       space,
       customer,
@@ -79,7 +108,7 @@ export class UsageStorage {
       servedAt: servedAt.toISOString(),
       cause,
     }
-    this._egressRecords[customer] = egressData
+    this._egressRecords.push(egressData)
     return Promise.resolve({
       ok: egressData,
     })

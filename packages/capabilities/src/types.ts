@@ -201,6 +201,22 @@ export interface EgressData {
   cause: UnknownLink
 }
 
+export interface EgressUsageData {
+  /** Provider the report concerns, e.g. `did:web:storacha.network` */
+  provider: ProviderDID
+  /** Space the report concerns. */
+  space: SpaceDID
+  /** Period the report applies to. */
+  period: {
+    /** ISO datetime the report begins from (inclusive). */
+    from: ISO8601Date
+    /** ISO datetime the report ends at (inclusive). */
+    to: ISO8601Date
+  }
+  /** Total bytes served during the period. */
+  total: number
+}
+
 // AccountUsage
 export type AccountUsage = InferInvokedCapability<
   typeof AccountUsageCaps.accountUsage
@@ -218,15 +234,29 @@ export type AccountUsageGetFailure = NoSubscriptionError | Ucanto.Failure
 export interface AccountUsageGetSuccess {
   // total across all providers and spaces
   total: number
-  // usages by provider
+  // usages by space
   spaces: Record<SpaceDID, SpaceUsage>
+  // egress usage data
+  egress: {
+    // total egress across all providers and spaces
+    total: number
+    // egress usages by space
+    spaces: Record<SpaceDID, SpaceEgressUsage>
+  }
 }
 
 export interface SpaceUsage {
   // total across all providers for the space
   total: number
-  // usages by provider
+  // storage usages by provider
   providers: Record<ProviderDID, UsageData>
+}
+
+export interface SpaceEgressUsage {
+  // total egress across all providers for the space
+  total: number
+  // egress usages by provider
+  providers: Record<ProviderDID, EgressUsageData>
 }
 
 // Provider

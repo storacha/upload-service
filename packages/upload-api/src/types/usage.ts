@@ -5,9 +5,10 @@ import {
   SpaceDID,
   UsageData,
   EgressData,
+  EgressUsageData,
 } from '@storacha/capabilities/types'
 
-export type { UsageData }
+export type { UsageData, EgressUsageData }
 
 export interface UsageStorage {
   report: (
@@ -15,6 +16,11 @@ export interface UsageStorage {
     space: SpaceDID,
     period: { from: Date; to: Date }
   ) => Promise<Result<UsageData, Failure>>
+  reportEgress: (
+    provider: ProviderDID,
+    space: SpaceDID,
+    period: { from: Date; to: Date }
+  ) => Promise<Result<EgressUsageData, Failure>>
   record: (
     /** The space which contains the resource that was served. */
     space: SpaceDID,

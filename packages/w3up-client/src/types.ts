@@ -129,6 +129,8 @@ export type {
   AccountUsageGet,
   AccountUsageGetSuccess,
   AccountUsageGetFailure,
+  EgressUsageData,
+  SpaceEgressUsage,
 } from '@storacha/capabilities/types'
 
 export type {
