@@ -7,31 +7,39 @@ const status = process.env.STATUS ? parseInt(process.env.STATUS) : 200
 const data = new Map()
 
 const server = createServer(async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', '*')
-  res.setHeader('Access-Control-Allow-Headers', '*')
-  if (req.method === 'OPTIONS') return res.end()
-  if (req.method === 'POST' && req.url === '/reset') {
-    data.clear()
-    return res.end()
-  }
-
-  res.statusCode = status
-  if (status === 200) {
-    const key = new URL(req.url ?? '', 'http://localhost').pathname
-    if (req.method === 'GET') {
-      const body = data.get(key)
-      if (!body) {
-        res.statusCode = 404
-      } else {
-        res.write(body)
-      }
-    } else if (req.method === 'PUT') {
-      const body = Buffer.concat(await collect(req))
-      data.set(key, body)
+  try {
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Methods', '*')
+    res.setHeader('Access-Control-Allow-Headers', '*')
+    if (req.method === 'OPTIONS') return res.end()
+    if (req.method === 'POST' && req.url === '/reset') {
+      data.clear()
+      return res.end()
     }
+
+    res.statusCode = status
+    if (status === 200) {
+      const key = new URL(req.url ?? '', 'http://localhost').pathname
+      if (req.method === 'GET') {
+        const body = data.get(key)
+        if (!body) {
+          res.statusCode = 404
+        } else {
+          res.write(body)
+        }
+      } else if (req.method === 'PUT') {
+        const body = Buffer.concat(await collect(req))
+        data.set(key, body)
+      }
+    }
+    res.end()
+  } catch (error) {
+    process.stderr.write(`Error handling request: ${error}\n`)
+    if (!res.headersSent) {
+      res.writeHead(500)
+    }
+    res.end()
   }
-  res.end()
 })
 
 /** @param {import('node:stream').Readable} stream */
@@ -46,7 +54,15 @@ const collect = (stream) => {
   )
 }
 
-// eslint-disable-next-line no-console
-server.listen(port, () => console.log(`Listening on :${port}`))
+server
+  .listen(port, () => {
+    process.stdout.write(`Listening on :${port}\n`)
+  })
+  .on('error', (err) => {
+    process.stderr.write(
+      `Failed to start server on port ${port}: ${err.message}\n`
+    )
+    process.exit(1)
+  })
 
 process.on('SIGTERM', () => process.exit(0))
