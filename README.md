@@ -100,3 +100,5 @@ This project uses node v18 and `pnpm`. It's a monorepo that uses [pnpm workspace
 ## License
 
 Dual-licensed under [MIT + Apache 2.0](license.md)
+
+this is a test - does CI hang?
