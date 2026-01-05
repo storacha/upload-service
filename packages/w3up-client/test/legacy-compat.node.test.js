@@ -105,6 +105,10 @@ const testUploadFile = async (
 
     await assert.doesNotReject(alice.uploadFile(file))
   } finally {
+    // Close all active connections before closing server
+    // This is required in Node.js 19+ where server.close() alone
+    // doesn't close existing keep-alive connections
+    receiptsServer.closeAllConnections()
     receiptsServer.close()
   }
 }

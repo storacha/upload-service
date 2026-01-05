@@ -93,8 +93,17 @@ export const setup = async () => {
  */
 export const teardown = async (context) => {
   await cleanupContext(context)
-  context.server.close()
-  context.receiptsServer.close()
+
+  // Close all active connections before closing servers
+  // This is required in Node.js 19+ where server.close() alone
+  // doesn't close existing keep-alive connections
+  context.server.closeAllConnections()
+  context.receiptsServer.closeAllConnections()
+
+  await Promise.all([
+    new Promise((resolve) => context.server.close(resolve)),
+    new Promise((resolve) => context.receiptsServer.close(resolve)),
+  ])
 
   const stores = [
     context.env.alice.STORACHA_STORE_NAME,
