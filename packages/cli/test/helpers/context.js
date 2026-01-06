@@ -122,16 +122,3 @@ export const teardown = async (context) => {
     })
   )
 }
-
-/**
- * @param {(assert: import('entail').Assert, context: Context) => unknown} unit
- * @returns {import('entail').Test}
- */
-export const test = (unit) => async (assert) => {
-  const context = await setup()
-  try {
-    await unit(assert, context)
-  } finally {
-    await teardown(context)
-  }
-}

@@ -1,3 +1,4 @@
+import assert from 'node:assert'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
@@ -8,7 +9,7 @@ import * as DID from '@ipld/dag-ucan/did'
 import * as dagJSON from '@ipld/dag-json'
 import { SpaceDID } from '@storacha/capabilities/utils'
 import { CarReader } from '@ipld/car'
-import { test } from './helpers/context.js'
+import { setup, teardown } from './helpers/context.js'
 import * as Test from './helpers/context.js'
 import { pattern, match } from './helpers/util.js'
 import * as Command from './helpers/process.js'
@@ -25,14 +26,181 @@ import * as Digest from 'multiformats/hashes/digest'
 
 const storacha = Command.create('./bin.js')
 
-export const testStoracha = {
-  storacha: test(async (assert, { env }) => {
-    const { output } = await storacha.env(env.alice).join()
+/**
+ * @param {Test.Context} context
+ * @param {object} options
+ * @param {string} [options.email]
+ * @param {Record<string, string>} [options.env]
+ */
+const login = async (
+  context,
+  { email = 'alice@web.mail', env = context.env.alice } = {}
+) => {
+  const loginProc = storacha.env(env).args(['login', email]).fork()
 
+  // wait for the new process to print the status
+  await loginProc.error.lines().take().text()
+
+  // receive authorization request
+  const message = await context.mail.take()
+
+  // confirm authorization
+  await context.grantAccess(message)
+
+  return await loginProc.join()
+}
+
+/**
+ * @typedef {import('@storacha/client/types').ProviderDID} Plan
+ *
+ * @param {Test.Context} context
+ * @param {object} options
+ * @param {DIDMailto.EmailAddress} [options.email]
+ * @param {string} [options.billingID]
+ * @param {Plan} [options.plan]
+ */
+const selectPlan = async (
+  context,
+  {
+    email = 'alice@web.mail',
+    billingID = 'test:cus_alice',
+    plan = 'did:web:free.web3.storage',
+  } = {}
+) => {
+  const customer = DIDMailto.fromEmail(email)
+  Result.try(await context.plansStorage.initialize(customer, billingID, plan))
+}
+
+/**
+ * @param {Test.Context} context
+ * @param {object} options
+ * @param {DIDMailto.EmailAddress|null} [options.customer]
+ * @param {string} [options.name]
+ * @param {Record<string, string>} [options.env]
+ */
+const createSpace = async (
+  context,
+  { customer = 'alice@web.mail', name = 'home', env = context.env.alice } = {}
+) => {
+  const { output } = await storacha
+    .args([
+      'space',
+      'create',
+      name,
+      '--no-recovery',
+      '--no-account',
+      '--no-gateway-authorization',
+      '--no-plan-selection',
+      ...(customer ? ['--customer', customer] : ['--no-customer']),
+    ])
+    .env(env)
+    .join()
+
+  const [did] = match(/(did:key:\w+)/, output)
+
+  return SpaceDID.from(did)
+}
+
+/**
+ * @param {Test.Context} context
+ * @param {object} options
+ * @param {DIDMailto.EmailAddress} [options.email]
+ * @param {DIDMailto.EmailAddress|null} [options.customer]
+ * @param {string} [options.name]
+ * @param {Plan} [options.plan]
+ * @param {Record<string, string>} [options.env]
+ */
+const loginAndCreateSpace = async (
+  context,
+  {
+    email = 'alice@web.mail',
+    customer = email,
+    name = 'home',
+    plan = 'did:web:free.web3.storage',
+    env = context.env.alice,
+  } = {}
+) => {
+  await login(context, { email, env })
+
+  if (customer != null && plan != null) {
+    await selectPlan(context, { email: customer, plan })
+  }
+
+  return createSpace(context, { customer, name, env })
+}
+
+/**
+ * @param {Test.Context} context
+ * @param {object} options
+ * @param {string} [options.password]
+ */
+const createCustomerSession = async (context, { password = '' } = {}) => {
+  // Derive delegation audience from the password
+  const { digest } = await sha256.digest(new TextEncoder().encode(password))
+  const audience = await ED25519.derive(digest)
+
+  // Generate the agent that will be authorized to act on behalf of the customer
+  const agent = await ed25519.generate()
+
+  const customer = Absentee.from({ id: 'did:mailto:web.mail:workshop' })
+
+  // First we create delegation from the customer to the agent that authorizing
+  // it to perform `provider/add` on their behalf.
+  const delegation = await delegate({
+    issuer: customer,
+    audience: agent,
+    capabilities: [
+      {
+        with: 'ucan:*',
+        can: '*',
+      },
+    ],
+    expiration: Infinity,
+  })
+
+  // Then we create an attestation from the service to proof that agent has
+  // been authorized
+  const attestation = await UCAN.attest.delegate({
+    issuer: context.service,
+    audience: agent,
+    with: context.service.did(),
+    nb: { proof: delegation.cid },
+    expiration: delegation.expiration,
+  })
+
+  // Finally we create a short lived session that authorizes the audience to
+  // provider/add with their billing account.
+  const session = await Provider.add.delegate({
+    issuer: agent,
+    audience,
+    with: customer.did(),
+    proofs: [delegation, attestation],
+  })
+
+  return Result.try(await session.archive())
+}
+
+describe('storacha', function () {
+  // Increase timeout for all tests in this suite (CLI tests can be slow)
+  this.timeout(30000)
+
+  /** @type {Test.Context} */
+  let context
+
+  beforeEach(async () => {
+    context = await setup()
+  })
+
+  afterEach(async () => {
+    await teardown(context)
+  })
+
+  it('shows available commands', async () => {
+    const { output } = await storacha.env(context.env.alice).join()
     assert.match(output, /Available Commands/)
-  }),
+  })
 
-  'storacha nosuchcmd': test(async (assert, context) => {
+  it('storacha nosuchcmd', async () => {
     const { status, output } = await storacha
       .args(['nosuchcmd'])
       .env(context.env.alice)
@@ -41,39 +209,51 @@ export const testStoracha = {
 
     assert.equal(status.code, 1)
     assert.match(output, /Invalid command: nosuch/)
-  }),
+  })
 
-  'storacha --version': test(async (assert, context) => {
+  it('storacha --version', async () => {
     const { output, status } = await storacha.args(['--version']).join()
 
     assert.equal(status.code, 0)
     assert.match(output, /storacha, \d+\.\d+\.\d+/)
-  }),
+  })
 
-  'storacha whoami': test(async (assert) => {
+  it('storacha whoami', async () => {
     const { output } = await storacha.args(['whoami']).join()
-
     assert.match(output, /^did:key:/)
-  }),
-}
+  })
+})
 
-export const testAccount = {
-  'storacha account ls': test(async (assert, context) => {
+describe('account', function () {
+  this.timeout(30000)
+
+  /** @type {Test.Context} */
+  let context
+
+  beforeEach(async () => {
+    context = await setup()
+  })
+
+  afterEach(async () => {
+    await teardown(context)
+  })
+
+  it('storacha account ls', async () => {
     const { output } = await storacha
       .env(context.env.alice)
       .args(['account ls'])
       .join()
 
     assert.match(output, /has not been authorized yet/)
-  }),
+  })
 
-  'storacha login': test(async (assert, context) => {
-    const login = storacha
+  it('storacha login', async () => {
+    const loginProc = storacha
       .args(['login', 'alice@web.mail'])
       .env(context.env.alice)
       .fork()
 
-    const line = await login.error.lines().take().text()
+    const line = await loginProc.error.lines().take().text()
     assert.match(line, /please click the link sent/)
 
     // receive authorization request
@@ -82,12 +262,12 @@ export const testAccount = {
     // confirm authorization
     await context.grantAccess(mail)
 
-    const message = await login.output.text()
+    const message = await loginProc.output.text()
 
     assert.match(message ?? '', /authorized by did:mailto:web.mail:alice/)
-  }),
+  })
 
-  'storacha account list': test(async (assert, context) => {
+  it('storacha account list', async () => {
     await login(context)
 
     const { output } = await storacha
@@ -96,11 +276,24 @@ export const testAccount = {
       .join()
 
     assert.match(output, /did:mailto:web.mail:alice/)
-  }),
-}
+  })
+})
 
-export const testSpace = {
-  'storacha space create': test(async (assert, context) => {
+describe('space', function () {
+  this.timeout(60000)
+
+  /** @type {Test.Context} */
+  let context
+
+  beforeEach(async () => {
+    context = await setup()
+  })
+
+  afterEach(async () => {
+    await teardown(context)
+  })
+
+  it('storacha space create', async () => {
     const command = storacha
       .args([
         'space',
@@ -116,9 +309,9 @@ export const testSpace = {
     assert.match(line, /What would you like to call this space/)
 
     await command.terminate().join().catch()
-  }),
+  })
 
-  'storacha space create home': test(async (assert, context) => {
+  it('storacha space create home', async () => {
     const create = storacha
       .args([
         'space',
@@ -143,9 +336,9 @@ export const testSpace = {
     assert.ok(secret.length > 60, 'there are several words')
 
     await create.terminate().join().catch()
-  }),
+  })
 
-  'storacha space create home --no-caution': test(async (assert, context) => {
+  it('storacha space create home --no-caution', async () => {
     const create = storacha
       .args([
         'space',
@@ -173,254 +366,238 @@ export const testSpace = {
     assert.ok(words.length > 20, 'there are several words')
 
     await create.terminate().join().catch()
-  }),
+  })
 
-  'storacha space create my-space --no-recovery': test(
-    async (assert, context) => {
-      const create = storacha
-        .args([
-          'space',
-          'create',
-          'home',
-          '--no-recovery',
-          '--no-gateway-authorization',
-          '--no-plan-selection',
-        ])
-        .env(context.env.alice)
-        .fork()
+  it('storacha space create my-space --no-recovery', async () => {
+    const create = storacha
+      .args([
+        'space',
+        'create',
+        'home',
+        '--no-recovery',
+        '--no-gateway-authorization',
+        '--no-plan-selection',
+      ])
+      .env(context.env.alice)
+      .fork()
 
-      const line = await create.output.lines().take().text()
+    const line = await create.output.lines().take().text()
 
-      assert.match(line, /billing account/, 'no paper recovery')
+    assert.match(line, /billing account/, 'no paper recovery')
 
-      await create.terminate().join().catch()
-    }
-  ),
+    await create.terminate().join().catch()
+  })
 
-  'storacha space create my-space --no-recovery (logged-in)': test(
-    async (assert, context) => {
-      await login(context)
+  it('storacha space create my-space --no-recovery (logged-in)', async () => {
+    await login(context)
+    await selectPlan(context)
 
-      await selectPlan(context)
+    const create = storacha
+      .args([
+        'space',
+        'create',
+        'home',
+        '--no-recovery',
+        '--no-gateway-authorization',
+        '--no-plan-selection',
+      ])
+      .env(context.env.alice)
+      .fork()
 
-      const create = storacha
-        .args([
-          'space',
-          'create',
-          'home',
-          '--no-recovery',
-          '--no-gateway-authorization',
-          '--no-plan-selection',
-        ])
-        .env(context.env.alice)
-        .fork()
+    const lines = await create.output.lines().take(3).text()
 
-      const lines = await create.output.lines().take(3).text()
+    assert.match(lines, /billing account is set/i)
 
-      assert.match(lines, /billing account is set/i)
+    await create.terminate().join().catch()
+  })
 
-      await create.terminate().join().catch()
-    }
-  ),
+  it('storacha space create my-space --no-recovery (multiple accounts)', async () => {
+    await login(context, { email: 'alice@web.mail' })
+    await login(context, { email: 'alice@email.me' })
 
-  'storacha space create my-space --no-recovery (multiple accounts)': test(
-    async (assert, context) => {
-      await login(context, { email: 'alice@web.mail' })
-      await login(context, { email: 'alice@email.me' })
+    const create = storacha
+      .args([
+        'space',
+        'create',
+        'my-space',
+        '--no-recovery',
+        '--no-gateway-authorization',
+        '--no-plan-selection',
+      ])
+      .env(context.env.alice)
+      .fork()
 
-      const create = storacha
-        .args([
-          'space',
-          'create',
-          'my-space',
-          '--no-recovery',
-          '--no-gateway-authorization',
-          '--no-plan-selection',
-        ])
-        .env(context.env.alice)
-        .fork()
+    const output = await create.output.take(2).text()
 
-      const output = await create.output.take(2).text()
+    assert.match(output, /choose an account you would like to use/, 'choose account')
 
-      assert.match(
-        output,
-        /choose an account you would like to use/,
-        'choose account'
-      )
+    assert.ok(output.includes('alice@web.mail'))
+    assert.ok(output.includes('alice@email.me'))
 
-      assert.ok(output.includes('alice@web.mail'))
-      assert.ok(output.includes('alice@email.me'))
+    create.terminate()
+  })
 
-      create.terminate()
-    }
-  ),
+  it('storacha space create void --skip-paper --provision-as unknown@web.mail --skip-email', async () => {
+    const { output, error } = await storacha
+      .env(context.env.alice)
+      .args([
+        'space',
+        'create',
+        'home',
+        '--no-recovery',
+        '--customer',
+        'unknown@web.mail',
+        '--no-account',
+        '--no-gateway-authorization',
+        '--no-plan-selection',
+      ])
+      .join()
+      .catch()
 
-  'storacha space create void --skip-paper --provision-as unknown@web.mail --skip-email':
-    test(async (assert, context) => {
-      const { output, error } = await storacha
-        .env(context.env.alice)
-        .args([
-          'space',
-          'create',
-          'home',
-          '--no-recovery',
-          '--customer',
-          'unknown@web.mail',
-          '--no-account',
-          '--no-gateway-authorization',
-          '--no-plan-selection',
-        ])
-        .join()
-        .catch()
+    assert.match(output, /billing account/)
+    assert.match(output, /Skipped billing setup/)
+    assert.match(error, /not authorized by unknown@web\.mail/)
+  })
 
-      assert.match(output, /billing account/)
-      assert.match(output, /Skipped billing setup/)
-      assert.match(error, /not authorized by unknown@web\.mail/)
-    }),
+  it('storacha space create home --no-recovery --customer alice@web.mail --no-account', async () => {
+    await login(context, { email: 'alice@web.mail' })
+    await selectPlan(context)
 
-  'storacha space create home --no-recovery --customer alice@web.mail --no-account':
-    test(async (assert, context) => {
-      await login(context, { email: 'alice@web.mail' })
-      await selectPlan(context)
+    const create = await storacha
+      .args([
+        'space',
+        'create',
+        'home',
+        '--no-recovery',
+        '--no-gateway-authorization',
+        '--no-plan-selection',
+        '--customer',
+        'alice@web.mail',
+        '--no-account',
+      ])
+      .env(context.env.alice)
+      .join()
 
-      const create = await storacha
-        .args([
-          'space',
-          'create',
-          'home',
-          '--no-recovery',
-          '--no-gateway-authorization',
-          '--no-plan-selection',
-          '--customer',
-          'alice@web.mail',
-          '--no-account',
-        ])
-        .env(context.env.alice)
-        .join()
+    assert.match(create.output, /Billing account is set/)
 
-      assert.match(create.output, /Billing account is set/)
+    const info = await storacha
+      .args(['space', 'info'])
+      .env(context.env.alice)
+      .join()
 
-      const info = await storacha
-        .args(['space', 'info'])
-        .env(context.env.alice)
-        .join()
+    assert.match(info.output, /Providers: did:web:/)
+  })
 
-      assert.match(info.output, /Providers: did:web:/)
-    }),
+  it('storacha space create home --no-recovery --customer alice@web.mail --account alice@web.mail', async () => {
+    const email = 'alice@web.mail'
+    await login(context, { email })
+    await selectPlan(context, { email })
 
-  'storacha space create home --no-recovery --customer alice@web.mail --account alice@web.mail':
-    test(async (assert, context) => {
-      const email = 'alice@web.mail'
-      await login(context, { email })
-      await selectPlan(context, { email })
+    const { output } = await storacha
+      .args([
+        'space',
+        'create',
+        'home',
+        '--no-recovery',
+        '--no-gateway-authorization',
+        '--no-plan-selection',
+        '--customer',
+        email,
+        '--account',
+        email,
+      ])
+      .env(context.env.alice)
+      .join()
 
-      const { output } = await storacha
-        .args([
-          'space',
-          'create',
-          'home',
-          '--no-recovery',
-          '--no-gateway-authorization',
-          '--no-plan-selection',
-          '--customer',
-          email,
-          '--account',
-          email,
-        ])
-        .env(context.env.alice)
-        .join()
+    assert.match(output, /account is authorized/i)
 
-      assert.match(output, /account is authorized/i)
+    const result = await context.delegationsStorage.find({
+      audience: DIDMailto.fromEmail(email),
+    })
 
-      const result = await context.delegationsStorage.find({
-        audience: DIDMailto.fromEmail(email),
-      })
+    assert.ok(
+      result.ok?.find((d) => d.capabilities[0].can === '*'),
+      'account has been delegated access to the space'
+    )
+  })
 
-      assert.ok(
-        result.ok?.find((d) => d.capabilities[0].can === '*'),
-        'account has been delegated access to the space'
-      )
-    }),
+  it('storacha space create home --no-recovery (blocks until plan is selected)', async () => {
+    const email = 'alice@web.mail'
+    await login(context, { email })
 
-  'storacha space create home --no-recovery (blocks until plan is selected)':
-    test(async (assert, context) => {
-      const email = 'alice@web.mail'
-      await login(context, { email })
-
-      context.plansStorage.get = async () => {
-        return {
-          ok: { product: 'did:web:free.web3.storage', updatedAt: 'now' },
-        }
+    context.plansStorage.get = async () => {
+      return {
+        ok: { product: 'did:web:free.web3.storage', updatedAt: 'now' },
       }
+    }
 
-      const { output, error } = await storacha
-        .env(context.env.alice)
-        .args([
-          'space',
-          'create',
-          'home',
-          '--no-recovery',
-          '--no-gateway-authorization',
-          '--no-plan-selection',
-        ])
-        .join()
+    const { output, error } = await storacha
+      .env(context.env.alice)
+      .args([
+        'space',
+        'create',
+        'home',
+        '--no-recovery',
+        '--no-gateway-authorization',
+        '--no-plan-selection',
+      ])
+      .join()
 
-      assert.match(output, /billing account is set/i)
-      assert.match(error, /wait.*plan.*select/i)
-    }),
+    assert.match(output, /billing account is set/i)
+    assert.match(error, /wait.*plan.*select/i)
+  })
 
-  'storacha space create home --no-recovery --customer alice@web.mail --account alice@web.mail --authorize-gateway-services':
-    test(async (assert, context) => {
-      const email = 'alice@web.mail'
-      await login(context, { email })
-      await selectPlan(context, { email })
+  it('storacha space create home --no-recovery --customer alice@web.mail --account alice@web.mail --authorize-gateway-services', async () => {
+    const email = 'alice@web.mail'
+    await login(context, { email })
+    await selectPlan(context, { email })
 
-      const serverId = context.connection.id.did()
-      const serverURL = context.serverURL
+    const serverId = context.connection.id.did()
+    const serverURL = context.serverURL
 
-      // In this test, the upload service is used as the gateway delegation
-      // service since it implements `access/delegate`. However, it requires
-      // the resource (with) to be a provisioned space, which doesn't actually
-      // happen until later in the flow for the CLI.
-      //
-      // FIXME: the tests should setup a gateway service that does not have this
-      // requirement.
-      context.provisionsStorage.getStorageProviders = async () => {
-        return {
-          ok: ['did:web:test.up.storacha.network'],
-        }
+    // In this test, the upload service is used as the gateway delegation
+    // service since it implements `access/delegate`. However, it requires
+    // the resource (with) to be a provisioned space, which doesn't actually
+    // happen until later in the flow for the CLI.
+    //
+    // FIXME: the tests should setup a gateway service that does not have this
+    // requirement.
+    context.provisionsStorage.getStorageProviders = async () => {
+      return {
+        ok: ['did:web:test.up.storacha.network'],
       }
+    }
 
-      const { output } = await storacha
-        .args([
-          'space',
-          'create',
-          'home',
-          '--no-recovery',
-          '--no-plan-selection',
-          '--customer',
-          email,
-          '--account',
-          email,
-          '--authorize-gateway-services',
-          `[{"id":"${serverId}","serviceEndpoint":"${serverURL}"}]`,
-        ])
-        .env(context.env.alice)
-        .join()
+    const { output } = await storacha
+      .args([
+        'space',
+        'create',
+        'home',
+        '--no-recovery',
+        '--no-plan-selection',
+        '--customer',
+        email,
+        '--account',
+        email,
+        '--authorize-gateway-services',
+        `[{"id":"${serverId}","serviceEndpoint":"${serverURL}"}]`,
+      ])
+      .env(context.env.alice)
+      .join()
 
-      assert.match(output, /account is authorized/i)
+    assert.match(output, /account is authorized/i)
 
-      const result = await context.delegationsStorage.find({
-        audience: DIDMailto.fromEmail(email),
-      })
+    const result = await context.delegationsStorage.find({
+      audience: DIDMailto.fromEmail(email),
+    })
 
-      assert.ok(
-        result.ok?.find((d) => d.capabilities[0].can === '*'),
-        'account has been delegated access to the space'
-      )
-    }),
+    assert.ok(
+      result.ok?.find((d) => d.capabilities[0].can === '*'),
+      'account has been delegated access to the space'
+    )
+  })
 
-  'storacha space add': test(async (assert, context) => {
+  it('storacha space add', async () => {
     const { env } = context
 
     const spaceDID = await loginAndCreateSpace(context, { env: env.alice })
@@ -459,9 +636,9 @@ export const testSpace = {
 
     const listSome = await storacha.args(['space', 'ls']).env(env.bob).join()
     assert.ok(listSome.output.includes(spaceDID))
-  }),
+  })
 
-  'storacha space add `base64 proof car`': test(async (assert, context) => {
+  it('storacha space add `base64 proof car`', async () => {
     const { env } = context
     const spaceDID = await loginAndCreateSpace(context, { env: env.alice })
     const whosBob = await storacha.args(['whoami']).env(env.bob).join()
@@ -490,9 +667,9 @@ export const testSpace = {
 
     const listSome = await storacha.args(['space', 'ls']).env(env.bob).join()
     assert.ok(listSome.output.includes(spaceDID))
-  }),
+  })
 
-  'storacha space add invalid/path': test(async (assert, context) => {
+  it('storacha space add invalid/path', async () => {
     const fail = await storacha
       .args(['space', 'add', 'djcvbii'])
       .env(context.env.alice)
@@ -501,9 +678,9 @@ export const testSpace = {
 
     assert.ok(!fail.status.success())
     assert.match(fail.error, /failed to read proof/)
-  }),
+  })
 
-  'storacha space add not-a-car.gif': test(async (assert, context) => {
+  it('storacha space add not-a-car.gif', async () => {
     const fail = await storacha
       .args(['space', 'add', './package.json'])
       .env(context.env.alice)
@@ -512,9 +689,9 @@ export const testSpace = {
 
     assert.equal(fail.status.success(), false)
     assert.match(fail.error, /failed to parse proof/)
-  }),
+  })
 
-  'storacha space add empty.car': test(async (assert, context) => {
+  it('storacha space add empty.car', async () => {
     const fail = await storacha
       .args(['space', 'add', './test/fixtures/empty.car'])
       .env(context.env.alice)
@@ -523,9 +700,9 @@ export const testSpace = {
 
     assert.equal(fail.status.success(), false)
     assert.match(fail.error, /failed to import proof/)
-  }),
+  })
 
-  'storacha space ls': test(async (assert, context) => {
+  it('storacha space ls', async () => {
     const emptyList = await storacha
       .args(['space', 'ls'])
       .env(context.env.alice)
@@ -540,9 +717,9 @@ export const testSpace = {
 
     assert.ok(!emptyList.output.includes(spaceDID))
     assert.ok(spaceList.output.includes(spaceDID))
-  }),
+  })
 
-  'storacha space use': test(async (assert, context) => {
+  it('storacha space use', async () => {
     const spaceDID = await loginAndCreateSpace(context, {
       env: context.env.alice,
     })
@@ -610,9 +787,9 @@ export const testSpace = {
 
     assert.equal(listNamedDefault.output.includes(`* ${spaceDID}`), false)
     assert.equal(listNamedDefault.output.includes(`* ${newSpaceDID}`), true)
-  }),
+  })
 
-  'storacha space use did:key:unknown': test(async (assert, context) => {
+  it('storacha space use did:key:unknown', async () => {
     const space = await Signer.generate()
 
     const useSpace = await storacha
@@ -622,9 +799,9 @@ export const testSpace = {
       .catch()
 
     assert.match(useSpace.error, /space not found/)
-  }),
+  })
 
-  'storacha space use notfound': test(async (assert, context) => {
+  it('storacha space use notfound', async () => {
     const useSpace = await storacha
       .args(['space', 'use', 'notfound'])
       .env(context.env.alice)
@@ -632,9 +809,9 @@ export const testSpace = {
       .catch()
 
     assert.match(useSpace.error, /space not found/)
-  }),
+  })
 
-  'storacha space info': test(async (assert, context) => {
+  it('storacha space info', async () => {
     const spaceDID = await loginAndCreateSpace(context, {
       customer: null,
     })
@@ -689,9 +866,9 @@ export const testSpace = {
       providers: [providerDID],
       name: 'home',
     })
-  }),
+  })
 
-  'storacha space provision --coupon': test(async (assert, context) => {
+  it('storacha space provision --coupon', async () => {
     const spaceDID = await loginAndCreateSpace(context, { customer: null })
 
     assert.deepEqual(
@@ -727,9 +904,9 @@ export const testSpace = {
       pattern`Providers: ${context.service.did()}`,
       'space got provisioned'
     )
-  }),
+  })
 
-  'storacha space recover': test(async (assert, context) => {
+  it('storacha space recover', async () => {
     const command = storacha
       .args(['space', 'recover'])
       .env(context.env.alice)
@@ -740,9 +917,9 @@ export const testSpace = {
     assert.match(line, /What would you like to call this space/)
 
     await command.terminate().join().catch()
-  }),
+  })
 
-  'storacha space recover home': test(async (assert, context) => {
+  it('storacha space recover home', async () => {
     const command = storacha
       .args(['space', 'recover', 'home'])
       .env(context.env.bob)
@@ -752,9 +929,9 @@ export const testSpace = {
 
     assert.match(line, /Enter your space recovery mnemonic/)
     await command.terminate().join().catch()
-  }),
+  })
 
-  'storacha space recover home --file': test(async (assert, context) => {
+  it('storacha space recover home --file', async () => {
     const create = storacha
       .args([
         'space',
@@ -797,11 +974,24 @@ export const testSpace = {
       .env(context.env.bob)
       .join()
     assert.ok(list.output.includes('home'))
-  }),
-}
+  })
+})
 
-export const testStorachaUp = {
-  'storacha up': test(async (assert, context) => {
+describe('storacha up', function () {
+  this.timeout(60000)
+
+  /** @type {Test.Context} */
+  let context
+
+  beforeEach(async () => {
+    context = await setup()
+  })
+
+  afterEach(async () => {
+    await teardown(context)
+  })
+
+  it('storacha up', async () => {
     const email = 'alice@web.mail'
     await login(context, { email })
     await selectPlan(context, { email })
@@ -833,9 +1023,9 @@ export const testStorachaUp = {
       /bafybeiajdopsmspomlrpaohtzo5sdnpknbolqjpde6huzrsejqmvijrcea/
     )
     assert.match(up.error, /Stored 1 file/)
-  }),
+  })
 
-  'storacha up --no-wrap': test(async (assert, context) => {
+  it('storacha up --no-wrap', async () => {
     const email = 'alice@web.mail'
     await login(context, { email })
     await selectPlan(context, { email })
@@ -867,9 +1057,9 @@ export const testStorachaUp = {
       /bafkreiajkbmpugz75eg2tmocmp3e33sg5kuyq2amzngslahgn6ltmqxxfa/
     )
     assert.match(up.error, /Stored 1 file/)
-  }),
+  })
 
-  'storacha up --wrap false': test(async (assert, context) => {
+  it('storacha up --wrap false', async () => {
     const email = 'alice@web.mail'
     await login(context, { email })
     await selectPlan(context, { email })
@@ -901,9 +1091,9 @@ export const testStorachaUp = {
       /bafkreiajkbmpugz75eg2tmocmp3e33sg5kuyq2amzngslahgn6ltmqxxfa/
     )
     assert.match(up.error, /Stored 1 file/)
-  }),
+  })
 
-  'storacha up --car': test(async (assert, context) => {
+  it('storacha up --car', async () => {
     const email = 'alice@web.mail'
     await login(context, { email })
     await selectPlan(context, { email })
@@ -932,9 +1122,9 @@ export const testStorachaUp = {
       /bafkreiajkbmpugz75eg2tmocmp3e33sg5kuyq2amzngslahgn6ltmqxxfa/
     )
     assert.match(up.error, /Stored 1 file/)
-  }),
+  })
 
-  'storacha ls': test(async (assert, context) => {
+  it('storacha ls', async () => {
     await loginAndCreateSpace(context)
 
     const list0 = await storacha.args(['ls']).env(context.env.alice).join()
@@ -954,9 +1144,9 @@ export const testStorachaUp = {
       .join()
 
     assert.ok(dagJSON.parse(list1.output))
-  }),
+  })
 
-  'storacha remove': test(async (assert, context) => {
+  it('storacha remove', async () => {
     await loginAndCreateSpace(context)
 
     const up = await storacha
@@ -980,9 +1170,9 @@ export const testStorachaUp = {
 
     assert.equal(rm.status.code, 0)
     assert.equal(rm.output, '')
-  }),
+  })
 
-  'storacha remove - no such upload': test(async (assert, context) => {
+  it('storacha remove - no such upload', async () => {
     await loginAndCreateSpace(context)
 
     const rm = await storacha
@@ -997,94 +1187,102 @@ export const testStorachaUp = {
 
     assert.equal(rm.status.code, 1)
     assert.match(rm.error, /not found/)
-  }),
-}
+  })
+})
 
-export const testDelegation = {
-  'storacha delegation create -c store/* --output file/path': test(
-    async (assert, context) => {
-      const env = context.env.alice
-      const { bob } = Test
+describe('delegation', function () {
+  this.timeout(60000)
 
-      const spaceDID = await loginAndCreateSpace(context)
+  /** @type {Test.Context} */
+  let context
 
-      const proofPath = path.join(
-        os.tmpdir(),
-        `storacha-cli-test-delegation-${Date.now()}`
-      )
+  beforeEach(async () => {
+    context = await setup()
+  })
 
-      await storacha
-        .args([
-          'delegation',
-          'create',
-          bob.did(),
-          '-c',
-          'store/*',
-          '--output',
-          proofPath,
-        ])
-        .env(env)
-        .join()
+  afterEach(async () => {
+    await teardown(context)
+  })
 
-      const extractRes = await extract(await fs.promises.readFile(proofPath))
-      assert.equal(extractRes.error, undefined)
+  it('storacha delegation create -c store/* --output file/path', async () => {
+    const env = context.env.alice
+    const { bob } = Test
 
-      const delegation = extractRes.ok
-      assert.equal(delegation?.audience.did(), bob.did())
-      assert.equal(delegation?.capabilities[0].can, 'store/*')
-      assert.equal(delegation?.capabilities[0].with, spaceDID)
-    }
-  ),
+    const spaceDID = await loginAndCreateSpace(context)
 
-  'storacha delegation create': test(async (assert, context) => {
+    const proofPath = path.join(
+      os.tmpdir(),
+      `storacha-cli-test-delegation-${Date.now()}`
+    )
+
+    await storacha
+      .args([
+        'delegation',
+        'create',
+        bob.did(),
+        '-c',
+        'store/*',
+        '--output',
+        proofPath,
+      ])
+      .env(env)
+      .join()
+
+    const extractRes = await extract(await fs.promises.readFile(proofPath))
+    assert.equal(extractRes.error, undefined)
+
+    const delegation = extractRes.ok
+    assert.equal(delegation?.audience.did(), bob.did())
+    assert.equal(delegation?.capabilities[0].can, 'store/*')
+    assert.equal(delegation?.capabilities[0].with, spaceDID)
+  })
+
+  it('storacha delegation create', async () => {
     const env = context.env.alice
     const { bob } = Test
     await loginAndCreateSpace(context)
 
-    const delegate = await storacha
+    const delegateRes = await storacha
       .args(['delegation', 'create', bob.did()])
       .env(env)
       .join()
 
-    // TODO: Test output after we switch to Delegation.archive() / Delegation.extract()
-    assert.equal(delegate.status.success(), true)
-  }),
+    assert.equal(delegateRes.status.success(), true)
+  })
 
-  'storacha delegation create -c store/add -c upload/add --base64': test(
-    async (assert, context) => {
-      const env = context.env.alice
-      const { bob } = Test
-      const spaceDID = await loginAndCreateSpace(context)
-      const res = await storacha
-        .args([
-          'delegation',
-          'create',
-          bob.did(),
-          '-c',
-          'store/add',
-          '-c',
-          'upload/add',
-          '--base64',
-        ])
-        .env(env)
-        .join()
+  it('storacha delegation create -c store/add -c upload/add --base64', async () => {
+    const env = context.env.alice
+    const { bob } = Test
+    const spaceDID = await loginAndCreateSpace(context)
+    const res = await storacha
+      .args([
+        'delegation',
+        'create',
+        bob.did(),
+        '-c',
+        'store/add',
+        '-c',
+        'upload/add',
+        '--base64',
+      ])
+      .env(env)
+      .join()
 
-      assert.equal(res.status.success(), true)
+    assert.equal(res.status.success(), true)
 
-      const identityCid = parseLink(res.output.trim(), base64)
-      const extractRes = await extract(identityCid.multihash.digest)
-      assert.equal(extractRes.error, undefined)
+    const identityCid = parseLink(res.output.trim(), base64)
+    const extractRes = await extract(identityCid.multihash.digest)
+    assert.equal(extractRes.error, undefined)
 
-      const delegation = extractRes.ok
-      assert.equal(delegation?.audience.did(), bob.did())
-      assert.equal(delegation?.capabilities[0].can, 'store/add')
-      assert.equal(delegation?.capabilities[0].with, spaceDID)
-      assert.equal(delegation?.capabilities[1].can, 'upload/add')
-      assert.equal(delegation?.capabilities[1].with, spaceDID)
-    }
-  ),
+    const delegation = extractRes.ok
+    assert.equal(delegation?.audience.did(), bob.did())
+    assert.equal(delegation?.capabilities[0].can, 'store/add')
+    assert.equal(delegation?.capabilities[0].with, spaceDID)
+    assert.equal(delegation?.capabilities[1].can, 'upload/add')
+    assert.equal(delegation?.capabilities[1].with, spaceDID)
+  })
 
-  'storacha delegation ls --json': test(async (assert, context) => {
+  it('storacha delegation ls --json', async () => {
     const { mallory } = Test
 
     const spaceDID = await loginAndCreateSpace(context)
@@ -1106,9 +1304,9 @@ export const testDelegation = {
     assert.equal(data.capabilities.length, 1)
     assert.equal(data.capabilities[0].with, spaceDID)
     assert.equal(data.capabilities[0].can, 'store/*')
-  }),
+  })
 
-  'storacha delegation revoke': test(async (assert, context) => {
+  it('storacha delegation revoke', async () => {
     const env = context.env.alice
     const { mallory } = Test
     await loginAndCreateSpace(context)
@@ -1169,11 +1367,24 @@ export const testDelegation = {
       .join()
 
     assert.match(pass.output, pattern`delegation ${cid} revoked`)
-  }),
-}
+  })
+})
 
-export const testProof = {
-  'storacha proof add': test(async (assert, context) => {
+describe('proof', function () {
+  this.timeout(60000)
+
+  /** @type {Test.Context} */
+  let context
+
+  beforeEach(async () => {
+    context = await setup()
+  })
+
+  afterEach(async () => {
+    await teardown(context)
+  })
+
+  it('storacha proof add', async () => {
     const { env } = context
 
     const spaceDID = await loginAndCreateSpace(context, { env: env.alice })
@@ -1208,8 +1419,9 @@ export const testProof = {
     assert.ok(addProof.output.includes(`with: ${spaceDID}`))
     const listProof = await storacha.args(['proof', 'ls']).env(env.bob).join()
     assert.ok(listProof.output.includes(spaceDID))
-  }),
-  'storacha proof add notfound': test(async (assert, context) => {
+  })
+
+  it('storacha proof add notfound', async () => {
     const proofAdd = await storacha
       .args(['proof', 'add', 'djcvbii'])
       .env(context.env.alice)
@@ -1218,8 +1430,9 @@ export const testProof = {
 
     assert.equal(proofAdd.status.success(), false)
     assert.match(proofAdd.error, /failed to read proof/)
-  }),
-  'storacha proof add not-car.json': test(async (assert, context) => {
+  })
+
+  it('storacha proof add not-car.json', async () => {
     const proofAdd = await storacha
       .args(['proof', 'add', './package.json'])
       .env(context.env.alice)
@@ -1228,8 +1441,9 @@ export const testProof = {
 
     assert.equal(proofAdd.status.success(), false)
     assert.match(proofAdd.error, /failed to parse proof/)
-  }),
-  'storacha proof add invalid.car': test(async (assert, context) => {
+  })
+
+  it('storacha proof add invalid.car', async () => {
     const proofAdd = await storacha
       .args(['proof', 'add', './test/fixtures/empty.car'])
       .env(context.env.alice)
@@ -1238,8 +1452,9 @@ export const testProof = {
 
     assert.equal(proofAdd.status.success(), false)
     assert.match(proofAdd.error, /failed to import proof/)
-  }),
-  'storacha proof ls': test(async (assert, context) => {
+  })
+
+  it('storacha proof ls', async () => {
     const { env } = context
     const spaceDID = await loginAndCreateSpace(context, { env: env.alice })
     const whoisalice = await storacha.args(['whoami']).env(env.alice).join()
@@ -1276,11 +1491,24 @@ export const testProof = {
     assert.equal(proofData.att.length, 1)
     assert.equal(proofData.att[0].with, spaceDID)
     assert.equal(proofData.att[0].can, 'store/*')
-  }),
-}
+  })
+})
 
-export const testBlob = {
-  'storacha can blob add': test(async (assert, context) => {
+describe('blob', function () {
+  this.timeout(60000)
+
+  /** @type {Test.Context} */
+  let context
+
+  beforeEach(async () => {
+    context = await setup()
+  })
+
+  afterEach(async () => {
+    await teardown(context)
+  })
+
+  it('storacha can blob add', async () => {
     await loginAndCreateSpace(context)
 
     const { error } = await storacha
@@ -1289,9 +1517,9 @@ export const testBlob = {
       .join()
 
     assert.match(error, /Stored zQm/)
-  }),
+  })
 
-  'storacha can blob ls': test(async (assert, context) => {
+  it('storacha can blob ls', async () => {
     await loginAndCreateSpace(context)
 
     await storacha
@@ -1305,9 +1533,9 @@ export const testBlob = {
       .join()
 
     assert.ok(dagJSON.parse(list.output))
-  }),
+  })
 
-  'storacha can blob rm': test(async (assert, context) => {
+  it('storacha can blob rm', async () => {
     await loginAndCreateSpace(context)
 
     await storacha
@@ -1328,11 +1556,24 @@ export const testBlob = {
       .join()
 
     assert.match(remove.error, /Removed zQm/)
-  }),
-}
+  })
+})
 
-export const testCan = {
-  'storacha can upload add': test(async (assert, context) => {
+describe('can', function () {
+  this.timeout(60000)
+
+  /** @type {Test.Context} */
+  let context
+
+  beforeEach(async () => {
+    context = await setup()
+  })
+
+  afterEach(async () => {
+    await teardown(context)
+  })
+
+  it('storacha can upload add', async () => {
     await loginAndCreateSpace(context)
 
     const carPath = 'test/fixtures/pinpie.car'
@@ -1357,9 +1598,9 @@ export const testCan = {
       .join()
 
     assert.match(canUpload.error, /Upload added/)
-  }),
+  })
 
-  'storacha can upload ls': test(async (assert, context) => {
+  it('storacha can upload ls', async () => {
     await loginAndCreateSpace(context)
 
     await storacha
@@ -1373,8 +1614,9 @@ export const testCan = {
       .join()
 
     assert.ok(dagJSON.parse(list.output))
-  }),
-  'storacha can upload rm': test(async (assert, context) => {
+  })
+
+  it('storacha can upload rm', async () => {
     await loginAndCreateSpace(context)
 
     const up = await storacha
@@ -1414,8 +1656,9 @@ export const testCan = {
       .join()
 
     assert.ok(rm.status.success())
-  }),
-  'can filecoin info with not found': test(async (assert, context) => {
+  })
+
+  it('can filecoin info with not found', async () => {
     await loginAndCreateSpace(context)
 
     const up = await storacha
@@ -1432,11 +1675,24 @@ export const testCan = {
     // no piece will be available right away
     assert.ok(error)
     assert.ok(error.includes('not found'))
-  }),
-}
+  })
+})
 
-export const testPlan = {
-  'storacha plan get': test(async (assert, context) => {
+describe('plan', function () {
+  this.timeout(60000)
+
+  /** @type {Test.Context} */
+  let context
+
+  beforeEach(async () => {
+    context = await setup()
+  })
+
+  afterEach(async () => {
+    await teardown(context)
+  })
+
+  it('storacha plan get', async () => {
     await login(context)
     const notFound = await storacha
       .args(['plan', 'get'])
@@ -1455,181 +1711,39 @@ export const testPlan = {
       .env(context.env.alice)
       .join()
     assert.match(plan.output, /did:web:free.web3.storage/)
-  }),
-}
+  })
+})
 
-export const testKey = {
-  'storacha key create': test(async (assert) => {
+describe('key', function () {
+  this.timeout(30000)
+
+  it('storacha key create', async () => {
     const res = await storacha.args(['key', 'create', '--json']).join()
     const key = ED25519.parse(JSON.parse(res.output).key)
     assert.ok(key.did().startsWith('did:key'))
-  }),
-}
+  })
+})
 
-export const testBridge = {
-  'storacha bridge generate-tokens': test(async (assert, context) => {
+describe('bridge', function () {
+  this.timeout(60000)
+
+  /** @type {Test.Context} */
+  let context
+
+  beforeEach(async () => {
+    context = await setup()
+  })
+
+  afterEach(async () => {
+    await teardown(context)
+  })
+
+  it('storacha bridge generate-tokens', async () => {
     const spaceDID = await loginAndCreateSpace(context)
     const res = await storacha
       .args(['bridge', 'generate-tokens', spaceDID])
       .join()
     assert.match(res.output, /X-Auth-Secret header: u/)
     assert.match(res.output, /Authorization header: u/)
-  }),
-}
-
-/**
- * @param {Test.Context} context
- * @param {object} options
- * @param {string} [options.email]
- * @param {Record<string, string>} [options.env]
- */
-export const login = async (
-  context,
-  { email = 'alice@web.mail', env = context.env.alice } = {}
-) => {
-  const login = storacha.env(env).args(['login', email]).fork()
-
-  // wait for the new process to print the status
-  await login.error.lines().take().text()
-
-  // receive authorization request
-  const message = await context.mail.take()
-
-  // confirm authorization
-  await context.grantAccess(message)
-
-  return await login.join()
-}
-
-/**
- * @typedef {import('@storacha/client/types').ProviderDID} Plan
- *
- * @param {Test.Context} context
- * @param {object} options
- * @param {DIDMailto.EmailAddress} [options.email]
- * @param {string} [options.billingID]
- * @param {Plan} [options.plan]
- */
-export const selectPlan = async (
-  context,
-  {
-    email = 'alice@web.mail',
-    billingID = 'test:cus_alice',
-    plan = 'did:web:free.web3.storage',
-  } = {}
-) => {
-  const customer = DIDMailto.fromEmail(email)
-  Result.try(await context.plansStorage.initialize(customer, billingID, plan))
-}
-
-/**
- * @param {Test.Context} context
- * @param {object} options
- * @param {DIDMailto.EmailAddress|null} [options.customer]
- * @param {string} [options.name]
- * @param {Record<string, string>} [options.env]
- */
-export const createSpace = async (
-  context,
-  { customer = 'alice@web.mail', name = 'home', env = context.env.alice } = {}
-) => {
-  const { output } = await storacha
-    .args([
-      'space',
-      'create',
-      name,
-      '--no-recovery',
-      '--no-account',
-      '--no-gateway-authorization',
-      '--no-plan-selection',
-      ...(customer ? ['--customer', customer] : ['--no-customer']),
-    ])
-    .env(env)
-    .join()
-
-  const [did] = match(/(did:key:\w+)/, output)
-
-  return SpaceDID.from(did)
-}
-
-/**
- * @param {Test.Context} context
- * @param {object} options
- * @param {DIDMailto.EmailAddress} [options.email]
- * @param {DIDMailto.EmailAddress|null} [options.customer]
- * @param {string} [options.name]
- * @param {Plan} [options.plan]
- * @param {Record<string, string>} [options.env]
- */
-export const loginAndCreateSpace = async (
-  context,
-  {
-    email = 'alice@web.mail',
-    customer = email,
-    name = 'home',
-    plan = 'did:web:free.web3.storage',
-    env = context.env.alice,
-  } = {}
-) => {
-  await login(context, { email, env })
-
-  if (customer != null && plan != null) {
-    await selectPlan(context, { email: customer, plan })
-  }
-
-  return createSpace(context, { customer, name, env })
-}
-
-/**
- * @param {Test.Context} context
- * @param {object} options
- * @param {string} [options.password]
- */
-export const createCustomerSession = async (
-  context,
-  { password = '' } = {}
-) => {
-  // Derive delegation audience from the password
-  const { digest } = await sha256.digest(new TextEncoder().encode(password))
-  const audience = await ED25519.derive(digest)
-
-  // Generate the agent that will be authorized to act on behalf of the customer
-  const agent = await ed25519.generate()
-
-  const customer = Absentee.from({ id: 'did:mailto:web.mail:workshop' })
-
-  // First we create delegation from the customer to the agent that authorizing
-  // it to perform `provider/add` on their behalf.
-  const delegation = await delegate({
-    issuer: customer,
-    audience: agent,
-    capabilities: [
-      {
-        with: 'ucan:*',
-        can: '*',
-      },
-    ],
-    expiration: Infinity,
   })
-
-  // Then we create an attestation from the service to proof that agent has
-  // been authorized
-  const attestation = await UCAN.attest.delegate({
-    issuer: context.service,
-    audience: agent,
-    with: context.service.did(),
-    nb: { proof: delegation.cid },
-    expiration: delegation.expiration,
-  })
-
-  // Finally we create a short lived session that authorizes the audience to
-  // provider/add with their billing account.
-  const session = await Provider.add.delegate({
-    issuer: agent,
-    audience,
-    with: customer.did(),
-    proofs: [delegation, attestation],
-  })
-
-  return Result.try(await session.archive())
-}
+})

@@ -697,9 +697,9 @@ importers:
       '@web3-storage/sigv4':
         specifier: 'catalog:'
         version: 1.0.2
-      entail:
-        specifier: ^2.1.1
-        version: 2.2.1
+      mocha:
+        specifier: ^10.2.0
+        version: 10.8.2
       multiformats:
         specifier: 'catalog:'
         version: 13.3.6

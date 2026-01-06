@@ -14,7 +14,7 @@
     "dev": "pnpm typecheck --watch --preserveWatchOutput",
     "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
-    "test": "node test/run.js"
+    "test": "mocha 'test/**/*.test.js' -n experimental-vm-modules -n no-warnings"
   },
   "repository": {
     "type": "git",
@@ -47,7 +47,7 @@
     "@ucanto/server": "catalog:",
     "@web-std/blob": "catalog:",
     "@web3-storage/sigv4": "catalog:",
-    "entail": "^2.1.1",
+    "mocha": "^10.2.0",
     "multiformats": "catalog:",
     "prettier": "^3.0.3",
     "typescript": "catalog:"
