@@ -2,6 +2,7 @@
 
 The command line interface to the Storacha Network.
 
+
 ## Getting started
 
 Install the CLI from npm (**requires Node 18 or higher**):
