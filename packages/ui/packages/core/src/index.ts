@@ -1,3 +1,4 @@
+// Test change to trigger ui-core tests only
 import type { AgentDataExport } from '@storacha/access/types'
 import type { ServiceConfig } from './service.js'
 
