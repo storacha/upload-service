@@ -9,6 +9,7 @@ export const provide = (context) =>
 
 /**
  * Wraps a promise that returns a Result with a timeout.
+ *
  * @param {Promise<API.Result<any, any>>} promise
  * @param {number} timeoutMs
  * @param {string} timeoutMessage
