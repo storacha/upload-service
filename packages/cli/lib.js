@@ -1,3 +1,4 @@
+// Test change to trigger nx affected for CLI package
 import fs from 'node:fs'
 import path from 'node:path'
 // @ts-expect-error no typings :(
