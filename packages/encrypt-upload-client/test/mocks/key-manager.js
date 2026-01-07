@@ -149,7 +149,14 @@ export function createMockKeyManagerServer(
         resolve({
           server: httpServer,
           url: `${protocol}://localhost:${port}`,
-          close: () => new Promise((resolve) => httpServer.close(resolve)),
+          close: () =>
+            new Promise((resolve) => {
+              // In Node.js 19+, server.close() alone doesn't close existing
+              // keep-alive connections. We need to call closeAllConnections()
+              // first to ensure all connections are terminated.
+              httpServer.closeAllConnections()
+              httpServer.close(resolve)
+            }),
         })
       }
     })
