@@ -7,6 +7,9 @@ export default defineConfig({
   expect: {
     timeout: 5000,
   },
+  // Use global setup/teardown for server lifecycle management
+  globalSetup: './test/mocks/playwright/global-setup.js',
+  globalTeardown: './test/mocks/playwright/global-teardown.js',
   fullyParallel: false, // Disable parallel execution for secure server tests
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

@@ -1,32 +1,18 @@
 import { test, expect } from '@playwright/test'
+import { readFileSync } from 'node:fs'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { GenericAesCtrStreamingCrypto } from '../src/crypto/symmetric/generic-aes-ctr-streaming-crypto.js'
-import {
-  startSecureCryptoTestServer,
-  stopSecureCryptoTestServer,
-} from './mocks/playwright/secure-server.js'
 import { streamToUint8Array } from './helpers/test-file-utils.js'
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
+// Read server info from global setup
+const serverInfoPath = join(__dirname, 'mocks/playwright/.server-info.json')
+const serverInfo = JSON.parse(readFileSync(serverInfoPath, 'utf8'))
+
 test.describe('Secure Cross-Environment Crypto with HTTPS Server', () => {
-  /** @type {any} */
-  let serverInfo
-
-  test.beforeAll(async () => {
-    // Start the secure HTTPS server before tests
-    console.log(
-      'Starting secure HTTPS server for cross-environment crypto testing...'
-    )
-    serverInfo = await startSecureCryptoTestServer(8443)
-    console.log(`Secure server ready at ${serverInfo.url}`)
-  })
-
-  test.afterAll(async () => {
-    // Stop the secure server after tests
-    if (serverInfo) {
-      console.log('Stopping secure HTTPS server...')
-      await stopSecureCryptoTestServer(serverInfo)
-      console.log('Secure server stopped')
-    }
-  })
 
   test('should encrypt in browser and decrypt in Node.js using HTTPS', async ({
     page,
