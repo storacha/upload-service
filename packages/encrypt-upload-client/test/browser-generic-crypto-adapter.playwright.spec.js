@@ -13,7 +13,6 @@ const serverInfoPath = join(__dirname, 'mocks/playwright/.server-info.json')
 const serverInfo = JSON.parse(readFileSync(serverInfoPath, 'utf8'))
 
 test.describe('Secure Cross-Environment Crypto with HTTPS Server', () => {
-
   test('should encrypt in browser and decrypt in Node.js using HTTPS', async ({
     page,
     browserName,
