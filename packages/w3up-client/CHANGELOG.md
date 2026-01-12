@@ -1,3 +1,22 @@
+# 2.0.0 (2026-01-12)
+
+### ⚠️  Breaking Changes
+
+- add egress usage to `account/usage/get` ([#632](https://github.com/storacha/upload-service/pull/632))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-client to 1.0.16
+- Updated @storacha/access to 1.6.5
+- Updated @storacha/upload-client to 1.3.7
+- Updated @storacha/capabilities to 2.0.0
+- Updated @storacha/blob-index to 1.2.5
+- Updated @storacha/upload-api to 3.0.0
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 1.8.26 (2025-12-19)
 
 ### 🧱 Updated Dependencies
