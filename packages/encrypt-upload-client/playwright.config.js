@@ -11,9 +11,10 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1, // Use single worker to avoid port conflicts
-  reporter: 'html',
+  reporter: process.env.CI ? 'list' : 'html',
   use: {
-    trace: 'on-first-retry',
+    // Disable trace in CI to avoid keeping file handles open
+    trace: process.env.CI ? 'off' : 'on-first-retry',
     // Enable Web Crypto API by using secure context
     ignoreHTTPSErrors: true,
   },
