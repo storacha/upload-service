@@ -214,7 +214,14 @@ export function createSecureCryptoServer(options = {}) {
           cryptoTestUrl: `https://localhost:${port}/crypto-test`,
           healthUrl: `https://localhost:${port}/health`,
           port,
-          close: () => new Promise((resolve) => server.close(resolve)),
+          close: () =>
+            new Promise((resolve) => {
+              // In Node.js 19+, server.close() alone doesn't close existing
+              // keep-alive connections. We need to call closeAllConnections()
+              // first to ensure all connections are terminated.
+              server.closeAllConnections()
+              server.close(resolve)
+            }),
         })
       }
     })
