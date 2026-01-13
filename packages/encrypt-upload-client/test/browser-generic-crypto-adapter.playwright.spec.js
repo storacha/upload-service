@@ -229,3 +229,10 @@ test.describe('Secure Cross-Environment Crypto with HTTPS Server', () => {
     console.log(`   Node.js Crypto Subtle: ${healthData.crypto.subtle}`)
   })
 })
+
+test.afterAll(async () => {
+  // Ensure Playwright does not keep the process alive in CI
+  if (process.env.CI) {
+    process.exit(0)
+  }
+})
