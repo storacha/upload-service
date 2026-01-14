@@ -40,6 +40,7 @@ export default async function globalTeardown() {
   // In CI, force exit to ensure no hanging handles keep the process alive
   if (process.env.CI) {
     console.log('[Global Teardown] CI detected, forcing process exit')
+    // eslint-disable-next-line no-process-exit
     process.exit(0)
   }
 }
