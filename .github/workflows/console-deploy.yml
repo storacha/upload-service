@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - 'main'
+      - 'fix/**'
     paths:
       - packages/console/**
   pull_request:
@@ -10,6 +11,7 @@ on:
       - 'main'
     paths:
       - packages/console/**
+  workflow_dispatch:
 jobs:
   test:
     name: Test
