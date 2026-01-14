@@ -149,7 +149,12 @@ export function createMockKeyManagerServer(
         resolve({
           server: httpServer,
           url: `${protocol}://localhost:${port}`,
-          close: () => new Promise((resolve) => httpServer.close(resolve)),
+          close: () => {
+            if (httpServer.closeAllConnections) {
+              httpServer.closeAllConnections()
+            }
+            return new Promise((resolve) => httpServer.close(resolve))
+          },
         })
       }
     })

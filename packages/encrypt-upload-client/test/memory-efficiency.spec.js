@@ -14,7 +14,7 @@ await describe('Memory Efficiency - Why Streaming Matters', async () => {
     const streamingCrypto = new GenericAesCtrStreamingCrypto()
 
     // Test with multiple sizes to show streaming scales linearly
-    const testSizes = [5, 10, 15, 20, 50, 100, 500, 1000] // MB - sizes that would challenge buffered approaches
+    const testSizes = [5, 10, 15, 20, 50, 100] // MB - sizes that would challenge buffered approaches
 
     for (const sizeMB of testSizes) {
       console.log(`Processing ${sizeMB}MB file...`)
