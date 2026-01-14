@@ -230,9 +230,4 @@ test.describe('Secure Cross-Environment Crypto with HTTPS Server', () => {
   })
 })
 
-test.afterAll(async () => {
-  // Ensure Playwright does not keep the process alive in CI
-  if (process.env.CI) {
-    process.exit(0)
-  }
-})
+
