@@ -20,5 +20,8 @@
     {
       "path": "../eslint-config-w3up"
     }
+  ],
+  "exclude": [
+    "scripts"
   ]
 }
