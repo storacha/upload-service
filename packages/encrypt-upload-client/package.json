@@ -131,9 +131,9 @@
       "src/types.js",
       "*.min.js",
       "**/*.playwright.spec.js",
-      "test/mocks/playwright/**",
       "playwright.config.js",
-      "playwright-report/**/*"
+      "playwright-report/**/*",
+      "scripts"
     ]
   },
   "depcheck": {

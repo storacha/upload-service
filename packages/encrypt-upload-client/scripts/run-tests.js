@@ -41,6 +41,12 @@ try {
     }
   });
 
+  // Force exit after 30 seconds if tests hang
+  setTimeout(() => {
+    console.error('❌ Tests timed out - forcing exit');
+    process.exit(1);
+  }, 30000).unref(); // unref so this timer itself doesn't keep process alive
+
 } catch (err) {
   console.error('Failed to run tests:', err);
   process.exit(1);
