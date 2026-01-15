@@ -41,6 +41,6 @@ export default async function globalTeardown() {
   if (process.env.CI) {
     console.log('[Global Teardown] CI detected, forcing process exit')
     // eslint-disable-next-line no-process-exit
-    process.exit(0)
+    process.exit()
   }
 }
