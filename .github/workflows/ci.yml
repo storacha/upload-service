@@ -13,12 +13,12 @@ permissions:
   contents: read
 
 jobs:
-  main:
+  quality:
+    name: Quality Checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
-          # Fetch full history so `nx affected` can determine what to run
           fetch-depth: 0
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
@@ -27,37 +27,57 @@ jobs:
           node-version: 24
       - name: Install npm package dependencies
         run: pnpm install --frozen-lockfile
-
-      # Clean stale TypeScript build info files that prevent types.d.ts generation
       - name: Clean stale build artifacts
         run: |
           find packages -name "*.tsbuildinfo" -delete
           pnpm nx reset
+      - uses: nrwl/nx-set-shas@v4
+        env:
+          NX_VERBOSE_LOGGING: ${{ runner.debug && 'true' || 'false' }}
+      - name: Run Quality Checks
+        run: pnpm nx affected -t lint typecheck depcheck --parallel=3
+        env:
+          NX_VERBOSE_LOGGING: ${{ runner.debug && 'true' || 'false' }}
 
-      # pre-build console to get around some odd bugs that seem to be related to nx 21
-      # TODO: Try to get rid of this later. If the build ever succeeds without
-      # running this step first, it's working correctly, and we can delete this.
-      - name: Pre-build console
-        shell: bash
-        working-directory: ./packages/console
+  verification:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          cache: 'pnpm'
+          node-version: 24
+      - name: Install npm package dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Clean stale build artifacts
         run: |
-          pnpm install
-          pnpm nx build @storacha/ui-core
-          pnpm nx build @storacha/ui-react
-          pnpm build
-      
-      # Set the base and head that `nx affected` will use
+          find packages -name "*.tsbuildinfo" -delete
+          pnpm nx reset
       - uses: nrwl/nx-set-shas@v4
         env:
           NX_VERBOSE_LOGGING: ${{ runner.debug && 'true' || 'false' }}
 
+      # pre-build console to get around some odd bugs that seem to be related to nx 21
+      # TODO: Try to get rid of this later. If the build ever succeeds without
+      # running this step first, it's working correctly, and we can delete this.
+      # - name: Pre-build console
+      #   shell: bash
+      #   working-directory: ./packages/console
+      #   run: |
+      #     pnpm install
+      #     pnpm nx build @storacha/ui-core
+      #     pnpm nx build @storacha/ui-react
+      #     pnpm build
+
       - name: Prepare environment
         run: pnpm nx affected -t prepare-environment
-        env:
-          NX_VERBOSE_LOGGING: ${{ runner.debug && 'true' || 'false' }}
-
-      # Run CI tasks over all affected projects
-      # TODO: Add `attw` back once fixed.
-      - run: pnpm nx affected -t typecheck lint build test depcheck
+      - name: Build
+        run: pnpm nx affected -t build --parallel=3
+      - name: Test
+        run: pnpm nx affected -t test --parallel=2
         env:
           NX_VERBOSE_LOGGING: ${{ runner.debug && 'true' || 'false' }}
