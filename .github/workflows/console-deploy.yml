@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - 'main'
-      - 'fix/**'
     paths:
       - packages/console/**
   pull_request:
