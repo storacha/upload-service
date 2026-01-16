@@ -9,12 +9,12 @@ import { createTestFile } from './helpers/test-file-utils.js'
  * These tests demonstrate why streaming is necessary for large files.
  * They show that buffered approaches fail with memory errors while streaming succeeds.
  */
-await describe.skip('Memory Efficiency - Why Streaming Matters', async () => {
+await describe('Memory Efficiency - Why Streaming Matters', async () => {
   await test('should show streaming handles progressively larger files', async () => {
     const streamingCrypto = new GenericAesCtrStreamingCrypto()
 
     // Test with multiple sizes to show streaming scales linearly
-    const testSizes = [5, 10, 15, 20, 50, 100] // MB - sizes that would challenge buffered approaches
+    const testSizes = [5, 10, 15, 20, 50, 100, 500, 1000] // MB - sizes that would challenge buffered approaches
 
     for (const sizeMB of testSizes) {
       console.log(`Processing ${sizeMB}MB file...`)
