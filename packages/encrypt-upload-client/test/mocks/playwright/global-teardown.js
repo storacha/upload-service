@@ -16,6 +16,19 @@ export default async function globalTeardown() {
 
   if (serverInfo) {
     try {
+      // Force close all connections immediately
+      if (serverInfo.server) {
+        // Destroy all active sockets
+        if (serverInfo.server.closeAllConnections) {
+          serverInfo.server.closeAllConnections()
+        }
+
+        // Force unref to allow process to exit
+        if (serverInfo.server.unref) {
+          serverInfo.server.unref()
+        }
+      }
+
       await serverInfo.close()
       console.log('[Global Teardown] Server stopped successfully')
     } catch (error) {
@@ -37,10 +50,8 @@ export default async function globalTeardown() {
 
   console.log('[Global Teardown] Cleanup complete')
 
-  // In CI, force exit to ensure no hanging handles keep the process alive
+  // Force exit in CI to prevent hangs
   if (process.env.CI) {
-    console.log('[Global Teardown] CI detected, forcing process exit')
+    console.log('[Global Teardown] CI mode - forcing exit')
     // eslint-disable-next-line no-process-exit
-    process.exit()
-  }
-}
+    process.exit(0)

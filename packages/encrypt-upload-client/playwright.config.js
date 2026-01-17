@@ -15,11 +15,17 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: 1, // Use single worker to avoid port conflicts
   reporter: process.env.CI ? 'list' : 'html',
+  // Global timeout to prevent infinite hangs in CI
+  globalTimeout: process.env.CI ? 5 * 60 * 1000 : undefined, // 5 minutes max
   use: {
     // Disable trace in CI to avoid keeping file handles open
     trace: process.env.CI ? 'off' : 'on-first-retry',
     // Enable Web Crypto API by using secure context
     ignoreHTTPSErrors: true,
+    // Set navigation timeout
+    navigationTimeout: 10000,
+    // Set action timeout
+    actionTimeout: 10000,
   },
 
   projects: [
@@ -27,6 +33,12 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
+        // Force browser to close quickly
+        launchOptions: {
+          args: process.env.CI
+            ? ['--disable-dev-shm-usage', '--no-sandbox']
+            : [],
+        },
       },
     },
     {
