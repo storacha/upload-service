@@ -6,7 +6,7 @@
   "scripts": {
     "serve": "serve node_modules/@storacha",
     "clean": "rm -rf dist *.tsbuildinfo coverage",
-    "test": "playwright test",
+    "test": "node scripts/test.js",
     "test-debug": "playwright test --project=chromium --headed",
     "prepare-environment": "playwright install --with-deps",
     "typecheck": "tsc --build --emitDeclarationOnly --pretty --verbose"

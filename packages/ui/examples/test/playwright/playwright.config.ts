@@ -7,7 +7,7 @@ import process from 'process'
  */
 const config: PlaywrightTestConfig = {
   testDir: './test',
-  globalTeardown: './global-teardown.ts',
+
   timeout: 30 * 1000,
   expect: {
     /**
