@@ -55,3 +55,7 @@ export default async function globalTeardown() {
     console.log('[Global Teardown] CI mode - forcing exit')
     // eslint-disable-next-line no-process-exit
     process.exit(0)
+  }
+
+  return undefined
+}

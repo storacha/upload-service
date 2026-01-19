@@ -138,32 +138,45 @@ async function validateAuthorization(authorization) {
 
   // per-CID attempt function: classify responses
   const checkCID = (/** @type {string} */ cid) => async () => {
-    const res = await fetch(`${REVOCATION_URL}/${cid}`, {
-      signal: globalAbort.signal,
-    })
+    // Add timeout to fetch to prevent hanging on slow endpoints
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 5000) // 5s timeout per fetch
 
-    if (res.status === 200) {
-      console.log(`[validateAuthorization] delegation ${cid} is revoked`)
-      return { status: 'revoked', cid }
+    try {
+      const res = await fetch(`${REVOCATION_URL}/${cid}`, {
+        signal: AbortSignal.any([globalAbort.signal, controller.signal]),
+      })
+      clearTimeout(timeout)
+      return processResponse(res)
+    } catch (err) {
+      clearTimeout(timeout)
+      throw err
     }
 
-    if (res.status === 404) {
-      return { status: 'not-revoked', cid }
-    }
+    async function processResponse(res) {
+      if (res.status === 200) {
+        console.log(`[validateAuthorization] delegation ${cid} is revoked`)
+        return { status: 'revoked', cid }
+      }
 
-    console.log(
-      `[validateAuthorization] delegation ${cid} revocation status ${res.status}`
-    )
+      if (res.status === 404) {
+        return { status: 'not-revoked', cid }
+      }
 
-    if (res.status === 429 || res.status >= 500) {
-      // transient: let p-retry retry
-      throw new Error(
-        `Transient revocation service status ${res.status} for CID ${cid}`
+      console.log(
+        `[validateAuthorization] delegation ${cid} revocation status ${res.status}`
       )
-    }
 
-    // other 4xx: non-retriable -> tell p-retry to abort retries for this CID
-    throw new AbortError(`Unexpected status ${res.status} for CID ${cid}`)
+      if (res.status === 429 || res.status >= 500) {
+        // transient: let p-retry retry
+        throw new Error(
+          `Transient revocation service status ${res.status} for CID ${cid}`
+        )
+      }
+
+      // other 4xx: non-retriable -> tell p-retry to abort retries for this CID
+      throw new AbortError(`Unexpected status ${res.status} for CID ${cid}`)
+    }
   }
 
   const tasks = []
@@ -257,6 +270,12 @@ async function validateAuthorization(authorization) {
   } finally {
     // Ensure queue cleared to avoid leftover scheduled tasks/timers
     queue.clear()
+    // Wait for the queue to fully drain
+    try {
+      await queue.onIdle()
+    } catch {
+      // Ignore idle wait errors
+    }
   }
 }
 

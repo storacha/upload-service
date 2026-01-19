@@ -14,7 +14,7 @@
     "dev": "pnpm typecheck --watch --preserveWatchOutput",
     "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
-    "test": "node scripts/test.js"
+    "test": "entail **/*.spec.js"
   },
   "repository": {
     "type": "git",
