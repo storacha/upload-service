@@ -59,7 +59,7 @@
     "dev": "tsc --build --watch --preserveWatchOutput",
     "clean": "rm -rf dist *.tsbuildinfo",
     "lint": "tsc --build && eslint '**/*.{js,ts}' --ignore-pattern 'lit-actions/**' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
-    "lint:fix": "tsc --build && eslint '**/*.{js,ts}' --fix && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+    "lint:fix": "tsc --build && eslint '**/*.{js,ts}' --fix --ignore-pattern 'lit-actions/**' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "build-actions": "node lit-actions/esbuild.js",
     "attw": "attw --pack .",
     "prepare-environment": "playwright install",
