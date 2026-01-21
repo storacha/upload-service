@@ -45,6 +45,7 @@ import * as UCANCaps from './ucan.js'
 import * as PlanCaps from './plan.js'
 import * as UsageCaps from './usage.js'
 import * as AccountUsageCaps from './account/usage.js'
+import * as AccountEgressCaps from './account/egress.js'
 import * as PDPCaps from './pdp.js'
 
 export type ISO8601Date = string
@@ -257,6 +258,49 @@ export interface SpaceEgressUsage {
   total: number
   // egress usages by provider
   providers: Record<ProviderDID, EgressUsageData>
+}
+
+// AccountEgress
+export type AccountEgress = InferInvokedCapability<
+  typeof AccountEgressCaps.accountEgress
+>
+export type AccountEgressGet = InferInvokedCapability<
+  typeof AccountEgressCaps.get
+>
+
+export interface AccountNotFoundError extends Ucanto.Failure {
+  name: 'AccountNotFound'
+}
+
+export interface SpaceUnauthorizedError extends Ucanto.Failure {
+  name: 'SpaceUnauthorized'
+}
+
+export interface PeriodNotAcceptableError extends Ucanto.Failure {
+  name: 'PeriodNotAcceptable'
+}
+
+export type AccountEgressGetFailure = AccountNotFoundError | SpaceUnauthorizedError | PeriodNotAcceptableError | Ucanto.Failure
+
+export interface AccountEgressGetSuccess {
+  // total egress across all spaces in the period in bytes
+  total: number
+  // breakdown by space
+  spaces: Record<SpaceDID, SpaceEgress>
+}
+
+export interface SpaceEgress {
+  // total egress for the space in the period
+  total: number
+  // daily egress stats
+  dailyStats: DailyStats[]
+}
+
+export interface DailyStats {
+  // date the stats refer to
+  date: ISO8601Date
+  // egress for the day in bytes
+  egress: number
 }
 
 // Provider
@@ -1240,6 +1284,8 @@ export type ServiceAbilityArray = [
   SpaceIndexAdd['can'],
   AccountUsage['can'],
   AccountUsageGet['can'],
+  AccountEgress['can'],
+  AccountEgressGet['can'],
   PDPAccept['can'],
   PDPInfo['can']
 ]
