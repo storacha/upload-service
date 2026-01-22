@@ -280,7 +280,11 @@ export interface PeriodNotAcceptableError extends Ucanto.Failure {
   name: 'PeriodNotAcceptable'
 }
 
-export type AccountEgressGetFailure = AccountNotFoundError | SpaceUnauthorizedError | PeriodNotAcceptableError | Ucanto.Failure
+export type AccountEgressGetFailure =
+  | AccountNotFoundError
+  | SpaceUnauthorizedError
+  | PeriodNotAcceptableError
+  | Ucanto.Failure
 
 export interface AccountEgressGetSuccess {
   // total egress across all spaces in the period in bytes
