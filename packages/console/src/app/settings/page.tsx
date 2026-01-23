@@ -14,16 +14,107 @@ import { logAndCaptureError } from '@/sentry'
 import type { JSX } from 'react'
 import CopyButton from '@/components/CopyButton'
 
-const Plans: Record<`did:${string}`, { name: string; limit: number; egressLimit: number }> = {
-  'did:web:starter.web3.storage': { name: 'Starter', limit: 5 * GB, egressLimit: 5 * GB },
-  'did:web:lite.web3.storage': { name: 'Lite', limit: 100 * GB, egressLimit: 25 * GB },
-  'did:web:business.web3.storage': { name: 'Business', limit: 2 * TB, egressLimit: 500 * GB },
-  'did:web:free.web3.storage': { name: 'Free', limit: Infinity, egressLimit: Infinity },
-  'did:web:starter.storacha.network': { name: 'Mild', limit: 5 * GB, egressLimit: 5 * GB },
-  'did:web:lite.storacha.network': { name: 'Medium', limit: 100 * GB, egressLimit: 25 * GB },
-  'did:web:business.storacha.network': { name: 'Extra Spicy', limit: 2 * TB, egressLimit: 500 * GB },
-  'did:web:free.storacha.network': { name: 'Free', limit: Infinity, egressLimit: Infinity },
-  'did:web:trial.storacha.network': { name: 'Trial', limit: 100 * MB, egressLimit: 100 * MB },
+const Plans: Record<
+  `did:${string}`,
+  { name: string; limit: number; egressLimit: number }
+> = {
+  // web3.storage plans
+  'did:web:starter.web3.storage': {
+    name: 'Starter',
+    limit: 5 * GB,
+    egressLimit: 5 * GB,
+  },
+  'did:web:lite.web3.storage': {
+    name: 'Lite',
+    limit: 100 * GB,
+    egressLimit: 25 * GB,
+  },
+  'did:web:business.web3.storage': {
+    name: 'Business',
+    limit: 2 * TB,
+    egressLimit: 500 * GB,
+  },
+  'did:web:free.web3.storage': {
+    name: 'Free',
+    limit: Infinity,
+    egressLimit: Infinity,
+  },
+
+  // staging.web3.storage plans
+  'did:web:starter.staging.web3.storage': {
+    name: 'Staging Starter',
+    limit: 5 * GB,
+    egressLimit: 5 * GB,
+  },
+  'did:web:lite.staging.web3.storage': {
+    name: 'Staging Lite',
+    limit: 100 * GB,
+    egressLimit: 25 * GB,
+  },
+  'did:web:business.staging.web3.storage': {
+    name: 'Staging Business',
+    limit: 2 * TB,
+    egressLimit: 500 * GB,
+  },
+  'did:web:free.staging.web3.storage': {
+    name: 'Free',
+    limit: Infinity,
+    egressLimit: Infinity,
+  },
+
+  // storacha.network plans
+  'did:web:starter.storacha.network': {
+    name: 'Mild',
+    limit: 5 * GB,
+    egressLimit: 5 * GB,
+  },
+  'did:web:lite.storacha.network': {
+    name: 'Medium',
+    limit: 100 * GB,
+    egressLimit: 25 * GB,
+  },
+  'did:web:business.storacha.network': {
+    name: 'Extra Spicy',
+    limit: 2 * TB,
+    egressLimit: 500 * GB,
+  },
+  'did:web:free.storacha.network': {
+    name: 'Free',
+    limit: Infinity,
+    egressLimit: Infinity,
+  },
+  'did:web:trial.storacha.network': {
+    name: 'Trial',
+    limit: 100 * MB,
+    egressLimit: 100 * MB,
+  },
+  
+  // staging.storacha.network plans
+  'did:web:starter.staging.storacha.network': {
+    name: 'Staging Mild',
+    limit: 5 * GB,
+    egressLimit: 5 * GB,
+  },
+  'did:web:lite.staging.storacha.network': {
+    name: 'Staging Medium',
+    limit: 100 * GB,
+    egressLimit: 25 * GB,
+  },
+  'did:web:business.staging.storacha.network': {
+    name: 'Staging Extra Spicy',
+    limit: 2 * TB,
+    egressLimit: 500 * GB,
+  },
+  'did:web:free.staging.storacha.network': {
+    name: 'Staging Free',
+    limit: Infinity,
+    egressLimit: Infinity,
+  },
+  'did:web:trial.staging.storacha.network': {
+    name: 'Staging Trial',
+    limit: 100 * MB,
+    egressLimit: 100 * MB,
+  },
 }
 
 const MAX_REFERRALS = 11
