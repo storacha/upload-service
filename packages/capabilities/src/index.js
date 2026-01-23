@@ -27,6 +27,7 @@ import * as SpaceBlob from './space/blob.js'
 import * as W3sBlob from './web3.storage/blob.js'
 import * as HTTP from './http.js'
 import * as AccountUsage from './account/usage.js'
+import * as AccountEgress from './account/egress.js'
 import * as PDP from './pdp.js'
 
 export {
@@ -59,6 +60,7 @@ export {
   W3sBlob,
   HTTP,
   AccountUsage,
+  AccountEgress,
   PDP,
 }
 
@@ -132,6 +134,7 @@ export const abilitiesAsStrings = [
   SpaceIndex.index.can,
   SpaceIndex.add.can,
   AccountUsage.get.can,
+  AccountEgress.get.can,
   PDP.accept.can,
   PDP.info.can,
 ]
