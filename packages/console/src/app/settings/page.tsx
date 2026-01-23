@@ -200,8 +200,6 @@ function UsageInfo({ account }: { account: Account }) {
   const allocated = usageData?.totalStorage ?? 0
   const limit = plan?.product ? Plans[plan.product]?.limit : 0
   const egressLimit = plan?.product ? Plans[plan.product]?.egressLimit : 0
-  console.log("PLAN", plan)
-  console.log("IS PLAN LOADING", isPlanLoading)
   return (
     <>
       <H2>{account.toEmail()}</H2>
