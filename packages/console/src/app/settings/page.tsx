@@ -18,6 +18,7 @@ const Plans: Record<
   `did:${string}`,
   { name: string; limit: number; egressLimit: number }
 > = {
+  // web3.storage plans
   'did:web:starter.web3.storage': {
     name: 'Starter',
     limit: 5 * GB,
@@ -38,6 +39,8 @@ const Plans: Record<
     limit: Infinity,
     egressLimit: Infinity,
   },
+
+  // staging.web3.storage plans
   'did:web:starter.staging.web3.storage': {
     name: 'Staging Starter',
     limit: 5 * GB,
@@ -53,15 +56,17 @@ const Plans: Record<
     limit: 2 * TB,
     egressLimit: 500 * GB,
   },
-  'did:web:starter.storacha.network': {
-    name: 'Mild',
-    limit: 5 * GB,
-    egressLimit: 5 * GB,
-  },
   'did:web:free.staging.web3.storage': {
     name: 'Free',
     limit: Infinity,
     egressLimit: Infinity,
+  },
+
+  // storacha.network plans
+  'did:web:starter.storacha.network': {
+    name: 'Mild',
+    limit: 5 * GB,
+    egressLimit: 5 * GB,
   },
   'did:web:lite.storacha.network': {
     name: 'Medium',
@@ -82,6 +87,13 @@ const Plans: Record<
     name: 'Trial',
     limit: 100 * MB,
     egressLimit: 100 * MB,
+  },
+  
+  // staging.storacha.network plans
+  'did:web:starter.staging.storacha.network': {
+    name: 'Staging Mild',
+    limit: 5 * GB,
+    egressLimit: 5 * GB,
   },
   'did:web:lite.staging.storacha.network': {
     name: 'Staging Medium',
