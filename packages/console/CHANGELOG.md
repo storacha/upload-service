@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.20.0](https://github.com/storacha/upload-service/compare/console-v2.19.2...console-v2.20.0) (2026-01-23)
+
+
+### Features
+
+* add egress reporting to account/usage/get ([#611](https://github.com/storacha/upload-service/issues/611)) ([df39e6f](https://github.com/storacha/upload-service/commit/df39e6fe11be13ab3ae2ae1769807e5bc06f5bcb))
+
+
+### Fixes
+
+* add staging plans to plan definition list ([#640](https://github.com/storacha/upload-service/issues/640)) ([7774e51](https://github.com/storacha/upload-service/commit/7774e519f7c878f6e9450300662d0395491b28e8))
+
 ## [2.19.2](https://github.com/storacha/upload-service/compare/console-v2.19.1...console-v2.19.2) (2025-12-16)
 
 
