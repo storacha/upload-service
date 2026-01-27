@@ -1,3 +1,21 @@
+## 2.1.1 (2026-01-12)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-client to 1.0.16
+- Updated @storacha/capabilities to 2.0.0
+- Updated @storacha/router to 1.1.2
+
+## 2.1.0 (2025-12-16)
+
+### 🚀 Features
+
+- handle pdp/info check asyncronously ([b210b70b](https://github.com/storacha/upload-service/commit/b210b70b))
+
+### ❤️ Thank You
+
+- hannahhoward
+
 ## 1.3.4 (2025-12-02)
 
 ### 🩹 Fixes

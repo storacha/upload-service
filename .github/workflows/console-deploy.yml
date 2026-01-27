@@ -87,8 +87,8 @@ jobs:
           echo "NEXT_PUBLIC_SENTRY_ENV=staging" >> .env
           echo "NEXT_PUBLIC_HUMANODE_OAUTH_CALLBACK_URL=https://staging.up.storacha.network/oauth/humanode/callback" >> .env
           echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" >> .env
-          echo "NEXT_PUBLIC_PRIVATE_SPACES_DOMAINS=dmail.ai,storacha.network,zkagi.ai,cyberlife.gg" >> .env
-          echo "NEXT_PUBLIC_PRIVATE_SPACES_FREE_TRIAL_DOMAINS=storacha.network,zkagi.ai,cyberlife.gg" >> .env
+          echo "NEXT_PUBLIC_PRIVATE_SPACES_DOMAINS=dmail.ai,storacha.network,zkagi.ai,cyberlife.gg,mawari.net,blondish.world" >> .env
+          echo "NEXT_PUBLIC_PRIVATE_SPACES_FREE_TRIAL_DOMAINS=storacha.network,zkagi.ai,cyberlife.gg,mawari.net,blondish.world" >> .env
           echo "NEXT_PUBLIC_UCAN_KMS_URL=https://ucan-kms-staging.protocol-labs.workers.dev" >> .env
           echo "NEXT_PUBLIC_UCAN_KMS_DID=did:key:z6MkmRf149D6oc9wq9ioXCsT5fgTn6esd7JjB9S5JnM4Y9qj" >> .env
           echo "NEXT_PUBLIC_ENABLE_TEST_IFRAME=true" >> .env
@@ -219,8 +219,8 @@ jobs:
           echo "NEXT_PUBLIC_SENTRY_ENV=production" >> .env
           echo "NEXT_PUBLIC_HUMANODE_OAUTH_CALLBACK_URL=https://up.storacha.network/oauth/humanode/callback" >> .env
           echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" >> .env
-          echo "NEXT_PUBLIC_PRIVATE_SPACES_DOMAINS=dmail.ai,storacha.network,zkagi.ai,cyberlife.gg" >> .env
-          echo "NEXT_PUBLIC_PRIVATE_SPACES_FREE_TRIAL_DOMAINS=storacha.network,zkagi.ai,cyberlife.gg" >> .env
+          echo "NEXT_PUBLIC_PRIVATE_SPACES_DOMAINS=dmail.ai,storacha.network,zkagi.ai,cyberlife.gg,mawari.net,blondish.world" >> .env
+          echo "NEXT_PUBLIC_PRIVATE_SPACES_FREE_TRIAL_DOMAINS=storacha.network,zkagi.ai,cyberlife.gg,mawari.net,blondish.world" >> .env
           echo "NEXT_PUBLIC_UCAN_KMS_URL=https://ucan-kms-production.protocol-labs.workers.dev" >> .env
           echo "NEXT_PUBLIC_UCAN_KMS_DID=did:key:z6MksQJobJmBfPhjHWgFXVppqM6Fcjc1k7xu4z6xvusVrtKv" >> .env
           echo "NEXT_PUBLIC_ENABLE_TEST_IFRAME=true" >> .env

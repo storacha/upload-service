@@ -156,12 +156,9 @@ export const blobReplicateProvider = (context) => {
           )
         }
 
-        // do not include any nodes where we already have replications or
-        // nodes we have previously failed to replicate to
+        // do not include any nodes where we already have replications
         /** @type {Principal[]} */
-        const exclude = [...activeReplicas, ...failedReplicas].map((r) =>
-          DID.parse(r.provider)
-        )
+        const exclude = [...activeReplicas].map((r) => DID.parse(r.provider))
 
         const selectRes = await router.selectReplicationProviders(
           locClaim.issuer,
@@ -315,7 +312,12 @@ export const blobReplicateProvider = (context) => {
               return messageWriteRes
             }
 
-            const addRes = await replicaStore.add({
+            const firstTimeReplica =
+              failedReplicas.findIndex(
+                (r) => r.provider === candidate.did()
+              ) === -1
+            /** @type {Parameters<typeof replicaStore.add>[0]} */
+            const replicaData = {
               space,
               digest,
               provider: candidate.did(),
@@ -323,11 +325,13 @@ export const blobReplicateProvider = (context) => {
               cause:
                 /** @type {API.UCANLink<[API.BlobReplicaAllocate]>} */
                 (task.cid),
-            })
+            }
+            const addRes = firstTimeReplica
+              ? await replicaStore.add(replicaData)
+              : await replicaStore.retry(replicaData)
             if (addRes.error) {
               return addRes
             }
-
             // if there no receipt, then an execution error occurred
             if (!receipt) {
               return Server.error({

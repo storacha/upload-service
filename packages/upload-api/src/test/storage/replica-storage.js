@@ -39,6 +39,22 @@ export class ReplicaStorage {
     return ok({})
   }
 
+  /** @type {API.BlobAPI.ReplicaStorage['retry']} */
+  async retry(data) {
+    const exists = this.#get(data)
+    if (!exists) {
+      return error(
+        /** @type {API.BlobAPI.ReplicaNotFound} */ ({
+          name: 'ReplicaNotFound',
+          message: 'replica not found',
+        })
+      )
+    }
+    exists.status = data.status
+    exists.cause = data.cause
+    return ok({})
+  }
+
   /** @type {API.BlobAPI.ReplicaStorage['setStatus']} */
   async setStatus(key, status) {
     const replica = this.#get(key)

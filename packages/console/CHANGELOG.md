@@ -1,5 +1,32 @@
 # Changelog
 
+## [2.20.1](https://github.com/storacha/upload-service/compare/console-v2.20.0...console-v2.20.1) (2026-01-27)
+
+
+### Fixes
+
+* trigger console release for pr-641 ([9c04318](https://github.com/storacha/upload-service/commit/9c0431824403628df5fd6e1a5c36587ac62b51c4))
+
+## [2.20.0](https://github.com/storacha/upload-service/compare/console-v2.19.2...console-v2.20.0) (2026-01-23)
+
+
+### Features
+
+* add egress reporting to account/usage/get ([#611](https://github.com/storacha/upload-service/issues/611)) ([df39e6f](https://github.com/storacha/upload-service/commit/df39e6fe11be13ab3ae2ae1769807e5bc06f5bcb))
+
+
+### Fixes
+
+* add staging plans to plan definition list ([#640](https://github.com/storacha/upload-service/issues/640)) ([7774e51](https://github.com/storacha/upload-service/commit/7774e519f7c878f6e9450300662d0395491b28e8))
+
+## [2.19.2](https://github.com/storacha/upload-service/compare/console-v2.19.1...console-v2.19.2) (2025-12-16)
+
+
+### Fixes
+
+* handle space creation errors and prevent duplicate submissions ([#586](https://github.com/storacha/upload-service/issues/586)) ([b74bed8](https://github.com/storacha/upload-service/commit/b74bed80f4b4564d06a73ea908cbd9ea9ef7bb5d))
+* show all accounts in usage info UI ([#601](https://github.com/storacha/upload-service/issues/601)) ([7857cbd](https://github.com/storacha/upload-service/commit/7857cbd9abca49d11eaf413e345b9787fb95ea7d))
+
 ## [2.19.1](https://github.com/storacha/upload-service/compare/console-v2.19.0...console-v2.19.1) (2025-12-04)
 
 

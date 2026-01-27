@@ -50,6 +50,40 @@ export const test = {
     const { error } = await replicaStore.add(r1)
     assert.equal(error?.name, 'ReplicaExists')
   },
+  'should retry a replica': async (assert, { replicaStore }) => {
+    const r0 = await createReplica({ status: 'allocated' })
+    const addRes = await replicaStore.add(r0)
+    assert.equal(addRes.error, undefined)
+    const results0 = Result.unwrap(
+      await replicaStore.list({
+        space: r0.space,
+        digest: r0.digest,
+      })
+    )
+    assert.equal(results0.length, 1)
+    assert.equal(results0[0].status, 'allocated')
+    assert.equal(results0[0].cause.toString(), r0.cause.toString())
+
+    // same replica with different status/cause
+    const r1 = await createReplica({
+      space: r0.space,
+      digest: r0.digest,
+      provider: r0.provider,
+      status: 'transferred',
+    })
+    const retryRes = await replicaStore.retry(r1)
+    assert.equal(retryRes.error, undefined)
+
+    const results1 = Result.unwrap(
+      await replicaStore.list({
+        space: r0.space,
+        digest: r0.digest,
+      })
+    )
+    assert.equal(results1.length, 1)
+    assert.equal(results1[0].status, 'transferred')
+    assert.equal(results1[0].cause.toString(), r1.cause.toString())
+  },
   'should list replicas': async (assert, { replicaStore }) => {
     const r0 = await createReplica()
     // for the same space/blob

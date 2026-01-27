@@ -1,3 +1,29 @@
+## 2.8.4 (2025-12-19)
+
+### 🩹 Fixes
+
+- allow retry on failed replicas ([f2bddade](https://github.com/storacha/upload-service/commit/f2bddade))
+
+### ❤️ Thank You
+
+- hannahhoward
+
+## 2.8.3 (2025-12-18)
+
+### 🩹 Fixes
+
+- dont excldue failed replicas ([16b07ce1](https://github.com/storacha/upload-service/commit/16b07ce1))
+
+### ❤️ Thank You
+
+- hannahhoward
+
+## 2.8.2 (2025-12-16)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-api to 2.1.0
+
 ## 2.8.1 (2025-12-10)
 
 ### 🧱 Updated Dependencies

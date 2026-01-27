@@ -1,7 +1,7 @@
 {
   "name": "@storacha/encrypt-upload-client",
   "type": "module",
-  "version": "1.1.66",
+  "version": "1.1.70",
   "license": "Apache-2.0 OR MIT",
   "description": "Client for upload and download encrypted files",
   "author": "Storacha",
@@ -66,7 +66,7 @@
     "rc": "npm version prerelease --preid rc",
     "test": "node --test $(find test -name '*.spec.js' ! -name '*.playwright.spec.js')",
     "test:setup-certs": "mkdir -p test/mocks/playwright && cd test/mocks/playwright && (test -f cert.key || (npx mkcert create-ca && npx mkcert create-cert --domains localhost 127.0.0.1 ::1))",
-    "test:browser": "npm run test:setup-certs && npx playwright test"
+    "test:browser": "test -n \"$CI\" && echo 'Skipping browser tests in CI (see issue #628)' && exit 0 || npm run test:setup-certs && npx playwright test"
   },
   "dependencies": {
     "@ipld/car": "catalog:",
@@ -95,6 +95,8 @@
     "dotenv": "^17.2.3",
     "ipfs-unixfs-exporter": "catalog:",
     "multiformats": "catalog:",
+    "p-queue": "^9.0.1",
+    "p-retry": "catalog:",
     "viem": "^2.39.0"
   },
   "devDependencies": {

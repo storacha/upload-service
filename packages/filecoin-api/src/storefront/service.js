@@ -3,7 +3,6 @@ import * as Client from '@ucanto/client'
 import * as CAR from '@ucanto/transport/car'
 import * as StorefrontCaps from '@storacha/capabilities/filecoin/storefront'
 import * as AggregatorCaps from '@storacha/capabilities/filecoin/aggregator'
-import * as PDPCaps from '@storacha/capabilities/pdp'
 import { DealTracker } from '@storacha/filecoin-client'
 // eslint-disable-next-line no-unused-vars
 import * as API from '../types.js'
@@ -45,44 +44,18 @@ export const filecoinOffer = async ({ capability, invocation }, context) => {
   // Queue offer for filecoin submission
   const group = context.id.did()
   if (!hasRes.ok) {
-    /** @type {API.PDPInfoSuccess | undefined} */
-    let pdpInfoSuccess
+    /** @type {import('@ucanto/interface').DID | undefined} */
+    var pdpIssuer
     if (PDP) {
       const pdpAccept = toPDPAccept(PDP, invocation.export())
-      const cap = PDPCaps.info.create({
-        with: pdpAccept.issuer.did(),
-        nb: {
-          blob: content.multihash.bytes,
-        },
-      })
-
-      const configure = await context.router.configureInvocation(
-        pdpAccept.issuer,
-        cap,
-        {
-          expiration: Infinity,
-        }
-      )
-
-      if (configure.error) {
-        return configure
-      }
-
-      const receipt = await configure.ok.invocation.execute(
-        configure.ok.connection
-      )
-
-      // it's ok if pdp/info fails, we just won't have pdp info
-      if (receipt.out.ok) {
-        pdpInfoSuccess = receipt.out.ok
-      }
+      pdpIssuer = pdpAccept.issuer.did()
     }
     // Queue the piece for validation etc.
     const queueRes = await context.filecoinSubmitQueue.add({
       piece,
       content,
       group,
-      pdpInfoSuccess,
+      pdpIssuer,
     })
     if (queueRes.error) {
       return {

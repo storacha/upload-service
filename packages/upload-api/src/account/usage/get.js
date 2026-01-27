@@ -8,6 +8,31 @@ export const provide = (context) =>
   Provider.provide(AccountUsage.get, (input) => get(input, context))
 
 /**
+ * Wraps a promise that returns a Result with a timeout.
+ *
+ * @param {Promise<API.Result<any, any>>} promise
+ * @param {number} timeoutMs
+ * @param {string} timeoutMessage
+ * @returns {Promise<API.Result<any, any>>}
+ */
+const resultWithTimeout = async (promise, timeoutMs, timeoutMessage) => {
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs)
+  )
+  try {
+    return await Promise.race([promise, timeout])
+  } catch (error) {
+    return /** @type {any} */ (
+      Server.error(
+        new Server.Failure(
+          error instanceof Error ? error.message : String(error)
+        )
+      )
+    )
+  }
+}
+
+/**
  * @param {{capability: { with: API.AccountDID, nb: API.InferInvokedCapability<AccountUsage.get>['nb']}}} input
  * @param {API.AccountUsageServiceContext} context
  * @returns {Promise<API.Result<API.AccountUsageGetSuccess, API.AccountUsageGetFailure>>}
@@ -57,9 +82,13 @@ export const get = async ({ capability }, context) => {
   const period = { from, to }
 
   /** @type {API.AccountUsageGetSuccess} */
-  const bySpace = {
+  const result = {
     total: 0,
     spaces: {},
+    egress: {
+      total: 0,
+      spaces: {},
+    },
   }
   for (const [
     space,
@@ -68,21 +97,67 @@ export const get = async ({ capability }, context) => {
     Object.entries(subscriptionsBySpace)
   )) {
     /** @type {API.SpaceUsage} */
-    bySpace.spaces[space] = {
+    result.spaces[space] = {
+      total: 0,
+      providers: {},
+    }
+    /** @type {API.SpaceEgressUsage} */
+    result.egress.spaces[space] = {
       total: 0,
       providers: {},
     }
 
     // lexographically order providers by Provider DID
     for (const provider of providers.sort()) {
-      const res = await context.usageStorage.report(provider, space, period)
-      if (res.error) return res
-      bySpace.spaces[space].providers[provider] = res.ok
-      bySpace.spaces[space].total += res.ok.size.final
-      bySpace.total += res.ok.size.final
+      // Storage usage
+      const reportTimeout = 8000 // 8 seconds is a bit less than the lambda timeout
+      const [storageRes, egressRes] = await Promise.all([
+        resultWithTimeout(
+          context.usageStorage.report(provider, space, period),
+          reportTimeout,
+          'Storage usage report timed out'
+        ),
+        resultWithTimeout(
+          context.usageStorage.reportEgress(provider, space, period),
+          reportTimeout,
+          'Egress usage report timed out'
+        ),
+      ])
+
+      // Log any errors
+      if (storageRes.error) {
+        console.error(
+          `Storage usage report error for provider ${provider}, space ${space}:`,
+          storageRes.error
+        )
+      }
+
+      if (egressRes.error) {
+        console.error(
+          `Egress usage report error for provider ${provider}, space ${space}:`,
+          egressRes.error
+        )
+      }
+
+      // Only fail if both timed out
+      if (storageRes.error && egressRes.error) {
+        return storageRes
+      }
+
+      if (storageRes.ok) {
+        result.spaces[space].providers[provider] = storageRes.ok
+        result.spaces[space].total += storageRes.ok.size.final
+        result.total += storageRes.ok.size.final
+      }
+
+      if (egressRes.ok) {
+        result.egress.spaces[space].providers[provider] = egressRes.ok
+        result.egress.spaces[space].total += egressRes.ok.total
+        result.egress.total += egressRes.ok.total
+      }
     }
   }
-  return { ok: bySpace }
+  return { ok: result }
 }
 
 class NoSubscriptionError extends Server.Failure {

@@ -103,7 +103,7 @@ export const test = {
       })
       assert.ok(!hasStoredPiece.ok)
     },
-  'filecoin/offer inserts piece into submission queue with pdp info if passed':
+  'filecoin/offer inserts piece into submission queue with pdp issuer if passed':
     async (assert, context) => {
       const { agent } = await getServiceContext(context.id)
       const connection = connect({
@@ -113,16 +113,7 @@ export const test = {
 
       // Generate piece for test
       const [cargo] = await randomCargo(1, 128)
-
-      const pdpInfoSuccess = {
-        piece: cargo.link,
-        aggregates: [],
-      }
-      await context.storageProviders[0].addPDPInfo(
-        cargo.content.multihash,
-        pdpInfoSuccess
-      )
-
+      // Prepare pdp/info delegation
       const pdpOfferInv = await PDPCaps.accept
         .invoke({
           issuer: context.storageProviders[0].id,
@@ -195,8 +186,9 @@ export const test = {
           context.queuedMessages.get('filecoinSubmitQueue')?.[0]
         )
       assert.ok(submittedMessage)
-      assert.ok(
-        submittedMessage.pdpInfoSuccess?.piece.equals(pdpInfoSuccess.piece)
+      assert.equal(
+        submittedMessage.pdpIssuer,
+        context.storageProviders[0].id.did()
       )
 
       // Piece not yet stored

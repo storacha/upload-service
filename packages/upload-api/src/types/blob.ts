@@ -118,6 +118,14 @@ export interface ReplicaStorage {
     status: ReplicationStatus
     cause: UCANLink<[BlobReplicaAllocate]>
   }) => Promise<Result<Unit, ReplicaExists | Failure>>
+  /** retry a replication in the store, updating status + cause. */
+  retry: (data: {
+    space: SpaceDID
+    digest: MultihashDigest
+    provider: DID
+    status: ReplicationStatus
+    cause: UCANLink<[BlobReplicaAllocate]>
+  }) => Promise<Result<Unit, ReplicaNotFound | Failure>>
   /** Update the replication status. */
   setStatus: (
     key: {

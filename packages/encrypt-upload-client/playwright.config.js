@@ -7,13 +7,17 @@ export default defineConfig({
   expect: {
     timeout: 5000,
   },
+  // Use global setup/teardown for server lifecycle management
+  globalSetup: './test/mocks/playwright/global-setup.js',
+  globalTeardown: './test/mocks/playwright/global-teardown.js',
   fullyParallel: false, // Disable parallel execution for secure server tests
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1, // Use single worker to avoid port conflicts
-  reporter: 'html',
+  reporter: process.env.CI ? 'list' : 'html',
   use: {
-    trace: 'on-first-retry',
+    // Disable trace in CI to avoid keeping file handles open
+    trace: process.env.CI ? 'off' : 'on-first-retry',
     // Enable Web Crypto API by using secure context
     ignoreHTTPSErrors: true,
   },
