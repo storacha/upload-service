@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.20.1](https://github.com/storacha/upload-service/compare/console-v2.20.0...console-v2.20.1) (2026-01-27)
+
+
+### Fixes
+
+* trigger console release for pr-641 ([9c04318](https://github.com/storacha/upload-service/commit/9c0431824403628df5fd6e1a5c36587ac62b51c4))
+
 ## [2.20.0](https://github.com/storacha/upload-service/compare/console-v2.19.2...console-v2.20.0) (2026-01-23)
 
 
