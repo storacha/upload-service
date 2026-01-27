@@ -467,7 +467,7 @@ export interface Service extends StorefrontService {
     }
   }
   // legacy handlers
-  store: LegacyUploadAPI.Service['store']
+  store: Omit<LegacyUploadAPI.Service['store'], 'add'>
   ['web3.storage']: {
     blob: {
       allocate: ServiceMethod<
