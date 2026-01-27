@@ -83,9 +83,14 @@ const testUploadFile = async (
       gateway: conn,
     }
     const clientOptions = { serviceConf, receiptsEndpoint }
-    const alice = legacy.client
-      ? new LegacyClient(await LegacyAgentData.create(), clientOptions)
-      : new Client(await AgentData.create(), clientOptions)
+    /** @type {LegacyClient | Client} */
+    let alice
+    if (legacy.client) {
+      // @ts-expect-error store/add removed from Service type but legacy client expects it
+      alice = new LegacyClient(await LegacyAgentData.create(), clientOptions)
+    } else {
+      alice = new Client(await AgentData.create(), clientOptions)
+    }
 
     const space = await alice.createSpace('upload-test', {
       skipGatewayAuthorization: true,
