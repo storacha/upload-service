@@ -198,11 +198,12 @@ describe('getAccountPlan', async function () {
   const accountWithAPlan = 'did:mailto:example.com:i-have-a-plan'
   const accountWithoutAPlan = 'did:mailto:example.com:i-have-no-plan'
   const product = 'did:web:test.up.storacha.network'
-  /** @type {Record<Ucanto.DID, {product: Ucanto.DID, updatedAt: string}>} */
+  /** @type {Record<Ucanto.DID, {product: Ucanto.DID, updatedAt: string, limit: string}>} */
   const plans = {
     [accountWithAPlan]: {
       product,
       updatedAt: new Date().toISOString(),
+      limit: '0',
     },
   }
 
