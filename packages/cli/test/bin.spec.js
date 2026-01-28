@@ -1466,17 +1466,6 @@ export const testKey = {
   }),
 }
 
-export const testBridge = {
-  'storacha bridge generate-tokens': test(async (assert, context) => {
-    const spaceDID = await loginAndCreateSpace(context)
-    const res = await storacha
-      .args(['bridge', 'generate-tokens', spaceDID])
-      .join()
-    assert.match(res.output, /X-Auth-Secret header: u/)
-    assert.match(res.output, /Authorization header: u/)
-  }),
-}
-
 /**
  * @param {Test.Context} context
  * @param {object} options

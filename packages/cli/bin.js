@@ -8,7 +8,6 @@ import {
   Account,
   Space,
   Coupon,
-  Bridge,
   accessClaim,
   addSpace,
   listSpaces,
@@ -341,20 +340,6 @@ cli
     'Path of file to write the exported delegation data to.'
   )
   .action(Coupon.issue)
-
-cli
-  .command('bridge generate-tokens <did>')
-  .option('-c, --can', 'One or more abilities to delegate.')
-  .option(
-    '-e, --expiration',
-    'Unix timestamp (in seconds) when the delegation is no longer valid. Zero indicates no expiration.',
-    0
-  )
-  .option(
-    '-j, --json',
-    'If set, output JSON suitable to spread into the `headers` field of a `fetch` request.'
-  )
-  .action(Bridge.generateTokens)
 
 cli
   .command('delegation create <audience-did>')
