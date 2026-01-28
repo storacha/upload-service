@@ -1084,6 +1084,7 @@ export type PlanGet = InferInvokedCapability<typeof PlanCaps.get>
 export interface PlanGetSuccess {
   updatedAt: ISO8601Date
   product: DID
+  limit: string
 }
 
 export interface PlanNotFound extends Ucanto.Failure {
