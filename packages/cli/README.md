@@ -58,8 +58,6 @@ storacha up recipies.txt
   - [`storacha proof ls`](#storacha-proof-ls)
 - Key management
   - [`storacha key create`](#storacha-key-create)
-- UCAN-HTTP Bridge
-  - [`storacha bridge generate-tokens`](#storacha-bridge-generate-tokens)
 - Advanced usage
   - [`storacha can blob add`](#storacha-can-blob-add-path)
   - [`storacha can blob ls`](#storacha-can-blob-ls)
@@ -215,17 +213,6 @@ List proofs of delegated capabilities. Proofs are delegations with an audience m
 Print a new key pair. Does not change your current signing key
 
 - `--json` Export as dag-json
-
-### `storacha bridge generate-tokens`
-
-Generate tokens that can be used as the `X-Auth-Secret` and `Authorization` headers required to use the UCAN-HTTP bridge.
-
-See the [UCAN Bridge specification](https://github.com/storacha/specs/blob/main/w3-ucan-bridge.md) for more information
-on how these are expected to be used.
-
-- `--can` One or more abilities to delegate.
-- `--expiration` Unix timestamp (in seconds) when the delegation is no longer valid. Zero indicates no expiration.
-- `--json` If set, output JSON suitable to splat into the `headers` field of a `fetch` request.
 
 ### `storacha can blob add [path]`
 
