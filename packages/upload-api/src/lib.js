@@ -200,7 +200,10 @@ export const createService = (context) => ({
     usage: createAccountUsageService(context),
   },
   // legacy
-  store: createLegacyStoreService(context),
+  store: (() => {
+    const { add: _, ...rest } = createLegacyStoreService(context)
+    return rest
+  })(),
   'web3.storage': createLegacyW3sService(context),
 })
 
