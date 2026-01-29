@@ -391,7 +391,6 @@ export interface Service extends StorefrontService {
     revoke: ServiceMethod<UCANRevoke, UCANRevokeSuccess, UCANRevokeFailure>
   }
   admin: {
-    store: LegacyUploadAPI.Service['admin']['store']
     upload: {
       inspect: ServiceMethod<
         AdminUploadInspect,
