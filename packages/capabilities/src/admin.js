@@ -27,22 +27,3 @@ export const upload = {
   }),
 }
 
-export const store = {
-  /**
-   * Capability can be invoked by a provider to get information an upload shard CID.
-   */
-  inspect: capability({
-    can: 'admin/store/inspect',
-    with: ProviderDID,
-    nb: struct({
-      link: Link,
-    }),
-    derives: (child, parent) => {
-      return (
-        and(equalWith(child, parent)) ||
-        and(equal(child.nb.link, parent.nb.link, 'link')) ||
-        ok({})
-      )
-    },
-  }),
-}
