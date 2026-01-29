@@ -313,7 +313,7 @@ describe('Agent', function () {
     await bob.importSpaceFromDelegation(proof)
     await bob.setCurrentSpace(space.did())
 
-    const proofs = bob.proofs([{ can: 'store/add', with: space.did() }])
+    const proofs = bob.proofs([{ can: 'space/blob/add', with: space.did() }])
     assert(proofs.length)
   })
 
@@ -354,7 +354,7 @@ describe('Agent', function () {
         'RSA_DECRYPT_OAEP_3072_SHA256'
       )
     }
-    const proofs = bob.proofs([{ can: 'store/add', with: space.did() }])
+    const proofs = bob.proofs([{ can: 'space/blob/add', with: space.did() }])
     assert(proofs.length)
   })
 
@@ -373,13 +373,13 @@ describe('Agent', function () {
     const proof = await alice.delegate({
       audience: bob,
       audienceMeta: { name: 'videos', type: 'app' },
-      abilities: ['store/add'],
+      abilities: ['space/blob/add'],
     })
 
     await bob.importSpaceFromDelegation(proof)
     await bob.setCurrentSpace(space.did())
 
-    const proofs = bob.proofs([{ can: 'store/add', with: space.did() }])
+    const proofs = bob.proofs([{ can: 'space/blob/add', with: space.did() }])
     assert(proofs.length)
   })
 
@@ -550,15 +550,15 @@ describe('Agent', function () {
     await bob.importSpaceFromDelegation(delegation)
     await bob.setCurrentSpace(space.did())
 
-    // should not be able to store/remove - bob only has ability to space/info
+    // should not be able to space/blob/remove - bob only has ability to space/info
     await assert.rejects(
       () =>
         bob.delegate({
-          abilities: ['store/remove'],
+          abilities: ['space/blob/remove'],
           audience: fixtures.mallory,
           audienceMeta: { name: 'sss', type: 'app' },
         }),
-      /cannot delegate capability store\/remove/
+      /cannot delegate capability space\/blob\/remove/
     )
   })
 
@@ -606,7 +606,7 @@ describe('Agent', function () {
     await alice.setCurrentSpace(space.did())
 
     const delegation = await alice.delegate({
-      abilities: ['store/add'],
+      abilities: ['space/blob/add'],
       audience: bob.issuer,
       audienceMeta: {
         name: 'sss',
@@ -633,7 +633,7 @@ describe('Agent', function () {
     await bob.importSpaceFromDelegation(bobAuth)
     await bob.setCurrentSpace(bobSpace.did())
     const bobDelegation = await bob.delegate({
-      abilities: ['store/add'],
+      abilities: ['space/blob/add'],
       audience: mallory.issuer,
       audienceMeta: {
         name: 'sss',
