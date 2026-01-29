@@ -161,7 +161,7 @@ const setup = async (context) => {
     capabilities: [
       {
         with: mallory.did(),
-        can: 'store/add',
+        can: 'space/blob/add',
       },
     ],
   })

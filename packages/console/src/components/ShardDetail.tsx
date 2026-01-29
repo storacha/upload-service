@@ -2,9 +2,9 @@
 
 import { CAR } from '@ucanto/transport'
 import { H2 } from '@/components/Text'
-import { useW3, FilecoinInfoSuccess, CARLink, Space, Client } from '@storacha/ui-react'
+import { FilecoinInfoSuccess, CARLink, Space, Client } from '@storacha/ui-react'
 import useSWR from 'swr'
-import { Link, parse as parseLink } from 'multiformats/link'
+import { Link } from 'multiformats/link'
 import DefaultLoader from '@/components/Loader'
 import * as Claims from '@web3-storage/content-claims/client'
 import {
@@ -29,8 +29,8 @@ import { logAndCaptureError } from '@/sentry'
 type ProofStyle = 'mini' | 'midi' | 'maxi'
 
 export function ShardDetail({client, space, shard}: {client?: Client, space?: Space, shard: Link}) {
-  const storeKey = space ? `/space/${space.did()}/store/get?link=${shard}` : undefined
-  const store = useSWR<{ size: number } | undefined>(storeKey, {
+  const blobKey = space ? `/space/${space.did()}/blob/get?link=${shard}` : undefined
+  const blob = useSWR<{ size: number } | undefined>(blobKey, {
     fetcher: async () => {
       if (!client || !space || !isCARLink(shard)) return
 
@@ -38,27 +38,8 @@ export function ShardDetail({client, space, shard}: {client?: Client, space?: Sp
         await client.setCurrentSpace(space.did())
       }
 
-      // First try to get the shard using the Blob protocol, then fall back to
-      // the Store protocol.
-      try {
-        const result = await client.capability.blob.get(shard.multihash)
-        // Note that, oddly, this result is never `error`, but the call may
-        // throw.
-        return result.ok.blob
-      } catch (blobErr) {
-        // Rethrow other errors.
-        if (!isErrorCausedByBlobNotFound(blobErr)) throw blobErr
-
-        // If there was no Blob, try the Store protocol.
-        try {
-          return await client.capability.store.get(shard)
-        } catch (storeErr) {
-          throw new Error(
-            'failed to get shard with either Blob or Store protocols',
-            { cause: [blobErr, storeErr] }
-          )
-        }
-      }
+      const result = await client.capability.blob.get(shard.multihash)
+      return result.ok.blob
     },
     onError: logAndCaptureError,
   })
@@ -129,10 +110,10 @@ export function ShardDetail({client, space, shard}: {client?: Client, space?: Sp
       </div>
       <H2>Size</H2>
       <div className="pb-5 font-mono text-sm overflow-hidden no-wrap text-ellipsis">
-        {store.isLoading ? (
+        {blob.isLoading ? (
           <DefaultLoader className="w-6 h-6 inline-block" />
-        ) : store.data ? (
-          filesize(store.data.size)
+        ) : blob.data ? (
+          filesize(blob.data.size)
         ) : (
           'Unknown'
         )}
@@ -236,24 +217,6 @@ export function ShardDetail({client, space, shard}: {client?: Client, space?: Sp
 
 function isCARLink(link: Link): link is CARLink {
   return link.code === CAR.codec.code
-}
-
-/**
- * True if the error is caused by a BlobNotFound error. (This is a slightly
- * convoluted signal at the moment; the client could be clearer about signaling
- * this, but this is what it currently throws.)
- * @param exception The thrown value
- */
-function isErrorCausedByBlobNotFound(exception: unknown) {
-  return (
-    exception &&
-    typeof exception === 'object' &&
-    'cause' in exception &&
-    exception.cause &&
-    typeof exception.cause === 'object' &&
-    'name' in exception.cause &&
-    exception.cause.name === 'BlobNotFound'
-  )
 }
 
 function isPieceLink(link: any): link is PieceLink {
