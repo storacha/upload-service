@@ -2,7 +2,6 @@ import { Registry as BlobRegistry } from './blob-registry.js'
 import { UploadTable } from './upload-table.js'
 import { BlobsStorage } from './blobs-storage.js'
 import { CarStoreBucket } from './car-store-bucket.js'
-import { StoreTable } from './store-table.js'
 import { ProvisionsStorage } from './provisions-storage.js'
 import { DelegationsStorage } from './delegations-storage.js'
 import { RateLimitsStorage } from './rate-limits-storage.js'
@@ -21,7 +20,6 @@ import { ReplicaStorage } from './replica-storage.js'
  * @param {{fail(error:unknown): unknown}} [options.assert]
  */
 export async function getServiceStorageImplementations(options) {
-  const storeTable = new StoreTable()
   const registry = new BlobRegistry()
   const uploadTable = new UploadTable()
   const blobsStorage = await BlobsStorage.activate(options)
@@ -37,7 +35,6 @@ export async function getServiceStorageImplementations(options) {
   const replicaStore = new ReplicaStorage()
 
   return {
-    storeTable,
     registry,
     uploadTable,
     blobsStorage,

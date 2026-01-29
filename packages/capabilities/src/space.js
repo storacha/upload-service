@@ -9,15 +9,9 @@
  * @module
  */
 
-import * as Store from './store.js'
 import { capability, Schema, ok, fail } from '@ucanto/validator'
 import { SpaceDID, equalWith } from './utils.js'
-import * as Upload from './upload.js'
 export { top } from './top.js'
-
-// Need this to workaround TS bug
-// @see https://github.com/microsoft/TypeScript/issues/51548
-export { Store }
 
 export const space = capability({
   can: 'space/*',
@@ -26,23 +20,14 @@ export const space = capability({
 })
 
 /**
- * `space/info` can be derived from any of the `store/*`
- * capability that has matching `with`. This allows store service
- * to identify account based on any user request.
+ * `space/info` capability allows getting information about a space.
  */
-export const info = Store.add
-  .or(Store.list)
-  .or(Store.remove)
-  .or(Upload.add)
-  .or(Upload.list)
-  .or(Upload.remove)
-  .derive({
-    to: capability({
-      can: 'space/info',
-      with: SpaceDID,
-    }),
-    derives: equalWith,
-  })
+export const info = capability({
+  can: 'space/info',
+  with: SpaceDID,
+  nb: Schema.struct({}),
+  derives: equalWith,
+})
 
 export const allocate = capability({
   can: 'space/allocate',

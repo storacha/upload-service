@@ -28,7 +28,6 @@ import * as BlobReplicaCaps from './blob/replica/index.js'
 import * as SpaceBlobCaps from './space/blob.js'
 import * as W3sBlobCaps from './web3.storage/blob.js'
 import * as HTTPCaps from './http.js'
-import * as StoreCaps from './store.js'
 import * as UploadCaps from './upload.js'
 import * as AccessCaps from './access.js'
 import * as CustomerCaps from './customer.js'
@@ -864,93 +863,12 @@ export interface RecordNotFound extends Error {
   name: 'RecordNotFound'
 }
 
-// Store
-/** @deprecated */
-export type Store = InferInvokedCapability<typeof StoreCaps.store>
-/** @deprecated */
-export type StoreAdd = InferInvokedCapability<typeof StoreCaps.add>
-/** @deprecated */
-export type StoreGet = InferInvokedCapability<typeof StoreCaps.get>
-/** @deprecated */
-export type StoreRemove = InferInvokedCapability<typeof StoreCaps.remove>
-/** @deprecated */
-export type StoreList = InferInvokedCapability<typeof StoreCaps.list>
-
-/** @deprecated */
-export type StoreAddSuccess = StoreAddSuccessDone | StoreAddSuccessUpload
-
-/** @deprecated */
-export type StoreAddSuccessStatusUpload = 'upload'
-/** @deprecated */
-export type StoreAddSuccessStatusDone = 'done'
-
-/** @deprecated */
-export interface StoreAddSuccessResult {
-  /**
-   * Status of the item to store. A "done" status indicates that it is not
-   * necessary to upload the item. An "upload" status indicates that the item
-   * should be uploaded to the provided URL.
-   */
-  status: StoreAddSuccessStatusUpload | StoreAddSuccessStatusDone
-  /**
-   * Total bytes allocated in the space to accommodate this stored item.
-   * May be zero if the item is _already_ stored in _this_ space.
-   */
-  allocated: number
-  /** DID of the space this item will be stored in. */
-  with: DID
-  /** CID of the item. */
-  link: CARLink
-}
-
-/** @deprecated */
-export interface StoreAddSuccessDone extends StoreAddSuccessResult {
-  status: StoreAddSuccessStatusDone
-}
-
-/** @deprecated */
-export interface StoreAddSuccessUpload extends StoreAddSuccessResult {
-  status: StoreAddSuccessStatusUpload
-  url: ToString<URL>
-  headers: Record<string, string>
-}
-
-/** @deprecated */
-export interface StoreRemoveSuccess {
-  size: number
-}
-
-/** @deprecated */
-export interface StoreItemNotFound extends Ucanto.Failure {
-  name: 'StoreItemNotFound'
-}
-
-/** @deprecated */
-export type StoreRemoveFailure = StoreItemNotFound | Ucanto.Failure
-
-/** @deprecated */
-export type StoreGetSuccess = StoreListItem
-
-/** @deprecated */
-export type StoreGetFailure = StoreItemNotFound | Ucanto.Failure
-
-/** @deprecated */
-export interface StoreListSuccess extends ListResponse<StoreListItem> {}
-
 export interface ListResponse<R> {
   cursor?: string
   before?: string
   after?: string
   size: number
   results: R[]
-}
-
-/** @deprecated */
-export interface StoreListItem {
-  link: CARLink
-  size: number
-  origin?: UnknownLink
-  insertedAt: ISO8601Date
 }
 
 export interface UploadListItem {
@@ -1038,9 +956,6 @@ export type Admin = InferInvokedCapability<typeof AdminCaps.admin>
 export type AdminUploadInspect = InferInvokedCapability<
   typeof AdminCaps.upload.inspect
 >
-export type AdminStoreInspect = InferInvokedCapability<
-  typeof AdminCaps.store.inspect
->
 export interface SpaceAdmin {
   did: DID
   insertedAt: string
@@ -1049,10 +964,6 @@ export interface AdminUploadInspectSuccess {
   spaces: SpaceAdmin[]
 }
 export type AdminUploadInspectFailure = Ucanto.Failure
-export interface AdminStoreInspectSuccess {
-  spaces: SpaceAdmin[]
-}
-export type AdminStoreInspectFailure = Ucanto.Failure
 // Filecoin
 export type Filecoin = InferInvokedCapability<typeof StorefrontCaps.filecoin>
 export type FilecoinOffer = InferInvokedCapability<
@@ -1234,11 +1145,6 @@ export type ServiceAbilityArray = [
   UploadGet['can'],
   UploadRemove['can'],
   UploadList['can'],
-  Store['can'],
-  StoreAdd['can'],
-  StoreGet['can'],
-  StoreRemove['can'],
-  StoreList['can'],
   Access['can'],
   AccessAuthorize['can'],
   UCANAttest['can'],
@@ -1263,7 +1169,6 @@ export type ServiceAbilityArray = [
   DealInfo['can'],
   Admin['can'],
   AdminUploadInspect['can'],
-  AdminStoreInspect['can'],
   PlanGet['can'],
   PlanSet['can'],
   PlanCreateAdminSession['can'],
