@@ -1,3 +1,13 @@
+## 3.0.2 (2026-01-29)
+
+### 🩹 Fixes
+
+- Use test products in tests ([7ace1a78](https://github.com/storacha/upload-service/commit/7ace1a78))
+
+### ❤️ Thank You
+
+- Vicente Olmedo
+
 ## 3.0.1 (2026-01-29)
 
 ### 🧱 Updated Dependencies
