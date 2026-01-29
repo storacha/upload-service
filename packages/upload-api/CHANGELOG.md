@@ -1,3 +1,13 @@
+## 3.1.0 (2026-01-29)
+
+### 🚀 Features
+
+- Remove store/add from the service ([#649](https://github.com/storacha/upload-service/pull/649))
+
+### ❤️ Thank You
+
+- Travis Vachon
+
 ## 3.0.2 (2026-01-29)
 
 ### 🩹 Fixes
