@@ -349,7 +349,11 @@ export const testSpace = {
 
       context.plansStorage.get = async () => {
         return {
-          ok: { product: 'did:web:free.web3.storage', updatedAt: 'now' },
+          ok: {
+            product: 'did:web:free.web3.storage',
+            updatedAt: 'now',
+            limit: '0',
+          },
         }
       }
 

@@ -7,7 +7,7 @@ import * as Types from '../../types.js'
 export class PlansStorage {
   constructor() {
     /**
-     * @type {Record<Types.DID, {product: Types.DID, billingID: string, updatedAt: string}>}
+     * @type {Record<Types.DID, {product: Types.DID, billingID: string, updatedAt: string, limit: string}>}
      */
     this.plans = {}
   }
@@ -26,6 +26,7 @@ export class PlansStorage {
       product,
       billingID,
       updatedAt: new Date().toISOString(),
+      limit: '0', // Default to unlimited for tests
     }
     return { ok: {} }
   }
