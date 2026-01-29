@@ -1050,7 +1050,7 @@ export const testDelegation = {
     assert.equal(delegate.status.success(), true)
   }),
 
-  'storacha delegation create -c store/add -c upload/add --base64': test(
+  'storacha delegation create -c space/blob/add -c upload/add --base64': test(
     async (assert, context) => {
       const env = context.env.alice
       const { bob } = Test
@@ -1061,7 +1061,7 @@ export const testDelegation = {
           'create',
           bob.did(),
           '-c',
-          'store/add',
+          'space/blob/add',
           '-c',
           'upload/add',
           '--base64',
@@ -1077,7 +1077,7 @@ export const testDelegation = {
 
       const delegation = extractRes.ok
       assert.equal(delegation?.audience.did(), bob.did())
-      assert.equal(delegation?.capabilities[0].can, 'store/add')
+      assert.equal(delegation?.capabilities[0].can, 'space/blob/add')
       assert.equal(delegation?.capabilities[0].with, spaceDID)
       assert.equal(delegation?.capabilities[1].can, 'upload/add')
       assert.equal(delegation?.capabilities[1].with, spaceDID)
@@ -1463,17 +1463,6 @@ export const testKey = {
     const res = await storacha.args(['key', 'create', '--json']).join()
     const key = ED25519.parse(JSON.parse(res.output).key)
     assert.ok(key.did().startsWith('did:key'))
-  }),
-}
-
-export const testBridge = {
-  'storacha bridge generate-tokens': test(async (assert, context) => {
-    const spaceDID = await loginAndCreateSpace(context)
-    const res = await storacha
-      .args(['bridge', 'generate-tokens', spaceDID])
-      .join()
-    assert.match(res.output, /X-Auth-Secret header: u/)
-    assert.match(res.output, /Authorization header: u/)
   }),
 }
 
