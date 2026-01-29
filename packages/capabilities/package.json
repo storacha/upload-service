@@ -1,6 +1,6 @@
 {
   "name": "@storacha/capabilities",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "UCAN Capabilities provided by storacha.network",
   "publishConfig": {
     "access": "public"
