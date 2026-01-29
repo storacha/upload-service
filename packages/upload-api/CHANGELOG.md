@@ -1,3 +1,13 @@
+## 3.0.1 (2026-01-29)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/access to 1.6.6
+- Updated @storacha/capabilities to 2.1.0
+- Updated @storacha/filecoin-api to 2.1.2
+- Updated @storacha/blob-index to 1.2.6
+- Updated @storacha/router to 1.1.3
+
 ## 2.8.4 (2025-12-19)
 
 ### 🩹 Fixes
