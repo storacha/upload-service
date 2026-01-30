@@ -1139,7 +1139,11 @@ export interface PlanNotFound extends Ucanto.Failure {
   name: 'PlanNotFound'
 }
 
-export type PlanGetFailure = PlanNotFound | UnexpectedError
+export interface ReservedCapacityNotSet extends Ucanto.Failure {
+    name: 'ReservedCapacityNotSet';
+}
+
+export type PlanGetFailure = PlanNotFound | ReservedCapacityNotSet | UnexpectedError
 
 export type PlanSet = InferInvokedCapability<typeof PlanCaps.set>
 
