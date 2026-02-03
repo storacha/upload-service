@@ -21,8 +21,6 @@ import { createService as createPlanService } from './plan.js'
 import { createService as createUsageService } from './usage.js'
 import { createService as createLegacyW3sService } from './web3.storage.js'
 import { createService as createFilecoinService } from '@storacha/filecoin-api/storefront/service'
-import { createService as createLegacyAdminService } from '@web3-storage/upload-api/admin'
-import { createService as createLegacyStoreService } from '@web3-storage/upload-api/store'
 import { createService as createAccountUsageService } from './account/usage.js'
 import * as AgentMessage from './utils/agent-message.js'
 
@@ -182,12 +180,7 @@ export const createService = (context) => ({
   customer: createCustomerService(context),
   provider: createProviderService(context),
   'rate-limit': createRateLimitService(context),
-  admin: {
-    ...createAdminService(context),
-    // @ts-expect-error `uploadTable` items now have a `cause` field. This does
-    // not matter since `admin/store/inspect` handler does not use this table.
-    store: createLegacyAdminService(context).store,
-  },
+  admin: createAdminService(context),
   space: createSpaceService(context),
   subscription: createSubscriptionService(context),
   upload: createUploadService(context),
@@ -200,10 +193,6 @@ export const createService = (context) => ({
     usage: createAccountUsageService(context),
   },
   // legacy
-  store: (() => {
-    const { add: _, ...rest } = createLegacyStoreService(context)
-    return rest
-  })(),
   'web3.storage': createLegacyW3sService(context),
 })
 
