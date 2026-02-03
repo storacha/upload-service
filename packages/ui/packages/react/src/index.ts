@@ -3,3 +3,5 @@ export * from './providers/Provider.js'
 export * from './Authenticator.js'
 export * from './Uploader.js'
 export * from './hooks.js'
+
+export * from './components/index.js'
