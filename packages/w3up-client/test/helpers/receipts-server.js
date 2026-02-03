@@ -19,65 +19,83 @@ const fixtureContent = fs.readFileSync(
 )
 
 const server = createServer(async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', '*')
-  res.setHeader('Access-Control-Allow-Headers', '*')
+  try {
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Methods', '*')
+    res.setHeader('Access-Control-Allow-Headers', '*')
 
-  const parts = new URL(req.url ?? '', 'http://localhost').pathname.split('/')
-  let task, content
+    const parts = new URL(req.url ?? '', 'http://localhost').pathname.split('/')
+    let task, content
 
-  // If request URL is structure like: `/content/:digest/task/:cid`
-  // ...then we can issue a location claim for the passed digest.
-  if (parts[1] === 'content') {
-    task = parseLink(parts[4])
-    content = { digest: Digest.decode(base58btc.decode(parts[2])).bytes }
-  } else {
-    task = parseLink(parts[1])
-    content = (await randomCAR(128)).cid
-  }
+    // If request URL is structure like: `/content/:digest/task/:cid`
+    // ...then we can issue a location claim for the passed digest.
+    if (parts[1] === 'content') {
+      task = parseLink(parts[4])
+      content = { digest: Digest.decode(base58btc.decode(parts[2])).bytes }
+    } else {
+      task = parseLink(parts[1])
+      content = (await randomCAR(128)).cid
+    }
 
-  if (
-    task.toString() ===
-    'bafyreibo6nqtvp67daj7dkmeb5c2n6bg5bunxdmxq3lghtp3pmjtzpzfma'
-  ) {
-    res.writeHead(200, {
-      'Content-disposition': 'attachment; filename=' + fixtureName,
-    })
-    return res.end(fixtureContent)
-  }
+    if (
+      task.toString() ===
+      'bafyreibo6nqtvp67daj7dkmeb5c2n6bg5bunxdmxq3lghtp3pmjtzpzfma'
+    ) {
+      res.writeHead(200, {
+        'Content-disposition': 'attachment; filename=' + fixtureName,
+      })
+      return res.end(fixtureContent)
+    }
 
-  const issuer = await Signer.generate()
-  const locationClaim = await Assert.location.delegate({
-    issuer,
-    audience: issuer,
-    with: issuer.toDIDKey(),
-    nb: {
-      content,
-      location: ['http://localhost'],
-    },
-    expiration: Infinity,
-  })
-
-  const receipt = await Receipt.issue({
-    issuer,
-    fx: {
-      fork: [locationClaim],
-    },
-    ran: task,
-    result: {
-      ok: {
-        site: locationClaim.link(),
+    const issuer = await Signer.generate()
+    const locationClaim = await Assert.location.delegate({
+      issuer,
+      audience: issuer,
+      with: issuer.toDIDKey(),
+      nb: {
+        content,
+        location: ['http://localhost'],
       },
-    },
-  })
+      expiration: Infinity,
+    })
 
-  const message = await Message.build({
-    receipts: [receipt],
-  })
-  const request = CAR.request.encode(message)
-  res.writeHead(200)
-  res.end(request.body)
+    const receipt = await Receipt.issue({
+      issuer,
+      fx: {
+        fork: [locationClaim],
+      },
+      ran: task,
+      result: {
+        ok: {
+          site: locationClaim.link(),
+        },
+      },
+    })
+
+    const message = await Message.build({
+      receipts: [receipt],
+    })
+    const request = CAR.request.encode(message)
+    res.writeHead(200)
+    res.end(request.body)
+  } catch (error) {
+    process.stderr.write(`Error handling request: ${error}\n`)
+    if (!res.headersSent) {
+      res.writeHead(500)
+    }
+    res.end()
+  }
 })
 
-server.listen(port, () => console.log(`Listening on :${port}`))
+server
+  .listen(port, () => {
+    process.stdout.write(`Listening on :${port}\n`)
+  })
+  .on('error', (err) => {
+    process.stderr.write(
+      `Failed to start server on port ${port}: ${err.message}\n`
+    )
+    process.exit(1)
+  })
+
 process.on('SIGTERM', () => process.exit(0))

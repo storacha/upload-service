@@ -109,49 +109,56 @@ export function createMockKeyManagerServer(
   })
 
   const httpServer = createServer(async (req, res) => {
-    res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Allow-Methods', '*')
-    res.setHeader('Access-Control-Allow-Headers', '*')
-    if (req.method === 'OPTIONS') return res.end()
+    try {
+      res.setHeader('Access-Control-Allow-Origin', '*')
+      res.setHeader('Access-Control-Allow-Methods', '*')
+      res.setHeader('Access-Control-Allow-Headers', '*')
+      if (req.method === 'OPTIONS') return res.end()
 
-    if (req.method === 'POST') {
-      const bodyBuffer = Buffer.concat(await collect(req))
+      if (req.method === 'POST') {
+        const bodyBuffer = Buffer.concat(await collect(req))
 
-      const reqHeaders = /** @type {Record<string, string>} */ (
-        Object.fromEntries(Object.entries(req.headers))
-      )
+        const reqHeaders = /** @type {Record<string, string>} */ (
+          Object.fromEntries(Object.entries(req.headers))
+        )
 
-      const { headers, body, status } = await ucantoServer.request({
-        body: new Uint8Array(
-          bodyBuffer.buffer,
-          bodyBuffer.byteOffset,
-          bodyBuffer.byteLength
-        ),
-        headers: reqHeaders,
-      })
+        const { headers, body, status } = await ucantoServer.request({
+          body: new Uint8Array(
+            bodyBuffer.buffer,
+            bodyBuffer.byteOffset,
+            bodyBuffer.byteLength
+          ),
+          headers: reqHeaders,
+        })
 
-      for (const [key, value] of Object.entries(headers)) {
-        res.setHeader(key, value)
+        for (const [key, value] of Object.entries(headers)) {
+          res.setHeader(key, value)
+        }
+        res.writeHead(status ?? 200)
+        res.end(body)
+      } else {
+        res.end()
       }
-      res.writeHead(status ?? 200)
-      res.end(body)
-    } else {
+    } catch (error) {
+      process.stderr.write(`Error handling request: ${error}\n`)
+      if (!res.headersSent) {
+        res.writeHead(500)
+      }
       res.end()
     }
   })
 
   return new Promise((resolve, reject) => {
-    httpServer.listen(port, (/** @type {Error | undefined} */ err) => {
-      if (err) {
-        reject(err)
-      } else {
-        const protocol = useHttps ? 'https' : 'http'
-        resolve({
-          server: httpServer,
-          url: `${protocol}://localhost:${port}`,
-          close: () => new Promise((resolve) => httpServer.close(resolve)),
-        })
-      }
+    httpServer.on('error', (err) => {
+      reject(err)
+    })
+    httpServer.listen(port, () => {
+      const protocol = useHttps ? 'https' : 'http'
+      resolve({
+        server: httpServer,
+        url: `${protocol}://localhost:${port}`,
+        close: () => new Promise((resolve) => httpServer.close(resolve)),
+      })
     })
   })
 }
