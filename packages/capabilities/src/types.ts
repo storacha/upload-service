@@ -1146,7 +1146,7 @@ export interface MissingCapacity extends Ucanto.Failure {
 
 export type PlanGetFailure =
   | PlanNotFound
-  | ReservedCapacityNotSet
+  | MissingCapacity
   | UnexpectedError
 
 export type PlanSet = InferInvokedCapability<typeof PlanCaps.set>
