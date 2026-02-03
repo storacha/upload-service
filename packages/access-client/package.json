@@ -1,6 +1,6 @@
 {
   "name": "@storacha/access",
-  "version": "1.6.6",
+  "version": "1.6.7",
   "description": "access client",
   "publishConfig": {
     "access": "public"
