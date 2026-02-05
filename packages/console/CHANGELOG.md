@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.20.2](https://github.com/storacha/upload-service/compare/console-v2.20.1...console-v2.20.2) (2026-02-05)
+
+
+### Fixes
+
+* Remove extra line from README.md ([3f17df8](https://github.com/storacha/upload-service/commit/3f17df83b73ea53391e7ef303069434fad803b27))
+
 ## [2.20.1](https://github.com/storacha/upload-service/compare/console-v2.20.0...console-v2.20.1) (2026-01-27)
 
 
