@@ -146,7 +146,9 @@ export const getCarFileFromPublicGateway = async (gatewayURL, cid) => {
   const response = await fetch(url)
   if (!response.ok) {
     throw new Error(
-      `Failed to fetch: ${response.status} ${response.statusText}`
+      `Failed to fetch from ${url.toString()}: ${response.status} ${
+        response.statusText
+      }`
     )
   }
 
@@ -188,12 +190,21 @@ const getEncryptedDataFromCar = async (car, encryptedDataCID) => {
   }
 
   // Step 2: Use the index to extract the encrypted data block bytes as needed
-  const { blockOffset, blockLength } = blockIndex.get(encryptedDataCID)
-  const blockBytes = car.subarray(blockOffset, blockOffset + blockLength)
+  const blockInfo = blockIndex.get(encryptedDataCID)
+  if (!blockInfo) {
+    throw new Error(
+      `Encrypted data CID ${encryptedDataCID} not found in CAR file. Available CIDs: ${Array.from(
+        blockIndex.keys()
+      ).join(', ')}`
+    )
+  }
 
-  // Step 3: Put the block in a blockstore for exporter compatibility
+  // Step 3: Put ALL blocks from CAR into blockstore (not just root)
   const blockstore = new MemoryBlockstore()
-  await blockstore.put(CID.parse(encryptedDataCID), blockBytes)
+  for (const [cidStr, { blockOffset, blockLength }] of blockIndex.entries()) {
+    const bytes = car.subarray(blockOffset, blockOffset + blockLength)
+    await blockstore.put(CID.parse(cidStr), bytes)
+  }
 
   // Step 4: Get the encrypted data from the CAR file
   const encryptedDataEntry = await exporter(
