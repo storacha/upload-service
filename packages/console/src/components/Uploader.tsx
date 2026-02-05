@@ -17,6 +17,7 @@ import { useEffect, useState, type JSX } from 'react';
 import { RadioGroup } from '@headlessui/react'
 import { H2 } from './Text'
 import { logAndCaptureError } from '@/sentry'
+import Image from 'next/image'
 
 function StatusLoader ({ progressStatus }: { progressStatus: ProgressStatus }) {
   const { total, loaded, lengthComputable } = progressStatus
@@ -60,8 +61,22 @@ export const Uploading = ({
         shard {cid.toString()} ({humanFileSize(size)}) uploaded
       </p>
     ))}
+    <CancelUploadButton />
   </div>
 )
+
+function CancelUploadButton(): JSX.Element | null {
+  const [{ canCancel }, { cancelUpload }] = useUploader()
+  if (!canCancel) return null
+  return (
+    <button
+      className='mt-3 inline-block bg-white text-hot-red border border-hot-red hover:bg-hot-red hover:text-white font-epilogue uppercase text-sm px-4 py-1.5 rounded-full whitespace-nowrap'
+      onClick={(e) => { e.preventDefault(); cancelUpload() }}
+    >
+      Cancel Upload
+    </button>
+  )
+}
 
 export const Errored = ({ error }: { error: any }): JSX.Element => {
   useEffect(() => {
@@ -203,7 +218,7 @@ const UploaderForm = ({ space }: UploaderFormProps): JSX.Element => {
           </>
         )}
         <div className={`relative h-80 mb-5 p-8 rounded-md bg-white/5 hover:border-hot-red border-2 border-dashed border-black flex flex-col justify-center items-center text-center`}>
-          {hasFile ? '' : <span className='mb-5 text-hot-red'><img src='/icon-tray.svg' /></span>}
+          {hasFile ? '' : <span className='mb-5 text-hot-red'><Image src='/icon-tray.svg' alt='Tray' width={100} height={100} /></span>}
           <label className={`${hasFile ? 'hidden' : 'block h-px w-px overflow-hidden absolute whitespace-nowrap'}`}>File:</label>
           <W3Uploader.Input className={`${hasFile ? 'hidden' : 'block absolute inset-0 cursor-pointer w-full opacity-0'}`} allowDirectory={allowDirectory} />
           <UploaderContents />
