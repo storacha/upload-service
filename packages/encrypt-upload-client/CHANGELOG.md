@@ -1,3 +1,13 @@
+## 1.1.75 (2026-02-05)
+
+### 🩹 Fixes
+
+- fix(encrypt-upload-client): load all CAR blocks into blockstore (#659 ([#660](https://github.com/storacha/upload-service/pull/660))
+
+### ❤️ Thank You
+
+- Felipe Forbeck @fforbeck
+
 ## 1.1.74 (2026-02-03)
 
 ### 🧱 Updated Dependencies
