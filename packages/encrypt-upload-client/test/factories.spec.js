@@ -5,7 +5,7 @@ import assert from 'node:assert'
 import {
   createGenericKMSAdapter,
   createGenericLitAdapter,
-} from '../src/crypto/factories.node.js'
+} from '../src/crypto/factories.js'
 import { GenericAesCtrStreamingCrypto } from '../src/crypto/symmetric/generic-aes-ctr-streaming-crypto.js'
 import { LitCryptoAdapter } from '../src/crypto/adapters/lit-crypto-adapter.js'
 import { KMSCryptoAdapter } from '../src/crypto/adapters/kms-crypto-adapter.js'

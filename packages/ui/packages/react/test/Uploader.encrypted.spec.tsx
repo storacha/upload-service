@@ -12,20 +12,20 @@ import {
 } from '../src/providers/Provider.js'
 import { Uploader, UploaderContext } from '../src/Uploader.js'
 
-const SpaceDID = "did:key:z6Mkit3tepJFA1Em9S1BTLVNdJ6rmXTrBaTTbt55dxyQvKZF"
-const AccountDID = "did:mailto:storacha.network:test"
+const SpaceDID = 'did:key:z6Mkit3tepJFA1Em9S1BTLVNdJ6rmXTrBaTTbt55dxyQvKZF'
+const AccountDID = 'did:mailto:storacha.network:test'
 
 // Mock the encrypt-upload-client module
 vi.mock('@storacha/encrypt-upload-client', () => ({
   create: vi.fn(),
 }))
 
-vi.mock('@storacha/encrypt-upload-client/factories.browser', () => ({
+vi.mock('@storacha/encrypt-upload-client/factories', () => ({
   createGenericKMSAdapter: vi.fn(),
 }))
 
 vi.mock('@ucanto/core', async (importOriginal) => {
-  const actual = await importOriginal() as any
+  const actual = (await importOriginal()) as any
   return {
     ...actual,
     delegate: vi.fn(),
@@ -46,31 +46,37 @@ test('encrypted upload with private space', async () => {
   const cid = Link.parse(
     'bafybeibrqc2se2p3k4kfdwg7deigdggamlumemkiggrnqw3edrjosqhvnm'
   )
-  
+
   const mockEncryptedClient = {
     encryptAndUploadFile: vi.fn().mockResolvedValue(cid),
   } as any
-  
+
   const mockCryptoAdapter = {
     encrypt: vi.fn(),
     decrypt: vi.fn(),
   } as any
 
   // Mock the encrypted client creation
-  const { create: createEncryptedClient } = await import('@storacha/encrypt-upload-client')
+  const { create: createEncryptedClient } = await import(
+    '@storacha/encrypt-upload-client'
+  )
   vi.mocked(createEncryptedClient).mockResolvedValue(mockEncryptedClient)
 
   // Set up delegate mock to return proper delegation
   const { delegate } = await import('@ucanto/core')
   vi.mocked(delegate).mockResolvedValue({
     cid: { toString: () => 'bafyreiabc123' },
-    issuer: { did: () => 'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK' },
+    issuer: {
+      did: () => 'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK',
+    },
     audience: { did: () => 'did:web:kms.storacha.network' },
     capabilities: [{ can: 'plan/get', with: AccountDID }],
     expiration: Math.floor(Date.now() / 1000) + 3600,
   } as any)
 
-  const { createGenericKMSAdapter } = await import('@storacha/encrypt-upload-client/factories.browser')
+  const { createGenericKMSAdapter } = await import(
+    '@storacha/encrypt-upload-client/factories'
+  )
   vi.mocked(createGenericKMSAdapter).mockReturnValue(mockCryptoAdapter)
 
   const space = {
@@ -92,7 +98,9 @@ test('encrypted upload with private space', async () => {
   const client = {
     currentSpace: vi.fn().mockReturnValue(space),
     agent: {
-      issuer: { did: () => 'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK' },
+      issuer: {
+        did: () => 'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK',
+      },
       proofs: vi.fn().mockReturnValue([]),
     },
     proofs: vi.fn().mockReturnValue([]),
@@ -131,7 +139,9 @@ test('encrypted upload with private space', async () => {
     </Context.Provider>
   )
 
-  const file = new File(['encrypted content'], 'secret.txt', { type: 'text/plain' })
+  const file = new File(['encrypted content'], 'secret.txt', {
+    type: 'text/plain',
+  })
 
   const fileInput = screen.getByTestId('file-upload')
   await user.upload(fileInput, file)
@@ -140,7 +150,7 @@ test('encrypted upload with private space', async () => {
   await user.click(submitButton)
 
   // Wait for async operations to complete
-  await new Promise(resolve => setTimeout(resolve, 100))
+  await new Promise((resolve) => setTimeout(resolve, 100))
 
   // Verify encrypted client was created
   expect(createEncryptedClient).toHaveBeenCalledWith({
@@ -169,10 +179,10 @@ test('encrypted upload with private space', async () => {
           issuer: expect.objectContaining({ did: expect.any(Function) }),
           audience: expect.objectContaining({ did: expect.any(Function) }),
           capabilities: expect.arrayContaining([
-            expect.objectContaining({ can: 'plan/get', with: AccountDID })
+            expect.objectContaining({ can: 'plan/get', with: AccountDID }),
           ]),
           expiration: expect.any(Number),
-        })
+        }),
       ]),
       fileMetadata: {
         name: 'secret.txt',
@@ -198,30 +208,36 @@ test('encrypted upload with custom KMS config', async () => {
   const cid = Link.parse(
     'bafybeibrqc2se2p3k4kfdwg7deigdggamlumemkiggrnqw3edrjosqhvnm'
   )
-  
+
   const mockEncryptedClient = {
     encryptAndUploadFile: vi.fn().mockResolvedValue(cid),
   } as any
-  
+
   const mockCryptoAdapter = {
     encrypt: vi.fn(),
     decrypt: vi.fn(),
   } as any
 
-  const { create: createEncryptedClient } = await import('@storacha/encrypt-upload-client')
+  const { create: createEncryptedClient } = await import(
+    '@storacha/encrypt-upload-client'
+  )
   vi.mocked(createEncryptedClient).mockResolvedValue(mockEncryptedClient)
 
   // Set up delegate mock to return proper delegation
   const { delegate } = await import('@ucanto/core')
   vi.mocked(delegate).mockResolvedValue({
     cid: { toString: () => 'bafyreiabc123' },
-    issuer: { did: () => 'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK' },
+    issuer: {
+      did: () => 'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK',
+    },
     audience: { did: () => 'did:web:kms.storacha.network' },
     capabilities: [{ can: 'plan/get', with: AccountDID }],
     expiration: Math.floor(Date.now() / 1000) + 3600,
   } as any)
 
-  const { createGenericKMSAdapter } = await import('@storacha/encrypt-upload-client/factories.browser')
+  const { createGenericKMSAdapter } = await import(
+    '@storacha/encrypt-upload-client/factories'
+  )
   vi.mocked(createGenericKMSAdapter).mockReturnValue(mockCryptoAdapter)
 
   const space = {
@@ -235,7 +251,7 @@ test('encrypted upload with custom KMS config', async () => {
       },
     }),
   }
-  
+
   const account = {
     did: vi.fn().mockReturnValue(AccountDID),
   } as any
@@ -243,7 +259,9 @@ test('encrypted upload with custom KMS config', async () => {
   const client = {
     currentSpace: vi.fn().mockReturnValue(space),
     agent: {
-      issuer: { did: () => 'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK' },
+      issuer: {
+        did: () => 'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK',
+      },
       proofs: vi.fn().mockReturnValue([]),
     },
     proofs: vi.fn().mockReturnValue([]),
@@ -283,7 +301,9 @@ test('encrypted upload with custom KMS config', async () => {
     </Context.Provider>
   )
 
-  const file = new File(['encrypted content'], 'secret.txt', { type: 'text/plain' })
+  const file = new File(['encrypted content'], 'secret.txt', {
+    type: 'text/plain',
+  })
 
   const fileInput = screen.getByTestId('file-upload')
   await user.upload(fileInput, file)
@@ -292,7 +312,7 @@ test('encrypted upload with custom KMS config', async () => {
   await user.click(submitButton)
 
   // Wait for async operations to complete
-  await new Promise(resolve => setTimeout(resolve, 100))
+  await new Promise((resolve) => setTimeout(resolve, 100))
 
   // Verify custom KMS config was used
   expect(createGenericKMSAdapter).toHaveBeenCalledWith(
@@ -317,10 +337,10 @@ test('encrypted upload with custom KMS config', async () => {
           issuer: expect.objectContaining({ did: expect.any(Function) }),
           audience: expect.objectContaining({ did: expect.any(Function) }),
           capabilities: expect.arrayContaining([
-            expect.objectContaining({ can: 'plan/get', with: AccountDID })
+            expect.objectContaining({ can: 'plan/get', with: AccountDID }),
           ]),
           expiration: expect.any(Number),
-        })
+        }),
       ]),
       fileMetadata: {
         name: 'secret.txt',
@@ -338,13 +358,17 @@ test('encrypted upload with custom KMS config', async () => {
 test('encrypted upload fails with multiple files', async () => {
   // We don't need to mock the encryption functions because the error should happen before they're called
   const space = {
-    did: vi.fn().mockReturnValue('did:key:z6Mkit3tepJFA1Em9S1BTLVNdJ6rmXTrBaTTbt55dxyQvKZF'),
+    did: vi
+      .fn()
+      .mockReturnValue(
+        'did:key:z6Mkit3tepJFA1Em9S1BTLVNdJ6rmXTrBaTTbt55dxyQvKZF'
+      ),
     meta: vi.fn().mockReturnValue({
       access: {
         type: 'private',
         encryption: {
           provider: 'google-kms',
-          algorithm: 'aes-256'
+          algorithm: 'aes-256',
         },
       },
     }),
@@ -353,7 +377,9 @@ test('encrypted upload fails with multiple files', async () => {
   const client = {
     currentSpace: vi.fn().mockReturnValue(space),
     agent: {
-      issuer: { did: () => 'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK' },
+      issuer: {
+        did: () => 'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK',
+      },
     },
   }
 
@@ -398,14 +424,18 @@ test('encrypted upload fails with multiple files', async () => {
   await user.click(submitButton)
 
   // Wait for the error to propagate
-  await new Promise(resolve => setTimeout(resolve, 1000))
+  await new Promise((resolve) => setTimeout(resolve, 1000))
 
   // Verify the upload failed with the correct error
   expect(uploaderState.status).toBe('failed')
-  expect(uploaderState.error?.message).toBe('Encrypted uploads currently only support single files')
+  expect(uploaderState.error?.message).toBe(
+    'Encrypted uploads currently only support single files'
+  )
 
   // Verify NO encryption functions were called since the error happens before them
-  const { create: createEncryptedClient } = await import('@storacha/encrypt-upload-client')
+  const { create: createEncryptedClient } = await import(
+    '@storacha/encrypt-upload-client'
+  )
   expect(createEncryptedClient).not.toHaveBeenCalled()
 })
 
@@ -427,7 +457,9 @@ test('encrypted upload falls back to regular upload for public space', async () 
     currentSpace: vi.fn().mockReturnValue(space),
     uploadFile: vi.fn().mockResolvedValue(cid), // Mock regular upload
     agent: {
-      issuer: { did: () => 'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK' },
+      issuer: {
+        did: () => 'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK',
+      },
     },
   }
 
@@ -443,7 +475,10 @@ test('encrypted upload falls back to regular upload for public space', async () 
   const handleComplete = vi.fn()
   render(
     <Context.Provider value={contextValue}>
-      <Uploader onUploadComplete={handleComplete} defaultEncryptionStrategy="kms">
+      <Uploader
+        onUploadComplete={handleComplete}
+        defaultEncryptionStrategy="kms"
+      >
         <Uploader.Form>
           <Uploader.Input data-testid="file-upload" />
           <input type="submit" value="Upload" />
@@ -497,7 +532,9 @@ test('encrypted upload fails with unsupported provider', async () => {
   const client = {
     currentSpace: vi.fn().mockReturnValue(space),
     agent: {
-      issuer: { did: () => 'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK' },
+      issuer: {
+        did: () => 'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK',
+      },
       proofs: vi.fn().mockReturnValue([]),
     },
     proofs: vi.fn().mockReturnValue([]),
@@ -542,14 +579,16 @@ test('encrypted upload fails with unsupported provider', async () => {
   await user.click(submitButton)
 
   // Wait for the error to propagate
-  await new Promise(resolve => setTimeout(resolve, 1000))
+  await new Promise((resolve) => setTimeout(resolve, 1000))
 
   // Verify the upload failed with the correct error
   expect(uploaderState.status).toBe('failed')
   expect(uploaderState.error?.message).toBe('Encryption provider not supported')
-  
+
   // Verify NO encryption functions were called since the provider is unsupported
-  const { create: createEncryptedClient } = await import('@storacha/encrypt-upload-client')
+  const { create: createEncryptedClient } = await import(
+    '@storacha/encrypt-upload-client'
+  )
   expect(createEncryptedClient).not.toHaveBeenCalled()
 })
 
@@ -557,7 +596,9 @@ test('upload fails without space', async () => {
   const client = {
     currentSpace: vi.fn().mockReturnValue(null), // No space selected
     agent: {
-      issuer: { did: () => 'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK' },
+      issuer: {
+        did: () => 'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK',
+      },
     },
   }
 
@@ -599,12 +640,12 @@ test('upload fails without space', async () => {
   await user.click(submitButton)
 
   // Wait for the error to propagate
-  await new Promise(resolve => setTimeout(resolve, 1000))
+  await new Promise((resolve) => setTimeout(resolve, 1000))
 
   // Verify the upload failed with the correct error
   expect(uploaderState.status).toBe('failed')
   expect(uploaderState.error?.message).toBe('No space selected for upload')
-  
+
   // Verify that currentSpace was called but returned null
   expect(client.currentSpace).toHaveBeenCalled()
-}) 
+})
