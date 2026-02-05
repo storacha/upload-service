@@ -318,7 +318,10 @@ cli
 cli
   .command('space info')
   .describe('Show information about a space. Defaults to the current space.')
-  .option('-s, --space', 'The space to print information about.')
+  .option(
+    '-s, --space <did>',
+    'The space DID to print information about (e.g. did:key:...)'
+  )
   .option('--json', 'Format as newline delimited JSON')
   .action(actions.spaceInfo)
 
