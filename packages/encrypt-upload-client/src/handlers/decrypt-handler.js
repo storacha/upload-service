@@ -146,7 +146,9 @@ export const getCarFileFromPublicGateway = async (gatewayURL, cid) => {
   const response = await fetch(url)
   if (!response.ok) {
     throw new Error(
-      `Failed to fetch from ${url.toString()}: ${response.status} ${response.statusText}`
+      `Failed to fetch from ${url.toString()}: ${response.status} ${
+        response.statusText
+      }`
     )
   }
 
@@ -191,7 +193,9 @@ const getEncryptedDataFromCar = async (car, encryptedDataCID) => {
   const blockInfo = blockIndex.get(encryptedDataCID)
   if (!blockInfo) {
     throw new Error(
-      `Encrypted data CID ${encryptedDataCID} not found in CAR file. Available CIDs: ${Array.from(blockIndex.keys()).join(', ')}`
+      `Encrypted data CID ${encryptedDataCID} not found in CAR file. Available CIDs: ${Array.from(
+        blockIndex.keys()
+      ).join(', ')}`
     )
   }
 
