@@ -146,9 +146,7 @@ export const getCarFileFromPublicGateway = async (gatewayURL, cid) => {
   const response = await fetch(url)
   if (!response.ok) {
     throw new Error(
-      `Failed to fetch from ${url.toString()}: ${response.status} ${
-        response.statusText
-      }`
+      `Failed to fetch CAR file for CID ${cid} from gateway ${gatewayURL.origin}: ${response.status} ${response.statusText}`
     )
   }
 
