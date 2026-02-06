@@ -80,4 +80,12 @@ const server = createServer(async (req, res) => {
 })
 
 server.listen(port, () => console.log(`Listening on :${port}`))
+
+/** @param {Error} err */
+server.on('error', (err) => {
+  // eslint-disable-next-line no-console
+  console.error(`Failed to start receipts server on port ${port}: ${err.message}`)
+  process.exit(1)
+})
+
 process.on('SIGTERM', () => process.exit(0))
