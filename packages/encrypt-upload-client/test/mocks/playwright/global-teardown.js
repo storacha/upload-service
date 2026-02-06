@@ -36,4 +36,10 @@ export default async function globalTeardown() {
   }
 
   console.log('[Global Teardown] Cleanup complete')
+
+  // In CI, force exit to ensure no hanging handles keep the process alive
+  if (process.env.CI) {
+    console.log('[Global Teardown] CI detected, forcing process exit')
+    process.exit(0)
+  }
 }
