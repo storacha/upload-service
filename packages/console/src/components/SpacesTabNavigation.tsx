@@ -26,7 +26,7 @@ export function SpacesTabNavigation({
   }
 
   return (
-    <div className="flex border-b border-gray-200 mb-6">
+    <div className="flex border-b border-gray-200">
       <button
         onClick={() => onTabChange('public')}
         className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
