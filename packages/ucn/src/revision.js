@@ -1,8 +1,9 @@
 import * as Base from './base/revision.js'
-import * as API from './api.js'
 import * as Value from './value.js'
+import { ArchiveSchema, NoValueError } from './base/revision.js'
+export { ArchiveSchema, NoValueError }
 
-export { ArchiveSchema, NoValueError } from './base/revision.js'
+/** @import * as API from './api.js' */
 
 /**
  * Create an initial revision.

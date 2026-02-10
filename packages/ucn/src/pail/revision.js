@@ -2,14 +2,19 @@ import { ShardBlock } from '@web3-storage/pail/shard'
 import * as Pail from '@web3-storage/pail'
 import { MemoryBlockstore, withCache } from '../base/block.js'
 import * as Base from '../base/revision.js'
-import * as API from './api.js'
 import * as Value from './value.js'
 import * as CRDT from '@web3-storage/pail/crdt'
-export { ArchiveSchema, NoValueError } from '../base/revision.js'
+import { ArchiveSchema, NoValueError } from '../base/revision.js'
+export { ArchiveSchema, NoValueError }
+
+/**
+ * @import * as API from './api.js'
+ */
 
 /**
  * Put a value (a CID) for the given key on an empty shard. This is used to create
  * the initial revision for a name.
+ *
  * @param {API.BlockFetcher} blocks Bucket block storage.
  * @param {string} key The key of the value to put.
  * @param {API.UnknownLink} value The value to put.

@@ -3,9 +3,15 @@ import {
   ShardBlockView,
   BlockFetcher,
   ShardLink,
-  UnknownLink
+  UnknownLink,
 } from '@web3-storage/pail/batch/api'
-import { Operation, BatchOperation, EventLink, ValueView, RevisionResult } from '../api.js'
+import {
+  Operation,
+  BatchOperation,
+  EventLink,
+  ValueView,
+  RevisionResult,
+} from '../api.js'
 
 export type {
   BatcherShardEntry,
@@ -17,7 +23,7 @@ export type {
   BatchOperation,
   EventLink,
   ValueView,
-  RevisionResult
+  RevisionResult,
 }
 
 export interface Batcher {
@@ -25,7 +31,7 @@ export interface Batcher {
    * Put a value (a CID) for the given key. If the key exists it's value is
    * overwritten.
    */
-  put: (key: string, value: UnknownLink) => Promise<void>;
+  put: (key: string, value: UnknownLink) => Promise<void>
   /**
    * Encode all altered shards in the batch and return the new root CID, new
    * clock head, the new clock event and the difference blocks.

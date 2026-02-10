@@ -1,10 +1,11 @@
 // eslint-disable-next-line no-unused-vars
-import * as API from './api.js'
 import * as Shard from '@web3-storage/pail/shard'
 import { ShardFetcher } from '@web3-storage/pail/shard'
 import * as Batch from '@web3-storage/pail/batch'
 import { BatchCommittedError } from '@web3-storage/pail/batch'
 import * as Base from '../../base/revision.js'
+
+/** @import * as API from './api.js' */
 
 export { BatchCommittedError }
 

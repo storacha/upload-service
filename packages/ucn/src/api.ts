@@ -1,4 +1,4 @@
-import * as Base from './base/api.js' 
+import * as Base from './base/api.js'
 import {
   ConnectionView,
   Delegation,
@@ -49,7 +49,8 @@ export type EventView = Base.EventView<Value>
 /**
  * A name mutation event block.
  */
-export type EventBlock = Base.EventBlock<Value> 
+export type EventBlock = Base.EventBlock<Value>
+
 /**
  * A name mutation event block with value.
  */
@@ -67,7 +68,5 @@ export interface ValueView extends Base.StateView<Value> {
 
 /**
  * A representation of a past, current or future value for a name.
-*/
+ */
 export type RevisionView = Base.RevisionView<Value>
-
-

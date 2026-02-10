@@ -112,7 +112,7 @@ export interface StateView<O> {
 
 /**
  * A representation of a past, current or future value for a name.
-*/
+ */
 export interface RevisionView<O> {
   /**
    * The operation associated with this revision.
