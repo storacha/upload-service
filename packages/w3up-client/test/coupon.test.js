@@ -58,7 +58,7 @@ export const testCoupon = Test.withContext({
       capabilities: [
         {
           with: client.did(),
-          can: 'store/list',
+          can: 'space/blob/list',
         },
       ],
       password: 'secret',

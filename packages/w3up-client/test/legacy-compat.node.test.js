@@ -86,7 +86,7 @@ const testUploadFile = async (
     /** @type {LegacyClient | Client} */
     let alice
     if (legacy.client) {
-      // @ts-expect-error store/add removed from Service type but legacy client expects it
+      // @ts-expect-error store protocol removed from Service type but legacy client expects it
       alice = new LegacyClient(await LegacyAgentData.create(), clientOptions)
     } else {
       alice = new Client(await AgentData.create(), clientOptions)
