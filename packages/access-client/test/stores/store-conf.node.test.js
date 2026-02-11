@@ -27,11 +27,41 @@ describe('Conf store', () => {
     assert.equal(exportData.meta.type, 'device')
   })
 
+  it('should create and load extractable ed25519 data', async () => {
+    const principal = await EdSigner.generate({ extractable: true })
+    const data = await AgentData.create({ principal })
+
+    const store = new StoreConf({ profile: 'test-access-db-' + Date.now() })
+    await store.open()
+    await store.save(data.export())
+
+    const exportData = await store.load()
+    assert(exportData)
+    const key = exportData.principal.keys[exportData.principal.id]
+    assert(key instanceof Uint8Array)
+    assert.equal(exportData.principal.id, principal.did())
+  })
+
+  it('should reject non-extractable ed25519 in conf store', async () => {
+    const data = await AgentData.create({
+      principal: await EdSigner.generate(),
+    })
+
+    const store = new StoreConf({ profile: 'test-access-db-' + Date.now() })
+    await store.open()
+    await assert.rejects(() => store.save(data.export()), {
+      message:
+        'Conf store cannot persist CryptoKey values. Use an extractable signer for Node/Conf storage.',
+    })
+  })
+
   it('should round trip delegations', async () => {
     const store = new StoreConf({ profile: 'test-access-db-' + Date.now() })
     await store.open()
 
-    const data0 = await AgentData.create()
+    const data0 = await AgentData.create({
+      principal: await EdSigner.generate({ extractable: true }),
+    })
     const signer = await EdSigner.generate()
     const del0 = await top.delegate({
       issuer: signer,

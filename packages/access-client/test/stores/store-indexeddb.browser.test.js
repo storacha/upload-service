@@ -1,14 +1,13 @@
 import assert from 'assert'
 import { top } from '@storacha/capabilities/top'
 import { Signer as EdSigner } from '@ucanto/principal/ed25519'
-import * as RSASigner from '@ucanto/principal/rsa'
 import { AgentData } from '../../src/agent-data.js'
 import { StoreIndexedDB } from '../../src/stores/store-indexeddb.js'
 
 describe('IndexedDB store', () => {
   it('should create and load data', async () => {
     const data = await AgentData.create({
-      principal: await RSASigner.generate({ extractable: false }),
+      principal: await EdSigner.generate(),
     })
 
     const store = new StoreIndexedDB('test-access-db-' + Date.now())
@@ -26,6 +25,7 @@ describe('IndexedDB store', () => {
     assert.deepEqual(keys, [])
     assert(key instanceof CryptoKey)
     assert.equal(key.extractable, false)
+    assert.deepEqual(Object(key.algorithm), { name: 'Ed25519' })
 
     // no accounts or delegations yet
     assert.equal(exportData.spaces.size, 0)
@@ -103,7 +103,7 @@ describe('IndexedDB store', () => {
   })
 
   it('should be resettable', async () => {
-    const principal = await RSASigner.generate({ extractable: false })
+    const principal = await EdSigner.generate()
     const data = await AgentData.create({ principal })
 
     const store = new StoreIndexedDB('test-access-db-' + Date.now())

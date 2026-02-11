@@ -48,6 +48,12 @@ export class ConfDriver {
 
   /** @param {T} data */
   async save(data) {
+    if (containsNonExtractableEd25519CryptoKey(data)) {
+      throw new TypeError(
+        'Conf store cannot persist CryptoKey values. Use an extractable signer for Node/Conf storage.'
+      )
+    }
+
     if (typeof data === 'object') {
       data = { ...data }
       for (const [k, v] of Object.entries(data)) {
@@ -65,4 +71,60 @@ export class ConfDriver {
     if (Object.keys(data).length === 0) return
     return data
   }
+}
+
+/**
+ * @param {unknown} value
+ * @param {Set<object>} [seen]
+ * @returns {boolean}
+ */
+const containsNonExtractableEd25519CryptoKey = (value, seen = new Set()) => {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+  if (seen.has(value)) {
+    return false
+  }
+  seen.add(value)
+  const key = /** @type {any} */ (value)
+
+  if (
+    ((typeof CryptoKey !== 'undefined' && value instanceof CryptoKey) ||
+      (typeof key.type === 'string' &&
+        key.algorithm &&
+        typeof key.algorithm.name === 'string' &&
+        Array.isArray(key.usages) &&
+        typeof key.extractable === 'boolean')) &&
+    key.algorithm &&
+    key.algorithm.name === 'Ed25519' &&
+    key.extractable === false
+  ) {
+    return true
+  }
+
+  if (Array.isArray(value)) {
+    return value.some((item) =>
+      containsNonExtractableEd25519CryptoKey(item, seen)
+    )
+  }
+
+  if (value instanceof Map) {
+    for (const [key, item] of value) {
+      if (
+        containsNonExtractableEd25519CryptoKey(key, seen) ||
+        containsNonExtractableEd25519CryptoKey(item, seen)
+      ) {
+        return true
+      }
+    }
+    return false
+  }
+
+  for (const item of Object.values(value)) {
+    if (containsNonExtractableEd25519CryptoKey(item, seen)) {
+      return true
+    }
+  }
+
+  return false
 }
