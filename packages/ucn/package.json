@@ -96,6 +96,14 @@
     "./pail/value": {
       "types": "./dist/pail/value.d.ts",
       "import": "./dist/pail/value.js"
+    },
+    "./pail/batch": {
+      "types": "./dist/pail/batch/index.d.ts",
+      "import": "./dist/pail/batch/index.js"
+    },
+    "./pail/batch/api": {
+      "types": "./dist/pail/batch/api.d.ts",
+      "import": "./dist/pail/batch/api.js"
     }
   },
   "files": [
@@ -136,7 +144,7 @@
     "@ucanto/server": "catalog:",
     "@ucanto/transport": "catalog:",
     "@web3-storage/clock": "^0.4.1",
-    "@web3-storage/pail": "^0.6.0",
+    "@web3-storage/pail": "0.6.3-rc.1",
     "hashlru": "^2.3.0",
     "multiformats": "catalog:",
     "p-defer": "catalog:",
