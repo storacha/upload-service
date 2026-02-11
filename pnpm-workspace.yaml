@@ -81,7 +81,7 @@ catalog:
   p-map: '^6.0.0'
   p-retry: '^5.1.2'
   p-wait-for: '^5.0.2'
-  playwright-test: '^12.3.4'
+  playwright-test: '^14.0.0'
   postcss: '^8.4.21'
   pretty-tree: '^1.0.0'
   react: '^19.2.1'

@@ -10,6 +10,7 @@ import * as ed25519 from '@ucanto/principal/ed25519'
 import { UCAN, Provider } from '@storacha/capabilities'
 import { Absentee } from '@ucanto/principal'
 import { SpaceAccess } from '../src/space-access.js'
+import { OwnedSpace } from '../src/space.js'
 
 describe('Agent', function () {
   it('should return did', async function () {
@@ -184,6 +185,21 @@ describe('Agent', function () {
     assert.equal(recoveredSpace.access.type, 'public') // Should default to public
     assert.equal(recoveredSpace.name, 'recovered-public-default')
     assert.equal(recoveredSpace.did(), space.did()) // Should have same DID
+  })
+
+  it('should throw a clear error when mnemonic is requested for non-extractable signer', async function () {
+    const agent = await Agent.create()
+    const signer = await ed25519.generate()
+    const space = new OwnedSpace({
+      signer,
+      name: 'non-extractable',
+      agent,
+    })
+
+    assert.throws(
+      () => space.toMnemonic(),
+      /Mnemonic export requires an extractable Ed25519 signer/
+    )
   })
 
   it('should preserve accessType in delegation facts', async function () {
