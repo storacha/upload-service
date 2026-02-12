@@ -48,6 +48,62 @@
     "./value": {
       "types": "./dist/value.d.ts",
       "import": "./dist/value.js"
+    },
+    "./base": {
+      "types": "./dist/base/index.d.ts",
+      "import": "./dist/base/index.js"
+    },
+    "./base/api": {
+      "types": "./dist/base/api.d.ts",
+      "import": "./dist/base/api.js"
+    },
+    "./base/agent": {
+      "types": "./dist/base/agent.d.ts",
+      "import": "./dist/base/agent.js"
+    },
+    "./base/block": {
+      "types": "./dist/base/block.d.ts",
+      "import": "./dist/base/block.js"
+    },
+    "./base/name": {
+      "types": "./dist/base/name.d.ts",
+      "import": "./dist/base/name.js"
+    },
+    "./base/proof": {
+      "types": "./dist/base/proof.d.ts",
+      "import": "./dist/base/proof.js"
+    },
+    "./base/revision": {
+      "types": "./dist/base/revision.d.ts",
+      "import": "./dist/base/revision.js"
+    },
+    "./base/value": {
+      "types": "./dist/base/value.d.ts",
+      "import": "./dist/base/value.js"
+    },
+    "./pail": {
+      "types": "./dist/pail/index.d.ts",
+      "import": "./dist/pail/index.js"
+    },
+    "./pail/api": {
+      "types": "./dist/pail/api.d.ts",
+      "import": "./dist/pail/api.js"
+    },
+    "./pail/revision": {
+      "types": "./dist/pail/revision.d.ts",
+      "import": "./dist/pail/revision.js"
+    },
+    "./pail/value": {
+      "types": "./dist/pail/value.d.ts",
+      "import": "./dist/pail/value.js"
+    },
+    "./pail/batch": {
+      "types": "./dist/pail/batch/index.d.ts",
+      "import": "./dist/pail/batch/index.js"
+    },
+    "./pail/batch/api": {
+      "types": "./dist/pail/batch/api.d.ts",
+      "import": "./dist/pail/batch/api.js"
     }
   },
   "files": [
@@ -88,7 +144,7 @@
     "@ucanto/server": "catalog:",
     "@ucanto/transport": "catalog:",
     "@web3-storage/clock": "^0.4.1",
-    "@web3-storage/pail": "^0.6.0",
+    "@web3-storage/pail": "0.6.3-rc.1",
     "hashlru": "^2.3.0",
     "multiformats": "catalog:",
     "p-defer": "catalog:",
@@ -119,7 +175,10 @@
       "coverage",
       "src/api.js",
       "src/bin/api.js",
-      "src/server/api.js"
+      "src/server/api.js",
+      "src/base/api.js",
+      "src/pail/api.js",
+      "src/pail/batch/api.js"
     ]
   },
   "directories": {
