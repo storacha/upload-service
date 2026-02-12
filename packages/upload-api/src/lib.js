@@ -100,6 +100,8 @@ export const handle = async (agent, request) => {
     })
 
     if (save.error) {
+      console.error('failed to save invocation message', save.error)
+      agent.catch(save.error)
       return {
         status: 500,
         headers: {},
@@ -121,6 +123,7 @@ export const handle = async (agent, request) => {
     // have change state and we would not want to rerun it. Which is why we
     // report an error but return a message back.
     if (error) {
+      console.error('failed to save receipt', save.error)
       agent.catch(error)
     }
 
