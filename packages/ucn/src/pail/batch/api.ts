@@ -33,6 +33,11 @@ export interface Batcher {
    */
   put: (key: string, value: UnknownLink) => Promise<void>
   /**
+   * Delete the value for the given key. If the key is not found no operation
+   * occurs.
+   */
+  del: (key: string) => Promise<void>
+  /**
    * Encode all altered shards in the batch and return the new root CID, new
    * clock head, the new clock event and the difference blocks.
    */

@@ -131,6 +131,112 @@ describe('pail/batch', () => {
     await expect(batcher.commit()).rejects.toThrow()
   })
 
+  it('should batch del and commit', async () => {
+    const blocks = new MemoryBlockstore()
+    const name = await Name.create()
+    const cidA = await createTestCID('a')
+    const cidB = await createTestCID('b')
+
+    // create initial pail with two entries
+    const init = await Revision.v0Put(blocks, 'a', cidA)
+    await storeBlocks(blocks, init.additions)
+    const v1 = await Value.from(blocks, name, init.revision)
+    await storeBlocks(blocks, v1.additions)
+
+    const put2 = await Revision.put(blocks, v1.value, 'b', cidB)
+    await storeBlocks(blocks, put2.additions)
+    const v2 = await Value.from(blocks, name, put2.revision)
+    await storeBlocks(blocks, v2.additions)
+    const value = v2.value
+
+    // batch delete 'a'
+    const batcher = await Batch.create(blocks, value)
+    await batcher.del('a')
+
+    const result = await batcher.commit()
+    assert(result.revision)
+    const op =
+      /** @type {BatchOperation & { root: import('../../src/pail/api.js').ShardLink }} */ (
+        result.revision.operation
+      )
+    assert.equal(op.type, 'batch')
+    assert.equal(op.ops.length, 1)
+    assert.equal(op.ops[0].type, 'del')
+    assert.equal(op.ops[0].key, 'a')
+
+    // verify 'a' is deleted and 'b' still exists
+    await storeBlocks(blocks, result.additions)
+    const value2 = Value.create(name, result.revision.operation.root, [
+      result.revision,
+    ])
+
+    const gotA = await Revision.get(blocks, value2, 'a')
+    assert.equal(gotA, undefined)
+
+    const gotB = await Revision.get(blocks, value2, 'b')
+    assert(gotB)
+    assert.equal(gotB.toString(), cidB.toString())
+  })
+
+  it('should throw on del after commit', async () => {
+    const blocks = new MemoryBlockstore()
+    const name = await Name.create()
+    const cidA = await createTestCID('a')
+
+    const init = await Revision.v0Put(blocks, 'a', cidA)
+    await storeBlocks(blocks, init.additions)
+    const value = Value.create(name, init.revision.operation.root, [
+      init.revision,
+    ])
+
+    const batcher = await Batch.create(blocks, value)
+    await batcher.del('a')
+    await batcher.commit()
+
+    await expect(batcher.del('a')).rejects.toThrow()
+  })
+
+  it('should batch put and del together', async () => {
+    const blocks = new MemoryBlockstore()
+    const name = await Name.create()
+    const cidA = await createTestCID('a')
+    const cidB = await createTestCID('b')
+
+    // create initial pail with one entry
+    const init = await Revision.v0Put(blocks, 'a', cidA)
+    await storeBlocks(blocks, init.additions)
+    const value = Value.create(name, init.revision.operation.root, [
+      init.revision,
+    ])
+
+    // batch: delete 'a' and put 'b'
+    const batcher = await Batch.create(blocks, value)
+    await batcher.del('a')
+    await batcher.put('b', cidB)
+
+    const result = await batcher.commit()
+    assert(result.revision)
+    const op =
+      /** @type {BatchOperation & { root: import('../../src/pail/api.js').ShardLink }} */ (
+        result.revision.operation
+      )
+    assert.equal(op.type, 'batch')
+    assert.equal(op.ops.length, 2)
+
+    // verify 'a' is deleted and 'b' exists
+    await storeBlocks(blocks, result.additions)
+    const value2 = Value.create(name, result.revision.operation.root, [
+      result.revision,
+    ])
+
+    const gotA = await Revision.get(blocks, value2, 'a')
+    assert.equal(gotA, undefined)
+
+    const gotB = await Revision.get(blocks, value2, 'b')
+    assert(gotB)
+    assert.equal(gotB.toString(), cidB.toString())
+  })
+
   it('should batch many items', async () => {
     const blocks = new MemoryBlockstore()
     const name = await Name.create()
