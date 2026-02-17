@@ -1,3 +1,13 @@
+## 3.1.2 (2026-02-17)
+
+### 🩹 Fixes
+
+- Log failures to save to agent store ([5ec4a1ef](https://github.com/storacha/upload-service/commit/5ec4a1ef))
+
+### ❤️ Thank You
+
+- Petra Jaros
+
 ## 3.1.1 (2026-02-03)
 
 ### 🧱 Updated Dependencies
