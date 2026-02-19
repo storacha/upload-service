@@ -46,8 +46,6 @@ export class UploadTable {
         shards: [...next].map(($) => parseLink($)),
         updatedAt: time,
       })
-
-      return { ok: { root, shards: item.shards } }
     } else {
       this.items.unshift({
         space,
@@ -58,9 +56,13 @@ export class UploadTable {
         insertedAt: time,
         updatedAt: time,
       })
-
-      return { ok: { root, shards } }
     }
+
+    // The OK type here (API.UploadAddSuccess) allows us to return the shards,
+    // but it's optional, and that list can be extremely long. Omit it in case
+    // it's an absurd amount of data to return. After all, the caller already
+    // has the list. It's never different from what they asked for.
+    return { ok: { root } }
   }
 
   /**

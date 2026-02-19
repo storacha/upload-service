@@ -25,7 +25,7 @@ export const UploadClient = Test.withContext({
 
       const result = await alice.capability.upload.add(car.roots[0], [car.cid])
       assert.deepEqual(result.root, car.roots[0])
-      assert.deepEqual(result.shards, [car.cid])
+      assert.equal(result.shards, undefined)
 
       assert.deepEqual(await uploadTable.exists(space.did(), car.roots[0]), {
         ok: true,

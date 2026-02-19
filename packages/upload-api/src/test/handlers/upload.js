@@ -49,11 +49,7 @@ export const test = {
       throw new Error('invocation failed', { cause: uploadAdd })
     }
 
-    assert.equal(uploadAdd.out.ok.root.toString(), root.toString())
-    assert.deepEqual(
-      uploadAdd.out.ok.shards?.map(String).sort(),
-      shards.map(String).sort()
-    )
+    assert.deepEqual(uploadAdd.out.ok, { root })
 
     const { results } = Result.unwrap(await context.uploadTable.list(spaceDid))
     assert.deepEqual(results.length, 1)
@@ -154,11 +150,7 @@ export const test = {
       throw new Error('invocation failed', { cause: uploadAdd })
     }
 
-    assert.deepEqual(
-      uploadAdd.out.ok.shards,
-      [],
-      'Should have an empty shards array'
-    )
+    assert.equal(uploadAdd.out.ok.shards, undefined)
 
     const { results } = Result.unwrap(await context.uploadTable.list(spaceDid))
     assert.equal(results.length, 1)
@@ -196,7 +188,7 @@ export const test = {
       throw new Error('invocation failed', { cause: uploadAdd1 })
     }
 
-    assert.deepEqual(uploadAdd1.out.ok.shards, [])
+    assert.deepEqual(uploadAdd1.out.ok, { root })
 
     const uploadAdd2 = await Upload.add
       .invoke({
@@ -212,10 +204,7 @@ export const test = {
       throw new Error('invocation failed', { cause: uploadAdd2 })
     }
 
-    assert.deepEqual(
-      uploadAdd2.out.ok.shards?.map(String).sort(),
-      shards.map(String).sort()
-    )
+    assert.deepEqual(uploadAdd2.out.ok, { root })
 
     const { results } = Result.unwrap(await context.uploadTable.list(spaceDid))
     assert.equal(results.length, 1)
@@ -259,10 +248,7 @@ export const test = {
       throw new Error('invocation failed', { cause: uploadAdd1 })
     }
 
-    assert.deepEqual(
-      uploadAdd1.out.ok.shards?.map(String).sort(),
-      [cars[0].cid, cars[1].cid].map(String).sort()
-    )
+    assert.equal(uploadAdd1.out.ok.shards, undefined)
 
     const uploadAdd2 = await Upload.add
       .invoke({
@@ -278,10 +264,7 @@ export const test = {
       throw new Error('invocation failed', { cause: uploadAdd2 })
     }
 
-    assert.deepEqual(
-      uploadAdd2.out.ok.shards?.map(String).sort(),
-      [cars[0].cid, cars[1].cid, cars[2].cid].map(String).sort()
-    )
+    assert.deepEqual(uploadAdd2.out.ok, { root })
 
     const { results } = Result.unwrap(await context.uploadTable.list(spaceDid))
     assert.equal(results.length, 1)
@@ -550,8 +533,6 @@ export const test = {
     if (!uploadAdd.out.ok) {
       throw new Error('invocation failed', { cause: uploadAdd })
     }
-
-    assert.equal(uploadAdd.out.ok.shards?.length, shards.length)
 
     // Validate DB before remove
     const { results } = Result.unwrap(await context.uploadTable.list(spaceDid))
