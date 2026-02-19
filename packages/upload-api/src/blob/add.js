@@ -149,10 +149,12 @@ export function blobAddProvider(context) {
  */
 async function allocate({ context, blob, space, cause }) {
   // 1. Create blob/allocate invocation and task
-  const { router } = context
+  const { router, providerCapacityStorage } = context
   const digest = Digest.decode(blob.digest)
 
   let provider, task, receipt
+  let capacityClaimed = false
+  let claimedProvider = null
   /** @type {Principal[]} */
   let exclude = []
   // eslint-disable-next-line no-constant-condition
@@ -167,8 +169,39 @@ async function allocate({ context, blob, space, cause }) {
         blob.size,
         candidate.error
       )
+      // Release capacity if we had claimed it
+      if (capacityClaimed && claimedProvider) {
+        await providerCapacityStorage.releaseClaimed(
+          /** @type {API.ProviderDID} */ (claimedProvider.did()),
+          blob.size
+        )
+      }
       return candidate
     }
+
+    const providerDID = /** @type {API.ProviderDID} */ (candidate.ok.did())
+
+    // Claim capacity before attempting allocation
+    const claimResult = await providerCapacityStorage.claimCapacity(
+      providerDID,
+      blob.size
+    )
+    if (claimResult.error) {
+      // Provider doesn't have capacity, exclude and try another
+      console.error(
+        'provider %s does not have capacity for blob %s (%d bytes)',
+        providerDID,
+        base58btc.encode(blob.digest),
+        blob.size,
+        claimResult.error
+      )
+      exclude.push(candidate.ok)
+      continue
+    }
+
+    // Mark that we've claimed capacity
+    capacityClaimed = true
+    claimedProvider = candidate.ok
 
     const cap = Blob.allocate.create({
       with: candidate.ok.did(),
@@ -187,6 +220,10 @@ async function allocate({ context, blob, space, cause }) {
       channel: { fetch: fetchWithTimeout(allocateExecTimeout) },
     })
     if (configure.error) {
+      // Release claimed capacity on configuration error
+      await providerCapacityStorage.releaseClaimed(providerDID, blob.size)
+      capacityClaimed = false
+      claimedProvider = null
       return configure
     }
 
@@ -195,12 +232,34 @@ async function allocate({ context, blob, space, cause }) {
       task = await configure.ok.invocation.delegate()
       receipt = await configure.ok.invocation.execute(configure.ok.connection)
       if (receipt.out.error) {
+        // Release claimed capacity on allocation failure
+        await providerCapacityStorage.releaseClaimed(providerDID, blob.size)
+        capacityClaimed = false
+        claimedProvider = null
         throw new Error(`allocation failed: ${receipt.out.error.message}`, {
           cause: receipt.out.error,
         })
       }
+      // Allocation succeeded - capacity remains claimed until accept
+      // Track allocation for cleanup if tracker is available
+      if (context.allocationTracker) {
+        context.allocationTracker.track(
+          task.link().toString(),
+          providerDID,
+          blob.size
+        )
+      }
       break
     } catch (err) {
+      // Release claimed capacity on execution error
+      if (capacityClaimed && claimedProvider) {
+        await providerCapacityStorage.releaseClaimed(
+          /** @type {API.ProviderDID} */ (claimedProvider.did()),
+          blob.size
+        )
+        capacityClaimed = false
+        claimedProvider = null
+      }
       console.error(
         'executing %s on %s for blob %s (%d bytes)',
         Blob.allocate.can,
@@ -388,6 +447,9 @@ async function accept({
   delivery: { task: deliveryTask, receipt: deliveryReceipt },
 }) {
   // 1. Create blob/accept invocation and task
+  const providerDID = /** @type {API.ProviderDID} */ (provider.did())
+  const blobSize = blob.size
+
   const cap = Blob.accept.create({
     with: provider.did(),
     nb: {
@@ -401,6 +463,8 @@ async function accept({
     expiration: Infinity,
   })
   if (configure.error) {
+    // Release claimed capacity on configuration error
+    await context.providerCapacityStorage.releaseClaimed(providerDID, blobSize)
     return configure
   }
 
@@ -421,6 +485,8 @@ async function accept({
         }),
       },
     })
+    // Release claimed capacity on put failure
+    await context.providerCapacityStorage.releaseClaimed(providerDID, blobSize)
   }
   // If put has already succeeded, we can execute `blob/accept` right away.
   else if (deliveryReceipt?.out.ok) {
@@ -442,7 +508,33 @@ async function accept({
 
     // if accept task was not successful do not register the blob in the space
     if (receipt.out.error) {
+      // Release claimed capacity on accept failure
+      await context.providerCapacityStorage.releaseClaimed(
+        providerDID,
+        blobSize
+      )
       return receipt.out
+    }
+
+    // Accept succeeded - finalize allocation (move from claimed to used)
+    const finalizeResult =
+      await context.providerCapacityStorage.finalizeAllocation(
+        providerDID,
+        blobSize
+      )
+    if (finalizeResult.error) {
+      // Log error but don't fail the accept - capacity tracking is best effort
+      console.error(
+        'failed to finalize allocation capacity for provider %s, blob size %d:',
+        providerDID,
+        blobSize,
+        finalizeResult.error
+      )
+    }
+
+    // Untrack allocation on successful accept
+    if (context.allocationTracker) {
+      context.allocationTracker.untrack(task.link().toString())
     }
 
     const register = await context.registry.register({
