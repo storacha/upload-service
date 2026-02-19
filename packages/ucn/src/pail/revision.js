@@ -5,7 +5,6 @@ import * as Base from '../base/revision.js'
 import * as Value from './value.js'
 import * as CRDT from '@web3-storage/pail/crdt'
 import { ArchiveSchema, NoValueError } from '../base/revision.js'
-import { EventFetcher } from '@web3-storage/pail/clock'
 export { ArchiveSchema, NoValueError }
 
 /**
