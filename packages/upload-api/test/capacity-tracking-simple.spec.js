@@ -74,7 +74,10 @@ describe('Capacity Tracking - Simple Tests', () => {
     assert.equal(afterClaim.ok.claimedCapacity, 1000)
 
     // Release claimed capacity
-    const releaseResult = await storage.releaseClaimed('did:web:provider1', 1000)
+    const releaseResult = await storage.releaseClaimed(
+      'did:web:provider1',
+      1000
+    )
     assert.ok(!releaseResult.error, 'should release claimed capacity')
 
     // Check capacity after release
@@ -95,15 +98,19 @@ describe('Capacity Tracking - Simple Tests', () => {
     const storageProviders = [
       {
         id: provider1,
-        connection: /** @type {any} */ ({
-          // Mock connection - router test implementation will handle this
-        }),
+        connection: /** @type {any} */ (
+          {
+            // Mock connection - router test implementation will handle this
+          }
+        ),
       },
       {
         id: provider2,
-        connection: /** @type {any} */ ({
-          // Mock connection - router test implementation will handle this
-        }),
+        connection: /** @type {any} */ (
+          {
+            // Mock connection - router test implementation will handle this
+          }
+        ),
       },
     ]
 
@@ -157,4 +164,3 @@ describe('Capacity Tracking - Simple Tests', () => {
     await capacityStorage.releaseClaimed(provider1DID, 1000)
   })
 })
-

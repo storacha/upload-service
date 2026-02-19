@@ -75,4 +75,3 @@ export interface ProviderCapacityStorage {
     size: number
   ): Promise<Ucanto.Result<boolean, Ucanto.Failure>>
 }
-

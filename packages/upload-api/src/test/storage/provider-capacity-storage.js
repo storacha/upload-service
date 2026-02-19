@@ -17,15 +17,12 @@ export class ProviderCapacityStorage {
   constructor(initialCapacities = {}) {
     // Initialize capacities from provided map
     for (const [provider, maxCapacity] of Object.entries(initialCapacities)) {
-      this.#capacities.set(
-        /** @type {Types.ProviderDID} */ (provider),
-        {
-          provider: /** @type {Types.ProviderDID} */ (provider),
-          usedCapacity: 0,
-          claimedCapacity: 0,
-          maxCapacity: maxCapacity || 0,
-        }
-      )
+      this.#capacities.set(/** @type {Types.ProviderDID} */ (provider), {
+        provider: /** @type {Types.ProviderDID} */ (provider),
+        usedCapacity: 0,
+        claimedCapacity: 0,
+        maxCapacity: maxCapacity || 0,
+      })
     }
   }
 
@@ -37,11 +34,12 @@ export class ProviderCapacityStorage {
     const capacity = this.#capacities.get(provider)
     if (!capacity) {
       // Return default capacity if not initialized
+      // maxCapacity: 0 means unlimited (capacity tracking not configured for this provider)
       const defaultCapacity = {
         provider,
         usedCapacity: 0,
         claimedCapacity: 0,
-        maxCapacity: 0,
+        maxCapacity: 0, // 0 = unlimited capacity
       }
       this.#capacities.set(provider, defaultCapacity)
       return { ok: defaultCapacity }
@@ -77,10 +75,16 @@ export class ProviderCapacityStorage {
     }
 
     const capacity = capacityResult.ok
+    // If maxCapacity is 0, treat as unlimited (capacity tracking not configured)
+    if (capacity.maxCapacity === 0) {
+      // Still track claimed capacity for consistency, but don't enforce limits
+      capacity.claimedCapacity += size
+      this.#capacities.set(provider, capacity)
+      return { ok: {} }
+    }
+
     const available =
-      capacity.maxCapacity -
-      capacity.usedCapacity -
-      capacity.claimedCapacity
+      capacity.maxCapacity - capacity.usedCapacity - capacity.claimedCapacity
 
     if (size > available) {
       return {
@@ -167,12 +171,14 @@ export class ProviderCapacityStorage {
     }
 
     const capacity = capacityResult.ok
+    // If maxCapacity is 0, treat as unlimited (capacity tracking not configured)
+    if (capacity.maxCapacity === 0) {
+      return { ok: true }
+    }
+
     const available =
-      capacity.maxCapacity -
-      capacity.usedCapacity -
-      capacity.claimedCapacity
+      capacity.maxCapacity - capacity.usedCapacity - capacity.claimedCapacity
 
     return { ok: size <= available }
   }
 }
-
