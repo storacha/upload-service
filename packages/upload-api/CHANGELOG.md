@@ -1,3 +1,13 @@
+## 3.1.3 (2026-02-19)
+
+### 🩹 Fixes
+
+- Don't repeat the list of shards in the `upload/add` OK value. It's optional, it's unnecessary, and it's problematically large for very large uploads. ([8eb07686](https://github.com/storacha/upload-service/commit/8eb07686))
+
+### ❤️ Thank You
+
+- Petra Jaros
+
 ## 3.1.2 (2026-02-17)
 
 ### 🩹 Fixes
