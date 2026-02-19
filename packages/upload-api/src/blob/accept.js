@@ -50,6 +50,8 @@ export const poll = async (context, receipt, putTask) => {
 
   const provider = result.ok.audience
   const [allocate] = /** @type {[API.BlobAllocate]} */ (result.ok.capabilities)
+  const providerDID = /** @type {API.ProviderDID} */ (provider.did())
+  const blobSize = allocate.nb.blob.size
 
   const configure = await context.router.configureInvocation(
     provider,
@@ -74,6 +76,8 @@ export const poll = async (context, receipt, putTask) => {
     }
   )
   if (configure.error) {
+    // Release claimed capacity on configuration error
+    await context.providerCapacityStorage.releaseClaimed(providerDID, blobSize)
     return configure
   }
 
@@ -122,7 +126,30 @@ export const poll = async (context, receipt, putTask) => {
 
   // if accept task was not successful do not register the blob in the space
   if (acceptReceipt.out.error) {
+    // Release claimed capacity on accept failure
+    await context.providerCapacityStorage.releaseClaimed(providerDID, blobSize)
     return acceptReceipt.out
+  }
+
+  // Accept succeeded - finalize allocation (move from claimed to used)
+  const finalizeResult =
+    await context.providerCapacityStorage.finalizeAllocation(
+      providerDID,
+      blobSize
+    )
+  if (finalizeResult.error) {
+    // Log error but don't fail the accept - capacity tracking is best effort
+    console.error(
+      'failed to finalize allocation capacity for provider %s, blob size %d:',
+      providerDID,
+      blobSize,
+      finalizeResult.error
+    )
+  }
+
+  // Untrack allocation on successful accept
+  if (context.allocationTracker) {
+    context.allocationTracker.untrack(allocation.toString())
   }
 
   const register = await context.registry.register({
