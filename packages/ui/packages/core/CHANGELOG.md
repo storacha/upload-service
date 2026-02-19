@@ -1,3 +1,9 @@
+## 2.4.160 (2026-02-19)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 2.0.6
+
 ## 2.4.159 (2026-02-17)
 
 ### 🧱 Updated Dependencies
