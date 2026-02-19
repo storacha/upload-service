@@ -15,6 +15,8 @@ import * as TestTypes from '../types.js'
 import { confirmConfirmationUrl } from './utils.js'
 import { getServiceStorageImplementations } from '../storage/index.js'
 import { getExternalServiceImplementations } from '../external-service/index.js'
+import { createCapacityAwareRouter } from '../../router/capacity-aware-router.js'
+import { AllocationTracker } from '../../allocations/tracker.js'
 
 /**
  * @param {object} options
@@ -64,6 +66,15 @@ export const createContext = async (
     serviceID: id,
   })
 
+  // Wrap the router with capacity-aware wrapper
+  const capacityAwareRouter = createCapacityAwareRouter(
+    externalServices.router,
+    serviceStores.providerCapacityStorage
+  )
+
+  // Create allocation tracker for cleanup of abandoned allocations
+  const allocationTracker = new AllocationTracker(5 * 60 * 1000) // 5 minutes timeout
+
   /** @type { import('../../types.js').UcantoServerContext } */
   const serviceContext = {
     id,
@@ -73,6 +84,8 @@ export const createContext = async (
     url: new URL('http://localhost:8787'),
     ...serviceStores,
     ...externalServices,
+    router: capacityAwareRouter,
+    allocationTracker,
     getServiceConnection: () => connection,
     ...createRevocationChecker({
       revocationsStorage: serviceStores.revocationsStorage,
