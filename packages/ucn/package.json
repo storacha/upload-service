@@ -144,7 +144,7 @@
     "@ucanto/server": "catalog:",
     "@ucanto/transport": "catalog:",
     "@web3-storage/clock": "^0.4.1",
-    "@web3-storage/pail": "0.6.3-rc.1",
+    "@web3-storage/pail": "0.6.3-rc.3",
     "hashlru": "^2.3.0",
     "multiformats": "catalog:",
     "p-defer": "catalog:",
