@@ -216,9 +216,19 @@ const extractContentRetrieveDelegation = (invocation) => {
       message: 'retrieval authorization delegation link not found in facts',
     })
   }
+
+  // Fetch blocks relevant to the retrieval auth delegation.
+  // To extract only relevant blocks, build a delegation with all the original blocks, rooted in the retrieval
+  // auth delegation, and then export() it.
   const blocks =
     /** @type {Server.API.BlockStore<unknown>} */
-    (new Map([...invocation.export()].map((b) => [b.cid.toString(), b])))
+    (
+      new Map(
+        [...Delegation.view({ root, blocks: invocation.blocks }).export()].map(
+          (b) => [b.cid.toString(), b]
+        )
+      )
+    )
   try {
     const delegation = Delegation.view({ root, blocks })
     const match = SpaceContent.retrieve.match({
