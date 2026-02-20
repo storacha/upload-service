@@ -1,3 +1,13 @@
+## 3.1.4 (2026-02-20)
+
+### 🩹 Fixes
+
+- Fix retrieval auth proofs blocks missing ([c58bb5d7](https://github.com/storacha/upload-service/commit/c58bb5d7))
+
+### ❤️ Thank You
+
+- Vicente Olmedo
+
 ## 3.1.3 (2026-02-19)
 
 ### 🩹 Fixes
