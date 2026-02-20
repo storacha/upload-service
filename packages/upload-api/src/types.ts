@@ -265,6 +265,11 @@ export type {
   RevocationsStorage,
 } from './types/revocations.js'
 export type { RateLimitsStorage, RateLimit } from './types/rate-limits.js'
+export type {
+  ProviderCapacityStorage,
+  ProviderCapacity,
+} from './types/provider-capacity.js'
+import type { ProviderCapacityStorage } from './types/provider-capacity.js'
 import { PlansStorage } from './types/plans.js'
 export type {
   PlansStorage,
@@ -522,6 +527,14 @@ export type BlobServiceContext = SpaceServiceContext & {
   registry: BlobRegistry
   replicaStore: ReplicaStorage
   /**
+   * Storage for tracking provider capacity (used, claimed, max)
+   */
+  providerCapacityStorage: ProviderCapacityStorage
+  /**
+   * Tracker for in-flight allocations (for cleanup of abandoned allocations)
+   */
+  allocationTracker?: import('./allocations/tracker.js').AllocationTracker
+  /**
    * The maximum number of replicas that can be allocated for a given blob. It
    * includes the original blob that was uploaded, so only values above 1 will
    * allow users to have multiple copies of their data.
@@ -631,6 +644,14 @@ export interface ConcludeServiceContext {
   registry: BlobRegistry
   router: RoutingService
   replicaStore: ReplicaStorage
+  /**
+   * Storage for tracking provider capacity (used, claimed, max)
+   */
+  providerCapacityStorage: ProviderCapacityStorage
+  /**
+   * Tracker for in-flight allocations (for cleanup of abandoned allocations)
+   */
+  allocationTracker?: import('./allocations/tracker.js').AllocationTracker
 }
 
 export interface UcanServiceContext

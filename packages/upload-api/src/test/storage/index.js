@@ -12,10 +12,12 @@ import { UsageStorage } from './usage-storage.js'
 import { SubscriptionsStorage } from './subscriptions-storage.js'
 import * as AgentStore from './agent-store.js'
 import { ReplicaStorage } from './replica-storage.js'
+import { ProviderCapacityStorage } from './provider-capacity-storage.js'
 
 /**
  * @param {object} options
  * @param {Record<string, number>} [options.providers]
+ * @param {Record<string, number>} [options.providerCapacities] Max capacity per provider DID
  * @param {boolean} [options.requirePaymentPlan]
  * @param {import('http')} [options.http]
  * @param {{fail(error:unknown): unknown}} [options.assert]
@@ -35,6 +37,9 @@ export async function getServiceStorageImplementations(options) {
   const rateLimitsStorage = new RateLimitsStorage()
   const agentStore = AgentStore.memory()
   const replicaStore = new ReplicaStorage()
+  const providerCapacityStorage = new ProviderCapacityStorage(
+    options.providerCapacities || {}
+  )
 
   return {
     storeTable,
@@ -51,5 +56,6 @@ export async function getServiceStorageImplementations(options) {
     rateLimitsStorage,
     agentStore,
     replicaStore,
+    providerCapacityStorage,
   }
 }
