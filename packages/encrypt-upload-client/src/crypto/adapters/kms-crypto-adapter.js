@@ -18,6 +18,9 @@ import * as DID from '@ipld/dag-ucan/did'
  * @implements {Type.CryptoAdapter}
  */
 export class KMSCryptoAdapter {
+  /** @type {Map<Type.SpaceDID, { publicKey: string, provider: string, algorithm: string }>} */
+  _cachedPublicKeys = new Map()
+
   /**
    * Create a new KMS crypto adapter
    *
@@ -279,6 +282,10 @@ export class KMSCryptoAdapter {
    * @returns {Promise<{ publicKey: string, provider: string, algorithm: string }>}
    */
   async getSpacePublicKey(encryptionConfig) {
+    const cached = this._cachedPublicKeys.get(encryptionConfig.spaceDID)
+    if (cached) {
+      return cached
+    }
     // Step 1: Invoke the EncryptionSetup capability
     const setupResult = await EncryptionSetup.invoke({
       issuer: encryptionConfig.issuer,
@@ -301,10 +308,15 @@ export class KMSCryptoAdapter {
       throw new Error(errorMessage)
     }
 
-    // Step 3: Return the public key and key reference
-    return /** @type {{ publicKey: string, provider: string, algorithm: string }} */ (
-      setupResult.out.ok
-    )
+    // Step 3: Cache the public key and key reference
+    const publicKeyData =
+      /** @type {{ publicKey: string, provider: string, algorithm: string }} */ (
+        setupResult.out.ok
+      )
+    this._cachedPublicKeys.set(encryptionConfig.spaceDID, publicKeyData)
+
+    // Step 4: Return the public key and key reference
+    return publicKeyData
   }
 
   /**
