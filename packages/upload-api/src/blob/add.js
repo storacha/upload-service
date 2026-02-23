@@ -41,6 +41,7 @@ export function blobAddProvider(context) {
     handler: async ({ capability, invocation, context: invocationContext }) => {
       const { with: space, nb } = capability
       const { blob } = nb
+      const digest = Digest.decode(blob.digest)
 
       // First we check if space has storage provider associated. If it does not
       // we return `InsufficientStorage` error as storage capacity is considered
@@ -60,6 +61,27 @@ export function blobAddProvider(context) {
           invocation,
           context: invocationContext,
         })
+      }
+
+      const findRes = await context.registry.find(space, digest)
+      if (findRes.error && findRes.error.name !== 'EntryNotFound') {
+        return findRes
+      }
+      // If blob is already registered in the space, we can skip allocation and
+      // return the information from the original receipt.
+      if (findRes.ok) {
+        // blob registration cause is the CID of the `space/blob/add` invocation
+        const receiptRes = await context.agentStore.receipts.get(findRes.ok.cause)
+        if (receiptRes.error) {
+          return receiptRes
+        }
+        const receipt = receiptRes.ok
+        /** @type {API.OkBuilder<API.SpaceBlobAddSuccess, API.SpaceBlobAddFailure>|API.ForkBuilder<API.SpaceBlobAddSuccess, API.SpaceBlobAddFailure>} */
+        let result = Server.ok(/** @type {API.SpaceBlobAddSuccess} */ (receipt.out.ok))
+        for (const fx of receipt.fx.fork) {
+          result = result.fork(fx)
+        }
+        return result
       }
 
       const allocation = await allocate({
