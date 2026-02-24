@@ -72,14 +72,18 @@ export function blobAddProvider(context) {
       // the http/put and blob/accept tasks that happened.
       if (findRes.ok) {
         // blob registration cause is the CID of the `space/blob/add` invocation
-        const blobAddRcptRes = await context.agentStore.receipts.get(findRes.ok.cause)
+        const blobAddRcptRes = await context.agentStore.receipts.get(
+          findRes.ok.cause
+        )
         if (blobAddRcptRes.error) {
           return blobAddRcptRes
         }
         const receipt = blobAddRcptRes.ok
 
         /** @type {API.OkBuilder<API.SpaceBlobAddSuccess, API.SpaceBlobAddFailure>|API.ForkBuilder<API.SpaceBlobAddSuccess, API.SpaceBlobAddFailure>} */
-        let result = Server.ok(/** @type {API.SpaceBlobAddSuccess} */ (receipt.out.ok))
+        let result = Server.ok(
+          /** @type {API.SpaceBlobAddSuccess} */ (receipt.out.ok)
+        )
         for (const fx of receipt.fx.fork) {
           result = result.fork(fx)
         }
@@ -96,26 +100,39 @@ export function blobAddProvider(context) {
           if (!task) {
             return Server.error({
               name: 'TaskNotFound',
-              message: `${cap.can} task not found in effects of the original invocation receipt`
+              message: `${cap.can} task not found in effects of the original invocation receipt`,
             })
           }
           rcptTasks.push(task)
         }
 
-        const rcptResults = await Promise.all(rcptTasks.map(t => context.agentStore.receipts.get(t.cid)))
+        const rcptResults = await Promise.all(
+          rcptTasks.map((t) => context.agentStore.receipts.get(t.cid))
+        )
         for (const [i, t] of rcptTasks.entries()) {
           const rcptRes = rcptResults[i]
           if (rcptRes.error) {
-            console.error('fetching %s receipt for task: %s: %o', t.capabilities[0].can, t.cid, rcptRes.error)
+            console.error(
+              'fetching %s receipt for task: %s: %o',
+              t.capabilities[0].can,
+              t.cid,
+              rcptRes.error
+            )
             if (rcptRes.error.name === 'RecordNotFound') {
               return Server.error({
                 name: 'ReceiptNotFound',
-                message: `${t.capabilities[0].can}  receipt not found in agent message store`
+                message: `${t.capabilities[0].can}  receipt not found in agent message store`,
               })
             }
             return rcptRes
           }
-          result = result.fork(await createConcludeInvocation(context.id, context.id, rcptRes.ok).delegate())
+          result = result.fork(
+            await createConcludeInvocation(
+              context.id,
+              context.id,
+              rcptRes.ok
+            ).delegate()
+          )
         }
         return result
       }

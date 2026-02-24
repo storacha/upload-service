@@ -318,7 +318,10 @@ export const test = {
       // allocation task is from the successful upload. The presence of
       // a `http/put` receipt is the indicator that the blob has been
       // successfully stored previously.
-      assert.equal(String(thirdNext.allocate.receipt.root.cid), String(secondNext.allocate.receipt.root.cid))
+      assert.equal(
+        String(thirdNext.allocate.receipt.root.cid),
+        String(secondNext.allocate.receipt.root.cid)
+      )
       assert.ok(
         thirdNext.allocate.receipt.out.ok?.address,
         'allocated memory has an address'
@@ -326,7 +329,10 @@ export const test = {
 
       assert.ok(thirdNext.put.task, 'put task was dispatched')
       assert.ok(thirdNext.put.receipt?.out.ok, 'put receipt was received')
-      assert.equal(String(thirdNext.put.receipt?.root.cid), String(httpPutReceipt.root.cid))
+      assert.equal(
+        String(thirdNext.put.receipt?.root.cid),
+        String(httpPutReceipt.root.cid)
+      )
 
       assert.ok(thirdNext.accept.task, 'accept task was dispatched')
       assert.ok(

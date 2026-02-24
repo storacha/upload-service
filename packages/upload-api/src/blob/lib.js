@@ -204,7 +204,7 @@ export const findTask = (fxs, capability) => {
     const capMatch = capability.match({
       // @ts-expect-error
       capability: fx.capabilities[0],
-      delegation: fx
+      delegation: fx,
     })
     if (capMatch.error) {
       continue
