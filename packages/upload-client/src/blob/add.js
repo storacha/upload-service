@@ -234,11 +234,12 @@ export async function add(
 
   const { address } = allocateReceipt.out.ok
   let { receipt: httpPutReceipt } = nextTasks.put
+  const httpPutSuccess = Boolean(httpPutReceipt?.out.ok)
 
   // only perform HTTP PUT if we have an address AND we haven't received a
   // receipt for the `http/put` task (which means the upload has already been
   // completed by a previous invocation attempt)
-  if (address && !httpPutReceipt) {
+  if (address && !httpPutSuccess) {
     const fetchWithUploadProgress =
       options.fetchWithUploadProgress ||
       options.fetch ||
@@ -297,7 +298,7 @@ export async function add(
   }
 
   // Invoke `conclude` with `http/put` receipt
-  if (!httpPutReceipt?.out.ok) {
+  if (!httpPutSuccess) {
     const derivedSigner = ed25519.from(
       /** @type {API.SignerArchive<API.DID, typeof ed25519.signatureCode>} */
       (nextTasks.put.task.facts[0]['keys'])
