@@ -1,4 +1,4 @@
-import * as Delegation from '@ucanto/core/delegation'
+import { Invocation, Delegation } from '@ucanto/core'
 import { Failure } from '@ucanto/server'
 import { ed25519 } from '@ucanto/principal'
 import { base58btc } from 'multiformats/bases/base58'
@@ -184,4 +184,32 @@ export const fetchWithTimeout = (timeout) => async (url, init) => {
   } finally {
     clearTimeout(id)
   }
+}
+
+/**
+ * Find a task for a capability invocation among a list of effects.
+ *
+ * @template {API.Ability} A
+ * @template {API.URI} R
+ * @template {API.Caveats} C
+ * @param {Iterable<API.Effect>} fxs
+ * @param {API.TheCapabilityParser<API.CapabilityMatch<A, R, C>>} capability
+ * @returns {API.Invocation<API.Capability<A, R, C>>|null}
+ */
+export const findTask = (fxs, capability) => {
+  for (const fx of fxs) {
+    if (!Invocation.isInvocation(fx)) {
+      continue
+    }
+    const capMatch = capability.match({
+      // @ts-expect-error
+      capability: fx.capabilities[0],
+      delegation: fx
+    })
+    if (capMatch.error) {
+      continue
+    }
+    return /** @type {API.Invocation<API.Capability<A, R, C>>} */ (fx)
+  }
+  return null
 }
