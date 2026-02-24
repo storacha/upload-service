@@ -238,7 +238,6 @@ export async function add(
   // only perform HTTP PUT if we have an address AND we haven't received a
   // receipt for the `http/put` task (which means the upload has already been
   // completed by a previous invocation attempt)
-  // if (address && !httpPutReceipt) {
   if (address && !httpPutReceipt) {
     const fetchWithUploadProgress =
       options.fetchWithUploadProgress ||
