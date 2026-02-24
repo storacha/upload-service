@@ -391,7 +391,6 @@ export interface Service extends StorefrontService {
     revoke: ServiceMethod<UCANRevoke, UCANRevokeSuccess, UCANRevokeFailure>
   }
   admin: {
-    store: LegacyUploadAPI.Service['admin']['store']
     upload: {
       inspect: ServiceMethod<
         AdminUploadInspect,
@@ -467,7 +466,6 @@ export interface Service extends StorefrontService {
     }
   }
   // legacy handlers
-  store: Omit<LegacyUploadAPI.Service['store'], 'add'>
   ['web3.storage']: {
     blob: {
       allocate: ServiceMethod<
@@ -485,20 +483,11 @@ export interface Service extends StorefrontService {
 }
 
 /** @deprecated */
-export type LegacyStoreServiceContext = LegacyUploadAPI.StoreServiceContext
-
-/** @deprecated */
 export interface LegacyCarStoreBucket extends LegacyUploadAPI.CarStoreBucket {}
 
 /** @deprecated */
 export interface LegacyCarStoreBucketOptions
   extends LegacyUploadAPI.CarStoreBucketOptions {}
-
-/** @deprecated */
-export interface LegacyStoreTable extends LegacyUploadAPI.StoreTable {}
-
-/** @deprecated */
-export interface LegacyStoreAddInput extends LegacyUploadAPI.StoreAddInput {}
 
 /** @deprecated */
 export type LegacyBlobServiceContext = Omit<
@@ -566,22 +555,6 @@ export interface AdminServiceContext {
   signer: Signer
   uploadTable: UploadTable
 }
-
-/** @deprecated */
-export interface LegacyAdminServiceContext
-  extends Pick<LegacyUploadAPI.AdminServiceContext, 'storeTable'> {}
-
-/** @deprecated */
-export type LegacyAdminStoreInspectResult =
-  LegacyUploadAPI.AdminStoreInspectResult
-
-/** @deprecated */
-export type LegacyAdminStoreInspectSuccess =
-  LegacyUploadAPI.AdminStoreInspectSuccess
-
-/** @deprecated */
-export type LegacyAdminStoreInspectFailure =
-  LegacyUploadAPI.AdminStoreInspectFailure
 
 export interface ConsoleServiceContext {}
 
@@ -658,7 +631,6 @@ export interface AccountUsageServiceContext {
 
 export interface ServiceContext
   extends AdminServiceContext,
-    LegacyAdminServiceContext,
     AgentContext,
     AccessServiceContext,
     ConsoleServiceContext,
@@ -676,8 +648,7 @@ export interface ServiceContext
     UploadServiceContext,
     FilecoinServiceContext,
     IndexServiceContext,
-    UsageServiceContext,
-    LegacyStoreServiceContext {}
+    UsageServiceContext {}
 
 export interface UcantoServerContext
   extends ServiceContext,

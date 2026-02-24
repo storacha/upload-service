@@ -3,7 +3,6 @@ import * as Claim from './claim.js'
 import * as Provider from './provider.js'
 import * as Space from './space.js'
 import * as Top from './top.js'
-import * as Store from './store.js'
 import * as Upload from './upload.js'
 import * as Access from './access.js'
 import * as Utils from './utils.js'
@@ -37,7 +36,6 @@ export {
   Provider,
   Space,
   Top,
-  Store,
   Upload,
   Consumer,
   Customer,
@@ -86,11 +84,6 @@ export const abilitiesAsStrings = [
   Upload.get.can,
   Upload.remove.can,
   Upload.list.can,
-  Store.store.can,
-  Store.add.can,
-  Store.get.can,
-  Store.remove.can,
-  Store.list.can,
   Access.access.can,
   Access.authorize.can,
   UCAN.attest.can,
@@ -114,7 +107,6 @@ export const abilitiesAsStrings = [
   DealTracker.dealInfo.can,
   Admin.admin.can,
   Admin.upload.inspect.can,
-  Admin.store.inspect.can,
   Plan.get.can,
   Plan.set.can,
   Plan.createAdminSession.can,
