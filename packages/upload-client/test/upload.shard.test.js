@@ -64,15 +64,15 @@ describe('UploadShard.list', () => {
       { connection },
     )
 
-    assert(service.upload.list.called)
-    assert.equal(service.upload.list.callCount, 1)
+    assert(service.upload.shard.list.called)
+    assert.equal(service.upload.shard.list.callCount, 1)
 
     assert.equal(list.cursor, res.cursor)
     assert.equal(list.size, res.size)
     assert(list.results)
     assert.equal(list.results.length, res.results.length)
     list.results.forEach((r, i) => {
-      assert.equal(r.root.toString(), res.results[i].root.toString())
+      assert.equal(r.toString(), res.results[i].toString())
     })
   })
 
@@ -85,29 +85,15 @@ describe('UploadShard.list', () => {
     const page0 = {
       cursor,
       size: 1,
-      results: [
-        {
-          root: car0.roots[0],
-          shards: [car0.cid],
-          insertedAt: '1970-01-01T00:00:00.000Z',
-          updatedAt: '1970-01-01T00:00:00.000Z',
-        },
-      ],
+      results: [car0.cid],
     }
     const car1 = await randomCAR(128)
     const page1 = {
       size: 1,
-      results: [
-        {
-          root: car1.roots[0],
-          shards: [car1.cid],
-          insertedAt: '1970-01-01T00:00:00.000Z',
-          updatedAt: '1970-01-01T00:00:00.000Z',
-        },
-      ],
+      results: [car1.cid],
     }
     const proofs = [
-      await UploadCapabilities.list.delegate({
+      await UploadShardCapabilities.list.delegate({
         issuer: space,
         audience: agent,
         with: space.did(),
@@ -117,17 +103,19 @@ describe('UploadShard.list', () => {
 
     const service = mockService({
       upload: {
-        list: provide(UploadCapabilities.list, ({ invocation }) => {
-          assert.equal(invocation.issuer.did(), agent.did())
-          assert.equal(invocation.capabilities.length, 1)
-          const invCap = invocation.capabilities[0]
-          assert.equal(invCap.can, UploadCapabilities.list.can)
-          assert.equal(invCap.with, space.did())
-          assert.equal(invCap.nb?.size, 1)
-          return {
-            ok: invCap.nb?.cursor === cursor ? page1 : page0,
-          }
-        }),
+        shard: {
+          list: provide(UploadShardCapabilities.list, ({ invocation }) => {
+            assert.equal(invocation.issuer.did(), agent.did())
+            assert.equal(invocation.capabilities.length, 1)
+            const invCap = invocation.capabilities[0]
+            assert.equal(invCap.can, UploadShardCapabilities.list.can)
+            assert.equal(invCap.with, space.did())
+            assert.equal(invCap.nb?.size, 1)
+            return {
+              ok: invCap.nb?.cursor === cursor ? page1 : page0,
+            }
+          }),
+        },
       },
     })
 
@@ -143,24 +131,26 @@ describe('UploadShard.list', () => {
       channel: server,
     })
 
-    const results0 = await Upload.list(
+    const results0 = await UploadShard.list(
       { issuer: agent, with: space.did(), proofs, audience: serviceSigner },
+      car0.roots[0],
       { size: 1, connection }
     )
-    const results1 = await Upload.list(
+    const results1 = await UploadShard.list(
       { issuer: agent, with: space.did(), proofs, audience: serviceSigner },
+      car0.roots[0],
       { size: 1, cursor: results0.cursor, connection }
     )
 
-    assert(service.upload.list.called)
-    assert.equal(service.upload.list.callCount, 2)
+    assert(service.upload.shard.list.called)
+    assert.equal(service.upload.shard.list.callCount, 2)
 
     assert.equal(results0.cursor, page0.cursor)
     assert.equal(results0.size, page0.size)
     assert(results0.results)
     assert.equal(results0.results.length, page0.results.length)
     results0.results.forEach((r, i) => {
-      assert.equal(r.root.toString(), page0.results[i].root.toString())
+      assert.equal(r.toString(), page0.results[i].toString())
     })
 
     assert.equal(results1.cursor, undefined)
@@ -168,16 +158,17 @@ describe('UploadShard.list', () => {
     assert(results1.results)
     assert.equal(results1.results.length, page1.results.length)
     results1.results.forEach((r, i) => {
-      assert.equal(r.root.toString(), page1.results[i].root.toString())
+      assert.equal(r.toString(), page1.results[i].toString())
     })
   })
 
   it('throws on service error', async () => {
     const space = await Signer.generate()
     const agent = await Signer.generate()
+    const car = await randomCAR(128)
 
     const proofs = [
-      await UploadCapabilities.list.delegate({
+      await UploadShardCapabilities.list.delegate({
         issuer: space,
         audience: agent,
         with: space.did(),
@@ -187,9 +178,11 @@ describe('UploadShard.list', () => {
 
     const service = mockService({
       upload: {
-        list: provide(UploadCapabilities.list, () => {
-          throw new Server.Failure('boom')
-        }),
+        shard: {
+          list: provide(UploadShardCapabilities.list, () => {
+            throw new Server.Failure('boom')
+          }),
+        },
       },
     })
 
@@ -206,12 +199,13 @@ describe('UploadShard.list', () => {
     })
 
     await assert.rejects(
-      Upload.list(
+      UploadShard.list(
         { issuer: agent, with: space.did(), proofs, audience: serviceSigner },
+        car.roots[0],
         { connection }
       ),
       {
-        message: 'failed upload/list invocation',
+        message: 'failed upload/shard/list invocation',
       }
     )
   })
