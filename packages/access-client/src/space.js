@@ -29,7 +29,7 @@ import { SpaceAccess } from './space-access.js'
  * @param {API.Agent<S>} [options.agent]
  */
 export const generate = async ({ name, access, agent }) => {
-  const { signer } = await ED25519.generate()
+  const signer = await ED25519.generate({ extractable: true })
   const normalizedAccess = SpaceAccess.from(access)
 
   return new OwnedSpace({ signer, name, access: normalizedAccess, agent })
@@ -62,9 +62,12 @@ export const fromMnemonic = async (mnemonic, { name, access, agent }) => {
  * @param {ED25519.EdSigner} space.signer
  */
 export const toMnemonic = ({ signer }) => {
-  /** @type {Uint8Array} */
-  // @ts-expect-error - Field is defined but not in the interface
-  const secret = signer.secret
+  const secret = /** @type {{secret?: unknown}} */ (signer).secret
+  if (!(secret instanceof Uint8Array)) {
+    throw new TypeError(
+      'Mnemonic export requires an extractable Ed25519 signer'
+    )
+  }
 
   return BIP39.entropyToMnemonic(secret, wordlist)
 }
