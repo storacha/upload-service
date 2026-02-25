@@ -164,6 +164,9 @@ import {
   UploadList,
   UploadListSuccess,
   UploadListItem,
+  UploadShardList,
+  UploadShardListSuccess,
+  UploadShardListFailure,
   AccessAuthorize,
   AccessAuthorizeSuccess,
   AccessDelegate,
@@ -319,6 +322,13 @@ export interface Service extends StorefrontService {
     get: ServiceMethod<UploadGet, UploadGetSuccess, UploadGetFailure>
     remove: ServiceMethod<UploadRemove, UploadRemoveSuccess, Failure>
     list: ServiceMethod<UploadList, UploadListSuccess, Failure>
+    shard: {
+      list: ServiceMethod<
+        UploadShardList,
+        UploadShardListSuccess,
+        UploadShardListFailure
+      >
+    }
   }
   console: {
     log: ServiceMethod<
@@ -842,6 +852,12 @@ export interface UploadTable {
     space: DID,
     options?: ListOptions
   ) => Promise<Result<ListResponse<UploadListItem>, Failure>>
+  /** Lists the shards of an upload. */
+  listShards: (
+    space: DID,
+    root: UnknownLink,
+    options?: ListOptions
+  ) => Promise<Result<UploadShardListSuccess, RecordNotFound>>
 }
 
 export type SpaceInfoSuccess = {

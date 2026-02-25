@@ -30,6 +30,7 @@ import * as W3sBlobCaps from './web3.storage/blob.js'
 import * as HTTPCaps from './http.js'
 import * as StoreCaps from './store.js'
 import * as UploadCaps from './upload.js'
+import * as UploadShardCaps from './upload/shard.js'
 import * as AccessCaps from './access.js'
 import * as CustomerCaps from './customer.js'
 import * as ConsumerCaps from './consumer.js'
@@ -614,6 +615,12 @@ export interface UploadNotFound extends Ucanto.Failure {
 
 export type UploadGetFailure = UploadNotFound | Ucanto.Failure
 
+// Upload Shard
+export type UploadShard = InferInvokedCapability<typeof UploadShardCaps.shard>
+export type UploadShardList = InferInvokedCapability<typeof UploadShardCaps.list>
+
+export type UploadShardListFailure = UploadNotFound | Ucanto.Failure
+
 // HTTP
 export type HTTPPut = InferInvokedCapability<typeof HTTPCaps.put>
 
@@ -955,12 +962,10 @@ export interface StoreListItem {
 
 export interface UploadListItem {
   root: UnknownLink
-  shards?: CARLink[]
   insertedAt: ISO8601Date
   updatedAt: ISO8601Date
 }
 
-// TODO: (olizilla) make this an UploadListItem too?
 export type UploadAddSuccess = Omit<UploadListItem, 'insertedAt' | 'updatedAt'>
 
 export type UploadGetSuccess = UploadListItem
@@ -968,6 +973,8 @@ export type UploadGetSuccess = UploadListItem
 export type UploadRemoveSuccess = UploadAddSuccess
 
 export interface UploadListSuccess extends ListResponse<UploadListItem> {}
+
+export interface UploadShardListSuccess extends Omit<ListResponse<UnknownLink>, 'before' | 'after'> {}
 
 // UCAN core events
 
@@ -1239,6 +1246,8 @@ export type ServiceAbilityArray = [
   UploadGet['can'],
   UploadRemove['can'],
   UploadList['can'],
+  UploadShard['can'],
+  UploadShardList['can'],
   Store['can'],
   StoreAdd['can'],
   StoreGet['can'],

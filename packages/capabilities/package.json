@@ -87,6 +87,10 @@
       "types": "./dist/space/content.d.ts",
       "import": "./dist/space/content.js"
     },
+    "./upload/shard": {
+      "types": "./dist/upload/shard.d.ts",
+      "import": "./dist/upload/shard.js"
+    },
     "./web3.storage/blob": {
       "types": "./dist/web3.storage/blob.d.ts",
       "import": "./dist/web3.storage/blob.js"

@@ -78,7 +78,7 @@ export class UploadTable {
       return { error: { name: 'RecordNotFound', message: 'record not found' } }
     }
     this.items = this.items.filter((i) => i !== item)
-    return { ok: item }
+    return { ok: { root } }
   }
 
   /**
@@ -93,7 +93,13 @@ export class UploadTable {
     if (!item) {
       return { error: { name: 'RecordNotFound', message: 'record not found' } }
     }
-    return { ok: item }
+    return {
+      ok: {
+        root: item.root,
+        insertedAt: item.insertedAt,
+        updatedAt: item.updatedAt,
+      },
+    }
   }
 
   /**
@@ -148,5 +154,24 @@ export class UploadTable {
         results,
       },
     }
+  }
+
+  /** @type {API.UploadTable['listShards']} */
+  async listShards(space, root, options) {
+    const item = this.items.find(
+      (i) => i.space === space && i.root.equals(root)
+    )
+    if (!item) {
+      return { error: { name: 'RecordNotFound', message: 'record not found' } }
+    }
+
+    const size = Math.max(1, options?.size ?? 1000)
+    const start = parseInt(options?.cursor ?? '0', 10)
+    const end = start + size
+    const shards = item.shards ?? []
+    const results = shards.slice(start, end)
+    const cursor = end >= shards.length ? undefined : `${end}`
+
+    return { ok: { size: shards.length, results, cursor } }
   }
 }

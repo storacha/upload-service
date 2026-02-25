@@ -52,6 +52,10 @@ import {
   UploadListItem,
   UploadRemove,
   UploadRemoveSuccess,
+  UploadShard,
+  UploadShardList,
+  UploadShardListSuccess,
+  UploadShardListFailure,
   ListResponse,
   CARLink,
   PieceLink,
@@ -118,6 +122,10 @@ export type {
   UploadListSuccess,
   UploadListItem,
   UploadRemove,
+  UploadShard,
+  UploadShardList,
+  UploadShardListSuccess,
+  UploadShardListFailure,
   UploadRemoveSuccess,
   UsageReport,
   UsageReportSuccess,
@@ -207,6 +215,9 @@ export interface Service extends StorefrontService {
     get: ServiceMethod<UploadGet, UploadGetSuccess, UploadGetFailure>
     remove: ServiceMethod<UploadRemove, UploadRemoveSuccess, Failure>
     list: ServiceMethod<UploadList, UploadListSuccess, Failure>
+    shard: {
+      list: ServiceMethod<UploadShardList, UploadShardListSuccess, UploadShardListFailure>
+    }
   }
   usage: {
     report: ServiceMethod<UsageReport, UsageReportSuccess, UsageReportFailure>

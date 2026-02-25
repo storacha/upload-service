@@ -10,6 +10,7 @@ import * as Index from './index/index.js'
 import * as IndexAdd from './index/add.js'
 import * as Upload from './upload/index.js'
 import * as UploadAdd from './upload/add.js'
+import * as UploadShard from './upload/shard/index.js'
 import * as UnixFS from './unixfs.js'
 import * as CAR from './car.js'
 import { BlockDeduplicationStream, dedupe } from './deduplication.js'
@@ -20,7 +21,7 @@ import {
 } from './sharding.js'
 import { ShardedDAGIndex, indexShardedDAG } from '@storacha/blob-index'
 
-export { Blob, Index, Upload, UnixFS, CAR }
+export { Blob, Index, Upload, UploadShard, UnixFS, CAR }
 export * from './sharding.js'
 export { receiptsEndpoint } from './service.js'
 export * as Receipt from './receipts.js'

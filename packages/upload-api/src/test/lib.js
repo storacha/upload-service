@@ -12,6 +12,7 @@ import * as BlobReplicate from './handlers/space/blob/replicate.js'
 import * as Ucan from './handlers/ucan.js'
 import * as Subscription from './handlers/subscription.js'
 import * as Upload from './handlers/upload.js'
+import * as UploadShard from './handlers/upload/shard.js'
 import * as Plan from './handlers/plan.js'
 import * as Usage from './handlers/usage.js'
 import * as Index from './handlers/index.js'
@@ -41,6 +42,7 @@ export const test = {
   ...Blob.test,
   ...Index.test,
   ...Upload.test,
+  ...UploadShard.test,
   ...Ucan.test,
 }
 
@@ -68,6 +70,7 @@ export const handlerTests = {
   ...Ucan.test,
   ...Subscription.test,
   ...Upload.test,
+  ...UploadShard.test,
   ...Plan.test,
   ...Usage.test,
 }
