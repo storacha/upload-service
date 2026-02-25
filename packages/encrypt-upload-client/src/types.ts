@@ -25,6 +25,7 @@ import type { SpaceDID } from '@storacha/capabilities/types'
 import { Account } from 'viem'
 import { createAuthManager } from '@lit-protocol/auth'
 
+export type { ReadableStorage } from 'ipfs-unixfs-exporter'
 export type AuthManager = ReturnType<typeof createAuthManager>
 // Use the actual types that Lit Protocol expects for auth contexts
 export type EoaAuthContext = Awaited<
@@ -110,6 +111,7 @@ export interface CryptoAdapter {
     }
   ): Promise<{ key: Uint8Array; iv: Uint8Array }>
   extractEncryptedMetadata(car: Uint8Array): ExtractedMetadata
+  viewEncryptedMetadata(source: { root: Block }): ExtractedMetadata
   getEncryptedKey(metadata: ExtractedMetadata): string
   encodeMetadata(
     encryptedDataCID: string,

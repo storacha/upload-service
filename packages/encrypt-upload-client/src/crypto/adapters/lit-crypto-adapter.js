@@ -185,11 +185,25 @@ export class LitCryptoAdapter {
    * @returns {Type.ExtractedMetadata} - The extracted metadata
    */
   extractEncryptedMetadata(car) {
-    const encryptedContentResult = EncryptedMetadata.extract(car)
+    return this._validateLitMetadata(EncryptedMetadata.extract(car))
+  }
+  /**
+   * @param {object} source
+   * @param {Type.IPLDBlock} source.root
+   */
+  viewEncryptedMetadata({ root }) {
+    return this._validateLitMetadata(EncryptedMetadata.view({ root }))
+  }
+
+  /**
+   *
+   * @param {Type.Result<any>} encryptedContentResult
+   * @returns {Type.ExtractedMetadata}
+   */
+  _validateLitMetadata(encryptedContentResult) {
     if (encryptedContentResult.error) {
       throw encryptedContentResult.error
     }
-
     const encryptedContent = encryptedContentResult.ok.toJSON()
 
     // Validate it's Lit format

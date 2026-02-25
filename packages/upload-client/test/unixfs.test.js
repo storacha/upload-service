@@ -62,7 +62,9 @@ describe('UnixFS', () => {
     assert.equal(dirEntry.type, 'directory')
 
     const expectedPaths = files.map((f) => path.join(cid.toString(), f.name))
-    const entries = await collectDir(dirEntry)
+    const entries = await collectDir(
+      /** @type {import('ipfs-unixfs-exporter').UnixFSDirectory} */ (dirEntry)
+    )
     const actualPaths = entries.map((e) => e.path)
 
     expectedPaths.forEach((p) => assert(actualPaths.includes(p)))
@@ -80,7 +82,9 @@ describe('UnixFS', () => {
     assert.equal(dirEntry.type, 'directory')
 
     const expectedPaths = files.map((f) => path.join(cid.toString(), f.name))
-    const entries = await collectDir(dirEntry)
+    const entries = await collectDir(
+      /** @type {import('ipfs-unixfs-exporter').UnixFSDirectory} */ (dirEntry)
+    )
     const actualPaths = entries.map((e) => e.path)
 
     expectedPaths.forEach((p) => assert(actualPaths.includes(p)))

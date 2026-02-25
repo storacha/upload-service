@@ -57,6 +57,10 @@
     "./utils/encrypt": {
       "import": "./dist/utils/encrypt.js",
       "require": "./dist/utils/encrypt.js"
+    },
+    "./utils/decrypt": {
+      "import": "./dist/utils/decrypt.js",
+      "require": "./dist/utils/decrypt.js"
     }
   },
   "scripts": {

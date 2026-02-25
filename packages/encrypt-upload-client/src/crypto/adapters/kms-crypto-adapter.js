@@ -6,7 +6,7 @@ import {
   EncryptionSetup,
   EncryptionKeyDecrypt,
 } from '@storacha/capabilities/space'
-import { KMSMetadata } from '../../core/metadata/encrypted-metadata.js'
+import * as EncryptedMetadata from '../../core/metadata/encrypted-metadata.js'
 import * as DID from '@ipld/dag-ucan/did'
 
 /**
@@ -202,7 +202,24 @@ export class KMSCryptoAdapter {
    * @returns {Type.ExtractedMetadata}
    */
   extractEncryptedMetadata(car) {
-    const kmsContentResult = KMSMetadata.extract(car)
+    const kmsContentResult = EncryptedMetadata.extract(car)
+    return this._validateKMSMetadata(kmsContentResult)
+  }
+
+  /**
+   * @param {object} source
+   * @param {Type.IPLDBlock} source.root
+   */
+  viewEncryptedMetadata({ root }) {
+    return this._validateKMSMetadata(EncryptedMetadata.view({ root }))
+  }
+
+  /**
+   *
+   * @param {Type.Result<any>} kmsContentResult
+   * @returns {Type.ExtractedMetadata}
+   */
+  _validateKMSMetadata(kmsContentResult) {
     if (kmsContentResult.error) {
       throw kmsContentResult.error
     }
@@ -271,7 +288,7 @@ export class KMSCryptoAdapter {
       },
     }
 
-    const kmsMetadata = KMSMetadata.create(uploadData)
+    const kmsMetadata = EncryptedMetadata.create('kms', uploadData)
     return await kmsMetadata.archiveBlock()
   }
 
