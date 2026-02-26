@@ -522,9 +522,9 @@ export class Client extends Base {
    * reference same shards, which in turn could corrupt those uploads.
    *
    * Required delegated capabilities:
-   * - `space/blob/remove`
-   * - `upload/shard/list`
    * - `upload/remove`
+   * - `upload/shard/list` (if shards option is true)
+   * - `space/blob/remove` (if shards option is true)
    *
    * @param {import('multiformats').UnknownLink} contentCID
    * @param {object} [options]
