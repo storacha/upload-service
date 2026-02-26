@@ -257,7 +257,7 @@ export async function list(opts = {}) {
   let cursor
   /** @type {ReadableStream<UploadListItem>} */
   const uploads = new ReadableStream({
-    async pull (controller) {
+    async pull(controller) {
       const page = await client.capability.upload.list({ cursor })
       for (const item of page.results) {
         controller.enqueue(item)
@@ -266,7 +266,7 @@ export async function list(opts = {}) {
       if (!cursor) {
         controller.close()
       }
-    }
+    },
   })
 
   /** @type {TransformStream<UploadListItem, [UploadListItem, UnknownLink[]]>} */
@@ -291,14 +291,14 @@ export async function list(opts = {}) {
   })
 
   let count = 0
-  await uploads
-    .pipeThrough(shards)
-    .pipeTo(new WritableStream({
-      write ([upload, shards]) {
+  await uploads.pipeThrough(shards).pipeTo(
+    new WritableStream({
+      write([upload, shards]) {
         count++
         console.log(uploadListItemToString(upload, shards, opts))
-      }
-    }))
+      },
+    })
+  )
 
   if (count === 0 && !opts.json) {
     console.log('🐔 No uploads in space')

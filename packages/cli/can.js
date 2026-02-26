@@ -175,13 +175,13 @@ export async function uploadList(opts = {}) {
 
   /** @type {ReadableStream<UploadListItem>} */
   const uploads = new ReadableStream({
-    async pull (controller) {
+    async pull(controller) {
       const page = await client.capability.upload.list(listOptions)
       for (const item of page.results) {
         controller.enqueue(item)
       }
       controller.close()
-    }
+    },
   })
 
   /** @type {TransformStream<UploadListItem, [UploadListItem, UnknownLink[]]>} */
@@ -205,13 +205,13 @@ export async function uploadList(opts = {}) {
     return [upload, shards]
   })
 
-  await uploads
-    .pipeThrough(shards)
-    .pipeTo(new WritableStream({
-      write ([upload, shards]) {
+  await uploads.pipeThrough(shards).pipeTo(
+    new WritableStream({
+      write([upload, shards]) {
         console.log(uploadListItemToString(upload, shards, opts))
-      }
-    }))
+      },
+    })
+  )
 
   spinner.stop()
 }
