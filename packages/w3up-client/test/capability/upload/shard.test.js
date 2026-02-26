@@ -27,8 +27,8 @@ export const UploadShardClient = Test.withContext({
 
       const list = await alice.capability.upload.shard.list(car.roots[0])
       assert.deepEqual(
-        list.results.map(r => r.toString()).sort(),
-        [car.cid].map(r => r.toString()).sort(),
+        list.results.map((r) => r.toString()).sort(),
+        [car.cid].map((r) => r.toString()).sort()
       )
     },
   },

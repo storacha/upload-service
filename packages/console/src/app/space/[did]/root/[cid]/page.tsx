@@ -4,7 +4,7 @@ import { useState, use, type JSX } from 'react';
 import { Dialog } from '@headlessui/react'
 import { TrashIcon, ExclamationTriangleIcon, LockOpenIcon } from '@heroicons/react/24/outline'
 import { H2 } from '@/components/Text'
-import { useW3, UploadGetSuccess, SpaceDID, CARLink } from '@storacha/ui-react'
+import { useW3, SpaceDID } from '@storacha/ui-react'
 import useSWR, { useSWRConfig } from 'swr'
 import { UnknownLink, parse as parseLink } from 'multiformats/link'
 import DefaultLoader from '@/components/Loader'
@@ -31,8 +31,8 @@ export default function ItemPage(props: PageProps): JSX.Element {
   const space = spaces.find(s => s.did() === spaceDID)
   const root = parseLink(params.cid)
 
-  const uploadKey = `/space/${spaceDID}/upload/${root}`
-  const upload = useSWR<UploadGetSuccess|undefined>(uploadKey, {
+  const shardsKey = `/space/${spaceDID}/upload/${root}/shards`
+  const shards = useSWR<UnknownLink[]|undefined>(shardsKey, {
     fetcher: async () => {
       if (!client || !space) return
 
@@ -40,7 +40,20 @@ export default function ItemPage(props: PageProps): JSX.Element {
         await client.setCurrentSpace(space.did())
       }
 
-      return await client.capability.upload.get(root)
+      const shards = []
+      /** @type {string|undefined} */
+      let cursor
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const page = await client.capability.upload.shard.list(root, { cursor })
+        shards.push(...page.results)
+        cursor = page.cursor
+        if (!cursor) {
+          break
+        }
+      }
+
+      return shards
     },
     onError: logAndCaptureError
   })
@@ -100,9 +113,9 @@ export default function ItemPage(props: PageProps): JSX.Element {
         
         <H2>Shards</H2>
         <div className='pb-5'>
-          {upload.isLoading
+          {shards.isLoading
             ? <DefaultLoader className='w-5 h-5 inline-block' />
-            : upload.data?.shards?.map(link => <Shard space={space.did()} root={root} shard={link} key={link.toString()} />)}
+            : shards.data?.map(link => <Shard space={space.did()} root={root} shard={link} key={link.toString()} />)}
         </div>
 
         <div className="flex items-center gap-2">
@@ -153,7 +166,7 @@ export default function ItemPage(props: PageProps): JSX.Element {
         <RemoveConfirmModal
           isOpen={isRemoveConfirmModalOpen}
           root={root}
-          shards={upload.data?.shards ?? []}
+          shards={shards.data ?? []}
           onConfirm={handleRemove}
           onCancel={() => setRemoveConfirmModalOpen(false)}
         />
@@ -162,7 +175,7 @@ export default function ItemPage(props: PageProps): JSX.Element {
   )
 }
 
-function Shard ({ space, root, shard }: { space: SpaceDID, root: UnknownLink, shard: CARLink }) {
+function Shard ({ space, root, shard }: { space: SpaceDID, root: UnknownLink, shard: UnknownLink }) {
   return (
     <div>
       <Link href={`/space/${space}/root/${root}/shard/${shard}`} className='font-mono text-sm overflow-hidden no-wrap text-ellipsis underline'>{shard.toString()}</Link>
