@@ -201,11 +201,10 @@ export const test = {
 
     assert.deepEqual(uploadAdd2.out.ok, { root })
 
-    const { results } = Result.unwrap(await context.uploadTable.listShards(spaceDid, root))
-    assert.deepEqual(
-      results?.map(String).sort(),
-      shards.map(String).sort()
+    const { results } = Result.unwrap(
+      await context.uploadTable.listShards(spaceDid, root)
     )
+    assert.deepEqual(results?.map(String).sort(), shards.map(String).sort())
   },
 
   'upload/add merges shards to an existing item with shards': async (
@@ -256,7 +255,9 @@ export const test = {
 
     assert.deepEqual(uploadAdd2.out.ok, { root })
 
-    const { results } = Result.unwrap(await context.uploadTable.listShards(spaceDid, root))
+    const { results } = Result.unwrap(
+      await context.uploadTable.listShards(spaceDid, root)
+    )
     assert.deepEqual(
       results?.map(String).sort(),
       cars.map((car) => car.cid.toString()).sort()

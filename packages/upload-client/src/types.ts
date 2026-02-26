@@ -216,7 +216,11 @@ export interface Service extends StorefrontService {
     remove: ServiceMethod<UploadRemove, UploadRemoveSuccess, Failure>
     list: ServiceMethod<UploadList, UploadListSuccess, Failure>
     shard: {
-      list: ServiceMethod<UploadShardList, UploadShardListSuccess, UploadShardListFailure>
+      list: ServiceMethod<
+        UploadShardList,
+        UploadShardListSuccess,
+        UploadShardListFailure
+      >
     }
   }
   usage: {

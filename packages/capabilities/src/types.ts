@@ -617,7 +617,9 @@ export type UploadGetFailure = UploadNotFound | Ucanto.Failure
 
 // Upload Shard
 export type UploadShard = InferInvokedCapability<typeof UploadShardCaps.shard>
-export type UploadShardList = InferInvokedCapability<typeof UploadShardCaps.list>
+export type UploadShardList = InferInvokedCapability<
+  typeof UploadShardCaps.list
+>
 
 export type UploadShardListFailure = UploadNotFound | Ucanto.Failure
 
@@ -974,7 +976,8 @@ export type UploadRemoveSuccess = UploadAddSuccess
 
 export interface UploadListSuccess extends ListResponse<UploadListItem> {}
 
-export interface UploadShardListSuccess extends Omit<ListResponse<UnknownLink>, 'before' | 'after'> {}
+export interface UploadShardListSuccess
+  extends Omit<ListResponse<UnknownLink>, 'before' | 'after'> {}
 
 // UCAN core events
 

@@ -534,8 +534,11 @@ export class Client extends Base {
     if (options.shards) {
       /** @type {string|undefined} */
       let cursor
+      // eslint-disable-next-line no-constant-condition
       while (true) {
-        const page = await this.capability.upload.shard.list(contentCID, { cursor })
+        const page = await this.capability.upload.shard.list(contentCID, {
+          cursor,
+        })
         await Promise.allSettled(
           page.results.map((shard) =>
             this.capability.blob.remove(shard.multihash)

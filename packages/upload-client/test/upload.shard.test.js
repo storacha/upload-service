@@ -61,7 +61,7 @@ describe('UploadShard.list', () => {
     const list = await UploadShard.list(
       { issuer: agent, with: space.did(), proofs, audience: serviceSigner },
       car.cid,
-      { connection },
+      { connection }
     )
 
     assert(service.upload.shard.list.called)
