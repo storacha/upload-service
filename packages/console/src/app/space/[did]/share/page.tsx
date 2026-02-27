@@ -1,11 +1,11 @@
 'use client';
 import { use, type JSX } from "react";
 
-import { ShareSpace } from '@/share'
+import { SpaceShare } from '@storacha/ui-react'
 
 export default function SharePage(props): JSX.Element {
   const params = use(props.params);
   return (
-    <ShareSpace spaceDID={decodeURIComponent(params.did)}/>
+    <SpaceShare spaceDID={decodeURIComponent(params.did)}/>
   )
 }
