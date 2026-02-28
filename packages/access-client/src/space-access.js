@@ -7,6 +7,7 @@ import * as API from './types.js'
  */
 const VALID_COMBINATIONS = {
   'google-kms': ['RSA_DECRYPT_OAEP_3072_SHA256'],
+  'generic-kms': ['RSA_DECRYPT_OAEP_3072_SHA256'],
   // Add more providers and algorithms here as needed
 }
 

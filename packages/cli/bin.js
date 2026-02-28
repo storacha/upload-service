@@ -239,9 +239,11 @@ cli
     // Validate encryption provider
     if (
       options['encryption-provider'] &&
-      !['google-kms'].includes(options['encryption-provider'])
+      !['google-kms', 'generic-kms'].includes(options['encryption-provider'])
     ) {
-      console.error('Invalid encryption provider. Must be "google-kms"')
+      console.error(
+        'Invalid encryption provider. Must be "google-kms" or "generic-kms"'
+      )
       process.exit(1)
     }
 

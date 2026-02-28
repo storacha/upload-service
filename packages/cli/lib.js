@@ -345,9 +345,11 @@ export const parseAccessFromOptions = (options) => {
   // Validate encryption provider
   if (
     options['encryption-provider'] &&
-    !['google-kms'].includes(options['encryption-provider'])
+    !['google-kms', 'generic-kms'].includes(options['encryption-provider'])
   ) {
-    console.error('Invalid encryption provider. Must be "google-kms"')
+    console.error(
+      'Invalid encryption provider. Must be "google-kms" or "generic-kms"'
+    )
     process.exit(1)
   }
 
@@ -359,10 +361,10 @@ export const parseAccessFromOptions = (options) => {
   } else {
     const provider = options['encryption-provider'] || 'google-kms'
 
-    // Ensure only Google KMS is supported
-    if (provider !== 'google-kms') {
+    // Ensure only Google KMS or 1Password is supported
+    if (!['google-kms', '1password'].includes(provider)) {
       console.error(
-        'Invalid encryption provider. Only "google-kms" is supported for private spaces.'
+        'Invalid encryption provider. Only "google-kms" or "1password" is supported for private spaces.'
       )
       process.exit(1)
     }

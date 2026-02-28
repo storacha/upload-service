@@ -239,6 +239,13 @@ export interface GoogleKMSEncryptionProvider extends EncryptionProvider {
 }
 
 /**
+ * Generic KMS encryption provider
+ */
+export interface OnePasswordEncryptionProvider extends EncryptionProvider {
+  provider: 'generic-kms'
+}
+
+/**
  * Public access type for spaces
  */
 export interface PublicAccess {
@@ -259,6 +266,7 @@ export interface PrivateAccess<P extends EncryptionProvider> {
 export type SpaceAccessType =
   | PublicAccess
   | PrivateAccess<GoogleKMSEncryptionProvider>
+  | PrivateAccess<OnePasswordEncryptionProvider>
 
 /**
  * Space metadata
