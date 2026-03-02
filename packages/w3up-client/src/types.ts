@@ -165,6 +165,7 @@ export type {
   EgressRecordSuccess,
   EgressRecordFailure,
   ListResponse,
+  ResultPage,
   AnyLink,
   CARLink,
   CARFile,

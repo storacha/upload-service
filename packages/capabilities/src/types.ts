@@ -946,12 +946,17 @@ export type StoreGetFailure = StoreItemNotFound | Ucanto.Failure
 /** @deprecated */
 export interface StoreListSuccess extends ListResponse<StoreListItem> {}
 
-export interface ListResponse<R> {
+/** A page of results from a paginated listing or query. */
+export interface ResultPage<R> {
   cursor?: string
-  before?: string
-  after?: string
   size: number
   results: R[]
+}
+
+/** A bi-directional page of results from a paginated listing or query. */
+export interface ListResponse<R> extends ResultPage<R> {
+  before?: string
+  after?: string
 }
 
 /** @deprecated */
@@ -977,7 +982,7 @@ export type UploadRemoveSuccess = UploadAddSuccess
 export interface UploadListSuccess extends ListResponse<UploadListItem> {}
 
 export interface UploadShardListSuccess
-  extends Omit<ListResponse<UnknownLink>, 'before' | 'after'> {}
+  extends ResultPage<UnknownLink> {}
 
 // UCAN core events
 
