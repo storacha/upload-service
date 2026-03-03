@@ -981,8 +981,7 @@ export type UploadRemoveSuccess = UploadAddSuccess
 
 export interface UploadListSuccess extends ListResponse<UploadListItem> {}
 
-export interface UploadShardListSuccess
-  extends ResultPage<UnknownLink> {}
+export interface UploadShardListSuccess extends ResultPage<UnknownLink> {}
 
 // UCAN core events
 
