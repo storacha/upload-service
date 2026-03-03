@@ -57,7 +57,7 @@ import {
   UploadShardListSuccess,
   UploadShardListFailure,
   ListResponse,
-  ResultPage,  
+  ResultPage,
   CARLink,
   PieceLink,
   UploadGet,
