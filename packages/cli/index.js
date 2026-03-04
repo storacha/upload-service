@@ -10,9 +10,7 @@ import * as dagJSON from '@ipld/dag-json'
 import { filesFromPaths } from 'files-from-path'
 import * as PieceHasher from 'fr32-sha2-256-trunc254-padded-binary-tree-multihash'
 import * as Account from './account.js'
-
 import { spaceAccess } from '@storacha/client/capability/access'
-import { parse as parseProof } from '@storacha/client/proof'
 import { AgentData } from '@storacha/access'
 import * as Space from './space.js'
 import {
@@ -23,21 +21,24 @@ import {
   filesizeMB,
   readProof,
   readProofFromBytes,
-  uploadListResponseToString,
+  uploadListItemToString,
   startOfLastMonth,
   chooseBillingPlanAndCheckout,
 } from './lib.js'
 import * as ucanto from '@ucanto/core'
 import { ed25519 } from '@ucanto/principal'
 import chalk from 'chalk'
+import ago from 's-ago'
+import { Parallel } from 'parallel-transform-web'
+
 export * as Coupon from './coupon.js'
 export * as Bridge from './bridge.js'
 export { Account, Space }
-import ago from 's-ago'
 
 /**
- * @import { MultihashDigest } from 'multiformats'
+ * @import { MultihashDigest, UnknownLink } from 'multiformats'
  * @import { code as pieceHashCode } from '@web3-storage/data-segment/multihash'
+ * @import { UploadListItem } from '@storacha/client/types'
  */
 
 /**
@@ -252,17 +253,52 @@ export async function upload(firstPath, opts) {
  */
 export async function list(opts = {}) {
   const client = await getClient()
-  let count = 0
-  /** @type {import('@storacha/client/types').UploadListSuccess|undefined} */
-  let res
-  do {
-    res = await client.capability.upload.list({ cursor: res?.cursor })
-    if (!res) throw new Error('missing upload list response')
-    count += res.results.length
-    if (res.results.length) {
-      console.log(uploadListResponseToString(res, opts))
+  /** @type {string|undefined} */
+  let cursor
+  /** @type {ReadableStream<UploadListItem>} */
+  const uploads = new ReadableStream({
+    async pull(controller) {
+      const page = await client.capability.upload.list({ cursor })
+      for (const item of page.results) {
+        controller.enqueue(item)
+      }
+      cursor = page.cursor
+      if (!cursor) {
+        controller.close()
+      }
+    },
+  })
+
+  /** @type {TransformStream<UploadListItem, [UploadListItem, UnknownLink[]]>} */
+  const shards = new Parallel(5, async (upload) => {
+    const shards = []
+    if (opts.shards) {
+      /** @type {string|undefined} */
+      let cursor
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const page = await client.capability.upload.shard.list(upload.root, {
+          cursor,
+        })
+        shards.push(...page.results)
+        cursor = page.cursor
+        if (!cursor) {
+          break
+        }
+      }
     }
-  } while (res.cursor && res.results.length)
+    return [upload, shards]
+  })
+
+  let count = 0
+  await uploads.pipeThrough(shards).pipeTo(
+    new WritableStream({
+      write([upload, shards]) {
+        count++
+        console.log(uploadListItemToString(upload, shards, opts))
+      },
+    })
+  )
 
   if (count === 0 && !opts.json) {
     console.log('🐔 No uploads in space')

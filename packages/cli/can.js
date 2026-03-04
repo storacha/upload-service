@@ -7,14 +7,20 @@ import { base58btc } from 'multiformats/bases/base58'
 import * as Digest from 'multiformats/hashes/digest'
 import { Piece } from '@web3-storage/data-segment'
 import ora from 'ora'
+import { Parallel } from 'parallel-transform-web'
 import {
   getClient,
-  uploadListResponseToString,
+  uploadListItemToString,
   filecoinInfoToString,
   parseCarLink,
   streamToBlob,
   blobListResponseToString,
 } from './lib.js'
+
+/**
+ * @import { UnknownLink } from 'multiformats'
+ * @import { UploadListItem } from '@storacha/client/types'
+ */
 
 /**
  * @param {string} [blobPath]
@@ -166,9 +172,48 @@ export async function uploadList(opts = {}) {
   }
 
   const spinner = ora('Listing uploads').start()
-  const res = await client.capability.upload.list(listOptions)
+
+  /** @type {ReadableStream<UploadListItem>} */
+  const uploads = new ReadableStream({
+    async pull(controller) {
+      const page = await client.capability.upload.list(listOptions)
+      for (const item of page.results) {
+        controller.enqueue(item)
+      }
+      controller.close()
+    },
+  })
+
+  /** @type {TransformStream<UploadListItem, [UploadListItem, UnknownLink[]]>} */
+  const shards = new Parallel(5, async (upload) => {
+    const shards = []
+    if (opts.shards) {
+      /** @type {string|undefined} */
+      let cursor
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const page = await client.capability.upload.shard.list(upload.root, {
+          cursor,
+        })
+        shards.push(...page.results)
+        cursor = page.cursor
+        if (!cursor) {
+          break
+        }
+      }
+    }
+    return [upload, shards]
+  })
+
+  await uploads.pipeThrough(shards).pipeTo(
+    new WritableStream({
+      write([upload, shards]) {
+        console.log(uploadListItemToString(upload, shards, opts))
+      },
+    })
+  )
+
   spinner.stop()
-  console.log(uploadListResponseToString(res, opts))
 }
 
 /**

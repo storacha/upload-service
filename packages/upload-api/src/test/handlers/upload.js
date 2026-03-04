@@ -56,7 +56,6 @@ export const test = {
 
     const [item] = results
     assert.deepEqual(item.root.toString(), root.toString())
-    assert.deepEqual(item.shards?.map(String).sort(), shards.map(String).sort())
 
     const msAgo = Date.now() - new Date(item.insertedAt).getTime()
     assert.equal(msAgo < 60_000, true)
@@ -150,12 +149,8 @@ export const test = {
       throw new Error('invocation failed', { cause: uploadAdd })
     }
 
-    assert.equal(uploadAdd.out.ok.shards, undefined)
-
     const { results } = Result.unwrap(await context.uploadTable.list(spaceDid))
     assert.equal(results.length, 1)
-    const [upload] = results
-    assert.deepEqual(upload.shards, [])
   },
 
   'upload/add can add shards to an existing item with no shards': async (
@@ -206,14 +201,10 @@ export const test = {
 
     assert.deepEqual(uploadAdd2.out.ok, { root })
 
-    const { results } = Result.unwrap(await context.uploadTable.list(spaceDid))
-    assert.equal(results.length, 1)
-    const [upload] = results
-    assert.equal(upload.root.toString(), root.toString())
-    assert.deepEqual(
-      upload.shards?.map(String).sort(),
-      shards.map(String).sort()
+    const { results } = Result.unwrap(
+      await context.uploadTable.listShards(spaceDid, root)
     )
+    assert.deepEqual(results?.map(String).sort(), shards.map(String).sort())
   },
 
   'upload/add merges shards to an existing item with shards': async (
@@ -248,8 +239,6 @@ export const test = {
       throw new Error('invocation failed', { cause: uploadAdd1 })
     }
 
-    assert.equal(uploadAdd1.out.ok.shards, undefined)
-
     const uploadAdd2 = await Upload.add
       .invoke({
         issuer: alice,
@@ -266,18 +255,12 @@ export const test = {
 
     assert.deepEqual(uploadAdd2.out.ok, { root })
 
-    const { results } = Result.unwrap(await context.uploadTable.list(spaceDid))
-    assert.equal(results.length, 1)
-    const [upload] = results
+    const { results } = Result.unwrap(
+      await context.uploadTable.listShards(spaceDid, root)
+    )
     assert.deepEqual(
-      {
-        root: upload.root.toString(),
-        shards: upload.shards?.map(String).sort(),
-      },
-      {
-        root: root.toString(),
-        shards: cars.map((car) => car.cid.toString()).sort(),
-      }
+      results?.map(String).sort(),
+      cars.map((car) => car.cid.toString()).sort()
     )
   },
 
@@ -366,10 +349,6 @@ export const test = {
 
     assert.ok(uploadRemove.out.ok.root)
     assert.equal(uploadRemove.out.ok.root?.toString(), car.roots[0].toString())
-    assert.equal(
-      uploadRemove?.out.ok.shards?.[0].toString(),
-      car.cid.toString()
-    )
   },
 
   'upload/remove fails for non existent upload': async (assert, context) => {
@@ -623,7 +602,6 @@ export const test = {
       )
 
       assert.deepEqual(item?.root.toString(), root.toString())
-      assert.deepEqual(item?.shards?.map(String), [car.cid.toString()])
     }
   },
 
@@ -876,10 +854,6 @@ export const test = {
       throw new Error('invocation failed', { cause: uploadGet })
     }
 
-    assert.equal(
-      uploadGet.out.ok.shards?.[0].toString(),
-      cars[0].cid.toString()
-    )
     assert.equal(uploadGet.out.ok.root.toString(), cars[0].roots[0].toString())
   },
 

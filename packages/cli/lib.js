@@ -19,18 +19,17 @@ import { CarReader } from '@ipld/car'
 import { select } from '@inquirer/prompts'
 import { Account } from '@storacha/client/account'
 
+/** @import { UnknownLink } from 'multiformats' */
+
 /**
  * @typedef {import('@storacha/client/types').AnyLink} AnyLink
  * @typedef {import('@storacha/client/types').CARLink} CARLink
  * @typedef {import('@storacha/client/types').FileLike & { size: number }} FileLike
  * @typedef {import('@storacha/client/types').SpaceBlobListSuccess} BlobListSuccess
- * @typedef {import('@storacha/client/types').UploadListSuccess} UploadListSuccess
+ * @typedef {import('@storacha/client/types').UploadListItem} UploadListItem
  * @typedef {import('@storacha/capabilities/types').FilecoinInfoSuccess} FilecoinInfoSuccess
  */
 
-/**
- *
- */
 export function getPkg() {
   // @ts-ignore JSON.parse works with Buffer in Node.js
   return JSON.parse(fs.readFileSync(new URL('./package.json', import.meta.url)))
@@ -162,7 +161,8 @@ export async function readProofFromBytes(bytes) {
 }
 
 /**
- * @param {UploadListSuccess} res
+ * @param {UploadListItem} upload
+ * @param {UnknownLink[]} shards
  * @param {object} [opts]
  * @param {boolean} [opts.raw]
  * @param {boolean} [opts.json]
@@ -170,30 +170,22 @@ export async function readProofFromBytes(bytes) {
  * @param {boolean} [opts.plainTree]
  * @returns {string}
  */
-export function uploadListResponseToString(res, opts = {}) {
+export function uploadListItemToString(upload, shards, opts = {}) {
   if (opts.json) {
-    return res.results
-      .map(({ root, shards, insertedAt, updatedAt }) =>
-        dagJSON.stringify({ root, shards, insertedAt, updatedAt })
-      )
-      .join('\n')
+    return dagJSON.stringify({ ...upload, shards })
   } else if (opts.shards) {
-    return res.results
-      .map(({ root, shards }) => {
-        const treeBuilder = opts.plainTree ? tree.plain : tree
-        return treeBuilder({
-          label: root.toString(),
-          nodes: [
-            {
-              label: 'shards',
-              leaf: shards?.map((s) => s.toString()),
-            },
-          ],
-        })
-      })
-      .join('\n')
+    const treeBuilder = opts.plainTree ? tree.plain : tree
+    return treeBuilder({
+      label: upload.root.toString(),
+      nodes: [
+        {
+          label: 'shards',
+          leaf: shards?.map((s) => s.toString()),
+        },
+      ],
+    })
   } else {
-    return res.results.map(({ root }) => root.toString()).join('\n')
+    return upload.root.toString()
   }
 }
 

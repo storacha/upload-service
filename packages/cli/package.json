@@ -80,6 +80,7 @@
     "fr32-sha2-256-trunc254-padded-binary-tree-multihash": "catalog:",
     "open": "catalog:",
     "ora": "catalog:",
+    "parallel-transform-web": "^1.0.1",
     "pretty-tree": "catalog:",
     "s-ago": "catalog:",
     "sade": "catalog:",

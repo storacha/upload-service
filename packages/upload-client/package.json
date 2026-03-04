@@ -44,6 +44,7 @@
     "./index": "./dist/index/index.js",
     "./sharding": "./dist/sharding.js",
     "./upload": "./dist/upload/index.js",
+    "./upload/shard": "./dist/upload/shard/index.js",
     "./unixfs": "./dist/unixfs.js",
     "./types": "./dist/types.js"
   },

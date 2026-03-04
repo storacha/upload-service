@@ -1393,9 +1393,9 @@ export const testClient = {
       const content = new Blob(bytesArray)
       const fileLink = await alice.uploadFile(content)
 
-      const upload = await uploadTable.get(space.did(), fileLink)
+      const listRes = await uploadTable.listShards(space.did(), fileLink)
 
-      const shard = upload.ok?.shards?.[0]
+      const shard = listRes.ok?.results?.[0]
       if (!shard) {
         return assert.ok(shard)
       }

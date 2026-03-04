@@ -2,6 +2,7 @@ import { uploadAddProvider } from './upload/add.js'
 import { uploadGetProvider } from './upload/get.js'
 import { uploadListProvider } from './upload/list.js'
 import { uploadRemoveProvider } from './upload/remove.js'
+import { uploadShardListProvider } from './upload/shard/list.js'
 import * as API from './types.js'
 
 /**
@@ -13,5 +14,8 @@ export function createService(context) {
     get: uploadGetProvider(context),
     list: uploadListProvider(context),
     remove: uploadRemoveProvider(context),
+    shard: {
+      list: uploadShardListProvider(context),
+    },
   }
 }

@@ -1,11 +1,23 @@
 import { Upload } from '@storacha/upload-client'
 import { Upload as UploadCapabilities } from '@storacha/capabilities'
 import { Base } from '../base.js'
+import { UploadShardClient } from './upload/shard.js'
 
 /**
  * Client for interacting with the `upload/*` capabilities.
  */
 export class UploadClient extends Base {
+  /**
+   * @param {import('@storacha/access').AgentData} agentData
+   * @param {object} [options]
+   * @param {import('../types.js').ServiceConf} [options.serviceConf]
+   * @param {URL} [options.receiptsEndpoint]
+   */
+  constructor(agentData, options) {
+    super(agentData, options)
+    this.shard = new UploadShardClient(agentData, options)
+  }
+
   /**
    * Register an "upload" to the resource.
    *

@@ -20,6 +20,7 @@ import { AgentDelegation } from './delegation.js'
 import { BlobClient } from './capability/blob.js'
 import { IndexClient } from './capability/index.js'
 import { UploadClient } from './capability/upload.js'
+import { UploadShardClient } from './capability/upload/shard.js'
 import { SpaceClient } from './capability/space.js'
 import { SubscriptionClient } from './capability/subscription.js'
 import { UsageClient } from './capability/usage.js'
@@ -40,6 +41,7 @@ export {
   SpaceClient,
   SubscriptionClient,
   UploadClient,
+  UploadShardClient,
   UsageClient,
   AccountUsageClient,
 }
@@ -520,33 +522,33 @@ export class Client extends Base {
    * reference same shards, which in turn could corrupt those uploads.
    *
    * Required delegated capabilities:
-   * - `space/blob/remove`
-   * - `store/remove`
-   * - `upload/get`
    * - `upload/remove`
+   * - `upload/shard/list` (if shards option is true)
+   * - `space/blob/remove` (if shards option is true)
    *
    * @param {import('multiformats').UnknownLink} contentCID
    * @param {object} [options]
    * @param {boolean} [options.shards]
    */
   async remove(contentCID, options = {}) {
-    // Shortcut if there is no request to remove shards
-    if (!options.shards) {
-      // Remove association of content CID with selected space.
-      await this.capability.upload.remove(contentCID)
-      return
-    }
-
-    // Get shards associated with upload.
-    const upload = await this.capability.upload.get(contentCID)
-
-    // Remove shards
-    if (upload.shards?.length) {
-      await Promise.allSettled(
-        upload.shards.map((shard) =>
-          this.capability.blob.remove(shard.multihash)
+    if (options.shards) {
+      /** @type {string|undefined} */
+      let cursor
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const page = await this.capability.upload.shard.list(contentCID, {
+          cursor,
+        })
+        await Promise.allSettled(
+          page.results.map((shard) =>
+            this.capability.blob.remove(shard.multihash)
+          )
         )
-      )
+        cursor = page.cursor
+        if (!cursor) {
+          break
+        }
+      }
     }
 
     // Remove association of content CID with selected space.

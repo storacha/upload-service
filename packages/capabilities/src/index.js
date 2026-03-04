@@ -5,6 +5,7 @@ import * as Space from './space.js'
 import * as Top from './top.js'
 import * as Store from './store.js'
 import * as Upload from './upload.js'
+import * as UploadShard from './upload/shard.js'
 import * as Access from './access.js'
 import * as Utils from './utils.js'
 import * as Consumer from './consumer.js'
@@ -39,6 +40,7 @@ export {
   Top,
   Store,
   Upload,
+  UploadShard,
   Consumer,
   Customer,
   Console,
@@ -86,6 +88,8 @@ export const abilitiesAsStrings = [
   Upload.get.can,
   Upload.remove.can,
   Upload.list.can,
+  UploadShard.shard.can,
+  UploadShard.list.can,
   Store.store.can,
   Store.add.can,
   Store.get.can,
