@@ -1,3 +1,13 @@
+## 3.2.1 (2026-03-04)
+
+### 🩹 Fixes
+
+- fix: do not allocate if blob is already stored ([#678](https://github.com/storacha/upload-service/pull/678))
+
+### ❤️ Thank You
+
+- ash
+
 ## 3.2.0 (2026-03-04)
 
 ### 🚀 Features
