@@ -1,3 +1,22 @@
+## 2.1.0 (2026-03-04)
+
+### 🚀 Features
+
+- feat: add `upload/shard/list` capability and implementation ([#680](https://github.com/storacha/upload-service/pull/680))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-client to 1.0.19
+- Updated @storacha/access to 1.6.8
+- Updated @storacha/upload-client to 1.4.0
+- Updated @storacha/capabilities to 2.3.0
+- Updated @storacha/blob-index to 1.2.8
+- Updated @storacha/upload-api to 3.2.0
+
+### ❤️ Thank You
+
+- ash
+
 ## 2.0.7 (2026-02-20)
 
 ### 🧱 Updated Dependencies
