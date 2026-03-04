@@ -130,7 +130,8 @@ export function SpaceCreatorForm({
     } catch (error) {
       setSubmitted(false)
       setCreated(false)
-      setErrorMessage(`Failed to create space: ${error.message}`)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      setErrorMessage(`Failed to create space: ${errorMessage}`)
       console.log(error)
       /* eslint-disable-next-line no-console */
       logAndCaptureError(error)
