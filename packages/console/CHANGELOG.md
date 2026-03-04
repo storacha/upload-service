@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.0.0](https://github.com/storacha/upload-service/compare/console-v2.20.2...console-v3.0.0) (2026-03-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* Return values for `upload/add`, `upload/list` and `upload/get` no longer include a `shards` field that contains the CIDs of the shards of the upload. You must now call `upload/shard/list` to obtain shards for an upload. This is not technically a breaking change because the field was optional. However, any API consumer relying on the field to contain the shard listing for a given upload will no longer show shards for a given upload.
+
+### Features
+
+* add `upload/shard/list` capability and implementation ([#680](https://github.com/storacha/upload-service/issues/680)) ([63bf146](https://github.com/storacha/upload-service/commit/63bf146b69a8465cc466c24d3baade6dedd99afe))
+
 ## [2.20.2](https://github.com/storacha/upload-service/compare/console-v2.20.1...console-v2.20.2) (2026-02-05)
 
 
