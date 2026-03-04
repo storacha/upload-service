@@ -1,3 +1,9 @@
+## 1.1.5 (2026-03-04)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/capabilities to 2.3.0
+
 ## 1.1.4 (2026-02-03)
 
 ### 🧱 Updated Dependencies
