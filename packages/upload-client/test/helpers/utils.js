@@ -9,6 +9,8 @@ import * as DID from '@ipld/dag-ucan/did'
 import { createConcludeInvocation } from '../../src/blob/add.js'
 import { randomCAR } from './random.js'
 
+/** @import * as CapAPI from '@storacha/capabilities/types' */
+
 export const validateAuthorization = () => ({ ok: {} })
 
 export const receiptsEndpoint = 'http://localhost:9201'
@@ -147,13 +149,13 @@ const setupBlobAddResponse = async function (
       }),
     },
   })
-  const blobConcludeAllocate = await createConcludeInvocation(
+  const concludeBlobAllocate = await createConcludeInvocation(
     issuer,
     audience,
     blobAllocateReceipt
   ).delegate()
 
-  const blobPutTask = await HTTP.put
+  const httpPutTask = await HTTP.put
     .invoke({
       issuer,
       audience,
@@ -175,19 +177,15 @@ const setupBlobAddResponse = async function (
       expiration: Infinity,
     })
     .delegate()
-  const blobPutReceipt = !hasHttpPutReceipt
-    ? await Receipt.issue({
-        issuer,
-        ran: blobPutTask.cid,
-        // Type assertion to work around type bug:
-        // https://github.com/ipld/js-dag-ucan/pull/108
-        result: { error: /** @type {{}} */ (new Error()) },
-      })
-    : await generateAcceptReceipt(blobPutTask.cid.toString())
-  const blobConcludePut = await createConcludeInvocation(
+  const httpPutReceipt = await Receipt.issue({
+    issuer,
+    ran: httpPutTask.cid,
+    result: { ok: {} },
+  })
+  const concludeHttpPut = await createConcludeInvocation(
     issuer,
     audience,
-    blobPutReceipt
+    httpPutReceipt
   ).delegate()
 
   const blobAcceptTask = await BlobCapabilities.accept
@@ -198,7 +196,7 @@ const setupBlobAddResponse = async function (
       nb: {
         blob,
         space: DID.parse(space.did()),
-        _put: { 'ucan/await': ['.out.ok', blobPutTask.link()] },
+        _put: { 'ucan/await': ['.out.ok', httpPutTask.link()] },
       },
       proofs,
     })
@@ -220,17 +218,27 @@ const setupBlobAddResponse = async function (
     blobAcceptReceipt
   ).delegate()
 
-  return Server.ok({
-    site: {
-      'ucan/await': ['.out.ok.site', blobAcceptTask.link()],
-    },
-  })
+  /** @type {Server.OkBuilder<CapAPI.SpaceBlobAddSuccess, CapAPI.SpaceBlobAddFailure>|Server.ForkBuilder<CapAPI.SpaceBlobAddSuccess, CapAPI.SpaceBlobAddFailure>} */
+  let result = Server.ok(
+    /** @type {CapAPI.SpaceBlobAddSuccess} */ ({
+      site: {
+        'ucan/await': ['.out.ok.site', blobAcceptTask.link()],
+      },
+    })
+  )
     .fork(blobAllocateTask)
-    .fork(blobConcludeAllocate)
-    .fork(blobPutTask)
-    .fork(blobConcludePut)
+    .fork(concludeBlobAllocate)
+    .fork(httpPutTask)
     .fork(blobAcceptTask)
-    .fork(blobConcludeAccept)
+
+  if (hasHttpPutReceipt) {
+    result = result.fork(concludeHttpPut)
+  }
+  if (hasAcceptReceipt) {
+    result = result.fork(blobConcludeAccept)
+  }
+
+  return result
 }
 
 /**

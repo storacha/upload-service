@@ -11,7 +11,7 @@ import * as DID from '@ipld/dag-ucan/did'
 import * as API from '../types.js'
 import { allocate as spaceAllocate } from '../space-allocate.js'
 import { createConcludeInvocation } from '../ucan/conclude.js'
-import { AwaitError, deriveDID, fetchWithTimeout } from './lib.js'
+import { AwaitError, deriveDID, fetchWithTimeout, findTask } from './lib.js'
 import { AgentMessage } from '../lib.js'
 import * as W3sBlobAdd from '../web3.storage/blob/add.js'
 import { isW3sProvider } from '../web3.storage/blob/lib.js'
@@ -41,6 +41,7 @@ export function blobAddProvider(context) {
     handler: async ({ capability, invocation, context: invocationContext }) => {
       const { with: space, nb } = capability
       const { blob } = nb
+      const digest = Digest.decode(blob.digest)
 
       // First we check if space has storage provider associated. If it does not
       // we return `InsufficientStorage` error as storage capacity is considered
@@ -60,6 +61,80 @@ export function blobAddProvider(context) {
           invocation,
           context: invocationContext,
         })
+      }
+
+      const findRes = await context.registry.find(space, digest)
+      if (findRes.error && findRes.error.name !== 'EntryNotFound') {
+        return findRes
+      }
+      // If blob is already registered in the space, we can skip allocation and
+      // return the information from the original receipt, plus the receipts for
+      // the http/put and blob/accept tasks that happened.
+      if (findRes.ok) {
+        // blob registration cause is the CID of the `space/blob/add` invocation
+        const blobAddRcptRes = await context.agentStore.receipts.get(
+          findRes.ok.cause
+        )
+        if (blobAddRcptRes.error) {
+          return blobAddRcptRes
+        }
+        const receipt = blobAddRcptRes.ok
+
+        /** @type {API.OkBuilder<API.SpaceBlobAddSuccess, API.SpaceBlobAddFailure>|API.ForkBuilder<API.SpaceBlobAddSuccess, API.SpaceBlobAddFailure>} */
+        let result = Server.ok(
+          /** @type {API.SpaceBlobAddSuccess} */ (receipt.out.ok)
+        )
+        for (const fx of receipt.fx.fork) {
+          result = result.fork(fx)
+        }
+
+        // Collect receipts for `http/put` and `blob/accept` tasks which should
+        // be available. Add them to the result effects to signify the blob has
+        // been successfully delivered and accepted.
+
+        /** @type {API.TheCapabilityParser<API.CapabilityMatch<API.Ability, API.URI, API.Caveats>>[]} */
+        const taskCaps = [HTTP.put, Blob.accept]
+        const rcptTasks = []
+        for (const cap of taskCaps) {
+          const task = findTask(receipt.fx.fork, cap)
+          if (!task) {
+            return Server.error({
+              name: 'TaskNotFound',
+              message: `${cap.can} task not found in effects of the original invocation receipt`,
+            })
+          }
+          rcptTasks.push(task)
+        }
+
+        const rcptResults = await Promise.all(
+          rcptTasks.map((t) => context.agentStore.receipts.get(t.cid))
+        )
+        for (const [i, t] of rcptTasks.entries()) {
+          const rcptRes = rcptResults[i]
+          if (rcptRes.error) {
+            console.error(
+              'fetching %s receipt for task: %s: %o',
+              t.capabilities[0].can,
+              t.cid,
+              rcptRes.error
+            )
+            if (rcptRes.error.name === 'RecordNotFound') {
+              return Server.error({
+                name: 'ReceiptNotFound',
+                message: `${t.capabilities[0].can}  receipt not found in agent message store`,
+              })
+            }
+            return rcptRes
+          }
+          result = result.fork(
+            await createConcludeInvocation(
+              context.id,
+              context.id,
+              rcptRes.ok
+            ).delegate()
+          )
+        }
+        return result
       }
 
       const allocation = await allocate({
