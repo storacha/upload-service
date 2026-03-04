@@ -2,7 +2,7 @@ import { useW3 } from '@storacha/ui-react'
 import { usePrivateSpacesAccess } from './usePrivateSpacesAccess'
 import { sortSpaces, type SortOption } from './useSpaceSort'
 
-export const useFilteredSpaces = (sortOption: SortOption = 'newest') => {
+export const useFilteredSpaces = (sortOption: SortOption = 'name-asc') => {
   const [{ spaces }] = useW3()
   const { canAccessPrivateSpaces } = usePrivateSpacesAccess()
   const allPublicSpaces = spaces.filter(s => s.access.type === 'public')

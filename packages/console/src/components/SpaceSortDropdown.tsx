@@ -1,5 +1,4 @@
 import { Fragment, type JSX } from 'react'
-// @ts-expect-error - relying on headlessui types from dependency tree
 import { Listbox, Transition } from '@headlessui/react'
 import { ChevronUpDownIcon, CheckIcon } from '@heroicons/react/20/solid'
 import type { SortOption } from '@/hooks/useSpaceSort'
@@ -9,12 +8,7 @@ interface SpaceSortDropdownProps {
   onSortChange: (option: SortOption) => void
 }
 
-/**
- * Sort options configuration
- */
 const sortOptions: Array<{ value: SortOption; label: string }> = [
-  { value: 'newest', label: 'Newest' },
-  { value: 'oldest', label: 'Oldest' },
   { value: 'name-asc', label: 'Name (A–Z)' },
   { value: 'name-desc', label: 'Name (Z–A)' },
 ]
