@@ -10,6 +10,10 @@ import { CAR, error } from '@ucanto/core'
 import * as dagCBOR from '@ipld/dag-cbor'
 import { UnknownFormat } from '../errors.js'
 
+/**
+ * @import * as Types from '../../types.js'
+ */
+
 const FORMATS = {
   [LitMetadata.version]: LitMetadata, // 'encrypted-metadata@0.1'
   [KMSMetadata.version]: KMSMetadata, // 'encrypted-metadata@0.2'
@@ -19,7 +23,7 @@ const FORMATS = {
  * Universal extract function - tries each registered format
  *
  * @param {Uint8Array} archive
- * @returns {any}
+ * @returns {Types.Result<any>}
  */
 export const extract = (archive) => {
   // Decode CAR to check version
@@ -36,13 +40,24 @@ export const extract = (archive) => {
     )
   }
 
+  return view({ root: roots[0] })
+}
+
+/**
+ * Universal view function - tries each registered format
+ *
+ * @param {object} source
+ * @param {Types.IPLDBlock} source.root
+ * @returns {Types.Result<any>}
+ */
+export const view = ({ root }) => {
   // Check which version this metadata uses
-  const value = dagCBOR.decode(roots[0].bytes)
+  const value = dagCBOR.decode(root.bytes)
 
   for (const [version, formatModule] of Object.entries(FORMATS)) {
     if (value && typeof value === 'object' && version in value) {
       // Found matching version, delegate to specific format module
-      return formatModule.extract(archive)
+      return formatModule.view({ root })
     }
   }
 

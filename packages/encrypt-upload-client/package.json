@@ -53,7 +53,15 @@
       "import": "./dist/crypto/symmetric/generic-aes-ctr-streaming-crypto.js",
       "require": "./dist/crypto/symmetric/generic-aes-ctr-streaming-crypto.js"
     },
-    "./types": "./dist/types.js"
+    "./types": "./dist/types.js",
+    "./utils/encrypt": {
+      "import": "./dist/utils/encrypt.js",
+      "require": "./dist/utils/encrypt.js"
+    },
+    "./utils/decrypt": {
+      "import": "./dist/utils/decrypt.js",
+      "require": "./dist/utils/decrypt.js"
+    }
   },
   "scripts": {
     "dev": "tsc --build --watch --preserveWatchOutput",

@@ -6,7 +6,7 @@ import {
   EncryptionSetup,
   EncryptionKeyDecrypt,
 } from '@storacha/capabilities/space'
-import { KMSMetadata } from '../../core/metadata/encrypted-metadata.js'
+import * as EncryptedMetadata from '../../core/metadata/encrypted-metadata.js'
 import * as DID from '@ipld/dag-ucan/did'
 
 /**
@@ -18,6 +18,9 @@ import * as DID from '@ipld/dag-ucan/did'
  * @implements {Type.CryptoAdapter}
  */
 export class KMSCryptoAdapter {
+  /** @type {Map<Type.SpaceDID, { publicKey: string, provider: string, algorithm: string }>} */
+  _cachedPublicKeys = new Map()
+
   /**
    * Create a new KMS crypto adapter
    *
@@ -199,7 +202,24 @@ export class KMSCryptoAdapter {
    * @returns {Type.ExtractedMetadata}
    */
   extractEncryptedMetadata(car) {
-    const kmsContentResult = KMSMetadata.extract(car)
+    const kmsContentResult = EncryptedMetadata.extract(car)
+    return this._validateKMSMetadata(kmsContentResult)
+  }
+
+  /**
+   * @param {object} source
+   * @param {Type.IPLDBlock} source.root
+   */
+  viewEncryptedMetadata({ root }) {
+    return this._validateKMSMetadata(EncryptedMetadata.view({ root }))
+  }
+
+  /**
+   *
+   * @param {Type.Result<any>} kmsContentResult
+   * @returns {Type.ExtractedMetadata}
+   */
+  _validateKMSMetadata(kmsContentResult) {
     if (kmsContentResult.error) {
       throw kmsContentResult.error
     }
@@ -268,7 +288,7 @@ export class KMSCryptoAdapter {
       },
     }
 
-    const kmsMetadata = KMSMetadata.create(uploadData)
+    const kmsMetadata = EncryptedMetadata.create('kms', uploadData)
     return await kmsMetadata.archiveBlock()
   }
 
@@ -279,6 +299,10 @@ export class KMSCryptoAdapter {
    * @returns {Promise<{ publicKey: string, provider: string, algorithm: string }>}
    */
   async getSpacePublicKey(encryptionConfig) {
+    const cached = this._cachedPublicKeys.get(encryptionConfig.spaceDID)
+    if (cached) {
+      return cached
+    }
     // Step 1: Invoke the EncryptionSetup capability
     const setupResult = await EncryptionSetup.invoke({
       issuer: encryptionConfig.issuer,
@@ -301,10 +325,15 @@ export class KMSCryptoAdapter {
       throw new Error(errorMessage)
     }
 
-    // Step 3: Return the public key and key reference
-    return /** @type {{ publicKey: string, provider: string, algorithm: string }} */ (
-      setupResult.out.ok
-    )
+    // Step 3: Cache the public key and key reference
+    const publicKeyData =
+      /** @type {{ publicKey: string, provider: string, algorithm: string }} */ (
+        setupResult.out.ok
+      )
+    this._cachedPublicKeys.set(encryptionConfig.spaceDID, publicKeyData)
+
+    // Step 4: Return the public key and key reference
+    return publicKeyData
   }
 
   /**
