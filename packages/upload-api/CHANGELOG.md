@@ -1,3 +1,13 @@
+## 3.2.2 (2026-03-12)
+
+### 🩹 Fixes
+
+- fix account/usage/get default start date ([9ce3f1c9](https://github.com/storacha/upload-service/commit/9ce3f1c9))
+
+### ❤️ Thank You
+
+- bravonatalie
+
 ## 3.2.1 (2026-03-04)
 
 ### 🩹 Fixes
