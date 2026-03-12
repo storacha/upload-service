@@ -75,7 +75,7 @@ export const get = async ({ capability }, context) => {
   const from =
     capability.nb.period?.from !== undefined
       ? new Date(capability.nb.period.from * 1000)
-      : startOfLastMonth(now)
+      : startOfMonth(now)
   const to = capability.nb.period?.to
     ? new Date(capability.nb.period.to * 1000)
     : now
@@ -192,14 +192,5 @@ const startOfMonth = (now) => {
   d.setUTCMinutes(0)
   d.setUTCSeconds(0)
   d.setUTCMilliseconds(0)
-  return d
-}
-
-/**
- * @param {string | number | Date} now
- */
-const startOfLastMonth = (now) => {
-  const d = startOfMonth(now)
-  d.setUTCMonth(d.getUTCMonth() - 1)
   return d
 }
