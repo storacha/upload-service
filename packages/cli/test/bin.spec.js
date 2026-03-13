@@ -444,7 +444,7 @@ export const testSpace = {
         'create',
         bobDID,
         '-c',
-        'store/*',
+        'space/blob/*',
         'upload/*',
         '--output',
         proofPath,
@@ -476,7 +476,7 @@ export const testSpace = {
         'create',
         bobDID,
         '-c',
-        'store/*',
+        'space/blob/*',
         'upload/*',
         '--base64',
       ])
@@ -1005,7 +1005,7 @@ export const testStorachaUp = {
 }
 
 export const testDelegation = {
-  'storacha delegation create -c store/* --output file/path': test(
+  'storacha delegation create -c space/blob/* --output file/path': test(
     async (assert, context) => {
       const env = context.env.alice
       const { bob } = Test
@@ -1023,7 +1023,7 @@ export const testDelegation = {
           'create',
           bob.did(),
           '-c',
-          'store/*',
+          'space/blob/*',
           '--output',
           proofPath,
         ])
@@ -1035,7 +1035,7 @@ export const testDelegation = {
 
       const delegation = extractRes.ok
       assert.equal(delegation?.audience.did(), bob.did())
-      assert.equal(delegation?.capabilities[0].can, 'store/*')
+      assert.equal(delegation?.capabilities[0].can, 'space/blob/*')
       assert.equal(delegation?.capabilities[0].with, spaceDID)
     }
   ),
