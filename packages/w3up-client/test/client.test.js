@@ -1119,7 +1119,7 @@ export const testClient = {
       await alice.addSpace(await space.createAuthorization(alice))
       await alice.setCurrentSpace(space.did())
 
-      const delegation = await alice.createDelegation(bob.agent, ['store/*'])
+      const delegation = await alice.createDelegation(bob.agent, ['space/blob/*'])
 
       await bob.addProof(delegation)
 
@@ -1141,7 +1141,7 @@ export const testClient = {
       const name = `delegation-${Date.now()}`
       const delegation = await alice.createDelegation(
         bob.agent,
-        ['upload/*', 'store/*'],
+        ['upload/*', 'space/blob/*'],
         {
           audienceMeta: { type: 'device', name },
         }
