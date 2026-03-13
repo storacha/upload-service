@@ -371,7 +371,6 @@ export class Client extends Base {
     options = {
       abilities: [
         'space/*',
-        'store/*',
         'upload/*',
         'access/*',
         'usage/*',
