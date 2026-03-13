@@ -235,7 +235,7 @@ describe('access capabilities', function () {
         with: alice.did(),
         nb: {
           iss: 'did:mailto:web.mail:alice',
-          att: [{ can: 'store/add' }],
+          att: [{ can: 'space/blob/add' }],
         },
         proofs: [
           await Access.authorize.delegate({
@@ -244,7 +244,7 @@ describe('access capabilities', function () {
             with: alice.did(),
             nb: {
               iss: 'did:mailto:web.mail:alice',
-              att: [{ can: 'store/add' }, { can: 'store/remove' }],
+              att: [{ can: 'space/blob/add' }, { can: 'space/blob/remove' }],
             },
           }),
         ],
@@ -594,7 +594,7 @@ describe('access capabilities', function () {
         nb: {
           iss: 'did:mailto:web.mail:alice',
           aud: bob.did(),
-          att: [{ can: 'store/add' }],
+          att: [{ can: 'space/blob/add' }],
           cause: parseLink('bafkqaaa'),
         },
         proofs: [
@@ -604,7 +604,7 @@ describe('access capabilities', function () {
             with: alice.did(),
             nb: {
               iss: 'did:mailto:web.mail:alice',
-              att: [{ can: 'store/add' }, { can: 'store/remove' }],
+              att: [{ can: 'space/blob/add' }, { can: 'space/blob/remove' }],
             },
           }),
         ],

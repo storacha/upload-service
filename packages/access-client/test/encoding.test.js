@@ -86,7 +86,7 @@ describe('Encoding', function () {
       audience: bob,
       capabilities: [
         {
-          can: 'store/add',
+          can: 'space/blob/add',
           with: alice.did(),
         },
       ],
@@ -101,7 +101,7 @@ describe('Encoding', function () {
 
     assert.deepEqual(delegation.capabilities, [
       {
-        can: 'store/add',
+        can: 'space/blob/add',
         with: alice.did(),
       },
     ])
