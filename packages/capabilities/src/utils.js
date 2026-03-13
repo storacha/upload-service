@@ -270,7 +270,7 @@ function parseAbility(ability) {
 
 /**
  *
- * TODO: needs to account for caps derived from different namespaces like 'account/info' can be derived from 'store/add'
+ * TODO: needs to account for caps derived from different namespaces like 'account/info' can be derived from 'space/blob/add'
  *
  * @param {import('@ucanto/interface').Ability} parent
  * @param {import('@ucanto/interface').Ability} child

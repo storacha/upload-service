@@ -34,7 +34,7 @@ export const parse = async (str) => {
     }
   } catch {
     // At one point we recommended piping output directly to base64 encoder:
-    // `w3 delegation create did:key... --can 'store/add' | base64`
+    // `w3 delegation create did:key... --can 'upload/add' | base64`
     return legacyExtract(base64.baseDecode(str))
   }
 }
