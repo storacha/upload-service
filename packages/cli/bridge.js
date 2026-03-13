@@ -20,7 +20,7 @@ export { Account, Space }
  */
 export const generateTokens = async (
   resource,
-  { can = ['store/add', 'upload/add'], expiration, json }
+  { can = ['upload/add'], expiration, json }
 ) => {
   const client = await getClient()
 
