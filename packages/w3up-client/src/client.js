@@ -369,13 +369,7 @@ export class Client extends Base {
     delegateEmail,
     spaceDID,
     options = {
-      abilities: [
-        'space/*',
-        'upload/*',
-        'access/*',
-        'usage/*',
-        'filecoin/*',
-      ],
+      abilities: ['space/*', 'upload/*', 'access/*', 'usage/*', 'filecoin/*'],
       expiration: Infinity,
     }
   ) {

@@ -1119,7 +1119,9 @@ export const testClient = {
       await alice.addSpace(await space.createAuthorization(alice))
       await alice.setCurrentSpace(space.did())
 
-      const delegation = await alice.createDelegation(bob.agent, ['space/blob/*'])
+      const delegation = await alice.createDelegation(bob.agent, [
+        'space/blob/*',
+      ])
 
       await bob.addProof(delegation)
 
