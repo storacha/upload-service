@@ -83,7 +83,7 @@ export function containedWithin(child, parent, constraint) {
 }
 
 /**
- * @template {API.ParsedCapability<"store/add"|"store/get"|"store/remove", API.URI<'did:'>, {link?: API.Link<unknown, number, number, 0|1>}>} T
+ * @template {API.ParsedCapability<"space/blob/add"|"space/blob/get"|"space/blob/remove"|"store/get"|"store/remove", API.URI<'did:'>, {link?: API.Link<unknown, number, number, 0|1>}>} T
  * @param {T} claimed
  * @param {T} delegated
  * @returns {API.Result<{}, API.Failure>}
@@ -270,7 +270,7 @@ function parseAbility(ability) {
 
 /**
  *
- * TODO: needs to account for caps derived from different namespaces like 'account/info' can be derived from 'store/add'
+ * TODO: needs to account for caps derived from different namespaces like 'account/info' can be derived from 'space/blob/add'
  *
  * @param {import('@ucanto/interface').Ability} parent
  * @param {import('@ucanto/interface').Ability} child

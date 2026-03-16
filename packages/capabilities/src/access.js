@@ -119,7 +119,7 @@ export const claim = capability({
 export const delegate = capability({
   can: 'access/delegate',
   /**
-   * Field MUST be a space DID with a storage provider. Delegation will be stored just like any other DAG stored using store/add capability.
+   * Field MUST be a space DID with a storage provider. Delegation will be stored just like any other DAG stored using space/blob/add capability.
    *
    * @see https://github.com/storacha/specs/blob/main/w3-access.md#delegate-with
    */
@@ -179,8 +179,8 @@ function subsetsNbDelegations(claim, proof) {
  * Checks that set of requested capabilities is a subset of the capabilities
  * that had been allowed by the owner or the delegate.
  *
- * ⚠️ This function does not currently check that say `store/add` is allowed
- * when say `store/*` was delegated, because it seems very unlikely that we
+ * ⚠️ This function does not currently check that say `space/blob/add` is allowed
+ * when say `space/blob/*` was delegated, because it seems very unlikely that we
  * will ever encounter delegations for `access/authorize` at all.
  *
  * @param {Schema.Infer<CapabilityRequest>[]} claim

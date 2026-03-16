@@ -34,59 +34,6 @@ export const store = capability({
 })
 
 /**
- * `store/add` capability allows agent to store a CAR file into a (memory) space
- * identified by did:key in the `with` field. Agent must precompute CAR locally
- * and provide it's CID and size using `nb.link` and `nb.size` fields, allowing
- * a service to provision a write location for the agent to PUT or POST desired
- * CAR into.
- *
- * @deprecated
- */
-export const add = capability({
-  can: 'store/add',
-  /**
-   * DID of the (memory) space where CAR is intended to
-   * be stored.
-   */
-  with: SpaceDID,
-  nb: Schema.struct({
-    /**
-     * CID of the CAR file to be stored. Service will provision write target
-     * for this exact CAR file for agent to PUT or POST it. Attempt to write
-     * any other content will fail.
-     */
-    link: CARLink,
-    /**
-     * Size of the CAR file to be stored. Service will provision write target
-     * for this exact size. Attempt to write a larger CAR file will fail.
-     */
-    size: Schema.integer(),
-    /**
-     * Agent may optionally provide a link to a related CAR file using `origin`
-     * field. This is useful when storing large DAGs, agent could shard it
-     * across multiple CAR files and then link each shard with a previous one.
-     *
-     * Providing this relation tells service that given CAR is shard of the
-     * larger DAG as opposed to it being intentionally partial DAG. When DAG is
-     * not sharded, there will be only one `store/add` with `origin` left out.
-     */
-    origin: Link.optional(),
-  }),
-  derives: (claim, from) => {
-    const result = equalLink(claim, from)
-    if (result.error) {
-      return result
-    } else if (claim.nb.size !== undefined && from.nb.size !== undefined) {
-      return claim.nb.size > from.nb.size
-        ? fail(`Size constraint violation: ${claim.nb.size} > ${from.nb.size}`)
-        : ok({})
-    } else {
-      return ok({})
-    }
-  },
-})
-
-/**
  * Capability to get store metadata by shard CID.
  * Use to check for inclusion, or get shard size and origin
  *
@@ -171,7 +118,7 @@ export const list = capability({
 })
 
 /** @deprecated */
-export const all = add.or(remove).or(list)
+export const all = remove.or(list)
 
 // ⚠️ We export imports here so they are not omitted in generated typedes
 // @see https://github.com/microsoft/TypeScript/issues/51548

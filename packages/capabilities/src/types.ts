@@ -877,52 +877,11 @@ export interface RecordNotFound extends Error {
 /** @deprecated */
 export type Store = InferInvokedCapability<typeof StoreCaps.store>
 /** @deprecated */
-export type StoreAdd = InferInvokedCapability<typeof StoreCaps.add>
-/** @deprecated */
 export type StoreGet = InferInvokedCapability<typeof StoreCaps.get>
 /** @deprecated */
 export type StoreRemove = InferInvokedCapability<typeof StoreCaps.remove>
 /** @deprecated */
 export type StoreList = InferInvokedCapability<typeof StoreCaps.list>
-
-/** @deprecated */
-export type StoreAddSuccess = StoreAddSuccessDone | StoreAddSuccessUpload
-
-/** @deprecated */
-export type StoreAddSuccessStatusUpload = 'upload'
-/** @deprecated */
-export type StoreAddSuccessStatusDone = 'done'
-
-/** @deprecated */
-export interface StoreAddSuccessResult {
-  /**
-   * Status of the item to store. A "done" status indicates that it is not
-   * necessary to upload the item. An "upload" status indicates that the item
-   * should be uploaded to the provided URL.
-   */
-  status: StoreAddSuccessStatusUpload | StoreAddSuccessStatusDone
-  /**
-   * Total bytes allocated in the space to accommodate this stored item.
-   * May be zero if the item is _already_ stored in _this_ space.
-   */
-  allocated: number
-  /** DID of the space this item will be stored in. */
-  with: DID
-  /** CID of the item. */
-  link: CARLink
-}
-
-/** @deprecated */
-export interface StoreAddSuccessDone extends StoreAddSuccessResult {
-  status: StoreAddSuccessStatusDone
-}
-
-/** @deprecated */
-export interface StoreAddSuccessUpload extends StoreAddSuccessResult {
-  status: StoreAddSuccessStatusUpload
-  url: ToString<URL>
-  headers: Record<string, string>
-}
 
 /** @deprecated */
 export interface StoreRemoveSuccess {
@@ -1256,7 +1215,6 @@ export type ServiceAbilityArray = [
   UploadShard['can'],
   UploadShardList['can'],
   Store['can'],
-  StoreAdd['can'],
   StoreGet['can'],
   StoreRemove['can'],
   StoreList['can'],
