@@ -26,12 +26,11 @@ export const space = capability({
 })
 
 /**
- * `space/info` can be derived from any of the `store/*`
+ * `space/info` can be derived from any of the `store/*` or `upload/*`
  * capability that has matching `with`. This allows store service
  * to identify account based on any user request.
  */
-export const info = Store.add
-  .or(Store.list)
+export const info = Store.list
   .or(Store.remove)
   .or(Upload.add)
   .or(Upload.list)
