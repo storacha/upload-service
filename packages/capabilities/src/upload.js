@@ -41,11 +41,11 @@ const CARLink = Link.match({ code: CAR.code, version: 1 })
  * identified by the given `root`.
  *
  * Usually when agent wants to upload a DAG it will encode it as a one or more
- * CAR files (shards) and invoke `store/add` capability for each one. Once all
+ * CAR files (shards) and invoke `space/blob/add` capability for each one. Once all
  * shards are stored it will invoke `upload/add` capability (providing link to
  * a DAG root and all the shards) to add it the upload list.
  *
- * That said `upload/add` could be invoked without invoking `store/add`s e.g.
+ * That said `upload/add` could be invoked without invoking `space/blob/add`s e.g.
  * because another (memory) space may already have those CARs.
  *
  * Note: If DAG with the given root is already in the upload list, invocation

@@ -76,45 +76,6 @@ describe('space/info', function () {
     }
   })
 
-  it('should return space info with store/add as proof', async function () {
-    const { signer: issuer, service, connection } = ctx
-
-    const { space, delegation } = await createSpace(
-      issuer,
-      service,
-      connection,
-      'space-info@dag.house'
-    )
-
-    const inv = await Space.info
-      .invoke({
-        issuer,
-        audience: service,
-        with: space.did(),
-        proofs: [
-          await Store.add.delegate({
-            audience: issuer,
-            issuer: space,
-            with: space.did(),
-            proofs: [delegation],
-            nb: {
-              size: 1000,
-              link: parseLink(
-                'bagbaierale63ypabqutmxxbz3qg2yzcp2xhz2yairorogfptwdd5n4lsz5xa'
-              ),
-            },
-          }),
-        ],
-      })
-      .execute(connection)
-
-    if (inv.out.error) {
-      assert.fail(inv.out.error.message)
-    } else {
-      assert.deepEqual(inv.out.ok.did, space.did())
-    }
-  })
-
   it('should return space info with store/list as proof', async function () {
     const { signer: issuer, service, connection } = ctx
 

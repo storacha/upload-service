@@ -98,7 +98,6 @@ export type {
   SpaceBlobAdd,
   SpaceBlobList,
   SpaceBlobRemove,
-  StoreAdd,
   StoreList,
   StoreRemove,
   UploadAdd,

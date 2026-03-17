@@ -91,7 +91,6 @@ export const abilitiesAsStrings = [
   UploadShard.shard.can,
   UploadShard.list.can,
   Store.store.can,
-  Store.add.can,
   Store.get.can,
   Store.remove.can,
   Store.list.can,
