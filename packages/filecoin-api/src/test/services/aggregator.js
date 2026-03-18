@@ -346,6 +346,7 @@ export const test = {
         nb: {
           aggregate: aggregate.link,
           pieces: piecesBlock.cid,
+          group,
         },
         expiration: Infinity,
       })

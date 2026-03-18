@@ -107,6 +107,7 @@ export async function createInvocationsAndReceiptsForDealDataProofChain({
       nb: {
         pieces: piecesBlock.cid,
         aggregate,
+        group,
       },
       expiration: Infinity,
     })
@@ -120,6 +121,7 @@ export async function createInvocationsAndReceiptsForDealDataProofChain({
       nb: {
         pieces: piecesBlock.cid,
         aggregate,
+        group,
       },
       expiration: Infinity,
     })

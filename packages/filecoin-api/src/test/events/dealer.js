@@ -25,6 +25,7 @@ export const test = {
   'handles aggregate insert event successfully': async (assert, context) => {
     // Generate piece for test
     const { pieces, aggregate } = await randomAggregate(100, 128)
+    const group = 'did:web:up.test.storacha.network'
     const offer = pieces.map((p) => p.link)
     const piecesBlock = await CBOR.write(offer)
 
@@ -32,6 +33,7 @@ export const test = {
       key: piecesBlock.cid.toString(),
       value: {
         issuer: context.id.did(),
+        group,
         aggregate: aggregate.link,
         pieces: offer,
       },
@@ -48,6 +50,7 @@ export const test = {
     const aggregateRecord = {
       pieces: piecesBlock.cid,
       aggregate: aggregate.link,
+      group,
       status: 'offered',
       insertedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

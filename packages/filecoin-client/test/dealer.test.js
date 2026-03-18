@@ -16,6 +16,7 @@ describe('dealer', () => {
   it('aggregator offers an aggregate', async () => {
     const { aggregator } = await getContext()
     const { pieces, aggregate } = await randomAggregate(100, 100)
+    const group = 'did:web:up.test.storacha.network'
     const offer = pieces.map((p) => p.link)
     const piecesBlock = await CBOR.write(offer)
     /** @type {import('@storacha/capabilities/types').AggregateOfferSuccess} */
@@ -38,6 +39,7 @@ describe('dealer', () => {
 
             // piece link
             assert.ok(invCap.nb.aggregate.equals(aggregate.link.link()))
+            assert.strictEqual(invCap.nb.group, group)
 
             // Validate block inline exists
             const invocationBlocks = Array.from(invocation.iterateIPLDBlocks())
@@ -71,6 +73,7 @@ describe('dealer', () => {
       },
       aggregate.link,
       offer,
+      group,
       { connection: getConnection(service).connection }
     )
 
@@ -82,6 +85,7 @@ describe('dealer', () => {
 
   it('dealer accepts an aggregate', async () => {
     const { pieces, aggregate } = await randomAggregate(100, 100)
+    const group = 'did:web:up.test.storacha.network'
     const offer = pieces.map((p) => p.link)
     const piecesBlock = await CBOR.write(offer)
 
@@ -125,6 +129,7 @@ describe('dealer', () => {
       },
       aggregate.link.link(),
       piecesBlock.cid,
+      group,
       { connection: getConnection(service).connection }
     )
 
@@ -140,6 +145,7 @@ describe('dealer', () => {
 
   it('dealer rejects an aggregate', async () => {
     const { pieces, aggregate } = await randomAggregate(100, 100)
+    const group = 'did:web:up.test.storacha.network'
     const offer = pieces.map((p) => p.link)
     const piecesBlock = await CBOR.write(offer)
 
@@ -189,6 +195,7 @@ describe('dealer', () => {
       },
       aggregate.link.link(),
       piecesBlock.cid,
+      group,
       { connection: getConnection(service).connection }
     )
 
