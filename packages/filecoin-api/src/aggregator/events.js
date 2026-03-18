@@ -373,6 +373,7 @@ export const handleAggregateInsertToAggregateOffer = async (
     context.dealerService.invocationConfig,
     record.aggregate,
     pieces,
+    record.group,
     { connection: context.dealerService.connection }
   )
 
