@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { telegramAuthMiddleware } from '../auth.js'
 import { getLeaderboard, getUserByTelegramId, addPoints, getDb } from '../db.js'
 
-const router = Router()
+const router: import("express").IRouter = Router()
 
 const TASK_POINTS: Record<string, number> = {
   follow_x: 50,

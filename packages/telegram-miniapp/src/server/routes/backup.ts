@@ -16,7 +16,7 @@ import {
 } from '../storacha.js'
 import crypto from 'crypto'
 
-const router = Router()
+const router: import("express").IRouter = Router()
 
 // Apply auth middleware to all backup routes
 router.use(telegramAuthMiddleware)

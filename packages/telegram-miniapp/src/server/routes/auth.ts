@@ -3,7 +3,7 @@ import { telegramAuthMiddleware } from '../auth.js'
 import { getOrCreateUser, updateUserStoracha, getUserByTelegramId } from '../db.js'
 import { provisionStorachaAccount } from '../storacha.js'
 
-const router = Router()
+const router: import("express").IRouter = Router()
 
 /**
  * POST /api/auth/login

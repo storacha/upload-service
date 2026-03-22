@@ -8,7 +8,8 @@ import backupRoutes from './routes/backup.js'
 import gamificationRoutes from './routes/gamification.js'
 import { initDatabase } from './db.js'
 
-const app = express()
+import type { Application } from 'express'
+const app: Application = express()
 const PORT = process.env.PORT || 3000
 
 // Initialize database
