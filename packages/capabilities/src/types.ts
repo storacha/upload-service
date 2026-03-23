@@ -415,6 +415,55 @@ export type SpaceEncryptionSetup = InferInvokedCapability<
 export type SpaceEncryptionKeyDecrypt = InferInvokedCapability<
   typeof SpaceCaps.EncryptionKeyDecrypt
 >
+export type SpaceDecrypt = InferInvokedCapability<typeof SpaceCaps.decrypt>
+
+/**
+ * Successful result for the `space/encryption/setup` capability.
+ *
+ * Returned when encryption is initialised (or already set up) for a Space.
+ * The public key can be used by clients to wrap per-file Data Encryption Keys
+ * (DEKs) before uploading.
+ */
+export interface SpaceEncryptionSetupSuccess {
+  /** PEM-encoded RSA public key for wrapping Data Encryption Keys (DEKs). */
+  publicKey: string
+  /** KMS provider identifier (e.g. `'storacha'`). */
+  provider: string
+  /** Key-wrapping algorithm used by the KMS (e.g. `'RSA-OAEP-256'`). */
+  algorithm: string
+}
+/**
+ * Failure type for the `space/encryption/setup` capability.
+ */
+export type SpaceEncryptionSetupFailure = Ucanto.Failure
+
+/**
+ * Successful result for the `space/encryption/key/decrypt` capability.
+ *
+ * Returned when the KMS successfully unwraps a wrapped Data Encryption Key
+ * (DEK) for an authorised caller.
+ */
+export interface SpaceEncryptionKeyDecryptSuccess {
+  /** Base64-encoded decrypted Data Encryption Key (DEK). */
+  decryptedSymmetricKey: string
+}
+/**
+ * Failure type for the `space/encryption/key/decrypt` capability.
+ */
+export type SpaceEncryptionKeyDecryptFailure = Ucanto.Failure
+
+/**
+ * Successful result for the `space/content/decrypt` capability.
+ *
+ * This capability is a delegation proof — success indicates the invocation is
+ * authorised to decrypt the referenced resource.
+ */
+export type SpaceDecryptSuccess = Unit
+/**
+ * Failure type for the `space/content/decrypt` capability.
+ */
+export type SpaceDecryptFailure = Ucanto.Failure
+
 export type EgressRecord = InferInvokedCapability<typeof SpaceCaps.egressRecord>
 export type EgressRecordSuccess = {
   space: SpaceDID
@@ -1247,6 +1296,7 @@ export type ServiceAbilityArray = [
   SpaceContentServe['can'],
   SpaceEncryptionSetup['can'],
   SpaceEncryptionKeyDecrypt['can'],
+  SpaceDecrypt['can'],
   EgressRecord['can'],
   Upload['can'],
   UploadAdd['can'],
