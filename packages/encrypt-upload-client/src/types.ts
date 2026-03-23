@@ -14,8 +14,12 @@ import type {
 import type { AuthData } from '@lit-protocol/schemas'
 
 export type { IPLDBlock } from '@ucanto/interface'
-export type { SpaceDID } from '@storacha/capabilities/types'
-export type { UnknownFormat } from '@storacha/capabilities/types'
+export type {
+  SpaceDID,
+  UnknownFormat,
+  SpaceEncryptionSetupSuccess,
+  SpaceEncryptionKeyDecryptSuccess
+} from '@storacha/capabilities/types'
 export type { Result, UnknownLink }
 export type { BlobLike, AnyLink }
 export type { UploadOptions } from '@storacha/client/types'

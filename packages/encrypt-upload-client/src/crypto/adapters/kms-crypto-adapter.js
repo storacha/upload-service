@@ -157,7 +157,7 @@ export class KMSCryptoAdapter {
    * @param {import('@ucanto/interface').Proof} decryptionProof - The decryption delegation proof
    * @param {import('@ucanto/interface').Proof[]} proofs - The proofs to access the space
    * @param {import('@storacha/client/types').Signer<import('@storacha/client/types').DID, import('@storacha/client/types').SigAlg>} issuer - The issuer
-   * @returns {Promise<{decryptedSymmetricKey: string}>} - The decrypted symmetric key (base64-encoded)
+   * @returns {Promise<Type.SpaceEncryptionKeyDecryptSuccess>} - The decrypted symmetric key (base64-encoded)
    */
   async getDecryptedSymmetricKey(
     encryptedSymmetricKey,
@@ -188,7 +188,7 @@ export class KMSCryptoAdapter {
     }
 
     // Step 3: Return the multibase-encoded decrypted key from the gateway response
-    return /** @type {{decryptedSymmetricKey: string}} */ (result.out.ok)
+    return /** @type {Type.SpaceEncryptionKeyDecryptSuccess} */ (result.out.ok)
   }
 
   /**
@@ -276,7 +276,7 @@ export class KMSCryptoAdapter {
    * Get the RSA public key from the space/encryption/setup
    *
    * @param {Type.EncryptionConfig} encryptionConfig
-   * @returns {Promise<{ publicKey: string, provider: string, algorithm: string }>}
+   * @returns {Promise<Type.SpaceEncryptionSetupSuccess>}
    */
   async getSpacePublicKey(encryptionConfig) {
     // Step 1: Invoke the EncryptionSetup capability
@@ -302,9 +302,7 @@ export class KMSCryptoAdapter {
     }
 
     // Step 3: Return the public key and key reference
-    return /** @type {{ publicKey: string, provider: string, algorithm: string }} */ (
-      setupResult.out.ok
-    )
+    return /** @type {Type.SpaceEncryptionSetupSuccess} */ (setupResult.out.ok)
   }
 
   /**
