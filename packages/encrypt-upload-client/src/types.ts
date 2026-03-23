@@ -18,7 +18,7 @@ export type {
   SpaceDID,
   UnknownFormat,
   SpaceEncryptionSetupSuccess,
-  SpaceEncryptionKeyDecryptSuccess
+  SpaceEncryptionKeyDecryptSuccess,
 } from '@storacha/capabilities/types'
 export type { Result, UnknownLink }
 export type { BlobLike, AnyLink }
