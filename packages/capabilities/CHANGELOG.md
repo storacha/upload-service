@@ -1,3 +1,13 @@
+## 2.3.1 (2026-03-24)
+
+### 🩹 Fixes
+
+- chore: add Success and Failure type definitions for space encryption capabilities ([d693f169](https://github.com/storacha/upload-service/commit/d693f169))
+
+### ❤️ Thank You
+
+- bravonatalie
+
 ## 1.12.0 (2025-11-12)
 
 ### 🚀 Features

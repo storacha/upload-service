@@ -1,3 +1,19 @@
+## 1.1.82 (2026-03-24)
+
+### 🩹 Fixes
+
+- chore: add Success and Failure type definitions for space encryption capabilities ([d693f169](https://github.com/storacha/upload-service/commit/d693f169))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/upload-client to 1.4.2
+- Updated @storacha/capabilities to 2.3.1
+- Updated @storacha/client to 2.1.3
+
+### ❤️ Thank You
+
+- bravonatalie
+
 ## 1.1.81 (2026-03-12)
 
 ### 🧱 Updated Dependencies

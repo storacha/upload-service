@@ -1,3 +1,14 @@
+## 2.1.3 (2026-03-24)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-client to 1.0.20
+- Updated @storacha/access to 1.6.9
+- Updated @storacha/upload-client to 1.4.2
+- Updated @storacha/capabilities to 2.3.1
+- Updated @storacha/blob-index to 1.2.9
+- Updated @storacha/upload-api to 3.2.3
+
 ## 2.1.2 (2026-03-12)
 
 ### 🧱 Updated Dependencies
