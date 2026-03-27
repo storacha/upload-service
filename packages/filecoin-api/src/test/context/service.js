@@ -39,6 +39,7 @@ export function getMockService() {
               nb: {
                 aggregate: invCap.nb.aggregate,
                 pieces: invCap.nb?.pieces,
+                group: invCap.nb.group,
               },
               expiration: Infinity,
             })
@@ -109,7 +110,9 @@ export function getMockService() {
               nb: {
                 aggregate: invCap.nb.piece,
                 pieces: invCap.nb.piece,
+                group: invCap.nb.group,
               },
+              expiration: Infinity,
             })
             .delegate()
 

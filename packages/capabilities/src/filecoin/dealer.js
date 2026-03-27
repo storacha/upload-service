@@ -33,6 +33,11 @@ export const aggregateOffer = capability({
      * Service will queue given offer to be validated and handled.
      */
     pieces: Schema.link({ version: 1 }),
+    /**
+     * The group this aggregate belongs to. Typicallly this is the DID of the
+     * storefront that received the `filecoin/offer` invocation.
+     */
+    group: Schema.string().optional(),
   }),
   derives: (claim, from) => {
     return (
@@ -64,6 +69,11 @@ export const aggregateAccept = capability({
      * Service will queue given offer to be validated and handled.
      */
     pieces: Schema.link(),
+    /**
+     * The group this aggregate belongs to. Typicallly this is the DID of the
+     * storefront that received the `filecoin/offer` invocation.
+     */
+    group: Schema.string().optional(),
   }),
   derives: (claim, from) => {
     return (

@@ -109,6 +109,7 @@ export const pieceAccept = async ({ capability }, context) => {
       nb: {
         aggregate,
         pieces,
+        group,
       },
       expiration: Infinity,
     })

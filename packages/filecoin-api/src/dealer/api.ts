@@ -57,6 +57,10 @@ export interface AggregateRecord {
    */
   pieces: Link
   /**
+   * Grouping information for submitted aggregate.
+   */
+  group?: string
+  /**
    * Status of the offered aggregate piece.
    * - offered = acknowledged received for inclusion in filecoin deals.
    * - accepted = accepted and included a filecoin deal(s).
@@ -96,6 +100,10 @@ export interface OfferValue {
    * Issuer of the aggregate offer.
    */
   issuer: `did:${string}:${string}`
+  /**
+   * Grouping information for submitted aggregate.
+   */
+  group?: string
   /**
    * Piece CID of an aggregate.
    */

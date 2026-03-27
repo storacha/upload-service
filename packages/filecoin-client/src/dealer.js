@@ -36,12 +36,14 @@ export const connection = connect({
  * @param {import('./types.js').InvocationConfig} conf - Configuration
  * @param {import('@web3-storage/data-segment').PieceLink} aggregate
  * @param {import('@web3-storage/data-segment').PieceLink[]} pieces
+ * @param {string} group
  * @param {import('./types.js').RequestOptions<DealerService>} [options]
  */
 export async function aggregateOffer(
   { issuer, with: resource, proofs, audience },
   aggregate,
   pieces,
+  group,
   options = {}
 ) {
   /* c8 ignore next */
@@ -56,6 +58,7 @@ export async function aggregateOffer(
     nb: {
       aggregate,
       pieces: block.cid,
+      group,
     },
     proofs,
     expiration: Infinity,
@@ -84,12 +87,14 @@ export async function aggregateOffer(
  * @param {import('./types.js').InvocationConfig} conf - Configuration
  * @param {import('@web3-storage/data-segment').PieceLink} aggregate
  * @param {import('@ucanto/interface').Link} pieces
+ * @param {string} group
  * @param {import('./types.js').RequestOptions<DealerService>} [options]
  */
 export async function aggregateAccept(
   { issuer, with: resource, proofs, audience },
   aggregate,
   pieces,
+  group,
   options = {}
 ) {
   /* c8 ignore next */
@@ -102,6 +107,7 @@ export async function aggregateAccept(
     nb: {
       aggregate,
       pieces,
+      group,
     },
     proofs,
     expiration: Infinity,

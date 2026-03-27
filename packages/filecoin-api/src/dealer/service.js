@@ -27,7 +27,7 @@ export const aggregateOffer = async ({ capability, invocation }, context) => {
     }
   }
   const issuer = invocation.issuer.did()
-  const { aggregate, pieces } = capability.nb
+  const { aggregate, pieces, group } = capability.nb
 
   const hasRes = await context.aggregateStore.has({ aggregate })
   if (hasRes.error) {
@@ -50,6 +50,7 @@ export const aggregateOffer = async ({ capability, invocation }, context) => {
       key: piecesBlockRes.ok.cid.toString(),
       value: {
         issuer,
+        group,
         aggregate,
         pieces: piecesBlockRes.ok.value,
       },
@@ -64,6 +65,7 @@ export const aggregateOffer = async ({ capability, invocation }, context) => {
     const putRes = await context.aggregateStore.put({
       aggregate,
       pieces,
+      group,
       status: 'offered',
       insertedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -84,6 +86,7 @@ export const aggregateOffer = async ({ capability, invocation }, context) => {
       nb: {
         aggregate,
         pieces,
+        group,
       },
       expiration: Infinity,
     })

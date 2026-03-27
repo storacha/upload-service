@@ -36,6 +36,7 @@ export const test = {
 
     // Generate piece for test
     const { pieces, aggregate } = await randomAggregate(100, 128)
+    const group = 'did:web:up.test.storacha.network'
     const offer = pieces.map((p) => p.link)
     const piecesBlock = await CBOR.write(offer)
 
@@ -47,6 +48,7 @@ export const test = {
       nb: {
         aggregate: aggregate.link,
         pieces: piecesBlock.cid,
+        group,
       },
     })
     pieceAddInv.attach(piecesBlock)
@@ -67,6 +69,7 @@ export const test = {
         nb: {
           aggregate: aggregate.link,
           pieces: piecesBlock.cid,
+          group,
         },
         expiration: Infinity,
       })
@@ -82,6 +85,7 @@ export const test = {
     assert.ok(storedDeal.ok)
     assert.ok(storedDeal.ok?.aggregate.equals(aggregate.link.link()))
     assert.ok(storedDeal.ok?.pieces.equals(piecesBlock.cid))
+    assert.equal(storedDeal.ok?.group, group)
     assert.equal(storedDeal.ok?.status, 'offered')
     assert.ok(storedDeal.ok?.insertedAt)
     assert.ok(storedDeal.ok?.updatedAt)
@@ -90,6 +94,7 @@ export const test = {
     assert.ok(storedOffer.ok)
     assert.ok(storedOffer.ok?.value.aggregate.equals(aggregate.link.link()))
     assert.equal(storedOffer.ok?.value.issuer, aggregator.did())
+    assert.equal(storedOffer.ok?.value.group, group)
     assert.deepEqual(
       storedOffer.ok?.value.pieces.map((p) => p.toString()),
       offer.map((p) => p.toString())

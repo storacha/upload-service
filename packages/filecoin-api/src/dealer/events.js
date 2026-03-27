@@ -40,6 +40,7 @@ export const handleAggregateUpdatedStatus = async (context, record) => {
     context.dealerService.invocationConfig,
     record.aggregate,
     record.pieces,
+    record.group ?? '',
     { connection: context.dealerService.connection }
   )
   if (aggregateAcceptInv.out.error) {
