@@ -21,15 +21,19 @@ export const testEd25519Key = {
 
     const client0 = await create({ store })
     const client1 = await create({ store })
+    const raw = await store.load()
 
     assert.equal(client0.agent.did(), client1.agent.did())
+    assert.ok(raw)
+    const key = raw.principal.keys[raw.principal.id]
+    assert.ok(key instanceof Uint8Array)
   },
 
   'should allow BYO principal': async (assert) => {
     const store = new StoreConf({ profile: 'w3up-client-test' })
     await store.reset()
 
-    const principal = await Signer.generate()
+    const principal = await Signer.generate({ extractable: true })
     const client = await create({ principal, store })
 
     assert.equal(client.agent.did(), principal.did())
@@ -39,10 +43,10 @@ export const testEd25519Key = {
     const store = new StoreConf({ profile: 'w3up-client-test' })
     await store.reset()
 
-    const principal0 = await Signer.generate()
+    const principal0 = await Signer.generate({ extractable: true })
     await create({ principal: principal0, store })
 
-    const principal1 = await Signer.generate()
+    const principal1 = await Signer.generate({ extractable: true })
     await assert.rejects(create({ principal: principal1, store }), {
       message: `store cannot be used with ${principal1.did()}, stored principal and passed principal must match`,
     })

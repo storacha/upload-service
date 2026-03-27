@@ -210,6 +210,23 @@ export const testSpace = Test.withContext({
     assert.equal(recovered.did(), space.did()) // Same DID because same key
   },
 
+  'should throw a clear error for non-extractable mnemonic export': async (
+    assert,
+    { client }
+  ) => {
+    const signer = await Signer.generate()
+    const space = new OwnedSpace({
+      signer,
+      name: 'non-extractable-space',
+      agent: client.agent,
+    })
+
+    assert.throws(
+      () => space.toMnemonic(),
+      /Mnemonic export requires an extractable Ed25519 signer/
+    )
+  },
+
   'should create authorization and fromDelegation': async (
     assert,
     { client }
