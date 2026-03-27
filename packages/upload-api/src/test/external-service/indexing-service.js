@@ -109,20 +109,28 @@ export const activate = async ({ http } = {}) => {
   }
 
   const httpServer = http.createServer(async (req, res) => {
-    const chunks = []
-    for await (const chunk of req) {
-      chunks.push(chunk)
+    try {
+      const chunks = []
+      for await (const chunk of req) {
+        chunks.push(chunk)
+      }
+
+      const { status, headers, body } = await server.request({
+        // @ts-expect-error
+        headers: req.headers,
+        body: new Uint8Array(await new Blob(chunks).arrayBuffer()),
+      })
+
+      res.writeHead(status ?? 200, headers)
+      res.write(body)
+      res.end()
+    } catch (error) {
+      process.stderr.write(`Error handling request: ${error}\n`)
+      if (!res.headersSent) {
+        res.writeHead(500)
+      }
+      res.end()
     }
-
-    const { status, headers, body } = await server.request({
-      // @ts-expect-error
-      headers: req.headers,
-      body: new Uint8Array(await new Blob(chunks).arrayBuffer()),
-    })
-
-    res.writeHead(status ?? 200, headers)
-    res.write(body)
-    res.end()
   })
   await new Promise((resolve) => httpServer.listen(resolve))
   // @ts-expect-error
