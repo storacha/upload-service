@@ -18,9 +18,26 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-### Using an alternate w3up service
+### Environment Configuration
 
-By default, this app connects to `https://up.web3.storage`, and uses `did:web:web3.storage` as provider. To use an alternate service and/or provider, specify the service URL, service DID and provider DID in your environment variables, like so:
+By default, this app connects to the **staging** environment at `https://staging.up.storacha.network` with `did:web:staging.up.storacha.network` as the service and provider DID (as configured in `.env.tpl`).
+
+#### Using Production Environment
+
+To connect to the production environment instead, set these in your `.env.local`:
+
+```
+NEXT_PUBLIC_W3UP_SERVICE_URL=https://up.storacha.network
+NEXT_PUBLIC_W3UP_SERVICE_DID=did:web:up.storacha.network
+NEXT_PUBLIC_W3UP_PROVIDER=did:web:up.storacha.network
+NEXT_PUBLIC_W3UP_RECEIPTS_URL=https://up.storacha.network/receipt/
+```
+
+> **Note:** The legacy domain `up.web3.storage` redirects to the production endpoint `up.storacha.network`.
+
+#### Using an alternate w3up service
+
+To use an alternate service and/or provider, specify the service URL, service DID and provider DID in your environment variables, like so:
 
 ```
 NEXT_PUBLIC_W3UP_SERVICE_URL=https://your.w3up.service
