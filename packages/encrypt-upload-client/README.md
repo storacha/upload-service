@@ -1,13 +1,27 @@
 <h1 align="center">🐔 + 🔑<br/>Encrypt Upload Client</h1>
-<p align="center">Use Lit Protocol and Storacha Network to enable private decentralized hot storage.</a></p>
 
 ## About
 
-This library leverages `@storacha/cli` and `@lit-protocol/lit-node-client` to provide a simple interface for encrypting files with Lit Protocol and uploading them to the Storacha Network. It also enables anyone with a valid `space/content/decrypt` UCAN delegation to decrypt the file. With Lit Protocol, encryption keys are managed in a decentralized way, so you don't have to handle them yourself.
+This library provides client-side encryption and key management solution integrations for files stored on Storacha.
+
+**The library is strategy-agnostic**, meaning it supports different key management solutions without changing your integration code:
+
+- **Lit Protocol** - Decentralized encryption with UCAN-friendly validation inside programmable Lit Actions
+- **Google KMS** - Centralized key management for enterprise compliance and auditability
+
+Different apps have different needs: some prioritize decentralization and user sovereignty, while others need to satisfy enterprise compliance or data residency rules. The library unifies the flow so you can switch from a centralized to a decentralized key management solution (or vice versa) without rewriting your entire logic.
+
+**Key features:**
+
+- **Client-side streaming encryption** - memory-efficient for large files
+- **Decentralized key management** via Lit Protocol's threshold cryptography network
+- **UCAN-based access control** - grant and revoke decrypt permissions without re-encrypting
+- **Pluggable crypto adapters** - use Lit Protocol, Google KMS, or implement your own
+- **Composable architecture** - integrate seamlessly with existing Storacha workflows
 
 ## Install
 
-You can add the `@storacha/encrypt-upload-client` package to your JavaScript or TypeScript project with `npm`:
+You can add the `@storacha/encrypt-upload-client` package to your project with `npm`:
 
 ```sh
 npm install @storacha/encrypt-upload-client
@@ -15,7 +29,7 @@ npm install @storacha/encrypt-upload-client
 
 ## Usage
 
-To use this library, you'll need to install `@storacha/cli` and `@lit-protocol/lit-node-client`, as they are required for initialization—though the Lit client is optional. You must also provide a crypto adapter that implements the `CryptoAdapter` interface. A ready-to-use Node.js & Browser crypto adapters are available.
+To use this library, you'll need to install `@storacha/client`. If using the Lit Protocol adapter, you'll also need to install `@lit-protocol/lit-client` and `@lit-protocol/auth`, as they are required for initialization. You must also provide a crypto adapter that implements the `CryptoAdapter` interface.
 
 ### CryptoAdapter Interface
 
@@ -32,59 +46,64 @@ interface EncryptOutput {
 }
 ```
 
-### Node Usage
+### Usage
 
 ```js
-const encryptedClient = await EncryptClient.create({
-  storachaClient,
-  cryptoAdapter: new NodeCryptoAdapter(),
-})
-```
-
-### Browser Usage
-
-For browser apps, use the `BrowserCryptoAdapter`:
-
-```js
-import { BrowserCryptoAdapter } from '@storacha/encrypt-upload-client/crypto-adapters/browser-crypto-adapter.js'
-
-const encryptedClient = await EncryptClient.create({
+// Using the Lit adapter
+const encryptedClient = await create({
   storachaClient: client,
-  cryptoAdapter: new BrowserCryptoAdapter(),
+  cryptoAdapter: createGenericLitAdapter(litClient, authManager),
 })
 ```
 
 ### Encryption
 
-The encryption process automatically generates a custom Access Control Condition (ACC) based on the current space setup in your Storacha client. It then creates a symmetric key to encrypt the file and uses Lit Protocol to encrypt that key, so you don't have to manage it yourself. Once encrypted, both the file and the generated encrypted metadata are uploaded to Storacha.
+The encryption process with Lit Adapter automatically generates a custom Access Control Condition (ACC) based on the current space in your Storacha client. It then creates a symmetric key to encrypt the file and uses the Lit Protocol to encrypt that key, so you don't have to manage it yourself. Once encrypted, both the file and the generated encrypted metadata are uploaded to Storacha.
 
 #### Encryption Example
 
 ```js
 const fileContent = await fs.promises.readFile('./README.md')
 const blob = new Blob([fileContent])
-const cid = await encryptedClient.uploadEncryptedFile(blob)
+
+const encryptionConfig = {
+  issuer: principal,
+  spaceDID: space.did(),
+}
+
+const cidLink = await encryptedClient.encryptAndUploadFile(
+  blob,
+  encryptionConfig
+)
 ```
 
 You can find a full example in `examples/encrypt-test.js`.
 
 ### Decryption
 
-To decrypt a file, you'll need the CID returned from `uploadEncryptedFile`, a UCAN delegation CAR with the `space/content/decrypt` capability (proving that the file owner has granted you decryption access), and an Ethereum wallet with available Capacity Credits on the Lit Network to cover the decryption cost.
-
-For details on minting Capacity Credits, check out the [official documentation](https://developer.litprotocol.com/concepts/capacity-credits-concept).
+To decrypt a file, you'll need the CID returned from `encryptAndUploadFile`, a UCAN delegation with the `space/content/decrypt` capability (proving that the file owner has granted you decryption access), and any other parameters specific to the selected adapter.
 
 #### Decryption Example
 
 ```js
-const decryptedContent = await encryptedClient.retrieveAndDecryptFile(
+// Lit adapter using an EOA wallet
+const decryptionConfig = {
   wallet,
+  decryptDelegation,
+  spaceDID,
+}
+
+const decryptedContent = await encryptedClient.retrieveAndDecryptFile(
   cid,
-  delegationCarBuffer
+  decryptionConfig
 )
 ```
 
 You can find a full example in `examples/decrypt-test.js`.
+
+## Using PKP (Programmable Key Pairs)
+
+If you want to use the Lit Protocol adapter without requiring a wallet (EOA account) for decryption, you can use a PKP (Programmable Key Pair). Check out the [demo code using PKP](https://github.com/storacha/lit-pkp-demo).
 
 ## Contributing
 
