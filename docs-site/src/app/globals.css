@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --hot-red: #E91315;
+  --hot-red-light: #EFE3F3;
+  --hot-yellow: #FFC83F;
+  --hot-yellow-light: #FFE4AE;
+  --hot-blue: #0176CE;
+  --hot-blue-light: #BDE0FF;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.prose {
+  @apply max-w-none;
+}
+
+.prose h1 {
+  @apply text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100;
+}
+
+.prose h2 {
+  @apply text-2xl font-semibold mb-4 mt-8 text-gray-900 dark:text-gray-100;
+}
+
+.prose h3 {
+  @apply text-xl font-semibold mb-3 mt-6 text-gray-900 dark:text-gray-100;
+}
+
+.prose p {
+  @apply mb-4 text-gray-700 dark:text-gray-300 leading-relaxed;
+}
+
+.prose code {
+  @apply bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-sm font-mono text-hot-red dark:text-hot-yellow;
+}
+
+.prose pre {
+  @apply bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto mb-4;
+}
+
+.prose pre code {
+  @apply bg-transparent px-0 py-0 text-gray-800 dark:text-gray-200;
+}
+
+.prose ul {
+  @apply mb-4 pl-6;
+}
+
+.prose li {
+  @apply mb-2 text-gray-700 dark:text-gray-300;
+}
+
+.prose a {
+  @apply text-hot-blue dark:text-hot-blue-light hover:underline;
+}
+
+.prose blockquote {
+  @apply border-l-4 border-hot-yellow pl-4 italic text-gray-600 dark:text-gray-400 mb-4;
+}
