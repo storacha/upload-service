@@ -165,7 +165,7 @@ async function* migrateSpace({ spacePlan, perSpaceCost, state, batchSize, stopOn
         })
       }
 
-      if (result.committed.length > 0) {
+      if (result.committed.length > 0 && result.dataSetId !== undefined) {
         for (const entry of result.committed) {
           recordCommit(state, spaceDID, entry.root, entry.shardCid, serviceProvider, result.dataSetId)
         }

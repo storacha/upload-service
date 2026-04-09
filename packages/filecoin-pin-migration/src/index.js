@@ -6,7 +6,7 @@ export {
   createResolver,
 } from './source-url.js'
 export { createMigrationPlan } from './planner.js'
-export { computeMigrationCosts } from './planner/index.js'
+export { computeMigrationCosts } from './compute-migration-costs.js'
 export { executeMigration } from './migrator.js'
 export {
   createApprovalState,

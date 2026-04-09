@@ -2,7 +2,7 @@ import { computeMigrationCosts } from './compute-migration-costs.js'
 import { buildResumeState } from './state.js'
 
 /**
- * @import * as API from './api.js'
+ * @import { SpaceInventory, Synapse, MigrationConfig, MigrationState, MigrationPlan } from './api.js'
  */
 
 /**
@@ -28,19 +28,18 @@ import { buildResumeState } from './state.js'
  * for await (const event of executeMigration({ plan, state, synapse, config })) { ... }
  * ```
  *
- * @param {API.SpaceInventory[]} inventories
- * @param {API.Synapse} synapse
- * @param {API.MigrationConfig} config
- * @param {API.MigrationState} [state] - Pass persisted state to resume a prior run
- * @returns {Promise<API.MigrationPlan>}
+ * @param {SpaceInventory[]} inventories
+ * @param {Synapse} synapse
+ * @param {MigrationConfig} config
+ * @param {MigrationState} [state] - Pass persisted state to resume a prior run
+ * @returns {Promise<MigrationPlan>}
  */
 export async function createMigrationPlan(inventories, synapse, config, state) {
   // ── Build PlanSpaces (shallow copy — don't mutate inventories) ────────────
-  /** @type {API.PlanSpace[]} */
-  const spaces = inventories.map((inv) => ({
+  const spaces = /** @type {import('./api.js').PlanSpace[]} */ (inventories.map((inv) => ({
     ...inv,
     skippedShards: [...inv.skippedShards],
-  }))
+  })))
 
   const totalUploads = inventories.reduce((n, inv) => n + inv.totalUploads, 0)
   const totalShards = inventories.reduce((n, inv) => n + inv.totalShards, 0)

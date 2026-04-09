@@ -1,5 +1,12 @@
 {
   "extends": "./tsconfig.json",
   "include": ["src/**/*"],
-  "references": []
+  "references": [
+    {
+      "path": "../w3up-client/tsconfig.lib.json"
+    },
+    {
+      "path": "../eslint-config-w3up/tsconfig.lib.json"
+    }
+  ]
 }

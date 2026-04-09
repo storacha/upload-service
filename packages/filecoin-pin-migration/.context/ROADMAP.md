@@ -59,7 +59,7 @@
 - [x] **TEST-01** — Unit tests for `reader.js`: index-blob claim filter, `pieceCID` extraction, missing `pieceCID` and missing location URL skip cases, multi-page pagination, `ClaimsResolver` and `RoundaboutResolver` application
 - [x] **TEST-02** — Unit tests for `planner.js`: totals aggregation, space shallow-copy, cost and warning propagation, skipped-shard carry-over (`computeMigrationCosts` is mocked — planner logic only)
 - [ ] **TEST-03** — Unit tests for `migrator.js`: mock Synapse SDK, presign/pull/commit flow, per-piece pull failure partitioning, `stopOnError` semantics, resume skip path, full event sequence
-- [ ] **TEST-04** — Unit tests for `source-url.js`: `ClaimsResolver` pass-through, `RoundaboutResolver` URL construction, custom base URL override
+- [x] **TEST-04** — Unit tests for `source-url.js`: `ClaimsResolver` pass-through, `RoundaboutResolver` URL construction, custom base URL override
 - [ ] **TEST-05** — Unit tests for `state.js`: phase FSM transitions, `recordCommit` double-commit guard, `serializeState` / `deserializeState` round-trip, `parseBigIntField` validation errors
 - [ ] **TEST-06** — Unit tests for `compute-migration-costs.js`: mock Synapse SDK chain calls, per-space lockup math, resume path with existing dataset IDs, skip-buffer logic, conflict warning when configured provider differs from pinned provider
 
