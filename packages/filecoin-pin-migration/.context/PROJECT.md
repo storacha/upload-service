@@ -62,8 +62,6 @@ A migration is considered successful when:
 - [ ] Batch shards with configurable size
 - [ ] Support multi-SP orchestration
 - [ ] Provide CLI command for migration execution
-- [ ] Support filtering and network selection
-- [ ] Follow `Result<T, Failure>` error pattern
 
 ### Validated
 

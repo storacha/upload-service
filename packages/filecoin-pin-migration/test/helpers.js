@@ -8,7 +8,6 @@ import { Piece, MIN_PAYLOAD_SIZE } from '@web3-storage/data-segment'
  * @import * as API from '../src/api.js'
  */
 
-
 /**
  * Create a deterministic CID from a label string.
  *
@@ -34,7 +33,11 @@ export function createPieceCID() {
  * @param {Map<string, API.UnknownLink[]>} [shardsByRoot]
  * @param {API.SpaceDID[]} [spaces]
  */
-export function createMockClient(uploadPages, shardsByRoot = new Map(), spaces = []) {
+export function createMockClient(
+  uploadPages,
+  shardsByRoot = new Map(),
+  spaces = []
+) {
   return /** @type {import('@storacha/client').Client} */ ({
     spaces() {
       return spaces.map((did) => ({ did: () => did }))
@@ -63,7 +66,6 @@ export function createMockClient(uploadPages, shardsByRoot = new Map(), spaces =
  * @param {{ locationURLs?: string[], pieceCid?: API.UnknownLink }} opts
  */
 export function buildShardClaims(shardCid, opts = {}) {
-  /** @type {Map<string, API.ReaderClaim>} */
   const claims = new Map()
 
   if (opts.locationURLs) {
@@ -86,9 +88,15 @@ export function buildShardClaims(shardCid, opts = {}) {
 }
 
 /**
- * Create a mock IndexingServiceReader.
+ * Create a mock IndexingServiceReader for tests.
  *
- * @param {Map<string, { claims: Map<string, API.ReaderClaim>, indexes?: Map<string, API.ShardIndex> }>} responses - keyed by base58btc multihash
+ * The mock satisfies the structural queryClaims contract but returns a plain
+ * object instead of the full QueryOk class (which requires IPLD internals).
+ * Casting to API.IndexingServiceReader is safe — the reader only accesses
+ * .ok.claims and iterates claim fields; it never calls .archive() or .root.
+ *
+ * @param {Map<string, { claims: Map<string, unknown>, indexes?: Map<string, unknown> }>} responses - keyed by base58btc multihash
+ * @returns {API.IndexingServiceReader}
  */
 export function createMockIndexer(responses) {
   return /** @type {API.IndexingServiceReader} */ ({
@@ -97,13 +105,18 @@ export function createMockIndexer(responses) {
       const res = responses.get(key)
       if (res) {
         return {
-          ok: {
+          ok: /** @type {import('@storacha/indexing-service-client/api').QueryOk} */ ({
             claims: res.claims,
             indexes: res.indexes ?? new Map(),
-          },
+          }),
         }
       }
-      return { ok: { claims: new Map(), indexes: new Map() } }
+      return {
+        ok: /** @type {import('@storacha/indexing-service-client/api').QueryOk} */ ({
+          claims: new Map(),
+          indexes: new Map(),
+        }),
+      }
     },
   })
 }
@@ -116,9 +129,8 @@ export function createMockIndexer(responses) {
  */
 export function createMockInventory(opts = {}) {
   const pieceCID = createPieceCID()
-  const uploads = opts.uploads ?? [
-    {
-      root: 'bafyroot1',
+  const uploads = opts.uploads ?? {
+    bafyroot1: {
       shards: [
         {
           cid: 'bafyshard1',
@@ -134,18 +146,33 @@ export function createMockInventory(opts = {}) {
         },
       ],
     },
-  ]
+  }
+  const uploadEntries = Object.values(uploads)
   return {
     did: opts.did ?? /** @type {API.SpaceDID} */ ('did:key:z6MkTestSpace1'),
     uploads,
     skippedShards: opts.skippedShards ?? [],
-    totalUploads: uploads.length,
-    totalShards: uploads.reduce((n, u) => n + u.shards.length, 0),
-    totalBytes: uploads.reduce(
+    totalUploads: uploadEntries.length,
+    totalShards: uploadEntries.reduce((n, u) => n + u.shards.length, 0),
+    totalBytes: uploadEntries.reduce(
       (n, u) => u.shards.reduce((m, s) => m + s.sizeBytes, n),
       0n
     ),
   }
+}
+
+/**
+ * Create a fresh MigrationState for tests (equivalent to createInitialState).
+ *
+ * @returns {API.MigrationState}
+ */
+export function createMockInitialState() {
+  return /** @type {API.MigrationState} */ ({
+    phase: 'reading',
+    spaces: {},
+    spacesInventories: {},
+    readerProgressCursors: undefined,
+  })
 }
 
 /**

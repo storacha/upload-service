@@ -1,118 +1,179 @@
 import { Piece } from '@web3-storage/data-segment'
 import { base58btc } from 'multiformats/bases/base58'
+import { Client as IndexingClient } from '@storacha/indexing-service-client'
 import { MissingPieceCIDFailure, MissingLocationURLFailure } from './errors.js'
+import { checkpointInventoryPage } from './state.js'
 
 /**
- * @import * as API from './api.js'
+ * @import {
+ *  SourceURLResolver,
+ *  MigrationState,
+ *  SpaceDID,
+ *  MigrationEvent,
+ *  IndexingServiceReader,
+ *  ResolvedShard,
+ *  ShardEntry,
+ *  PieceView,
+ *  UnknownLink,
+ *  PieceLink
+ * } from './api.js'
  */
 
 /**
- * Build migration inventories for multiple spaces.
+ * Build migration inventories for multiple spaces, checkpointing into state
+ * after each upload.list page.
  *
- * When `spaceDIDs` is omitted, iterates all spaces the client has access to
- * via `client.spaces()`. Pass an explicit list to migrate a subset only.
+ * ## Resume
  *
- * Spaces are processed sequentially — keeps memory bounded and makes
- * per-space progress straightforward for the caller.
+ * Pass a previously persisted MigrationState to resume an interrupted read:
+ *   - Spaces already in state.spacesInventories with no cursor → skipped entirely
+ *   - Spaces with a cursor in state.readerProgressCursors → resumed from that page
+ *   - Spaces absent from state.spacesInventories → started fresh
  *
- * @param {import('@storacha/client').Client} client - Authenticated @storacha/client instance
- * @param {API.IndexingServiceReader} indexer - Indexing service claim reader
- * @param {API.SourceURLResolver} resolver - Resolves the final sourceURL for each shard
- * @param {API.SpaceDID[]} [spaceDIDs] - Defaults to all spaces on the client
- * @returns {Promise<API.SpaceInventory[]>}
+ * When spaceDIDs is omitted, all spaces on the client are processed.
+ *
+ * ## Events
+ *
+ *   reader:space:start    — before the first page of each space
+ *   reader:space:complete — after the last page of each space
+ *   state:checkpoint      — after every upload.list page (persist on this event)
+ *   reader:complete       — after all spaces; state.phase set to 'planning'
+ *
+ * @param {object} args
+ * @param {SourceURLResolver} args.resolver - Resolves the final sourceURL for each shard
+ * @param {MigrationState} args.state - Mutated in place; used for resume and checkpointing
+ * @param {SpaceDID[]} [args.spaceDIDs] - Defaults to all spaces on the client
+ * @param {{ serviceURL?: URL, indexer?: IndexingServiceReader }} [args.options]
+ * @param {import('@storacha/client').Client} args.client - Authenticated @storacha/client instance
+ * @returns {AsyncGenerator<MigrationEvent>}
  */
-export async function buildMigrationInventories(
+export async function* buildMigrationInventories({
   client,
-  indexer,
   resolver,
-  spaceDIDs
-) {
+  state,
+  spaceDIDs,
+  options,
+}) {
+  const indexer =
+    options?.indexer ?? new IndexingClient({ serviceURL: options?.serviceURL })
   const dids = spaceDIDs ?? client.spaces().map((s) => s.did())
-  const inventories = []
+
   for (const did of dids) {
-    inventories.push(
-      await buildMigrationInventory(client, indexer, resolver, did)
-    )
+    // Space already fully read — skip
+    if (state.spacesInventories[did] && !state.readerProgressCursors?.[did]) {
+      continue
+    }
+
+    yield* buildSpaceInventory({
+      client,
+      indexer,
+      resolver,
+      spaceDID: did,
+      state,
+    })
   }
-  return inventories
+
+  state.phase = 'planning'
+  yield { type: 'reader:complete' }
+  yield { type: 'state:checkpoint', state }
 }
 
 /**
- * Build a complete migration inventory for a single Storacha space.
+ * Paginate all uploads for one space, checkpointing into state after each page.
  *
- * Paginates uploads and processes each page immediately — no buffering.
- * Shards are resolved via indexing service claims as each upload is encountered.
- * The resolver is applied inline so sourceURLs are final on the returned inventory.
+ * Resumes from state.readerProgressCursors[spaceDID] if present.
  *
- * @param {import('@storacha/client').Client} client - Authenticated @storacha/client instance
- * @param {API.IndexingServiceReader} indexer - Indexing service claim reader
- * @param {API.SourceURLResolver} resolver - Resolves the final sourceURL for each shard
- * @param {API.SpaceDID} spaceDID - Space to inventory
- * @returns {Promise<API.SpaceInventory>}
+ * Builds pageUploads as a Record during the natural shard-resolution pass,
+ * appending shards to an existing root entry if encountered more than once.
+ * Aggregates (totalShards, totalBytes) are accumulated in the same loop —
+ * no extra iteration needed in checkpointInventoryPage.
+ *
+ * @param {object} args
+ * @param {import('@storacha/client').Client} args.client
+ * @param {IndexingServiceReader} args.indexer
+ * @param {SourceURLResolver} args.resolver
+ * @param {SpaceDID} args.spaceDID
+ * @param {MigrationState} args.state - Mutated in place
+ * @returns {AsyncGenerator<MigrationEvent>}
  */
-export async function buildMigrationInventory(
+async function* buildSpaceInventory({
   client,
   indexer,
   resolver,
-  spaceDID
-) {
+  spaceDID,
+  state,
+}) {
+  yield { type: 'reader:space:start', spaceDID }
+
   await client.setCurrentSpace(spaceDID)
 
-  /** @type {API.SpaceInventory['uploads']} */
-  const uploads = []
-  /** @type {API.SpaceInventory['skippedShards']} */
-  const skippedShards = []
-  let totalShards = 0
-  let totalBytes = 0n
+  let cursor = state.readerProgressCursors?.[spaceDID]
 
-  let uploadCursor
   do {
     const page = await client.capability.upload.list({
-      cursor: uploadCursor,
+      cursor,
       size: 100,
     })
 
+    /** @type {Record<string, { shards: ResolvedShard[] }>} */
+    const pageUploads = {}
+    /** @type {Array<{ cid: string; reason: string }>} */
+    const pageSkipped = []
+    let pageShards = 0
+    let pageBytes = 0n
+
     for (const upload of page.results) {
       const shards = await listShardsFromStore(client, upload.root)
+      const root = upload.root.toString()
 
-      /** @type {API.ResolvedShard[]} */
-      const resolvedShards = []
       for (const shard of shards) {
         const result = await resolveShard(indexer, shard, resolver)
         if (result.ok) {
-          resolvedShards.push(result.ok)
-          totalBytes += result.ok.sizeBytes
+          const existing = pageUploads[root]
+          if (existing) {
+            existing.shards.push(result.ok)
+          } else {
+            pageUploads[root] = { shards: [result.ok] }
+          }
+          pageShards++
+          pageBytes += result.ok.sizeBytes
         } else {
-          skippedShards.push({ cid: shard.cidStr, reason: result.error.reason })
+          pageSkipped.push({ cid: shard.cidStr, reason: result.error.reason })
         }
       }
 
-      totalShards += resolvedShards.length
-      uploads.push({ root: upload.root.toString(), shards: resolvedShards })
+      // Ensure the upload root is always present even when all shards are skipped
+      if (!pageUploads[root]) {
+        pageUploads[root] = { shards: [] }
+      }
     }
 
-    uploadCursor = page.cursor
-  } while (uploadCursor)
+    cursor = page.cursor
 
-  return {
-    did: spaceDID,
-    uploads,
-    skippedShards,
-    totalUploads: uploads.length,
-    totalShards,
-    totalBytes,
-  }
+    checkpointInventoryPage(state, {
+      spaceDID,
+      uploads: pageUploads,
+      skippedShards: pageSkipped,
+      totalShards: pageShards,
+      totalBytes: pageBytes,
+      cursor,
+    })
+
+    yield { type: 'state:checkpoint', state }
+  } while (cursor)
+
+  yield { type: 'reader:space:complete', spaceDID }
 }
 
 /**
  * Paginate shard CIDs from the upload table for a given upload root.
  *
  * @param {import('@storacha/client').Client} client
- * @param {API.UnknownLink} root
- * @returns {Promise<API.ShardEntry[]>}
+ * @param {UnknownLink} root
+ * @returns {Promise<ShardEntry[]>}
  */
 async function listShardsFromStore(client, root) {
-  /** @type {API.ShardEntry[]} */
+  /** @type {ShardEntry[]} */
   const shards = []
   let cursor
   do {
@@ -130,14 +191,14 @@ async function listShardsFromStore(client, root) {
  * Resolve a shard's pieceCID, sizeBytes, and sourceURL from indexing service claims.
  * The resolver is applied to produce the final sourceURL.
  *
- * @param {API.IndexingServiceReader} indexer
- * @param {API.ShardEntry} shard
- * @param {API.SourceURLResolver} resolver
+ * @param {IndexingServiceReader} indexer
+ * @param {ShardEntry} shard
+ * @param {SourceURLResolver} resolver
  */
 async function resolveShard(indexer, shard, resolver) {
   /** @type {string | null} */
   let locationURL = null
-  /** @type {API.PieceView | null} */
+  /** @type {PieceView | null} */
   let piece = null
 
   const claimsResult = await indexer.queryClaims({
@@ -147,15 +208,18 @@ async function resolveShard(indexer, shard, resolver) {
   if (claimsResult.ok) {
     for (const claim of claimsResult.ok.claims.values()) {
       if (claim.type === 'assert/location' && locationURL === null) {
-        // Filter out index-blob location claims by comparing content multihash
-        const claimMhB58 = base58btc.encode(claim.content.multihash.bytes)
+        const bytes =
+          'digest' in claim.content
+            ? claim.content.digest
+            : claim.content.multihash.bytes
+        const claimMhB58 = base58btc.encode(bytes)
         if (claimMhB58 === shard.b58) {
           locationURL = claim.location[0]?.toString() ?? null
         }
       }
       if (claim.type === 'assert/equals' && piece === null) {
         try {
-          piece = Piece.fromLink(/** @type {API.PieceLink} */ (claim.equals))
+          piece = Piece.fromLink(/** @type {PieceLink} */ (claim.equals))
         } catch {
           // not a piece CID
         }
@@ -170,12 +234,17 @@ async function resolveShard(indexer, shard, resolver) {
     return { error: new MissingLocationURLFailure(`shard ${shard.cidStr}`) }
   }
 
-  const partial = {
+  const partialResolvedShard = {
     cid: shard.cidStr,
     pieceCID: piece.link.toString(),
     sourceURL: locationURL,
     sizeBytes: piece.size,
   }
 
-  return { ok: { ...partial, sourceURL: resolver.resolve(partial) } }
+  return {
+    ok: {
+      ...partialResolvedShard,
+      sourceURL: resolver.resolve(partialResolvedShard),
+    },
+  }
 }

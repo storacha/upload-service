@@ -63,14 +63,24 @@ export async function* executeMigration({ plan, state, synapse, config }) {
   for (const perSpaceCost of plan.costs.perSpace) {
     if (signal?.aborted) break
 
-    const spacePlan = plan.spaces.find((s) => s.did === perSpaceCost.spaceDID)
-    if (!spacePlan) continue
+    const inventory = state.spacesInventories[perSpaceCost.spaceDID]
+    if (!inventory) continue
 
-    yield* migrateSpace({ spacePlan, perSpaceCost, state, batchSize, stopOnError, signal })
+    yield* migrateSpace({
+      inventory,
+      perSpaceCost,
+      state,
+      batchSize,
+      stopOnError,
+      signal,
+    })
   }
 
   finalizeMigration(state)
-  yield { type: 'migration:complete', summary: deriveSummary(plan, state, startedAt) }
+  yield {
+    type: 'migration:complete',
+    summary: deriveSummary(plan, state, startedAt),
+  }
 }
 
 // ── Funding ───────────────────────────────────────────────────────────────────
@@ -99,13 +109,24 @@ async function* ensureFunding(costs, synapse, state) {
   yield { type: 'funding:start', amount: costs.totalDepositNeeded }
 
   try {
-    await synapse.payments.fundSync({
-      amount: costs.totalDepositNeeded,
+    // TODO: receive the result and check for success
+    const amount =
+      costs.totalDepositNeeded + (costs.totalDepositNeeded * 5n) / 10n // add 5% extra for safety
+    const result = await synapse.payments.fundSync({
+      amount,
       needsFwssMaxApproval: costs.needsFwssMaxApproval,
     })
+    if (result.receipt.status === 'reverted') {
+      throw new Error(
+        `Funding transaction ${result.hash} failed with status ${result.receipt.status}`
+      )
+    }
+    console.log(`Funding transaction ${result.hash} succeeded `)
   } catch (err) {
-    // TODO:check the error message 
-    const error = new InsufficientFundsFailure(err instanceof Error ? err.message : String(err))
+    // TODO:check the error message
+    const error = new InsufficientFundsFailure(
+      err instanceof Error ? err.message : String(err)
+    )
     yield { type: 'funding:failed', error }
     throw error
   }
@@ -129,7 +150,7 @@ async function* ensureFunding(costs, synapse, state) {
  * so the space phase is resolved before the consumer persists.
  *
  * @param {object} args
- * @param {API.PlanSpace} args.spacePlan
+ * @param {API.SpaceInventory} args.inventory
  * @param {API.PerSpaceCost} args.perSpaceCost
  * @param {API.MigrationState} args.state
  * @param {number} args.batchSize
@@ -137,19 +158,30 @@ async function* ensureFunding(costs, synapse, state) {
  * @param {AbortSignal | undefined} args.signal
  * @returns {AsyncGenerator<API.MigrationEvent>}
  */
-async function* migrateSpace({ spacePlan, perSpaceCost, state, batchSize, stopOnError, signal }) {
+async function* migrateSpace({
+  inventory,
+  perSpaceCost,
+  state,
+  batchSize,
+  stopOnError,
+  signal,
+}) {
   const { context, spaceDID, serviceProvider } = perSpaceCost
+  const space = state.spaces[spaceDID]
+  if (!space) return
 
-  for (const upload of spacePlan.uploads) {
+  for (const [root, upload] of Object.entries(inventory.uploads)) {
     if (signal?.aborted) break
 
-    const shards = upload.shards.map((shard) => ({ shard, root: upload.root }))
+    const shards = upload.shards.map((shard) => ({ shard, root }))
 
+    // how to deal with cases where the batch is less than the batch size?
     for (const batch of batches(shards, batchSize)) {
       if (signal?.aborted) break
 
       const pending = batch.filter(
-        ({ shard }) => !(state.committed[shard.cid] ?? []).includes(serviceProvider)
+        ({ shard }) =>
+          !(space.committed.shards[shard.cid] ?? []).includes(serviceProvider)
       )
       if (pending.length === 0) continue
 
@@ -167,9 +199,18 @@ async function* migrateSpace({ spacePlan, perSpaceCost, state, batchSize, stopOn
 
       if (result.committed.length > 0 && result.dataSetId !== undefined) {
         for (const entry of result.committed) {
-          recordCommit(state, spaceDID, entry.root, entry.shardCid, serviceProvider, result.dataSetId)
+          recordCommit(
+            state,
+            spaceDID,
+            entry.shardCid,
+            serviceProvider,
+            result.dataSetId
+          )
         }
-        yield /** @type {API.MigrationEvent} */ ({ type: 'state:checkpoint', state })
+        yield /** @type {API.MigrationEvent} */ ({
+          type: 'state:checkpoint',
+          state,
+        })
       }
 
       // stopOnError: stop remaining batches for this upload only.
@@ -257,7 +298,9 @@ async function processBatch({ batch, context, signal }) {
       pullFailures.push({
         root: entry.root,
         shardCid: entry.shard.cid,
-        error: new PullFailedFailure(`Pull failed for piece ${entry.shard.pieceCID}`),
+        error: new PullFailedFailure(
+          `Pull failed for piece ${entry.shard.pieceCID}`
+        ),
       })
     }
   }
@@ -322,13 +365,19 @@ function* batches(arr, size) {
 function failBatch(entries, err, stage) {
   const msg = err instanceof Error ? err.message : String(err)
   const error =
-    stage === 'presign' ? new PresignFailedFailure(msg)
-    : stage === 'commit' ? new CommitFailedFailure(msg)
-    : new PullFailedFailure(msg)
+    stage === 'presign'
+      ? new PresignFailedFailure(msg)
+      : stage === 'commit'
+      ? new CommitFailedFailure(msg)
+      : new PullFailedFailure(msg)
   return {
     dataSetId: undefined,
     committed: [],
-    failures: entries.map(({ shard, root }) => ({ root, shardCid: shard.cid, error })),
+    failures: entries.map(({ shard, root }) => ({
+      root,
+      shardCid: shard.cid,
+      error,
+    })),
   }
 }
 
@@ -346,16 +395,19 @@ function failBatch(entries, err, stage) {
 function deriveSummary(plan, state, startedAt) {
   let succeeded = 0
   let failed = 0
-  for (const space of Object.values(state.spaces)) {
-    for (const upload of Object.values(space.uploads)) {
-      succeeded += upload.committedShards
-      failed += upload.totalShards - upload.committedShards
-    }
+  for (const [did, space] of Object.entries(state.spaces)) {
+    const inventory = state.spacesInventories[/** @type {API.SpaceDID} */ (did)]
+    if (!inventory) continue
+    succeeded += space.committed.count
+    failed += inventory.totalShards - space.committed.count
   }
   return {
     succeeded,
     failed,
-    skipped: plan.spaces.reduce((n, s) => n + s.skippedShards.length, 0),
+    skipped: Object.values(state.spacesInventories).reduce(
+      (n, inv) => n + inv.skippedShards.length,
+      0
+    ),
     dataSetIds: Object.values(state.spaces)
       .map((s) => s.dataSetId)
       .filter(/** @returns {id is bigint} */ (id) => id != null),

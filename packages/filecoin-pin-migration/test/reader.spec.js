@@ -2,10 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { Piece } from '@web3-storage/data-segment'
 import { base58btc } from 'multiformats/bases/base58'
 
-import {
-  buildMigrationInventory,
-  buildMigrationInventories,
-} from '../src/reader.js'
+import { buildMigrationInventories } from '../src/reader.js'
 import { ClaimsResolver, RoundaboutResolver } from '../src/source-url.js'
 import {
   createTestCID,
@@ -13,6 +10,7 @@ import {
   createMockClient,
   createMockIndexer,
   buildShardClaims,
+  createMockInitialState,
 } from './helpers.js'
 
 /**
@@ -26,501 +24,494 @@ const SPACE_DID = /** @type {API.SpaceDID} */ (
 /** Default pass-through resolver — sourceURL is the raw claim URL. */
 const claimsResolver = new ClaimsResolver()
 
-describe('buildMigrationInventory', () => {
-  it('uses upload table shards as default', async () => {
-    const rootCid = await createTestCID('root-a')
-    const shardCid = await createTestCID('shard-a')
-    const pieceCid = createPieceCID()
-    const shardB58 = base58btc.encode(shardCid.multihash.bytes)
+/**
+ * Collect all events from the reader generator and return the final inventory
+ * for the given spaceDID from state.
+ *
+ * @param {AsyncGenerator<API.MigrationEvent>} gen
+ * @param {API.MigrationState} state
+ * @param {API.SpaceDID} spaceDID
+ */
+async function collectInventory(gen, state, spaceDID) {
+  for await (const _ of gen) { /* drain */ }
+  return state.spacesInventories[spaceDID]
+}
 
-    const client = createMockClient(
-      [{ results: [{ root: rootCid }] }],
-      new Map([[rootCid.toString(), [shardCid]]])
-    )
+describe('buildMigrationInventories', () => {
+  describe('single space — basic inventory', () => {
+    it('resolves shards and builds inventory keyed by root CID', async () => {
+      const rootCid = await createTestCID('root-a')
+      const shardCid = await createTestCID('shard-a')
+      const pieceCid = createPieceCID()
+      const shardB58 = base58btc.encode(shardCid.multihash.bytes)
 
-    const indexer = createMockIndexer(
-      new Map([
-        [
-          shardB58,
-          {
-            claims: buildShardClaims(shardCid, {
-              locationURLs: ['https://r2.example/shard-a'],
-              pieceCid,
-            }),
-          },
-        ],
-      ])
-    )
+      const client = createMockClient(
+        [{ results: [{ root: rootCid }] }],
+        new Map([[rootCid.toString(), [shardCid]]])
+      )
+      const indexer = createMockIndexer(
+        new Map([
+          [shardB58, { claims: buildShardClaims(shardCid, { locationURLs: ['https://r2.example/shard-a'], pieceCid }) }],
+        ])
+      )
 
-    const inventory = await buildMigrationInventory(
-      client,
-      indexer,
-      claimsResolver,
-      SPACE_DID
-    )
+      const state = createMockInitialState()
+      const inventory = await collectInventory(
+        buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } }),
+        state,
+        SPACE_DID
+      )
 
-    expect(inventory.uploads).toHaveLength(1)
-    expect(inventory.uploads[0].shards).toHaveLength(1)
-    expect(inventory.uploads[0].shards[0].sourceURL).toBe(
-      'https://r2.example/shard-a'
-    )
-    expect(inventory.uploads[0].shards[0].pieceCID).toBe(pieceCid.toString())
-  })
+      expect(Object.keys(inventory.uploads)).toHaveLength(1)
+      const upload = inventory.uploads[rootCid.toString()]
+      expect(upload).toBeDefined()
+      expect(upload.shards).toHaveLength(1)
+      expect(upload.shards[0].sourceURL).toBe('https://r2.example/shard-a')
+      expect(upload.shards[0].pieceCID).toBe(pieceCid.toString())
+    })
 
-  it('filters out index-blob location claims', async () => {
-    const rootCid = await createTestCID('root-c')
-    const shardCid = await createTestCID('shard-c')
-    const indexBlobCid = await createTestCID('index-blob-c')
-    const pieceCid = createPieceCID()
-    const shardB58 = base58btc.encode(shardCid.multihash.bytes)
+    it('filters out index-blob location claims', async () => {
+      const rootCid = await createTestCID('root-c')
+      const shardCid = await createTestCID('shard-c')
+      const indexBlobCid = await createTestCID('index-blob-c')
+      const pieceCid = createPieceCID()
+      const shardB58 = base58btc.encode(shardCid.multihash.bytes)
 
-    const client = createMockClient(
-      [{ results: [{ root: rootCid }] }],
-      new Map([[rootCid.toString(), [shardCid]]])
-    )
-
-    /** @type {Map<string, API.ReaderClaim>} */
-    const claims = new Map([
-      // Matching location claim (shard multihash matches)
-      [
-        'location-shard',
-        {
+      const client = createMockClient(
+        [{ results: [{ root: rootCid }] }],
+        new Map([[rootCid.toString(), [shardCid]]])
+      )
+      const claims = new Map([
+        ['location-shard', {
           type: /** @type {const} */ ('assert/location'),
           content: { multihash: shardCid.multihash },
           location: [new URL('https://r2.example/shard')],
-        },
-      ],
-      // Index-blob location claim (different multihash — should be filtered)
-      [
-        'location-index-blob',
-        {
+        }],
+        ['location-index-blob', {
           type: /** @type {const} */ ('assert/location'),
           content: { multihash: indexBlobCid.multihash },
           location: [new URL('https://r2.example/index-blob')],
-        },
-      ],
-      [
-        'equals-claim',
-        {
+        }],
+        ['equals-claim', {
           type: /** @type {const} */ ('assert/equals'),
           content: { multihash: shardCid.multihash },
           equals: pieceCid,
-        },
-      ],
-    ])
+        }],
+      ])
+      const indexer = createMockIndexer(new Map([[shardB58, { claims }]]))
 
-    const indexer = createMockIndexer(new Map([[shardB58, { claims }]]))
-    const inventory = await buildMigrationInventory(
-      client,
-      indexer,
-      claimsResolver,
-      SPACE_DID
-    )
+      const state = createMockInitialState()
+      const inventory = await collectInventory(
+        buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } }),
+        state,
+        SPACE_DID
+      )
 
-    expect(inventory.uploads[0].shards).toHaveLength(1)
-    expect(inventory.uploads[0].shards[0].sourceURL).toBe(
-      'https://r2.example/shard'
-    )
+      const upload = inventory.uploads[rootCid.toString()]
+      expect(upload.shards).toHaveLength(1)
+      expect(upload.shards[0].sourceURL).toBe('https://r2.example/shard')
+    })
+
+    it('extracts pieceCID from assert/equals via Piece.fromLink', async () => {
+      const rootCid = await createTestCID('root-d')
+      const shardCid = await createTestCID('shard-d')
+      const pieceCid = createPieceCID()
+      const shardB58 = base58btc.encode(shardCid.multihash.bytes)
+
+      const client = createMockClient(
+        [{ results: [{ root: rootCid }] }],
+        new Map([[rootCid.toString(), [shardCid]]])
+      )
+      const indexer = createMockIndexer(
+        new Map([[shardB58, { claims: buildShardClaims(shardCid, { locationURLs: ['https://r2.example/shard-d'], pieceCid }) }]])
+      )
+
+      const state = createMockInitialState()
+      const inventory = await collectInventory(
+        buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } }),
+        state,
+        SPACE_DID
+      )
+
+      expect(inventory.uploads[rootCid.toString()].shards[0].pieceCID).toBe(pieceCid.toString())
+    })
+
+    it('populates sizeBytes from Piece.fromLink().size', async () => {
+      const rootCid = await createTestCID('root-e')
+      const shardCid = await createTestCID('shard-e')
+      const pieceCid = createPieceCID()
+      const shardB58 = base58btc.encode(shardCid.multihash.bytes)
+
+      const client = createMockClient(
+        [{ results: [{ root: rootCid }] }],
+        new Map([[rootCid.toString(), [shardCid]]])
+      )
+      const indexer = createMockIndexer(
+        new Map([[shardB58, { claims: buildShardClaims(shardCid, { locationURLs: ['https://r2.example/shard-e'], pieceCid }) }]])
+      )
+
+      const state = createMockInitialState()
+      const inventory = await collectInventory(
+        buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } }),
+        state,
+        SPACE_DID
+      )
+
+      const expectedSize = Piece.fromLink(pieceCid).size
+      expect(inventory.uploads[rootCid.toString()].shards[0].sizeBytes).toBe(expectedSize)
+    })
+
+    it('skips shard missing pieceCID', async () => {
+      const rootCid = await createTestCID('root-f')
+      const shardCid = await createTestCID('shard-f')
+      const shardB58 = base58btc.encode(shardCid.multihash.bytes)
+
+      const client = createMockClient(
+        [{ results: [{ root: rootCid }] }],
+        new Map([[rootCid.toString(), [shardCid]]])
+      )
+      const indexer = createMockIndexer(
+        new Map([[shardB58, { claims: buildShardClaims(shardCid, { locationURLs: ['https://r2.example/shard-f'] }) }]])
+      )
+
+      const state = createMockInitialState()
+      const inventory = await collectInventory(
+        buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } }),
+        state,
+        SPACE_DID
+      )
+
+      expect(inventory.uploads[rootCid.toString()].shards).toHaveLength(0)
+      expect(inventory.skippedShards).toHaveLength(1)
+      expect(inventory.skippedShards[0].reason).toContain(shardCid.toString())
+    })
+
+    it('skips shard missing location URL', async () => {
+      const rootCid = await createTestCID('root-g')
+      const shardCid = await createTestCID('shard-g')
+      const pieceCid = createPieceCID()
+      const shardB58 = base58btc.encode(shardCid.multihash.bytes)
+
+      const client = createMockClient(
+        [{ results: [{ root: rootCid }] }],
+        new Map([[rootCid.toString(), [shardCid]]])
+      )
+      const indexer = createMockIndexer(
+        new Map([[shardB58, { claims: buildShardClaims(shardCid, { pieceCid }) }]])
+      )
+
+      const state = createMockInitialState()
+      const inventory = await collectInventory(
+        buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } }),
+        state,
+        SPACE_DID
+      )
+
+      expect(inventory.uploads[rootCid.toString()].shards).toHaveLength(0)
+      expect(inventory.skippedShards).toHaveLength(1)
+      expect(inventory.skippedShards[0].reason).toContain(shardCid.toString())
+    })
+
+    it('applies ClaimsResolver — sourceURL is the raw claim URL', async () => {
+      const rootCid = await createTestCID('root-resolver-claims')
+      const shardCid = await createTestCID('shard-resolver-claims')
+      const pieceCid = createPieceCID()
+      const shardB58 = base58btc.encode(shardCid.multihash.bytes)
+
+      const client = createMockClient(
+        [{ results: [{ root: rootCid }] }],
+        new Map([[rootCid.toString(), [shardCid]]])
+      )
+      const indexer = createMockIndexer(
+        new Map([[shardB58, { claims: buildShardClaims(shardCid, { locationURLs: ['https://r2.example/shard-claims'], pieceCid }) }]])
+      )
+
+      const state = createMockInitialState()
+      const inventory = await collectInventory(
+        buildMigrationInventories({ client, resolver: new ClaimsResolver(), state, spaceDIDs: [SPACE_DID], options: { indexer } }),
+        state,
+        SPACE_DID
+      )
+
+      expect(inventory.uploads[rootCid.toString()].shards[0].sourceURL).toBe('https://r2.example/shard-claims')
+    })
+
+    it('applies RoundaboutResolver — sourceURL is built from pieceCID', async () => {
+      const rootCid = await createTestCID('root-resolver-roundabout')
+      const shardCid = await createTestCID('shard-resolver-roundabout')
+      const pieceCid = createPieceCID()
+      const shardB58 = base58btc.encode(shardCid.multihash.bytes)
+
+      const client = createMockClient(
+        [{ results: [{ root: rootCid }] }],
+        new Map([[rootCid.toString(), [shardCid]]])
+      )
+      const indexer = createMockIndexer(
+        new Map([[shardB58, { claims: buildShardClaims(shardCid, { locationURLs: ['https://r2.example/shard-roundabout'], pieceCid }) }]])
+      )
+
+      const state = createMockInitialState()
+      const inventory = await collectInventory(
+        buildMigrationInventories({ client, resolver: new RoundaboutResolver(), state, spaceDIDs: [SPACE_DID], options: { indexer } }),
+        state,
+        SPACE_DID
+      )
+
+      const shard = inventory.uploads[rootCid.toString()].shards[0]
+      expect(shard.sourceURL).toMatch(/^https:\/\/roundabout\.web3\.storage\/piece\//)
+      expect(shard.sourceURL).toContain(pieceCid.toString())
+      expect(shard.sourceURL).not.toBe('https://r2.example/shard-roundabout')
+    })
   })
 
-  it('extracts pieceCID from assert/equals via Piece.fromLink', async () => {
-    const rootCid = await createTestCID('root-d')
-    const shardCid = await createTestCID('shard-d')
-    const pieceCid = createPieceCID()
-    const shardB58 = base58btc.encode(shardCid.multihash.bytes)
+  describe('pagination', () => {
+    it('paginates through multiple upload pages and merges into inventory', async () => {
+      const rootA = await createTestCID('root-page-a')
+      const rootB = await createTestCID('root-page-b')
+      const shardA = await createTestCID('shard-page-a')
+      const shardB = await createTestCID('shard-page-b')
+      const pieceCid = createPieceCID()
+      const shardAB58 = base58btc.encode(shardA.multihash.bytes)
+      const shardBB58 = base58btc.encode(shardB.multihash.bytes)
 
-    const client = createMockClient(
-      [{ results: [{ root: rootCid }] }],
-      new Map([[rootCid.toString(), [shardCid]]])
-    )
+      const client = createMockClient(
+        [{ results: [{ root: rootA }], cursor: '1' }, { results: [{ root: rootB }] }],
+        new Map([[rootA.toString(), [shardA]], [rootB.toString(), [shardB]]])
+      )
+      const indexer = createMockIndexer(new Map([
+        [shardAB58, { claims: buildShardClaims(shardA, { locationURLs: ['https://r2.example/shard-a'], pieceCid }) }],
+        [shardBB58, { claims: buildShardClaims(shardB, { locationURLs: ['https://r2.example/shard-b'], pieceCid }) }],
+      ]))
 
-    const indexer = createMockIndexer(
-      new Map([
-        [
-          shardB58,
-          {
-            claims: buildShardClaims(shardCid, {
-              locationURLs: ['https://r2.example/shard-d'],
-              pieceCid,
-            }),
-          },
-        ],
-      ])
-    )
+      const state = createMockInitialState()
+      const inventory = await collectInventory(
+        buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } }),
+        state,
+        SPACE_DID
+      )
 
-    const inventory = await buildMigrationInventory(
-      client,
-      indexer,
-      claimsResolver,
-      SPACE_DID
-    )
+      expect(Object.keys(inventory.uploads)).toHaveLength(2)
+      expect(inventory.uploads[rootA.toString()].shards).toHaveLength(1)
+      expect(inventory.uploads[rootB.toString()].shards).toHaveLength(1)
+      expect(inventory.totalUploads).toBe(2)
+    })
 
-    expect(inventory.uploads[0].shards[0].pieceCID).toBe(pieceCid.toString())
+    it('emits state:checkpoint after each page', async () => {
+      const rootA = await createTestCID('root-ckpt-a')
+      const rootB = await createTestCID('root-ckpt-b')
+      const shardA = await createTestCID('shard-ckpt-a')
+      const shardB = await createTestCID('shard-ckpt-b')
+      const pieceCid = createPieceCID()
+      const shardAB58 = base58btc.encode(shardA.multihash.bytes)
+      const shardBB58 = base58btc.encode(shardB.multihash.bytes)
+
+      const client = createMockClient(
+        [{ results: [{ root: rootA }], cursor: '1' }, { results: [{ root: rootB }] }],
+        new Map([[rootA.toString(), [shardA]], [rootB.toString(), [shardB]]])
+      )
+      const indexer = createMockIndexer(new Map([
+        [shardAB58, { claims: buildShardClaims(shardA, { locationURLs: ['https://r2.example/a'], pieceCid }) }],
+        [shardBB58, { claims: buildShardClaims(shardB, { locationURLs: ['https://r2.example/b'], pieceCid }) }],
+      ]))
+
+      const state = createMockInitialState()
+      const checkpoints = []
+      for await (const event of buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } })) {
+        if (event.type === 'state:checkpoint') checkpoints.push(event)
+      }
+
+      // one checkpoint per page (2) + one final checkpoint after reader:complete
+      expect(checkpoints.length).toBe(3)
+    })
   })
 
-  it('populates sizeBytes from Piece.fromLink().size', async () => {
-    const rootCid = await createTestCID('root-e')
-    const shardCid = await createTestCID('shard-e')
-    const pieceCid = createPieceCID()
-    const shardB58 = base58btc.encode(shardCid.multihash.bytes)
+  describe('multiple spaces', () => {
+    it('builds inventories for all client spaces when no DID list is passed', async () => {
+      const rootA = await createTestCID('root-spaces-a')
+      const rootB = await createTestCID('root-spaces-b')
+      const shardA = await createTestCID('shard-spaces-a')
+      const shardB = await createTestCID('shard-spaces-b')
+      const pieceCid = createPieceCID()
+      const shardAB58 = base58btc.encode(shardA.multihash.bytes)
+      const shardBB58 = base58btc.encode(shardB.multihash.bytes)
 
-    const client = createMockClient(
-      [{ results: [{ root: rootCid }] }],
-      new Map([[rootCid.toString(), [shardCid]]])
-    )
+      const spaceA = /** @type {API.SpaceDID} */ ('did:key:z6MkSpaceA')
+      const spaceB = /** @type {API.SpaceDID} */ ('did:key:z6MkSpaceB')
 
-    const indexer = createMockIndexer(
-      new Map([
-        [
-          shardB58,
-          {
-            claims: buildShardClaims(shardCid, {
-              locationURLs: ['https://r2.example/shard-e'],
-              pieceCid,
-            }),
-          },
-        ],
-      ])
-    )
+      /** @type {API.SpaceDID} */
+      let currentSpace
+      const uploadsBySpace = new Map([[spaceA, [rootA]], [spaceB, [rootB]]])
+      const shardsByRoot = new Map([[rootA.toString(), [shardA]], [rootB.toString(), [shardB]]])
 
-    const inventory = await buildMigrationInventory(
-      client,
-      indexer,
-      claimsResolver,
-      SPACE_DID
-    )
-
-    const expectedSize = Piece.fromLink(pieceCid).size
-    expect(inventory.uploads[0].shards[0].sizeBytes).toBe(expectedSize)
-  })
-
-  it('skips shard missing pieceCID', async () => {
-    const rootCid = await createTestCID('root-f')
-    const shardCid = await createTestCID('shard-f')
-    const shardB58 = base58btc.encode(shardCid.multihash.bytes)
-
-    const client = createMockClient(
-      [{ results: [{ root: rootCid }] }],
-      new Map([[rootCid.toString(), [shardCid]]])
-    )
-
-    // Location claim present, but NO equals claim — no pieceCID
-    const indexer = createMockIndexer(
-      new Map([
-        [
-          shardB58,
-          {
-            claims: buildShardClaims(shardCid, {
-              locationURLs: ['https://r2.example/shard-f'],
-            }),
-          },
-        ],
-      ])
-    )
-
-    const inventory = await buildMigrationInventory(
-      client,
-      indexer,
-      claimsResolver,
-      SPACE_DID
-    )
-
-    expect(inventory.uploads[0].shards).toHaveLength(0)
-    expect(inventory.skippedShards).toHaveLength(1)
-    expect(inventory.skippedShards[0].reason).toContain(shardCid.toString())
-  })
-
-  it('skips shard missing location URL', async () => {
-    const rootCid = await createTestCID('root-g')
-    const shardCid = await createTestCID('shard-g')
-    const pieceCid = createPieceCID()
-    const shardB58 = base58btc.encode(shardCid.multihash.bytes)
-
-    const client = createMockClient(
-      [{ results: [{ root: rootCid }] }],
-      new Map([[rootCid.toString(), [shardCid]]])
-    )
-
-    // Equals claim present, but NO location claim
-    const indexer = createMockIndexer(
-      new Map([
-        [
-          shardB58,
-          {
-            claims: buildShardClaims(shardCid, { pieceCid }),
-          },
-        ],
-      ])
-    )
-
-    const inventory = await buildMigrationInventory(
-      client,
-      indexer,
-      claimsResolver,
-      SPACE_DID
-    )
-
-    expect(inventory.uploads[0].shards).toHaveLength(0)
-    expect(inventory.skippedShards).toHaveLength(1)
-    expect(inventory.skippedShards[0].reason).toContain(shardCid.toString())
-  })
-
-  it('paginates through multiple upload pages', async () => {
-    const rootA = await createTestCID('root-page-a')
-    const rootB = await createTestCID('root-page-b')
-    const shardA = await createTestCID('shard-page-a')
-    const shardB = await createTestCID('shard-page-b')
-    const pieceCid = createPieceCID()
-    const shardAB58 = base58btc.encode(shardA.multihash.bytes)
-    const shardBB58 = base58btc.encode(shardB.multihash.bytes)
-
-    const client = createMockClient(
-      [
-        {
-          results: [{ root: rootA }],
-          cursor: '1',
-        },
-        { results: [{ root: rootB }] },
-      ],
-      new Map([
-        [rootA.toString(), [shardA]],
-        [rootB.toString(), [shardB]],
-      ])
-    )
-
-    const indexer = createMockIndexer(
-      new Map([
-        [
-          shardAB58,
-          {
-            claims: buildShardClaims(shardA, {
-              locationURLs: ['https://r2.example/shard-a'],
-              pieceCid,
-            }),
-          },
-        ],
-        [
-          shardBB58,
-          {
-            claims: buildShardClaims(shardB, {
-              locationURLs: ['https://r2.example/shard-b'],
-              pieceCid,
-            }),
-          },
-        ],
-      ])
-    )
-
-    const inventory = await buildMigrationInventory(
-      client,
-      indexer,
-      claimsResolver,
-      SPACE_DID
-    )
-
-    expect(inventory.uploads).toHaveLength(2)
-    expect(inventory.uploads[0].shards).toHaveLength(1)
-    expect(inventory.uploads[1].shards).toHaveLength(1)
-  })
-
-  it('applies ClaimsResolver — sourceURL is the raw claim URL', async () => {
-    const rootCid = await createTestCID('root-resolver-claims')
-    const shardCid = await createTestCID('shard-resolver-claims')
-    const pieceCid = createPieceCID()
-    const shardB58 = base58btc.encode(shardCid.multihash.bytes)
-
-    const client = createMockClient(
-      [{ results: [{ root: rootCid }] }],
-      new Map([[rootCid.toString(), [shardCid]]])
-    )
-    const indexer = createMockIndexer(
-      new Map([
-        [
-          shardB58,
-          {
-            claims: buildShardClaims(shardCid, {
-              locationURLs: ['https://r2.example/shard-claims'],
-              pieceCid,
-            }),
-          },
-        ],
-      ])
-    )
-
-    const inventory = await buildMigrationInventory(
-      client,
-      indexer,
-      new ClaimsResolver(),
-      SPACE_DID
-    )
-
-    expect(inventory.uploads[0].shards[0].sourceURL).toBe(
-      'https://r2.example/shard-claims'
-    )
-  })
-
-  it('applies RoundaboutResolver — sourceURL is built from pieceCID', async () => {
-    const rootCid = await createTestCID('root-resolver-roundabout')
-    const shardCid = await createTestCID('shard-resolver-roundabout')
-    const pieceCid = createPieceCID()
-    const shardB58 = base58btc.encode(shardCid.multihash.bytes)
-
-    const client = createMockClient(
-      [{ results: [{ root: rootCid }] }],
-      new Map([[rootCid.toString(), [shardCid]]])
-    )
-    const indexer = createMockIndexer(
-      new Map([
-        [
-          shardB58,
-          {
-            claims: buildShardClaims(shardCid, {
-              locationURLs: ['https://r2.example/shard-roundabout'],
-              pieceCid,
-            }),
-          },
-        ],
-      ])
-    )
-
-    const inventory = await buildMigrationInventory(
-      client,
-      indexer,
-      new RoundaboutResolver(),
-      SPACE_DID
-    )
-
-    const shard = inventory.uploads[0].shards[0]
-    expect(shard.sourceURL).toMatch(
-      /^https:\/\/roundabout\.web3\.storage\/piece\//
-    )
-    expect(shard.sourceURL).toContain(pieceCid.toString())
-    expect(shard.sourceURL).not.toBe('https://r2.example/shard-roundabout')
-  })
-})
-
-describe('buildMigrationInventories', () => {
-  it('builds inventories for all client spaces when no DID list is passed', async () => {
-    const rootA = await createTestCID('root-spaces-a')
-    const rootB = await createTestCID('root-spaces-b')
-    const shardA = await createTestCID('shard-spaces-a')
-    const shardB = await createTestCID('shard-spaces-b')
-    const pieceCid = createPieceCID()
-    const shardAB58 = base58btc.encode(shardA.multihash.bytes)
-    const shardBB58 = base58btc.encode(shardB.multihash.bytes)
-
-    const spaceA = /** @type {API.SpaceDID} */ ('did:key:z6MkSpaceA')
-    const spaceB = /** @type {API.SpaceDID} */ ('did:key:z6MkSpaceB')
-
-    // Custom mock: tracks current space so each space gets its own upload page
-    /** @type {API.SpaceDID } */
-    let currentSpace
-    const uploadsBySpace = new Map([
-      [spaceA, [rootA]],
-      [spaceB, [rootB]],
-    ])
-    /** @type {Map<string, API.UnknownLink[]>} */
-    const shardsByRoot = new Map([
-      [rootA.toString(), [shardA]],
-      [rootB.toString(), [shardB]],
-    ])
-    const client = /** @type {import('@storacha/client').Client} */ ({
-      spaces() {
-        return [{ did: () => spaceA }, { did: () => spaceB }]
-      },
-      async setCurrentSpace(did) {
-        currentSpace = /** @type {API.SpaceDID} */ (did)
-      },
-      capability: {
-        upload: {
-          async list(_options) {
-            const roots = uploadsBySpace.get(currentSpace) ?? []
-            return { results: roots.map((root) => ({ root })) }
-          },
-          shard: {
-            async list(root, _options) {
-              return { results: shardsByRoot.get(root.toString()) ?? [] }
+      const client = /** @type {import('@storacha/client').Client} */ ({
+        spaces() { return [{ did: () => spaceA }, { did: () => spaceB }] },
+        async setCurrentSpace(did) { currentSpace = /** @type {API.SpaceDID} */ (did) },
+        capability: {
+          upload: {
+            async list(_options) {
+              const roots = uploadsBySpace.get(currentSpace) ?? []
+              return { results: roots.map((root) => ({ root })) }
+            },
+            shard: {
+              async list(root, _options) {
+                return { results: shardsByRoot.get(root.toString()) ?? [] }
+              },
             },
           },
         },
-      },
+      })
+
+      const indexer = createMockIndexer(new Map([
+        [shardAB58, { claims: buildShardClaims(shardA, { locationURLs: ['https://r2.example/shard-a'], pieceCid }) }],
+        [shardBB58, { claims: buildShardClaims(shardB, { locationURLs: ['https://r2.example/shard-b'], pieceCid }) }],
+      ]))
+
+      const state = createMockInitialState()
+      for await (const _ of buildMigrationInventories({ client, resolver: claimsResolver, state, options: { indexer } })) { /* drain */ }
+
+      expect(state.spacesInventories[spaceA]).toBeDefined()
+      expect(state.spacesInventories[spaceB]).toBeDefined()
+      expect(Object.keys(state.spacesInventories[spaceA].uploads)).toHaveLength(1)
+      expect(Object.keys(state.spacesInventories[spaceB].uploads)).toHaveLength(1)
     })
 
-    const indexer = createMockIndexer(
-      new Map([
-        [
-          shardAB58,
-          {
-            claims: buildShardClaims(shardA, {
-              locationURLs: ['https://r2.example/shard-a'],
-              pieceCid,
-            }),
-          },
-        ],
-        [
-          shardBB58,
-          {
-            claims: buildShardClaims(shardB, {
-              locationURLs: ['https://r2.example/shard-b'],
-              pieceCid,
-            }),
-          },
-        ],
-      ])
-    )
+    it('builds inventories only for the specified space DIDs', async () => {
+      const rootA = await createTestCID('root-filter-a')
+      const shardA = await createTestCID('shard-filter-a')
+      const pieceCid = createPieceCID()
+      const shardAB58 = base58btc.encode(shardA.multihash.bytes)
 
-    const inventories = await buildMigrationInventories(
-      client,
-      indexer,
-      claimsResolver
-    )
+      const spaceA = /** @type {API.SpaceDID} */ ('did:key:z6MkFilterA')
+      const spaceB = /** @type {API.SpaceDID} */ ('did:key:z6MkFilterB')
 
-    expect(inventories).toHaveLength(2)
-    expect(inventories[0].did).toBe(spaceA)
-    expect(inventories[1].did).toBe(spaceB)
-    expect(inventories[0].uploads).toHaveLength(1)
-    expect(inventories[1].uploads).toHaveLength(1)
+      const client = createMockClient(
+        [{ results: [{ root: rootA }] }],
+        new Map([[rootA.toString(), [shardA]]]),
+        [spaceA, spaceB]
+      )
+      const indexer = createMockIndexer(
+        new Map([[shardAB58, { claims: buildShardClaims(shardA, { locationURLs: ['https://r2.example/shard-a'], pieceCid }) }]])
+      )
+
+      const state = createMockInitialState()
+      for await (const _ of buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [spaceA], options: { indexer } })) { /* drain */ }
+
+      expect(state.spacesInventories[spaceA]).toBeDefined()
+      expect(state.spacesInventories[spaceB]).toBeUndefined()
+    })
   })
 
-  it('builds inventories only for the specified space DIDs', async () => {
-    const rootA = await createTestCID('root-filter-a')
-    const shardA = await createTestCID('shard-filter-a')
-    const pieceCid = createPieceCID()
-    const shardAB58 = base58btc.encode(shardA.multihash.bytes)
+  describe('phase transitions', () => {
+    it('sets state.phase to planning after all spaces are read', async () => {
+      const rootCid = await createTestCID('root-phase')
+      const shardCid = await createTestCID('shard-phase')
+      const pieceCid = createPieceCID()
+      const shardB58 = base58btc.encode(shardCid.multihash.bytes)
 
-    const spaceA = /** @type {API.SpaceDID} */ ('did:key:z6MkFilterA')
-    const spaceB = /** @type {API.SpaceDID} */ ('did:key:z6MkFilterB')
+      const client = createMockClient(
+        [{ results: [{ root: rootCid }] }],
+        new Map([[rootCid.toString(), [shardCid]]])
+      )
+      const indexer = createMockIndexer(
+        new Map([[shardB58, { claims: buildShardClaims(shardCid, { locationURLs: ['https://r2.example/shard'], pieceCid }) }]])
+      )
 
-    // spaceB is registered on the client but excluded from the explicit DID list
-    const client = createMockClient(
-      [{ results: [{ root: rootA }] }],
-      new Map([[rootA.toString(), [shardA]]]),
-      [spaceA, spaceB]
-    )
+      const state = createMockInitialState()
+      for await (const _ of buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } })) { /* drain */ }
 
-    const indexer = createMockIndexer(
-      new Map([
-        [
-          shardAB58,
-          {
-            claims: buildShardClaims(shardA, {
-              locationURLs: ['https://r2.example/shard-a'],
-              pieceCid,
-            }),
-          },
-        ],
-      ])
-    )
+      expect(state.phase).toBe('planning')
+    })
 
-    // Pass only spaceA — spaceB should be skipped entirely
-    const inventories = await buildMigrationInventories(
-      client,
-      indexer,
-      claimsResolver,
-      [spaceA]
-    )
+    it('emits reader:complete as last named event', async () => {
+      const client = createMockClient([{ results: [] }])
+      const indexer = createMockIndexer(new Map())
 
-    expect(inventories).toHaveLength(1)
-    expect(inventories[0].did).toBe(spaceA)
+      const state = createMockInitialState()
+      const events = []
+      for await (const event of buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } })) {
+        events.push(event.type)
+      }
+
+      expect(events).toContain('reader:complete')
+      // reader:complete comes before the final state:checkpoint
+      const completeIdx = events.lastIndexOf('reader:complete')
+      const lastCheckpointIdx = events.lastIndexOf('state:checkpoint')
+      expect(completeIdx).toBeLessThan(lastCheckpointIdx)
+    })
+  })
+
+  describe('resume', () => {
+    it('skips a space already in spacesInventories with no cursor', async () => {
+      const spaceA = /** @type {API.SpaceDID} */ ('did:key:z6MkResumeSkip')
+      let setCurrentSpaceCalled = false
+
+      const client = /** @type {import('@storacha/client').Client} */ (/** @type {unknown} */ ({
+        spaces() { return [] },
+        async setCurrentSpace() { setCurrentSpaceCalled = true },
+        capability: { upload: { list: async () => ({ results: [] }), shard: { list: async () => ({ results: [] }) } } },
+      }))
+      const indexer = createMockIndexer(new Map())
+
+      const state = createMockInitialState()
+      // Pre-populate as complete (no cursor)
+      state.spacesInventories[spaceA] = {
+        did: spaceA,
+        uploads: { bafyroot: { shards: [] } },
+        skippedShards: [],
+        totalUploads: 1,
+        totalShards: 0,
+        totalBytes: 0n,
+      }
+
+      for await (const _ of buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [spaceA], options: { indexer } })) { /* drain */ }
+
+      expect(setCurrentSpaceCalled).toBe(false)
+    })
+
+    it('resumes a space from a saved cursor, preserving already-accumulated uploads', async () => {
+      const rootA = await createTestCID('root-resume-a')
+      const rootB = await createTestCID('root-resume-b')
+      const shardA = await createTestCID('shard-resume-a')
+      const shardB = await createTestCID('shard-resume-b')
+      const pieceCid = createPieceCID()
+      const shardAB58 = base58btc.encode(shardA.multihash.bytes)
+      const shardBB58 = base58btc.encode(shardB.multihash.bytes)
+
+      // Mock returns page 0 at cursor undefined, page 1 at cursor '1'
+      const client = createMockClient(
+        [{ results: [{ root: rootA }], cursor: '1' }, { results: [{ root: rootB }] }],
+        new Map([[rootA.toString(), [shardA]], [rootB.toString(), [shardB]]])
+      )
+      const indexer = createMockIndexer(new Map([
+        [shardAB58, { claims: buildShardClaims(shardA, { locationURLs: ['https://r2.example/a'], pieceCid }) }],
+        [shardBB58, { claims: buildShardClaims(shardB, { locationURLs: ['https://r2.example/b'], pieceCid }) }],
+      ]))
+
+      const state = createMockInitialState()
+      // Simulate a prior partial run: page 0 was processed, cursor '1' was saved
+      const rootAStr = /** @type {string} */ (rootA.toString())
+      state.spacesInventories[SPACE_DID] = {
+        did: SPACE_DID,
+        uploads: { [rootAStr]: { shards: [{ cid: shardA.toString(), pieceCID: pieceCid.toString(), sourceURL: 'https://r2.example/a', sizeBytes: Piece.fromLink(pieceCid).size }] } },
+        skippedShards: [],
+        totalUploads: 1,
+        totalShards: 1,
+        totalBytes: Piece.fromLink(pieceCid).size,
+      }
+      state.readerProgressCursors = { [SPACE_DID]: '1' }
+
+      const inventory = await collectInventory(
+        buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } }),
+        state,
+        SPACE_DID
+      )
+
+      // rootA from the pre-populated state + rootB from the resumed page
+      expect(Object.keys(inventory.uploads)).toHaveLength(2)
+      expect(inventory.uploads[rootA.toString()]).toBeDefined()
+      expect(inventory.uploads[rootB.toString()]).toBeDefined()
+      // Cursor should be cleared after completion
+      expect(state.readerProgressCursors).toBeUndefined()
+    })
   })
 })

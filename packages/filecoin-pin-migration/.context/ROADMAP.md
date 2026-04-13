@@ -11,7 +11,7 @@
 ### Package & Types
 
 - [x] **PKG-01** — Package scaffold (`package.json`, `tsconfig`, exports map, pnpm catalog entries for `@filoz/synapse-sdk` and `viem`)
-- [x] **PKG-02** — Core type definitions in `src/api.ts` (`MigrationConfig`, `MigrationPlan`, `MigrationEvent`, `MigrationState`, `MigrationSummary`, `SpaceInventory`, `PlanSpace`, `ResolvedShard`)
+- [x] **PKG-02** — Core type definitions in `src/api.ts` (`MigrationConfig`, `MigrationPlan`, `MigrationEvent`, `MigrationState`, `MigrationSummary`, `SpaceInventory`, `ResolvedShard`)
 - [x] **PKG-03** — Typed failure classes in `src/errors.js`: `MissingPieceCIDFailure`, `MissingLocationURLFailure`, `InsufficientFundsFailure`, `PresignFailedFailure`, `PullFailedFailure`, `CommitFailedFailure`
 
 ### Reader
@@ -26,38 +26,38 @@
 
 - [x] **SRC-01** — `RoundaboutResolver` builds `https://roundabout.web3.storage/piece/{pieceCidV2}` without network calls
 - [x] **SRC-02** — `ClaimsResolver` returns the location URL already resolved from indexing service claims
-- [x] **SRC-03** — Source URL strategy is config-driven (`{ strategy: 'roundabout' | 'claims' }`); `createResolver(config)` instantiates the correct resolver. The resolver is applied at read time inside `buildMigrationInventory` — `SpaceInventory` shards carry final `sourceURL` values before the planner sees them
+- [x] **SRC-03** — Source URL strategy is config-driven (`{ strategy: 'roundabout' | 'claims' }`); `createResolver(config)` instantiates the correct resolver. The resolver is applied at read time inside `buildMigrationInventories` — `SpaceInventory` shards carry final `sourceURL` values before the planner sees them
 
 ### Planner
 
-- [x] **PLAN-01** — `buildMigrationInventories` builds a full `SpaceInventory` per space; `createMigrationPlan` assembles them into a `MigrationPlan`
+- [x] **PLAN-01** — `buildMigrationInventories` builds a full `SpaceInventory` per space into `state.spacesInventories`; `createMigrationPlan` is an async generator that reads inventories from `state.spacesInventories`, aggregates totals, computes costs, writes SP bindings to state, and yields a `plan:ready` event carrying the `MigrationPlan`
 - [x] **PLAN-02** — `computeMigrationCosts` replicates the Synapse SDK `calculateMultiContextCosts` logic with heterogeneous per-space sizes — one `StorageContext` per space
 - [x] **PLAN-03** — `MigrationPlan` carries `costs.totalDepositNeeded`, `costs.needsFwssMaxApproval`, and `costs.ready` flag derived from USDFC balance, deposited balance, and FWSS approval state
-- [x] **PLAN-04** — `createMigrationPlan` accepts an optional `MigrationState` for resume; SP and dataset bindings are extracted automatically via `buildResumeState` and passed to `computeMigrationCosts` to pin the same provider and compute floor-aware rate deltas
+- [x] **PLAN-04** — `createMigrationPlan` requires a `MigrationState` for both fresh and resume runs; SP and dataset bindings are extracted automatically via `buildResumeState` and passed to `computeMigrationCosts` to pin the same provider and compute floor-aware rate deltas
 
 ### Migrator
 
 - [x] **MIG-01** — `executeMigration` orchestrates multi copies pull-based migration via Synapse SDK — 1 Storacha space → 1 FOC dataset per SP — processing uploads sequentially with configurable batch size
 - [x] **MIG-02** — Fund once pre-flight via `synapse.payments.fundSync`; skip funding on resume when deposit is already satisfied
 - [x] **MIG-03** — Commit pieces on-chain via `StorageContext.commit()` with `withIPFSIndexing: ''` dataset metadata and `ipfsRootCID: rootCID` per-piece metadata
-- [x] **MIG-04** — `executeMigration` yields typed `MigrationEvent`: `funding:start`, `funding:complete`, `funding:failed`, `shard:failed`, `state:checkpoint`, `migration:complete`
+- [x] **MIG-04** — All three stages yield typed `MigrationEvent`. Reader: `reader:space:start`, `reader:space:complete`, `reader:complete`, `state:checkpoint`. Planner: `state:checkpoint`, `plan:ready`. Migrator: `funding:start`, `funding:complete`, `funding:failed`, `shard:failed`, `state:checkpoint`, `migration:complete`
 - [x] **MIG-05** — Resume: `MigrationState` tracks committed shards per provider in `state.committed`; shards already committed to the target provider are skipped at the start of each batch
 - [x] **MIG-06** — Respects `batchSize` option from `MigrationConfig` (default: 50 pieces per batch)
 - [ ] **MIG-07** — `concurrency` option in `MigrationConfig` (default: 1) — process multiple batches concurrently within an upload to reduce wall-clock time for large spaces
 
 ### State management
 
-- [x] **STATE-01** — `createApprovalState` initialises `MigrationState` from an approved plan, capturing SP bindings before any on-chain action
+- [x] **STATE-01** — `createInitialState` creates a fresh `MigrationState` before the reader runs; SP bindings are written into state by the planner via `transitionToApproved` after cost computation
 - [x] **STATE-02** — `transitionToFunded` advances migration phase after `fundSync` lands
 - [x] **STATE-03** — `recordCommit` updates the committed map, increments upload progress, and resolves the active upload phase; guards against double-counting on multi-provider commits
 - [x] **STATE-04** — `finalizeSpace` / `finalizeMigration` resolve terminal phases for uploads, spaces, and the top-level migration after each space loop completes
 - [x] **STATE-05** — `serializeState` / `deserializeState` provide a JSON-safe round-trip; `bigint` fields encoded as decimal strings
-- [x] **STATE-06** — Phase FSM enforced by pure resolvers: upload (`pending → migrating → complete | incomplete`), space (`pending → complete | incomplete | failed`), migration (`approved → funded → complete | incomplete`)
+- [x] **STATE-06** — Phase FSM enforced by pure resolvers: upload (`pending → migrating → complete | incomplete`, computed not stored), space (`pending → complete | incomplete | failed`), migration (`reading → planning → approved → funded → migrating → complete | incomplete`)
 
 ### Tests
 
 - [x] **TEST-01** — Unit tests for `reader.js`: index-blob claim filter, `pieceCID` extraction, missing `pieceCID` and missing location URL skip cases, multi-page pagination, `ClaimsResolver` and `RoundaboutResolver` application
-- [x] **TEST-02** — Unit tests for `planner.js`: totals aggregation, space shallow-copy, cost and warning propagation, skipped-shard carry-over (`computeMigrationCosts` is mocked — planner logic only)
+- [x] **TEST-02** — Unit tests for `planner.js`: totals aggregation, cost and warning propagation, skipped shards surfaced as plan warnings, `state:checkpoint` before `plan:ready` event order, SP bindings written to state (`computeMigrationCosts` is mocked — planner logic only)
 - [ ] **TEST-03** — Unit tests for `migrator.js`: mock Synapse SDK, presign/pull/commit flow, per-piece pull failure partitioning, `stopOnError` semantics, resume skip path, full event sequence
 - [x] **TEST-04** — Unit tests for `source-url.js`: `ClaimsResolver` pass-through, `RoundaboutResolver` URL construction, custom base URL override
 - [ ] **TEST-05** — Unit tests for `state.js`: phase FSM transitions, `recordCommit` double-commit guard, `serializeState` / `deserializeState` round-trip, `parseBigIntField` validation errors

@@ -50,7 +50,7 @@ const DATASET_METADATA_BASE = Object.freeze({
  * Fail-fast on createContext rejection: a plan with a silently missing space is
  * a trap that lets users approve a partial migration.
  *
- * @param {API.PlanSpace[]} spaces
+ * @param {API.SpaceInventory[]} spaces
  * @param {API.Synapse} synapse
  * @param {object} [opts]
  * @param {API.ResumeState} [opts.resumeState]
@@ -75,7 +75,7 @@ export async function computeMigrationCosts(spaces, synapse, opts = {}) {
   const contexts = await Promise.all(
     spaces.map(async (space) => {
       const pinned = pinnedProviderIds?.get(space.did)
-      const existing = existingDataSetIds?.get(space.did)
+      const existingDataSet = existingDataSetIds?.get(space.did)
 
       // Conflict rule: pinned always wins. The pinned SP holds the lockup
       // from the prior funding tx and cannot be changed without forfeiting it.
@@ -96,12 +96,19 @@ export async function computeMigrationCosts(spaces, synapse, opts = {}) {
           ? configuredProviderIds
           : undefined
 
+      /** @type {import('@filoz/synapse-sdk').StorageServiceOptions} */
+      const options = {
+        metadata: {
+          ...DATASET_METADATA_BASE,
+          space: space.did,
+          // TODO: add space name
+        },
+        ...(providerIds && { providerIds }),
+        ...(existingDataSet != null && { dataSetIds: [existingDataSet] }),
+      }
+
       try {
-        return await synapse.storage.createContext({
-          metadata: { ...DATASET_METADATA_BASE, space: space.did },
-          ...(providerIds ? { providerIds } : {}),
-          ...(existing != null ? { dataSetIds: [existing] } : {}),
-        })
+        return await synapse.storage.createContext(options)
       } catch (err) {
         throw new Error(
           `Failed to create context for space ${space.did}: ${

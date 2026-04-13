@@ -1,5 +1,5 @@
 export * from './errors.js'
-export { buildMigrationInventory, buildMigrationInventories } from './reader.js'
+export { buildMigrationInventories } from './reader.js'
 export {
   RoundaboutResolver,
   ClaimsResolver,
@@ -9,12 +9,14 @@ export { createMigrationPlan } from './planner.js'
 export { computeMigrationCosts } from './compute-migration-costs.js'
 export { executeMigration } from './migrator.js'
 export {
-  createApprovalState,
+  createInitialState,
   transitionToFunded,
+  checkpointInventoryPage,
   recordCommit,
   finalizeSpace,
   finalizeMigration,
   buildResumeState,
   serializeState,
   deserializeState,
+  resolveUploadPhase,
 } from './state.js'

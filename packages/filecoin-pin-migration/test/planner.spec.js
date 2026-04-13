@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createMigrationPlan } from '../src/planner.js'
-import { createMockInventory, createMockInventories } from './helpers.js'
+import {
+  createMockInventory,
+  createMockInventories,
+  createMockInitialState,
+} from './helpers.js'
 
 /**
  * @import * as API from '../src/api.js'
@@ -12,7 +16,7 @@ vi.mock('../src/compute-migration-costs.js', () => ({
   computeMigrationCosts: vi.fn(),
 }))
 
-const { computeMigrationCosts } = await import('../src/compute-migration-costs.js')
+import { computeMigrationCosts } from '../src/compute-migration-costs.js'
 
 /**
  * Build a minimal valid MigrationCostResult for mock use.
@@ -43,6 +47,37 @@ function makeCostResult(overrides = {}) {
   })
 }
 
+/**
+ * Collect plan and events from the createMigrationPlan generator.
+ *
+ * @param {AsyncGenerator<API.MigrationEvent>} gen
+ */
+async function collectPlan(gen) {
+  /** @type {API.MigrationPlan | undefined} */
+  let plan
+  /** @type {API.MigrationEvent[]} */
+  const events = []
+  for await (const event of gen) {
+    events.push(event)
+    if (event.type === 'plan:ready') plan = event.plan
+  }
+  if (!plan) throw new Error('plan:ready event was never yielded')
+  return { plan, events }
+}
+
+/**
+ * Populate state.spacesInventories from an array of inventories.
+ *
+ * @param {API.MigrationState} state
+ * @param {API.SpaceInventory[]} inventories
+ */
+function withInventories(state, inventories) {
+  for (const inv of inventories) {
+    state.spacesInventories[inv.did] = inv
+  }
+  return state
+}
+
 /** Dummy synapse — never called because computeMigrationCosts is mocked. */
 const mockSynapse = /** @type {API.Synapse} */ ({})
 
@@ -59,8 +94,10 @@ beforeEach(() => {
 
 describe('createMigrationPlan', () => {
   it('returns correct totals from a single inventory', async () => {
-    const inventories = createMockInventories(1)
-    const plan = await createMigrationPlan(inventories, mockSynapse, makeConfig())
+    const state = withInventories(createMockInitialState(), createMockInventories(1))
+    const { plan } = await collectPlan(
+      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
+    )
 
     expect(plan.totals.uploads).toBe(1)
     expect(plan.totals.shards).toBe(2)
@@ -68,28 +105,30 @@ describe('createMigrationPlan', () => {
   })
 
   it('aggregates totals across multiple spaces', async () => {
-    const inventories = createMockInventories(3)
-    const plan = await createMigrationPlan(inventories, mockSynapse, makeConfig())
+    const state = withInventories(createMockInitialState(), createMockInventories(3))
+    const { plan } = await collectPlan(
+      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
+    )
 
     // 3 spaces x 1 upload x 2 shards
     expect(plan.totals.uploads).toBe(3)
     expect(plan.totals.shards).toBe(6)
     expect(plan.totals.bytes).toBe((1024n + 2048n) * 3n)
-    expect(plan.spaces).toHaveLength(3)
   })
 
-  it('carries over skipped shards per space', async () => {
-    const inventories = [
-      createMockInventory({
-        did: /** @type {API.SpaceDID} */ ('did:key:z6MkSkipped1'),
-        skippedShards: [{ cid: 'bafymissing', reason: 'MissingPieceCID' }],
-      }),
-    ]
+  it('surfaces skipped shards as plan warnings', async () => {
+    const inventory = createMockInventory({
+      did: /** @type {API.SpaceDID} */ ('did:key:z6MkSkipped1'),
+      skippedShards: [{ cid: 'bafymissing', reason: 'MissingPieceCID' }],
+    })
+    const state = withInventories(createMockInitialState(), [inventory])
 
-    const plan = await createMigrationPlan(inventories, mockSynapse, makeConfig())
+    const { plan } = await collectPlan(
+      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
+    )
 
-    expect(plan.spaces[0].skippedShards).toHaveLength(1)
-    expect(plan.spaces[0].skippedShards[0].cid).toBe('bafymissing')
+    expect(plan.warnings).toHaveLength(1)
+    expect(plan.warnings[0]).toContain('skipped')
   })
 
   it('surfaces costs from computeMigrationCosts', async () => {
@@ -97,10 +136,9 @@ describe('createMigrationPlan', () => {
       makeCostResult({ totalDepositNeeded: 500n, ready: false })
     )
 
-    const plan = await createMigrationPlan(
-      createMockInventories(1),
-      mockSynapse,
-      makeConfig()
+    const state = withInventories(createMockInitialState(), createMockInventories(1))
+    const { plan } = await collectPlan(
+      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
     )
 
     expect(plan.costs.totalDepositNeeded).toBe(500n)
@@ -108,10 +146,9 @@ describe('createMigrationPlan', () => {
   })
 
   it('sets ready=true when costs.ready is true', async () => {
-    const plan = await createMigrationPlan(
-      createMockInventories(1),
-      mockSynapse,
-      makeConfig()
+    const state = withInventories(createMockInitialState(), createMockInventories(1))
+    const { plan } = await collectPlan(
+      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
     )
 
     expect(plan.ready).toBe(true)
@@ -122,10 +159,9 @@ describe('createMigrationPlan', () => {
       makeCostResult({ totalDepositNeeded: 500n, ready: false })
     )
 
-    const plan = await createMigrationPlan(
-      createMockInventories(1),
-      mockSynapse,
-      makeConfig()
+    const state = withInventories(createMockInitialState(), createMockInventories(1))
+    const { plan } = await collectPlan(
+      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
     )
 
     expect(plan.ready).toBe(false)
@@ -137,10 +173,9 @@ describe('createMigrationPlan', () => {
       makeCostResult({ needsFwssMaxApproval: true, ready: false })
     )
 
-    const plan = await createMigrationPlan(
-      createMockInventories(1),
-      mockSynapse,
-      makeConfig()
+    const state = withInventories(createMockInitialState(), createMockInventories(1))
+    const { plan } = await collectPlan(
+      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
     )
 
     expect(plan.ready).toBe(false)
@@ -155,13 +190,14 @@ describe('createMigrationPlan', () => {
       })
     )
 
-    const inventories = [
-      createMockInventory({
-        skippedShards: [{ cid: 'bafymissing', reason: 'MissingPieceCID' }],
-      }),
-    ]
+    const inventory = createMockInventory({
+      skippedShards: [{ cid: 'bafymissing', reason: 'MissingPieceCID' }],
+    })
+    const state = withInventories(createMockInitialState(), [inventory])
 
-    const plan = await createMigrationPlan(inventories, mockSynapse, makeConfig())
+    const { plan } = await collectPlan(
+      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
+    )
 
     expect(plan.warnings).toEqual(
       expect.arrayContaining([
@@ -172,12 +208,66 @@ describe('createMigrationPlan', () => {
     )
   })
 
-  it('does not mutate input inventories', async () => {
-    const inventories = createMockInventories(1)
-    const originalURL = inventories[0].uploads[0].shards[0].sourceURL
+  it('yields state:checkpoint before plan:ready', async () => {
+    const state = withInventories(createMockInitialState(), createMockInventories(1))
+    const { events } = await collectPlan(
+      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
+    )
 
-    await createMigrationPlan(inventories, mockSynapse, makeConfig())
+    expect(events).toHaveLength(2)
+    expect(events[0].type).toBe('state:checkpoint')
+    expect(events[1].type).toBe('plan:ready')
+  })
 
-    expect(inventories[0].uploads[0].shards[0].sourceURL).toBe(originalURL)
+  it('sets state.phase to approved and writes SP bindings', async () => {
+    const spaceDID = /** @type {API.SpaceDID} */ ('did:key:z6MkTestSpace1')
+    vi.mocked(computeMigrationCosts).mockResolvedValue(
+      makeCostResult({
+        perSpace: [
+          /** @type {API.PerSpaceCost} */ ({
+            spaceDID,
+            providerId: 42n,
+            serviceProvider: /** @type {`0x${string}`} */ ('0xdeadbeef'),
+            dataSetId: null,
+            context: {},
+            bytesToMigrate: 0n,
+            currentDataSetSize: 0n,
+            lockupUSDFC: 0n,
+            sybilFee: 0n,
+            rateLockupDelta: 0n,
+            ratePerEpoch: 0n,
+            ratePerMonth: 0n,
+            isResumed: false,
+          }),
+        ],
+      })
+    )
+
+    const state = withInventories(
+      createMockInitialState(),
+      [createMockInventory({ did: spaceDID })]
+    )
+    await collectPlan(
+      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
+    )
+
+    expect(state.phase).toBe('approved')
+    expect(state.spaces[spaceDID]).toBeDefined()
+    expect(state.spaces[spaceDID].providerId).toBe(42n)
+    expect(state.spaces[spaceDID].serviceProvider).toBe('0xdeadbeef')
+  })
+
+  it('does not mutate inventories in state', async () => {
+    const inventory = createMockInventory({})
+    const state = withInventories(createMockInitialState(), [inventory])
+    const originalURL = Object.values(inventory.uploads)[0].shards[0].sourceURL
+
+    await collectPlan(
+      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
+    )
+
+    expect(
+      Object.values(state.spacesInventories[inventory.did].uploads)[0].shards[0].sourceURL
+    ).toBe(originalURL)
   })
 })

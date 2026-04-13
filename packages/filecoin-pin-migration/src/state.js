@@ -2,47 +2,30 @@
  * @import * as API from './api.js'
  */
 
-// ── Phase resolvers (pure, unexported) ────────────────────────────────────────
+// ── Phase resolvers ────────────────────────────────────────────────────────────
 //
-// Phase progression (read this before editing the resolvers below):
+// Phase progression:
+//   Upload:    pending → migrating → complete | incomplete  (computed, never stored)
+//   Space:     pending → complete | incomplete | failed     (set in finalizeSpace)
+//   Migration: approved → funded → complete | incomplete   (set in finalizeMigration)
 //
-//   Upload:    pending → migrating → complete          (during batch loop, final=false)
-//              pending → incomplete | complete          (after finalizeSpace, final=true)
-//   Space:     pending → complete | incomplete | failed (after finalizeSpace)
-//   Migration: approved → funded → complete | incomplete (after finalizeMigration)
-//
-// Rule: resolveUploadPhase(upload, false) during processing
-//       resolveUploadPhase(upload, true)  in finalizeSpace
+// resolveUploadPhase is exported as a consumer utility — not used internally.
+// Space phase is resolved directly from CommittedShards.count vs inventory.totalShards.
 
 /**
- * Resolve upload phase.
+ * Compute upload phase from shard counts. Consumer utility — not used internally.
  *
  * Pass `final=false` during the batch loop (partial progress is still 'migrating').
- * Pass `final=true` in finalizeSpace (partial progress becomes terminal 'incomplete').
+ * Pass `final=true` at space finalization (partial progress becomes terminal 'incomplete').
  *
  * @param {{ committedShards: number; totalShards: number }} upload
  * @param {boolean} final
  * @returns {API.UploadPhase}
  */
-function resolveUploadPhase({ committedShards, totalShards }, final) {
+export function resolveUploadPhase({ committedShards, totalShards }, final) {
   if (committedShards === totalShards) return 'complete'
   if (committedShards > 0) return final ? 'incomplete' : 'migrating'
   return 'pending'
-}
-
-/**
- * Resolve space phase at finalization.
- * Must be called after all upload phases have been finalized (final=true).
- *
- * @param {API.SpaceState} space
- * @returns {API.SpacePhase}
- */
-function resolveSpacePhase(space) {
-  const uploads = Object.values(space.uploads)
-  if (uploads.length === 0) return 'failed'
-  if (uploads.every((u) => u.phase === 'complete')) return 'complete'
-  if (uploads.some((u) => u.phase === 'incomplete')) return 'incomplete'
-  return 'failed'
 }
 
 /**
@@ -57,49 +40,106 @@ function resolveMigrationPhase(state) {
   return 'incomplete'
 }
 
-// ── Checkpoint functions ───────────────────────────────────────────────────────
+// ── Initialization ─────────────────────────────────────────────────────────────
+
+/**
+ * Create the initial MigrationState before the reader runs.
+ *
+ * This is the single entry point for a new migration run. Pass the returned
+ * state to buildMigrationInventories(), then to createMigrationPlan(), then
+ * to executeMigration().
+ *
+ * @returns {API.MigrationState}
+ */
+export function createInitialState() {
+  return /** @type {API.MigrationState} */ ({
+    phase: 'reading',
+    spaces: {},
+    spacesInventories: {},
+    readerProgressCursors: undefined,
+  })
+}
+
+// ── Reader checkpoint ──────────────────────────────────────────────────────────
+
+/**
+ * Checkpoint a completed upload.list page into the space's inventory entry.
+ *
+ * The reader builds uploads as a Record and accumulates totalShards/totalBytes
+ * during its natural shard-resolution pass — no extra iteration here.
+ * This function does an O(uploads-on-page) merge and cursor update only.
+ *
+ * cursor present → space is still being read, save cursor for resume
+ * cursor absent  → last page processed, space reading is complete
+ *
+ * @param {API.MigrationState} state - Mutated in place
+ * @param {{
+ *   spaceDID: API.SpaceDID
+ *   uploads: Record<string, { shards: API.ResolvedShard[] }>
+ *   skippedShards: Array<{ cid: string; reason: string }>
+ *   totalShards: number
+ *   totalBytes: bigint
+ *   cursor: string | undefined
+ * }} page
+ */
+export function checkpointInventoryPage(state, { spaceDID, uploads, skippedShards, totalShards, totalBytes, cursor }) {
+  let inventory = state.spacesInventories[spaceDID]
+  if (!inventory) {
+    inventory = {
+      did: spaceDID,
+      uploads: {},
+      skippedShards: [],
+      totalUploads: 0,
+      totalShards: 0,
+      totalBytes: 0n,
+    }
+    state.spacesInventories[spaceDID] = inventory
+  }
+
+  Object.assign(inventory.uploads, uploads)
+  inventory.skippedShards.push(...skippedShards)
+  inventory.totalUploads += Object.keys(uploads).length
+  inventory.totalShards += totalShards
+  inventory.totalBytes += totalBytes
+
+  if (cursor) {
+    if (!state.readerProgressCursors) state.readerProgressCursors = {}
+    state.readerProgressCursors[spaceDID] = cursor
+  } else if (state.readerProgressCursors) {
+    delete state.readerProgressCursors[spaceDID]
+    if (Object.keys(state.readerProgressCursors).length === 0) {
+      state.readerProgressCursors = undefined
+    }
+  }
+}
+
+// ── Approval checkpoint ────────────────────────────────────────────────────────
 
 /**
  * Checkpoint 1: user approves plan — BEFORE fundSync.
  *
- * Builds the full MigrationState from the cost result and plan inventory.
+ * Populates state.spaces with SP bindings from the cost result. Upload tracking
+ * is not pre-populated here — progress is derived at runtime from space.committed
+ * and state.spacesInventories.
+ *
  * SP bindings (providerId, serviceProvider) are captured here so a re-run
  * after a crash binds to the same SP even if fundSync never landed.
  *
- * Upload counts are sourced from the plan inventory, not the cost calculation.
- *
- * @param {API.PerSpaceCost[]} perSpace
- * @param {API.PlanSpace[]} planSpaces
- * @returns {API.MigrationState}
+ * @param {API.MigrationState} state - Mutated in place
+ * @param {API.PerSpaceCost[]} perSpaceCost
  */
-export function createApprovalState(perSpace, planSpaces) {
-  /** @type {API.MigrationState['spaces']} */
-  const spaces = {}
-
-  for (const cost of perSpace) {
-    const plan = planSpaces.find((s) => s.did === cost.spaceDID)
-
-    /** @type {Record<string, API.UploadState>} */
-    const uploads = {}
-    for (const upload of plan?.uploads ?? []) {
-      uploads[upload.root] = {
-        phase: 'pending',
-        totalShards: upload.shards.length,
-        committedShards: 0,
-      }
-    }
-
-    spaces[cost.spaceDID] = {
-      spaceDID: cost.spaceDID,
+export function transitionToApproved(state, perSpaceCost) {
+  for (const cost of perSpaceCost) {
+    state.spaces[cost.spaceDID] = {
+      did: cost.spaceDID,
       phase: 'pending',
       providerId: cost.providerId,
       serviceProvider: cost.serviceProvider,
       dataSetId: cost.dataSetId,
-      uploads,
+      committed: { shards: {}, count: 0 },
     }
   }
-
-  return { phase: 'approved', spaces, committed: {} }
+  state.phase = 'approved'
 }
 
 /**
@@ -114,51 +154,41 @@ export function transitionToFunded(state) {
 /**
  * Checkpoint 3: a shard was successfully committed.
  *
- * Updates the committed map, increments upload progress, and resolves the
- * active upload phase. Only counts toward upload progress on the first commit
- * for a given shard (any provider) — copies > 1 add to the committed array
- * but don't double-count committedShards.
+ * Updates the space's committed map. Only counts toward committed on the first
+ * commit for a given shard (any provider) — copies > 1 add to the committed
+ * array but the shard was already tracked.
  *
  * @param {API.MigrationState} state - Mutated in place
  * @param {API.SpaceDID} spaceDID
- * @param {string} uploadRoot
  * @param {string} shardCid
  * @param {string} provider
  * @param {bigint} dataSetId
  */
-export function recordCommit(
-  state,
-  spaceDID,
-  uploadRoot,
-  shardCid,
-  provider,
-  dataSetId
-) {
-  const providers =
-    state.committed[shardCid] ?? (state.committed[shardCid] = [])
+export function recordCommit(state, spaceDID, shardCid, provider, dataSetId) {
+  const space = state.spaces[spaceDID]
+  if (!space) return
+
+  const { shards } = space.committed
+  const providers = shards[shardCid] ?? (shards[shardCid] = [])
   const isFirstCommit = providers.length === 0
   if (!providers.includes(provider)) {
     providers.push(provider)
   }
-
-  const space = state.spaces[spaceDID]
-  if (!space) return
+  if (isFirstCommit) {
+    space.committed.count++
+  }
 
   if (space.dataSetId === null) {
     space.dataSetId = dataSetId
   }
-
-  if (!isFirstCommit) return
-
-  const upload = space.uploads[uploadRoot]
-  if (!upload) return
-  upload.committedShards++
-  upload.phase = resolveUploadPhase(upload, false)
 }
 
 /**
  * Checkpoint 4: space loop ends — resolve terminal phases for all uploads
  * and the space itself.
+ *
+ * Upload phases are computed from space.committed counts vs inventory shard
+ * counts — not stored. resolveUploadPhase is called with computed values.
  *
  * @param {API.MigrationState} state - Mutated in place
  * @param {API.SpaceDID} spaceDID
@@ -166,10 +196,21 @@ export function recordCommit(
 export function finalizeSpace(state, spaceDID) {
   const space = state.spaces[spaceDID]
   if (!space) return
-  for (const upload of Object.values(space.uploads)) {
-    upload.phase = resolveUploadPhase(upload, true)
+
+  const inventory = state.spacesInventories[spaceDID]
+  if (!inventory) {
+    space.phase = 'failed'
+    return
   }
-  space.phase = resolveSpacePhase(space)
+
+  const { count } = space.committed
+  if (count === 0) {
+    space.phase = 'failed'
+  } else if (count === inventory.totalShards) {
+    space.phase = 'complete'
+  } else {
+    space.phase = 'incomplete'
+  }
 }
 
 /**
@@ -215,8 +256,8 @@ export function buildResumeState(state) {
  * serialize bigints:
  *   - spaces[did].providerId → decimal string
  *   - spaces[did].dataSetId → decimal string or null
- *
- * committed values are already string[] — no encoding needed.
+ *   - spacesInventories[did].totalBytes → decimal string
+ *   - spacesInventories[did].uploads[root].shards[].sizeBytes → decimal string
  *
  * @param {API.MigrationState} state
  */
@@ -224,29 +265,51 @@ export function serializeState(state) {
   /** @type {Record<string, unknown>} */
   const spaces = {}
   for (const [did, space] of Object.entries(state.spaces)) {
-    /** @type {Record<string, unknown>} */
-    const uploads = {}
-    for (const [root, upload] of Object.entries(space.uploads)) {
-      uploads[root] = {
-        phase: upload.phase,
-        totalShards: upload.totalShards,
-        committedShards: upload.committedShards,
-      }
-    }
     spaces[did] = {
-      spaceDID: space.spaceDID,
+      did: space.did,
       phase: space.phase,
       providerId: space.providerId.toString(10),
       serviceProvider: space.serviceProvider,
       dataSetId: space.dataSetId != null ? space.dataSetId.toString(10) : null,
+      committed: {
+        shards: { ...space.committed.shards },
+        count: space.committed.count,
+      },
+    }
+  }
+
+  /** @type {Record<string, unknown>} */
+  const spacesInventories = {}
+  for (const [did, inventory] of Object.entries(state.spacesInventories)) {
+    /** @type {Record<string, unknown>} */
+    const uploads = {}
+    for (const [root, upload] of Object.entries(inventory.uploads)) {
+      uploads[root] = {
+        shards: upload.shards.map((s) => ({
+          cid: s.cid,
+          pieceCID: s.pieceCID,
+          sourceURL: s.sourceURL,
+          sizeBytes: s.sizeBytes.toString(10),
+        })),
+      }
+    }
+    spacesInventories[did] = {
+      did: inventory.did,
       uploads,
+      skippedShards: [...inventory.skippedShards],
+      totalUploads: inventory.totalUploads,
+      totalShards: inventory.totalShards,
+      totalBytes: inventory.totalBytes.toString(10),
     }
   }
 
   return {
     phase: state.phase,
     spaces,
-    committed: { ...state.committed },
+    spacesInventories,
+    readerProgressCursors: state.readerProgressCursors
+      ? { ...state.readerProgressCursors }
+      : undefined,
   }
 }
 
@@ -283,11 +346,13 @@ export function deserializeState(obj) {
   if (
     typeof raw.phase !== 'string' ||
     typeof raw.spaces !== 'object' ||
-    typeof raw.committed !== 'object' ||
+    typeof raw.spacesInventories !== 'object' ||
     raw.spaces === null ||
-    raw.committed === null
+    raw.spacesInventories === null
   ) {
-    throw new TypeError('deserializeState: missing phase, spaces, or committed')
+    throw new TypeError(
+      'deserializeState: missing phase, spaces, or spacesInventories'
+    )
   }
 
   /** @type {API.MigrationState['spaces']} */
@@ -295,20 +360,16 @@ export function deserializeState(obj) {
   for (const [did, rawSpace] of Object.entries(
     /** @type {Record<string, Record<string, unknown>>} */ (raw.spaces)
   )) {
-    const rawUploads = /** @type {Record<string, Record<string, unknown>>} */ (
-      rawSpace.uploads ?? {}
+    const rawCommitted = /** @type {{ shards?: Record<string, string[]>; count?: number }} */ (
+      rawSpace.committed ?? {}
     )
-    /** @type {Record<string, API.UploadState>} */
-    const uploads = {}
-    for (const [root, u] of Object.entries(rawUploads)) {
-      uploads[root] = {
-        phase: /** @type {API.UploadPhase} */ (u.phase),
-        totalShards: /** @type {number} */ (u.totalShards),
-        committedShards: /** @type {number} */ (u.committedShards),
-      }
+    /** @type {Record<string, string[]>} */
+    const committedShards = {}
+    for (const [cid, providers] of Object.entries(rawCommitted.shards ?? {})) {
+      committedShards[cid] = providers
     }
     spaces[/** @type {API.SpaceDID} */ (did)] = {
-      spaceDID: /** @type {API.SpaceDID} */ (rawSpace.spaceDID),
+      did: /** @type {API.SpaceDID} */ (rawSpace.did),
       phase: /** @type {API.SpacePhase} */ (rawSpace.phase),
       providerId: parseBigIntField(
         rawSpace.providerId,
@@ -320,21 +381,61 @@ export function deserializeState(obj) {
         rawSpace.dataSetId != null
           ? parseBigIntField(rawSpace.dataSetId, 'dataSetId', `space "${did}"`)
           : null,
-      uploads,
+      committed: {
+        shards: committedShards,
+        count: typeof rawCommitted.count === 'number' ? rawCommitted.count : Object.keys(committedShards).length,
+      },
     }
   }
 
-  /** @type {API.MigrationState['committed']} */
-  const committed = {}
-  for (const [cid, providers] of Object.entries(
-    /** @type {Record<string, string[]>} */ (raw.committed)
+  /** @type {API.MigrationState['spacesInventories']} */
+  const spacesInventories = {}
+  for (const [did, rawInv] of Object.entries(
+    /** @type {Record<string, Record<string, unknown>>} */ (raw.spacesInventories)
   )) {
-    committed[cid] = providers
+    const rawUploads = /** @type {Record<string, Record<string, unknown>>} */ (
+      rawInv.uploads ?? {}
+    )
+    /** @type {Record<string, { shards: API.ResolvedShard[] }>} */
+    const uploads = {}
+    for (const [root, u] of Object.entries(rawUploads)) {
+      const rawShards = /** @type {Array<Record<string, unknown>>} */ (
+        u.shards ?? []
+      )
+      uploads[root] = {
+        shards: rawShards.map((s) => ({
+          cid: /** @type {string} */ (s.cid),
+          pieceCID: /** @type {string} */ (s.pieceCID),
+          sourceURL: /** @type {string} */ (s.sourceURL),
+          sizeBytes: parseBigIntField(s.sizeBytes, 'sizeBytes', `shard "${s.cid}"`),
+        })),
+      }
+    }
+    spacesInventories[/** @type {API.SpaceDID} */ (did)] = {
+      did: /** @type {API.SpaceDID} */ (rawInv.did),
+      uploads,
+      skippedShards: /** @type {Array<{ cid: string; reason: string }>} */ (
+        rawInv.skippedShards ?? []
+      ),
+      totalUploads: /** @type {number} */ (rawInv.totalUploads),
+      totalShards: /** @type {number} */ (rawInv.totalShards),
+      totalBytes: parseBigIntField(rawInv.totalBytes, 'totalBytes', `inventory "${did}"`),
+    }
   }
+
+  /** @type {Record<API.SpaceDID, string> | undefined} */
+  const readerProgressCursors =
+    raw.readerProgressCursors &&
+    typeof raw.readerProgressCursors === 'object'
+      ? /** @type {Record<API.SpaceDID, string>} */ ({
+          .../** @type {object} */ (raw.readerProgressCursors),
+        })
+      : undefined
 
   return {
     phase: /** @type {API.MigrationPhase} */ (raw.phase),
     spaces,
-    committed,
+    spacesInventories,
+    readerProgressCursors,
   }
 }

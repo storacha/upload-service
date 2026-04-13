@@ -1,8 +1,9 @@
-import type { DID, Result } from '@ucanto/interface'
+import type { DID } from '@ucanto/interface'
 import type { Synapse, PieceCID } from '@filoz/synapse-sdk'
 import type { StorageContext } from '@filoz/synapse-sdk/storage'
 import type { UnknownLink, MultihashDigest } from 'multiformats'
 import type { Client } from '@storacha/client'
+import type { Client as IndexingClient } from '@storacha/indexing-service-client'
 
 export type { PieceLink, PieceView } from '@web3-storage/data-segment'
 export type { MultihashDigest, UnknownLink }
@@ -65,36 +66,31 @@ export interface ResolvedShard {
 
 /** Return type of buildMigrationInventory(). */
 export interface SpaceInventory {
+  /** DID identifying the space */
   did: SpaceDID
-  uploads: Array<{
-    root: string
-    shards: ResolvedShard[]
-  }>
+  /** All uploads in this space, keyed by root CID for O(1) lookup */
+  uploads: Record<string, { shards: ResolvedShard[] }>
+  /** Shards that could not be resolved */
   skippedShards: Array<{ cid: string; reason: string }>
   /** Number of uploads in this space. */
   totalUploads: number
   /** Total number of resolved shards across all uploads. */
   totalShards: number
-  /** Sum of resolved shard sizes in bytes. */
+  /** Total size (bytes) of all resolved shards */
   totalBytes: bigint
 }
-
-/**
- * One space's slice of the migration plan.
- *
- * Structurally identical to SpaceInventory — a PlanSpace is a SpaceInventory
- * with sourceURLs already resolved by the chosen strategy at read time.
- */
-export interface PlanSpace extends SpaceInventory {}
 
 /**
  * Pre-flight migration plan. Presented to the user for approval before execution.
  *
  * Carries the live `MigrationCostResult` (with live StorageContext handles in
  * `costs.perSpace[].context`) for in-process hand-off to the migrator.
+ *
+ * Space-level upload data lives in `MigrationState.spacesInventories` — the
+ * migrator reads from there directly, so `MigrationPlan` carries only what is
+ * needed for display/approval and execution.
  */
 export interface MigrationPlan {
-  spaces: PlanSpace[]
   totals: {
     uploads: number
     shards: number
@@ -182,6 +178,8 @@ export interface ResumeState {
 
 /**
  * Top-level migration lifecycle.
+ *   reading    — reader is paginating spaces and building inventories
+ *   planning   — reader complete; consumer should call createMigrationPlan
  *   approved   — plan approved, before fundSync
  *   funded     — fundSync landed
  *   migrating  — at least one space is being processed
@@ -189,6 +187,8 @@ export interface ResumeState {
  *   incomplete — migration finished, some spaces/uploads have uncommitted shards
  */
 export type MigrationPhase =
+  | 'reading'
+  | 'planning'
   | 'approved'
   | 'funded'
   | 'migrating'
@@ -211,7 +211,7 @@ export type SpacePhase =
   | 'failed'
 
 /**
- * Per-upload lifecycle.
+ * Per-upload lifecycle — computed from space.committed + inventory, not stored.
  *   pending    — no shards committed yet
  *   migrating  — some shards committed, not all
  *   complete   — all shards committed
@@ -219,22 +219,28 @@ export type SpacePhase =
  */
 export type UploadPhase = 'pending' | 'migrating' | 'complete' | 'incomplete'
 
-/** Per-upload progress tracking. */
-export interface UploadState {
-  phase: UploadPhase
-  /** Set at approval time from plan inventory. Stable denominator for progress %. */
-  totalShards: number
-  committedShards: number
+/**
+ * Committed shard tracking for a space.
+ *
+ * Bundles the shard→providers map with its count so consumers never need
+ * Object.keys().length — count is O(1) and always in sync.
+ */
+export interface CommittedShards {
+  /** Shard CID → provider addresses that have committed it. */
+  shards: Record<string, string[]>
+  /** Count of unique committed shards. Incremented in recordCommit on first commit only. */
+  count: number
 }
 
 /**
  * Per-space resume record and progress tracker.
  *
  * SP binding (providerId, dataSetId) enables planner resume.
- * Upload map enables N spaces → M uploads progress display.
+ * committed tracks which shards have been committed to which providers,
+ * enabling O(1) skip checks during migration and progress derivation.
  */
 export interface SpaceState {
-  spaceDID: SpaceDID
+  did: SpaceDID
   phase: SpacePhase
   /** Locks SP selection across runs. Passed back as providerIds on resume. */
   providerId: bigint
@@ -242,22 +248,23 @@ export interface SpaceState {
   serviceProvider: `0x${string}`
   /** null until first commit; then passed as dataSetIds on resume. */
   dataSetId: bigint | null
-  /** Per-upload progress, keyed by upload root CID. */
-  uploads: Record<string, UploadState>
+  committed: CommittedShards
 }
 
 /**
  * Persisted resume state for a migration. Serializable to JSON via
  * serializeState() / deserializeState().
  *
- * committed is separate from the space/upload hierarchy: O(1) skip check
- * without walking spaces → uploads. Supports copies > 1 (array, not single value).
+ * spacesInventories holds reader output — completed spaces have no cursor entry;
+ * in-progress spaces have a matching entry in readerProgressCursors.
  */
 export interface MigrationState {
   phase: MigrationPhase
   spaces: Record<SpaceDID, SpaceState>
-  /** Shard CID → committed provider addresses. */
-  committed: Record<string, string[]>
+  /** Reader output keyed by space DID. Completed + in-progress spaces. */
+  spacesInventories: Record<SpaceDID, SpaceInventory>
+  /** Pagination cursor per space — present only while reading that space. */
+  readerProgressCursors?: Record<SpaceDID, string>
 }
 
 /**
@@ -278,7 +285,15 @@ export interface MigrationSummary {
 }
 
 /**
- * Events yielded by executeMigration().
+ * Events yielded by buildMigrationInventories() and executeMigration().
+ *
+ * Reader lifecycle:
+ *   reader:space:start → (state:checkpoint per page) → reader:space:complete
+ *   reader:complete — once, after all spaces are inventoried; state.phase → 'planning'
+ *
+ * Planner lifecycle:
+ *   plan:ready — once, after costs computed and SP bindings written to state;
+ *   consumer displays plan to the user for approval before calling executeMigration
  *
  * Funding lifecycle (single pre-flight transaction):
  *   funding:start → funding:complete
@@ -288,16 +303,21 @@ export interface MigrationSummary {
  *   shard:failed — emitted for every shard that fails presign, pull, or commit
  *
  * State persistence:
- *   state:checkpoint — emitted after each successful batch; consumer persists to disk
+ *   state:checkpoint — emitted after each reader page, after planner writes SP
+ *   bindings, and after each migrator batch; consumer persists to disk on this event
  *
  * Terminal:
  *   migration:complete — once, after all spaces are processed
  *
  * Progress is derived from MigrationState on each state:checkpoint.
- * Upload-level counters (committedShards / totalShards) live in
- * state.spaces[did].uploads[root] — no separate upload:progress events.
+ * Upload progress (committed vs total shards) is computed from
+ * space.committed + spacesInventories[did].uploads[root].shards.
  */
 export type MigrationEvent =
+  | { type: 'reader:space:start'; spaceDID: SpaceDID }
+  | { type: 'reader:space:complete'; spaceDID: SpaceDID }
+  | { type: 'reader:complete' }
+  | { type: 'plan:ready'; plan: MigrationPlan }
   | { type: 'funding:start'; amount: bigint }
   | { type: 'funding:complete' }
   | { type: 'funding:failed'; error: Error }
@@ -313,41 +333,19 @@ export type MigrationEvent =
 
 // ── Reader interfaces ────────────────────────────────────────────────────────
 
-/** A location claim from the indexing service. */
-export interface LocationClaim {
-  type: 'assert/location'
-  content: { multihash: MultihashDigest }
-  location: URL[]
-  range?: { offset: number; length: number }
-}
+/**
+ * Derived from the real IndexingClient — never drifts from the implementation.
+ * Tests satisfy this type by casting their mock objects.
+ */
+export type IndexingServiceReader = Pick<
+  InstanceType<typeof IndexingClient>,
+  'queryClaims'
+>
 
-/** An equals claim from the indexing service. */
-export interface EqualsClaim {
-  type: 'assert/equals'
-  content: { multihash: MultihashDigest }
-  equals: UnknownLink
-}
-
-/** Union of claims the reader processes. */
-export type ReaderClaim = LocationClaim | EqualsClaim
-
-/** Decoded ShardedDAGIndex entry — maps content CIDs to shards. */
-export interface ShardIndex {
-  shards: Map<MultihashDigest, unknown>
-}
-
-/** Query result from the indexing service. */
-export interface ClaimQueryResult {
-  claims: Map<string, ReaderClaim>
-  indexes: Map<string, ShardIndex>
-}
-
-/** Abstraction over @storacha/indexing-service-client for testability. */
-export interface IndexingServiceReader {
-  queryClaims(options: {
-    hashes: MultihashDigest[]
-    kind?: string
-  }): Promise<Result<ClaimQueryResult, Error>>
+/** Options for the built-in indexing service client. */
+export interface IndexerOptions {
+  /** Override the default indexing service URL. */
+  serviceURL?: URL
 }
 
 /** A shard discovered during inventory. */
