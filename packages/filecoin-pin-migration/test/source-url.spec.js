@@ -33,31 +33,21 @@ describe('ClaimsResolver', () => {
 })
 
 describe('createResolver', () => {
-  /**
-   * @param {'roundabout' | 'claims'} strategy
-   * @param {string} [roundaboutURL]
-   */
-  const configFor = (strategy, roundaboutURL) =>
-    /** @type {import('../src/api.js').MigrationConfig} */ ({
-      storacha: { client: {} },
-      foc: { synapse: {} },
-      sourceURL: { strategy, roundaboutURL },
-    })
-
   it('returns RoundaboutResolver for strategy roundabout', () => {
-    const resolver = createResolver(configFor('roundabout'))
+    const resolver = createResolver({ strategy: 'roundabout' })
     expect(resolver).toBeInstanceOf(RoundaboutResolver)
   })
 
   it('returns ClaimsResolver for strategy claims', () => {
-    const resolver = createResolver(configFor('claims'))
+    const resolver = createResolver({ strategy: 'claims' })
     expect(resolver).toBeInstanceOf(ClaimsResolver)
   })
 
   it('passes roundaboutURL override to RoundaboutResolver', () => {
-    const resolver = createResolver(
-      configFor('roundabout', 'https://my-roundabout.io')
-    )
+    const resolver = createResolver({
+      strategy: 'roundabout',
+      roundaboutURL: 'https://my-roundabout.io',
+    })
     expect(resolver.resolve(shard)).toBe(
       'https://my-roundabout.io/piece/bafkzcibPIECE123'
     )

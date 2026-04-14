@@ -2,7 +2,7 @@ import { computeMigrationCosts } from './compute-migration-costs.js'
 import { buildResumeState, transitionToApproved } from './state.js'
 
 /**
- * @import { Synapse, MigrationConfig, MigrationState, MigrationEvent } from './api.js'
+ * @import { CreatePlanInput, MigrationEvent } from './api.js'
  */
 
 /**
@@ -29,20 +29,17 @@ import { buildResumeState, transitionToApproved } from './state.js'
  * Typical resume sequence:
  * ```js
  * const state = deserializeState(JSON.parse(raw))
- * for await (const event of createMigrationPlan({ synapse, config, state })) {
+ * for await (const event of createMigrationPlan({ synapse, state })) {
  *   if (event.type === 'plan:ready') plan = event.plan
  *   if (event.type === 'state:checkpoint') await saveState(event.state)
  * }
- * for await (const event of executeMigration({ plan, state, synapse, config })) { ... }
+ * for await (const event of executeMigration({ plan, state, synapse })) { ... }
  * ```
  *
- * @param {object} args
- * @param {Synapse} args.synapse
- * @param {MigrationConfig} args.config
- * @param {MigrationState} args.state
+ * @param {CreatePlanInput} input
  * @returns {AsyncGenerator<MigrationEvent>}
  */
-export async function* createMigrationPlan({ synapse, config, state }) {
+export async function* createMigrationPlan({ synapse, state, providerIds }) {
   const inventories = Object.values(state.spacesInventories)
   const totalUploads = inventories.reduce((n, inv) => n + inv.totalUploads, 0)
   const totalShards = inventories.reduce((n, inv) => n + inv.totalShards, 0)
@@ -51,14 +48,15 @@ export async function* createMigrationPlan({ synapse, config, state }) {
   // ── Cost aggregation (creates contexts + reads chain in one batch) ────────
   const costs = await computeMigrationCosts(inventories, synapse, {
     resumeState: buildResumeState(state),
-    configuredProviderIds: config.foc.providerIds,
+    configuredProviderIds: providerIds,
   })
 
   // ── Plan-level warnings ───────────────────────────────────────────────────
   const warnings = [...costs.warnings]
   for (const inv of inventories) {
-    if (inv.skippedShards.length > 0) {
-      warnings.push(`${inv.did}: ${inv.skippedShards.length} shard(s) skipped`)
+    const failedCount = Object.keys(inv.failedUploads).length
+    if (failedCount > 0) {
+      warnings.push(`${inv.did}: ${failedCount} upload(s) have unresolvable shards and will not be migrated`)
     }
   }
 

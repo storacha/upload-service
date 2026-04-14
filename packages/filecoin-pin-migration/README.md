@@ -216,7 +216,7 @@ interface MigrationConfig {
   }
   options?: {
     batchSize?: number        // Pieces per pull batch (default: 50)
-    stopOnError?: boolean     // Stop remaining batches for an upload on failure (default: false)
+    stopOnError?: boolean     // If any shard of an upload fails to resolve, stop resolving remaining shards for that upload immediately. The upload is always excluded from migration when any shard is unresolvable (default: true)
     signal?: AbortSignal      // Cancellation
   }
 }

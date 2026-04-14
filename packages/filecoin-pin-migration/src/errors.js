@@ -42,3 +42,10 @@ export class MissingLocationURLFailure extends Server.Failure {
   describe() { return `Missing location URL: ${this.message}` }
 }
 
+export const FundingFailedFailureName = /** @type {const} */ ('FundingFailed')
+export class FundingFailedFailure extends Server.Failure {
+  get reason() { return this.message }
+  get name() { return FundingFailedFailureName }
+  describe() { return `Funding failed: ${this.message}` }
+}
+

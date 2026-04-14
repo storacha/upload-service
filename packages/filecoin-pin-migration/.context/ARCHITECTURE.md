@@ -223,16 +223,20 @@ The output is a fully resolved dataset ready for planning and migration.
 interface SpaceInventory {
   /** DID identifying the space */
   did: SpaceDID
-  /** All uploads in this space */
+  /** Uploads where all shards resolved successfully, keyed by root CID */
   uploads: Record<
     /** Root CID of the upload */
     root: string
     /** Fully resolved shards for this upload */
     { shards: ResolvedShard[] }
   >
-  /** Shards that could not be resolved */
-  skippedShards: Array<{ cid: string; reason: string }>
-  /** Number of uploads in this space. */
+  /**
+   * Uploads excluded from migration because one or more shards could not be
+   * resolved. Keyed by root CID; value is the list of shards that failed.
+   * Mutually exclusive with uploads.
+   */
+  failedUploads: Record<string, Array<{ cid: string; reason: string }>>
+  /** Number of uploads where all shards resolved (i.e. keys of uploads). */
   totalUploads: number
   /** Total number of resolved shards across all uploads. */
   totalShards: number
@@ -263,7 +267,9 @@ storachaClient.capability.upload.list()          [paginated, cursor-based]
   - A valid pieceCID is found
   - `resolver.resolve(...)` succeeds
 - If any of the above fails:
-  - The shard is added to `skippedShards`
+  - The upload is added to `failedUploads` (keyed by root CID) with the failing shard and reason
+  - The upload is excluded from `uploads` — mutually exclusive
+  - If `stopOnError` is true, remaining shards for that upload are not resolved
   - A reason string MUST be provided
 
 **Key invariant:** resolver is applied **inline** as each shard is resolved. `SpaceInventory` shards carry final `sourceURL` values before the planner sees them.
@@ -478,7 +484,7 @@ The SDK's `calculateMultiContextCosts` applies one `dataSize` to every context. 
 
 ## Anti-Patterns
 
-**Library owns I/O:** The library never writes to disk or prints output. It accepts state as input and yields events as output. CLI persists state to a JSON file; Console persists to IndexedDB or localStorage.
+**Library owns I/O:** The library never writes to disk. It accepts state as input and yields events as output. CLI persists state to a JSON file; Console persists to IndexedDB or localStorage.
 
 **Planner executes mutations:** The planner only calls read-only Synapse APIs. All FOC mutations (funding, pull, commit) live in the migrator. The planner is safe to call repeatedly without side effects or gas cost.
 

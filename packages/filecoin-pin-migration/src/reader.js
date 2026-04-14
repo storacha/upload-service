@@ -6,11 +6,12 @@ import { checkpointInventoryPage } from './state.js'
 
 /**
  * @import {
- *  SourceURLResolver,
- *  MigrationState,
+ *  BuildInventoriesInput,
  *  SpaceDID,
  *  MigrationEvent,
+ *  MigrationState,
  *  IndexingServiceReader,
+ *  SourceURLResolver,
  *  ResolvedShard,
  *  ShardEntry,
  *  PieceView,
@@ -39,12 +40,7 @@ import { checkpointInventoryPage } from './state.js'
  *   state:checkpoint      — after every upload.list page (persist on this event)
  *   reader:complete       — after all spaces; state.phase set to 'planning'
  *
- * @param {object} args
- * @param {SourceURLResolver} args.resolver - Resolves the final sourceURL for each shard
- * @param {MigrationState} args.state - Mutated in place; used for resume and checkpointing
- * @param {SpaceDID[]} [args.spaceDIDs] - Defaults to all spaces on the client
- * @param {{ serviceURL?: URL, indexer?: IndexingServiceReader }} [args.options]
- * @param {import('@storacha/client').Client} args.client - Authenticated @storacha/client instance
+ * @param {BuildInventoriesInput} input
  * @returns {AsyncGenerator<MigrationEvent>}
  */
 export async function* buildMigrationInventories({
@@ -56,6 +52,7 @@ export async function* buildMigrationInventories({
 }) {
   const indexer =
     options?.indexer ?? new IndexingClient({ serviceURL: options?.serviceURL })
+  const stopOnError = options?.stopOnError ?? true
   const dids = spaceDIDs ?? client.spaces().map((s) => s.did())
 
   for (const did of dids) {
@@ -70,6 +67,7 @@ export async function* buildMigrationInventories({
       resolver,
       spaceDID: did,
       state,
+      stopOnError,
     })
   }
 
@@ -94,6 +92,7 @@ export async function* buildMigrationInventories({
  * @param {SourceURLResolver} args.resolver
  * @param {SpaceDID} args.spaceDID
  * @param {MigrationState} args.state - Mutated in place
+ * @param {boolean} args.stopOnError
  * @returns {AsyncGenerator<MigrationEvent>}
  */
 async function* buildSpaceInventory({
@@ -102,6 +101,7 @@ async function* buildSpaceInventory({
   resolver,
   spaceDID,
   state,
+  stopOnError,
 }) {
   yield { type: 'reader:space:start', spaceDID }
 
@@ -117,8 +117,8 @@ async function* buildSpaceInventory({
 
     /** @type {Record<string, { shards: ResolvedShard[] }>} */
     const pageUploads = {}
-    /** @type {Array<{ cid: string; reason: string }>} */
-    const pageSkipped = []
+    /** @type {Record<string, Array<{ cid: string; reason: string }>>} */
+    const pageFailedUploads = {}
     let pageShards = 0
     let pageBytes = 0n
 
@@ -126,25 +126,28 @@ async function* buildSpaceInventory({
       const shards = await listShardsFromStore(client, upload.root)
       const root = upload.root.toString()
 
+      /** @type {ResolvedShard[]} */
+      const resolvedShards = []
+      /** @type {Array<{ cid: string; reason: string }>} */
+      const uploadSkipped = []
+
       for (const shard of shards) {
         const result = await resolveShard(indexer, shard, resolver)
         if (result.ok) {
-          const existing = pageUploads[root]
-          if (existing) {
-            existing.shards.push(result.ok)
-          } else {
-            pageUploads[root] = { shards: [result.ok] }
-          }
-          pageShards++
-          pageBytes += result.ok.sizeBytes
+          resolvedShards.push(result.ok)
         } else {
-          pageSkipped.push({ cid: shard.cidStr, reason: result.error.reason })
+          uploadSkipped.push({ cid: shard.cidStr, reason: result.error.describe() })
+          // stopOnError: no need to resolve remaining shards — upload is already corrupted
+          if (stopOnError) break
         }
       }
 
-      // Ensure the upload root is always present even when all shards are skipped
-      if (!pageUploads[root]) {
-        pageUploads[root] = { shards: [] }
+      if (uploadSkipped.length > 0) {
+        pageFailedUploads[root] = uploadSkipped
+      } else {
+        pageUploads[root] = { shards: resolvedShards }
+        pageShards += resolvedShards.length
+        for (const s of resolvedShards) pageBytes += s.sizeBytes
       }
     }
 
@@ -153,7 +156,7 @@ async function* buildSpaceInventory({
     checkpointInventoryPage(state, {
       spaceDID,
       uploads: pageUploads,
-      skippedShards: pageSkipped,
+      failedUploads: pageFailedUploads,
       totalShards: pageShards,
       totalBytes: pageBytes,
       cursor,
@@ -234,17 +237,13 @@ async function resolveShard(indexer, shard, resolver) {
     return { error: new MissingLocationURLFailure(`shard ${shard.cidStr}`) }
   }
 
-  const partialResolvedShard = {
+  const resolved = {
     cid: shard.cidStr,
     pieceCID: piece.link.toString(),
     sourceURL: locationURL,
     sizeBytes: piece.size,
   }
+  resolved.sourceURL = resolver.resolve(resolved)
 
-  return {
-    ok: {
-      ...partialResolvedShard,
-      sourceURL: resolver.resolve(partialResolvedShard),
-    },
-  }
+  return { ok: resolved }
 }

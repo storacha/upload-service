@@ -81,13 +81,6 @@ function withInventories(state, inventories) {
 /** Dummy synapse — never called because computeMigrationCosts is mocked. */
 const mockSynapse = /** @type {API.Synapse} */ ({})
 
-const makeConfig = () =>
-  /** @type {API.MigrationConfig} */ ({
-    storacha: { client: {} },
-    foc: { synapse: {} },
-    sourceURL: { strategy: 'claims' },
-  })
-
 beforeEach(() => {
   vi.mocked(computeMigrationCosts).mockResolvedValue(makeCostResult())
 })
@@ -96,7 +89,7 @@ describe('createMigrationPlan', () => {
   it('returns correct totals from a single inventory', async () => {
     const state = withInventories(createMockInitialState(), createMockInventories(1))
     const { plan } = await collectPlan(
-      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
+      createMigrationPlan({ synapse: mockSynapse, state })
     )
 
     expect(plan.totals.uploads).toBe(1)
@@ -107,7 +100,7 @@ describe('createMigrationPlan', () => {
   it('aggregates totals across multiple spaces', async () => {
     const state = withInventories(createMockInitialState(), createMockInventories(3))
     const { plan } = await collectPlan(
-      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
+      createMigrationPlan({ synapse: mockSynapse, state })
     )
 
     // 3 spaces x 1 upload x 2 shards
@@ -116,19 +109,19 @@ describe('createMigrationPlan', () => {
     expect(plan.totals.bytes).toBe((1024n + 2048n) * 3n)
   })
 
-  it('surfaces skipped shards as plan warnings', async () => {
+  it('surfaces failed uploads as plan warnings', async () => {
     const inventory = createMockInventory({
       did: /** @type {API.SpaceDID} */ ('did:key:z6MkSkipped1'),
-      skippedShards: [{ cid: 'bafymissing', reason: 'MissingPieceCID' }],
+      failedUploads: { bafyroot1: [{ cid: 'bafymissing', reason: 'MissingPieceCID' }] },
     })
     const state = withInventories(createMockInitialState(), [inventory])
 
     const { plan } = await collectPlan(
-      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
+      createMigrationPlan({ synapse: mockSynapse, state })
     )
 
     expect(plan.warnings).toHaveLength(1)
-    expect(plan.warnings[0]).toContain('skipped')
+    expect(plan.warnings[0]).toContain('unresolvable shards')
   })
 
   it('surfaces costs from computeMigrationCosts', async () => {
@@ -138,7 +131,7 @@ describe('createMigrationPlan', () => {
 
     const state = withInventories(createMockInitialState(), createMockInventories(1))
     const { plan } = await collectPlan(
-      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
+      createMigrationPlan({ synapse: mockSynapse, state })
     )
 
     expect(plan.costs.totalDepositNeeded).toBe(500n)
@@ -148,7 +141,7 @@ describe('createMigrationPlan', () => {
   it('sets ready=true when costs.ready is true', async () => {
     const state = withInventories(createMockInitialState(), createMockInventories(1))
     const { plan } = await collectPlan(
-      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
+      createMigrationPlan({ synapse: mockSynapse, state })
     )
 
     expect(plan.ready).toBe(true)
@@ -161,7 +154,7 @@ describe('createMigrationPlan', () => {
 
     const state = withInventories(createMockInitialState(), createMockInventories(1))
     const { plan } = await collectPlan(
-      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
+      createMigrationPlan({ synapse: mockSynapse, state })
     )
 
     expect(plan.ready).toBe(false)
@@ -175,7 +168,7 @@ describe('createMigrationPlan', () => {
 
     const state = withInventories(createMockInitialState(), createMockInventories(1))
     const { plan } = await collectPlan(
-      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
+      createMigrationPlan({ synapse: mockSynapse, state })
     )
 
     expect(plan.ready).toBe(false)
@@ -191,19 +184,19 @@ describe('createMigrationPlan', () => {
     )
 
     const inventory = createMockInventory({
-      skippedShards: [{ cid: 'bafymissing', reason: 'MissingPieceCID' }],
+      failedUploads: { bafyroot1: [{ cid: 'bafymissing', reason: 'MissingPieceCID' }] },
     })
     const state = withInventories(createMockInitialState(), [inventory])
 
     const { plan } = await collectPlan(
-      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
+      createMigrationPlan({ synapse: mockSynapse, state })
     )
 
     expect(plan.warnings).toEqual(
       expect.arrayContaining([
         expect.stringContaining('Deposit'),
         expect.stringContaining('Approval'),
-        expect.stringContaining('skipped'),
+        expect.stringContaining('unresolvable shards'),
       ])
     )
   })
@@ -211,7 +204,7 @@ describe('createMigrationPlan', () => {
   it('yields state:checkpoint before plan:ready', async () => {
     const state = withInventories(createMockInitialState(), createMockInventories(1))
     const { events } = await collectPlan(
-      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
+      createMigrationPlan({ synapse: mockSynapse, state })
     )
 
     expect(events).toHaveLength(2)
@@ -248,7 +241,7 @@ describe('createMigrationPlan', () => {
       [createMockInventory({ did: spaceDID })]
     )
     await collectPlan(
-      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
+      createMigrationPlan({ synapse: mockSynapse, state })
     )
 
     expect(state.phase).toBe('approved')
@@ -263,7 +256,7 @@ describe('createMigrationPlan', () => {
     const originalURL = Object.values(inventory.uploads)[0].shards[0].sourceURL
 
     await collectPlan(
-      createMigrationPlan({ synapse: mockSynapse, config: makeConfig(), state })
+      createMigrationPlan({ synapse: mockSynapse, state })
     )
 
     expect(

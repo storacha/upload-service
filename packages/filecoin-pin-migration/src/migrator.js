@@ -1,6 +1,6 @@
 import { Piece } from '@web3-storage/data-segment'
 import {
-  InsufficientFundsFailure,
+  FundingFailedFailure,
   PresignFailedFailure,
   PullFailedFailure,
   CommitFailedFailure,
@@ -43,18 +43,13 @@ const DEFAULT_BATCH_SIZE = 50
  * that upload only. Other uploads in the same space and other spaces continue.
  * Failed uploads appear as 'incomplete' in the final state.
  *
- * @param {object} args
- * @param {API.MigrationPlan} args.plan - Approved plan from createMigrationPlan()
- * @param {API.MigrationState} args.state - Use createApprovalState() for fresh runs
- * @param {API.Synapse} args.synapse - Initialized Synapse SDK instance
- * @param {API.MigrationConfig} args.config - Same config used for planning
+ * @param {API.ExecuteMigrationInput} input
  * @returns {AsyncGenerator<API.MigrationEvent>}
  */
-export async function* executeMigration({ plan, state, synapse, config }) {
+export async function* executeMigration({ plan, state, synapse, batchSize: batchSizeOpt, stopOnError: stopOnErrorOpt, signal }) {
   const startedAt = Date.now()
-  const batchSize = config.options?.batchSize ?? DEFAULT_BATCH_SIZE
-  const stopOnError = config.options?.stopOnError ?? false
-  const signal = config.options?.signal
+  const batchSize = batchSizeOpt ?? DEFAULT_BATCH_SIZE
+  const stopOnError = stopOnErrorOpt ?? true
 
   yield* ensureFunding(plan.costs, synapse, state)
 
@@ -123,8 +118,7 @@ async function* ensureFunding(costs, synapse, state) {
     }
     console.log(`Funding transaction ${result.hash} succeeded `)
   } catch (err) {
-    // TODO:check the error message
-    const error = new InsufficientFundsFailure(
+    const error = new FundingFailedFailure(
       err instanceof Error ? err.message : String(err)
     )
     yield { type: 'funding:failed', error }
@@ -180,8 +174,7 @@ async function* migrateSpace({
       if (signal?.aborted) break
 
       const pending = batch.filter(
-        ({ shard }) =>
-          !(space.committed.shards[shard.cid] ?? []).includes(serviceProvider)
+        ({ shard }) => !(shard.cid in space.committed)
       )
       if (pending.length === 0) continue
 
@@ -199,13 +192,7 @@ async function* migrateSpace({
 
       if (result.committed.length > 0 && result.dataSetId !== undefined) {
         for (const entry of result.committed) {
-          recordCommit(
-            state,
-            spaceDID,
-            entry.shardCid,
-            serviceProvider,
-            result.dataSetId
-          )
+          recordCommit(state, spaceDID, entry.shardCid, result.dataSetId)
         }
         yield /** @type {API.MigrationEvent} */ ({
           type: 'state:checkpoint',
@@ -398,14 +385,15 @@ function deriveSummary(plan, state, startedAt) {
   for (const [did, space] of Object.entries(state.spaces)) {
     const inventory = state.spacesInventories[/** @type {API.SpaceDID} */ (did)]
     if (!inventory) continue
-    succeeded += space.committed.count
-    failed += inventory.totalShards - space.committed.count
+    const committedCount = Object.keys(space.committed).length
+    succeeded += committedCount
+    failed += inventory.totalShards - committedCount
   }
   return {
     succeeded,
     failed,
-    skipped: Object.values(state.spacesInventories).reduce(
-      (n, inv) => n + inv.skippedShards.length,
+    skippedUploads: Object.values(state.spacesInventories).reduce(
+      (n, inv) => n + Object.keys(inv.failedUploads).length,
       0
     ),
     dataSetIds: Object.values(state.spaces)

@@ -76,19 +76,19 @@ export function createInitialState() {
  * @param {{
  *   spaceDID: API.SpaceDID
  *   uploads: Record<string, { shards: API.ResolvedShard[] }>
- *   skippedShards: Array<{ cid: string; reason: string }>
+ *   failedUploads: Record<string, Array<{ cid: string; reason: string }>>
  *   totalShards: number
  *   totalBytes: bigint
  *   cursor: string | undefined
  * }} page
  */
-export function checkpointInventoryPage(state, { spaceDID, uploads, skippedShards, totalShards, totalBytes, cursor }) {
+export function checkpointInventoryPage(state, { spaceDID, uploads, failedUploads, totalShards, totalBytes, cursor }) {
   let inventory = state.spacesInventories[spaceDID]
   if (!inventory) {
     inventory = {
       did: spaceDID,
       uploads: {},
-      skippedShards: [],
+      failedUploads: {},
       totalUploads: 0,
       totalShards: 0,
       totalBytes: 0n,
@@ -97,7 +97,7 @@ export function checkpointInventoryPage(state, { spaceDID, uploads, skippedShard
   }
 
   Object.assign(inventory.uploads, uploads)
-  inventory.skippedShards.push(...skippedShards)
+  Object.assign(inventory.failedUploads, failedUploads)
   inventory.totalUploads += Object.keys(uploads).length
   inventory.totalShards += totalShards
   inventory.totalBytes += totalBytes
@@ -136,7 +136,7 @@ export function transitionToApproved(state, perSpaceCost) {
       providerId: cost.providerId,
       serviceProvider: cost.serviceProvider,
       dataSetId: cost.dataSetId,
-      committed: { shards: {}, count: 0 },
+      committed: {},
     }
   }
   state.phase = 'approved'
@@ -154,29 +154,19 @@ export function transitionToFunded(state) {
 /**
  * Checkpoint 3: a shard was successfully committed.
  *
- * Updates the space's committed map. Only counts toward committed on the first
- * commit for a given shard (any provider) — copies > 1 add to the committed
- * array but the shard was already tracked.
+ * Sets the shard CID key in the committed record.
+ * The service provider is already on SpaceState — no need to track per shard.
  *
  * @param {API.MigrationState} state - Mutated in place
  * @param {API.SpaceDID} spaceDID
  * @param {string} shardCid
- * @param {string} provider
  * @param {bigint} dataSetId
  */
-export function recordCommit(state, spaceDID, shardCid, provider, dataSetId) {
+export function recordCommit(state, spaceDID, shardCid, dataSetId) {
   const space = state.spaces[spaceDID]
   if (!space) return
 
-  const { shards } = space.committed
-  const providers = shards[shardCid] ?? (shards[shardCid] = [])
-  const isFirstCommit = providers.length === 0
-  if (!providers.includes(provider)) {
-    providers.push(provider)
-  }
-  if (isFirstCommit) {
-    space.committed.count++
-  }
+  space.committed[shardCid] = true
 
   if (space.dataSetId === null) {
     space.dataSetId = dataSetId
@@ -203,10 +193,10 @@ export function finalizeSpace(state, spaceDID) {
     return
   }
 
-  const { count } = space.committed
-  if (count === 0) {
+  const committedCount = Object.keys(space.committed).length
+  if (committedCount === 0) {
     space.phase = 'failed'
-  } else if (count === inventory.totalShards) {
+  } else if (committedCount === inventory.totalShards) {
     space.phase = 'complete'
   } else {
     space.phase = 'incomplete'
@@ -271,10 +261,7 @@ export function serializeState(state) {
       providerId: space.providerId.toString(10),
       serviceProvider: space.serviceProvider,
       dataSetId: space.dataSetId != null ? space.dataSetId.toString(10) : null,
-      committed: {
-        shards: { ...space.committed.shards },
-        count: space.committed.count,
-      },
+      committed: { ...space.committed },
     }
   }
 
@@ -296,7 +283,7 @@ export function serializeState(state) {
     spacesInventories[did] = {
       did: inventory.did,
       uploads,
-      skippedShards: [...inventory.skippedShards],
+      failedUploads: { ...inventory.failedUploads },
       totalUploads: inventory.totalUploads,
       totalShards: inventory.totalShards,
       totalBytes: inventory.totalBytes.toString(10),
@@ -360,14 +347,6 @@ export function deserializeState(obj) {
   for (const [did, rawSpace] of Object.entries(
     /** @type {Record<string, Record<string, unknown>>} */ (raw.spaces)
   )) {
-    const rawCommitted = /** @type {{ shards?: Record<string, string[]>; count?: number }} */ (
-      rawSpace.committed ?? {}
-    )
-    /** @type {Record<string, string[]>} */
-    const committedShards = {}
-    for (const [cid, providers] of Object.entries(rawCommitted.shards ?? {})) {
-      committedShards[cid] = providers
-    }
     spaces[/** @type {API.SpaceDID} */ (did)] = {
       did: /** @type {API.SpaceDID} */ (rawSpace.did),
       phase: /** @type {API.SpacePhase} */ (rawSpace.phase),
@@ -381,10 +360,7 @@ export function deserializeState(obj) {
         rawSpace.dataSetId != null
           ? parseBigIntField(rawSpace.dataSetId, 'dataSetId', `space "${did}"`)
           : null,
-      committed: {
-        shards: committedShards,
-        count: typeof rawCommitted.count === 'number' ? rawCommitted.count : Object.keys(committedShards).length,
-      },
+      committed: /** @type {Record<string, true>} */ (rawSpace.committed ?? {}),
     }
   }
 
@@ -414,8 +390,8 @@ export function deserializeState(obj) {
     spacesInventories[/** @type {API.SpaceDID} */ (did)] = {
       did: /** @type {API.SpaceDID} */ (rawInv.did),
       uploads,
-      skippedShards: /** @type {Array<{ cid: string; reason: string }>} */ (
-        rawInv.skippedShards ?? []
+      failedUploads: /** @type {Record<string, Array<{ cid: string; reason: string }>>} */ (
+        rawInv.failedUploads ?? {}
       ),
       totalUploads: /** @type {number} */ (rawInv.totalUploads),
       totalShards: /** @type {number} */ (rawInv.totalShards),

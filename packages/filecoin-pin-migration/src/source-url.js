@@ -38,14 +38,14 @@ export class ClaimsResolver {
 }
 
 /**
- * Create a SourceURLResolver from migration config.
+ * Create a SourceURLResolver from a strategy name.
  *
- * @param {API.MigrationConfig} config
+ * @param {{ strategy: 'roundabout' | 'claims', roundaboutURL?: string }} options
  * @returns {API.SourceURLResolver}
  */
-export function createResolver(config) {
-  if (config.sourceURL.strategy === 'claims') {
+export function createResolver({ strategy, roundaboutURL }) {
+  if (strategy === 'claims') {
     return new ClaimsResolver()
   }
-  return new RoundaboutResolver(config.sourceURL.roundaboutURL)
+  return new RoundaboutResolver(roundaboutURL)
 }

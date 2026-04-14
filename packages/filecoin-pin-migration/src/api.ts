@@ -12,41 +12,6 @@ export type { Synapse, StorageContext, PieceCID }
 export type SpaceDID = DID<'key'>
 
 /**
- * Configuration provided by CLI or Console to drive a migration.
- */
-export interface MigrationConfig {
-  storacha: {
-    /** Authenticated @storacha/client instance */
-    client: Client
-    /** Filter to specific space DIDs */
-    spaces?: SpaceDID[]
-  }
-  foc: {
-    /** Initialized @filoz/synapse-sdk Synapse instance */
-    synapse: Synapse
-    /**
-     * Target storage provider IDs (default: SDK auto-select).
-     * On resume, pinned providers extracted from the persisted MigrationState
-     * always win over this value.
-     */
-    providerIds?: bigint[]
-  }
-  sourceURL: {
-    strategy: 'roundabout' | 'claims'
-    /** Override roundabout endpoint URL */
-    roundaboutURL?: string
-  }
-  options?: {
-    /** Pieces per pull batch (default: 50) */
-    batchSize?: number
-    /** A failure stops the remaining batches in an upload level (default: false) */
-    stopOnError?: boolean
-    /** AbortSignal for cancellation */
-    signal?: AbortSignal
-  }
-}
-
-/**
  * Per-shard inventory entry resolved by the reader.
  *
  * CIDs are kept as strings throughout the plan/state surface and
@@ -68,11 +33,15 @@ export interface ResolvedShard {
 export interface SpaceInventory {
   /** DID identifying the space */
   did: SpaceDID
-  /** All uploads in this space, keyed by root CID for O(1) lookup */
+  /** Uploads where all shards resolved successfully, keyed by root CID */
   uploads: Record<string, { shards: ResolvedShard[] }>
-  /** Shards that could not be resolved */
-  skippedShards: Array<{ cid: string; reason: string }>
-  /** Number of uploads in this space. */
+  /**
+   * Uploads excluded from migration because one or more shards could not be
+   * resolved. Keyed by root CID; value is the list of shards that failed.
+   * Mutually exclusive with uploads — a root appears in one or the other, never both.
+   */
+  failedUploads: Record<string, Array<{ cid: string; reason: string }>>
+  /** Number of uploads where all shards resolved (i.e. keys of uploads). */
   totalUploads: number
   /** Total number of resolved shards across all uploads. */
   totalShards: number
@@ -220,24 +189,11 @@ export type SpacePhase =
 export type UploadPhase = 'pending' | 'migrating' | 'complete' | 'incomplete'
 
 /**
- * Committed shard tracking for a space.
- *
- * Bundles the shard→providers map with its count so consumers never need
- * Object.keys().length — count is O(1) and always in sync.
- */
-export interface CommittedShards {
-  /** Shard CID → provider addresses that have committed it. */
-  shards: Record<string, string[]>
-  /** Count of unique committed shards. Incremented in recordCommit on first commit only. */
-  count: number
-}
-
-/**
  * Per-space resume record and progress tracker.
  *
  * SP binding (providerId, dataSetId) enables planner resume.
- * committed tracks which shards have been committed to which providers,
- * enabling O(1) skip checks during migration and progress derivation.
+ * committed tracks which shard CIDs have been committed,
+ * enabling skip checks during migration and progress derivation.
  */
 export interface SpaceState {
   did: SpaceDID
@@ -248,7 +204,8 @@ export interface SpaceState {
   serviceProvider: `0x${string}`
   /** null until first commit; then passed as dataSetIds on resume. */
   dataSetId: bigint | null
-  committed: CommittedShards
+  /** Shard CIDs that have been committed. Keyed for O(1) membership test. */
+  committed: Record<string, true>
 }
 
 /**
@@ -275,13 +232,64 @@ export interface MigrationSummary {
   succeeded: number
   /** Count of shards that were not committed (failures). */
   failed: number
-  /** Count of shards skipped at inventory time (missing pieceCID or URL). */
-  skipped: number
+  /** Count of uploads excluded at inventory time (one or more shards unresolvable). */
+  skippedUploads: number
   dataSetIds: bigint[]
   /** Total bytes across all resolved shards in the plan. */
   totalBytes: bigint
   /** Duration in milliseconds */
   duration: number
+}
+
+// ── Stage inputs ─────────────────────────────────────────────────────────────
+
+/** Input for buildMigrationInventories() — the reader stage. */
+export interface BuildInventoriesInput {
+  /** Authenticated @storacha/client instance */
+  client: Client
+  /** Resolves the final sourceURL for each shard */
+  resolver: SourceURLResolver
+  /** Mutated in place; used for resume and checkpointing */
+  state: MigrationState
+  /** Defaults to all spaces on the client */
+  spaceDIDs?: SpaceDID[]
+  options?: {
+    /** Override the default indexing service URL */
+    serviceURL?: URL
+    /** Inject a custom indexing service reader (tests) */
+    indexer?: IndexingServiceReader
+    /** Stop resolving remaining shards on first failure per upload (default: true) */
+    stopOnError?: boolean
+  }
+}
+
+/** Input for createMigrationPlan() — the planner stage. */
+export interface CreatePlanInput {
+  /** Initialized @filoz/synapse-sdk Synapse instance */
+  synapse: Synapse
+  /** Mutated in place; SP bindings written after cost computation */
+  state: MigrationState
+  /**
+   * Target storage provider IDs (default: SDK auto-select).
+   * On resume, pinned providers extracted from state always win.
+   */
+  providerIds?: bigint[]
+}
+
+/** Input for executeMigration() — the migrator stage. */
+export interface ExecuteMigrationInput {
+  /** Approved plan from createMigrationPlan() */
+  plan: MigrationPlan
+  /** Mutated in place; tracks committed shards and phase */
+  state: MigrationState
+  /** Initialized Synapse SDK instance */
+  synapse: Synapse
+  /** Pieces per pull batch (default: 50) */
+  batchSize?: number
+  /** A failure stops remaining batches in an upload (default: true) */
+  stopOnError?: boolean
+  /** AbortSignal for cancellation */
+  signal?: AbortSignal
 }
 
 /**
@@ -360,7 +368,7 @@ export interface ShardEntry {
 
 // ── Source URL resolver ────────────────────────────────────────────────────
 
-/** Resolves a source URL for a shard. Used by planner and migrator. */
+/** Resolves a source URL for a shard. Applied only in the reader. */
 export interface SourceURLResolver {
   resolve(shard: ResolvedShard): string
 }

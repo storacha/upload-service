@@ -181,9 +181,10 @@ describe('buildMigrationInventories', () => {
         SPACE_DID
       )
 
-      expect(inventory.uploads[rootCid.toString()].shards).toHaveLength(0)
-      expect(inventory.skippedShards).toHaveLength(1)
-      expect(inventory.skippedShards[0].reason).toContain(shardCid.toString())
+      const rootStr = rootCid.toString()
+      expect(inventory.uploads[rootStr]).toBeUndefined()
+      expect(inventory.failedUploads[rootStr]).toHaveLength(1)
+      expect(inventory.failedUploads[rootStr][0].reason).toContain(shardCid.toString())
     })
 
     it('skips shard missing location URL', async () => {
@@ -207,9 +208,10 @@ describe('buildMigrationInventories', () => {
         SPACE_DID
       )
 
-      expect(inventory.uploads[rootCid.toString()].shards).toHaveLength(0)
-      expect(inventory.skippedShards).toHaveLength(1)
-      expect(inventory.skippedShards[0].reason).toContain(shardCid.toString())
+      const rootStr = rootCid.toString()
+      expect(inventory.uploads[rootStr]).toBeUndefined()
+      expect(inventory.failedUploads[rootStr]).toHaveLength(1)
+      expect(inventory.failedUploads[rootStr][0].reason).toContain(shardCid.toString())
     })
 
     it('applies ClaimsResolver — sourceURL is the raw claim URL', async () => {
@@ -457,7 +459,7 @@ describe('buildMigrationInventories', () => {
       state.spacesInventories[spaceA] = {
         did: spaceA,
         uploads: { bafyroot: { shards: [] } },
-        skippedShards: [],
+        failedUploads: {},
         totalUploads: 1,
         totalShards: 0,
         totalBytes: 0n,
@@ -493,7 +495,7 @@ describe('buildMigrationInventories', () => {
       state.spacesInventories[SPACE_DID] = {
         did: SPACE_DID,
         uploads: { [rootAStr]: { shards: [{ cid: shardA.toString(), pieceCID: pieceCid.toString(), sourceURL: 'https://r2.example/a', sizeBytes: Piece.fromLink(pieceCid).size }] } },
-        skippedShards: [],
+        failedUploads: {},
         totalUploads: 1,
         totalShards: 1,
         totalBytes: Piece.fromLink(pieceCid).size,
