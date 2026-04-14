@@ -18,13 +18,13 @@ All three phases are `AsyncGenerator`s that yield `MigrationEvent` objects. A si
 
 ### 1. Reader — inventory
 
-Walks every space on the Storacha client, paginates all uploads, and for each shard queries the indexing service to resolve:
+Walks every space on the Storacha client, paginates all uploads, and per page batch-queries the indexing service once to resolve all shards in that page:
 
 - `pieceCID` — required by the Filecoin storage provider
 - `sourceURL` — the URL the SP will pull from (resolved by the chosen strategy)
 - `sizeBytes` — derived from the piece itself
 
-The result is a `SpaceInventory` per space: a structured list of every upload and its resolved shards, with counts and byte totals pre-computed. Inventories are written into `state.spacesInventories` as each page completes.
+The result is a `SpaceInventory` per space: a flat list of every resolved shard (each carrying its upload root), the list of successful upload root CIDs, and the list of failed upload root CIDs. Inventories are written into `state.spacesInventories` as each page completes.
 
 ### 2. Planner — cost calculation and approval
 
@@ -35,16 +35,17 @@ The plan carries:
 - Per-space upload/shard/byte totals
 - Per-space storage cost breakdown (lockup, rate, sybil fee)
 - Account-level deposit needed and approval requirements
+- `fundingAmount` — the deposit plus a 10% safety buffer, surfaced in `plan.warnings` before the user approves
 - A `ready` flag — false if a deposit or FWSS approval is required
 
 ### 3. Migrator — execution
 
 Executes the approved plan as an `AsyncGenerator`. Yields `MigrationEvent` objects the consumer handles at its own pace: persisting state to disk, displaying progress, logging failures.
 
-Each space is processed upload-by-upload in configurable batches. Each batch runs three stages:
+Shards from all uploads in a space are batched together (cross-upload) from the flat `inventory.shards` array, maximising batch utilisation regardless of how many shards each upload has. Each batch runs three stages:
 
-1. **Presign** — EIP-712 signature for the batch
-2. **Pull** — SP fetches pieces from the `sourceURL`; pieces are partitioned into succeeded/failed
+1. **Presign** — EIP-712 signature scoped to the exact pieces in the batch
+2. **Pull** — SP fetches pieces from `sourceURL`; retried up to 3 times with exponential backoff; pieces are partitioned into succeeded/failed
 3. **Commit** — on-chain registration of successfully pulled pieces and creation of datasets
 
 State is checkpointed after every batch with at least one commit, enabling crash recovery.
@@ -67,7 +68,7 @@ State is checkpointed after every batch with at least one commit, enabling crash
 │                                                            │
 │  → state.spacesInventories  (uploads, shards, final URLs)  │
 └────────────────────┬───────────────────────────────────────┘
-                     │ Object.values(state.spacesInventories)
+                     │ state.spacesInventories
                      ▼
 ┌────────────────────────────────────────────────────────────┐
 │                createMigrationPlan()                       │
@@ -79,7 +80,7 @@ State is checkpointed after every batch with at least one commit, enabling crash
                      ▼
 ┌────────────────────────────────────────────────────────────┐
 │              executeMigration()  [AsyncGenerator]          │
-│  presign → pull → commit  (per batch, per upload, per space│
+│  presign → pull → commit  (per batch, per space│
 │  checkpoints → MigrationState  (serializable, resumable)  │
 │                                                            │
 │  yields: funding:start/complete/failed                     │
@@ -105,184 +106,6 @@ State is checkpointed after every batch with at least one commit, enabling crash
 
 ```bash
 npm install @storacha/filecoin-pin-migration
-```
-
----
-
-## Usage
-
-```js
-import {
-  createInitialState,
-  buildMigrationInventories,
-  createMigrationPlan,
-  executeMigration,
-  serializeState,
-  ClaimsResolver,
-} from '@storacha/filecoin-pin-migration'
-
-const state = createInitialState()
-const resolver = new ClaimsResolver() // or new RoundaboutResolver()
-
-// 1. Read — build inventories for all spaces
-for await (const event of buildMigrationInventories({ client, resolver, state })) {
-  if (event.type === 'state:checkpoint') {
-    await fs.writeFile('migration-state.json', JSON.stringify(serializeState(event.state)))
-  }
-}
-
-// 2. Plan — compute costs and get user approval
-let plan
-for await (const event of createMigrationPlan({ synapse, config, state })) {
-  if (event.type === 'state:checkpoint') {
-    await fs.writeFile('migration-state.json', JSON.stringify(serializeState(event.state)))
-  }
-  if (event.type === 'plan:ready') plan = event.plan
-}
-
-console.log(`Shards:  ${plan.totals.shards}`)
-console.log(`Bytes:   ${plan.totals.bytes}`)
-console.log(`Deposit: ${plan.costs.totalDepositNeeded} USDFC`)
-
-if (!plan.ready) {
-  console.error('Not ready:', plan.warnings)
-  process.exit(1)
-}
-
-// Present plan to user and wait for approval...
-
-// 3. Execute
-for await (const event of executeMigration({ plan, state, synapse, config })) {
-  switch (event.type) {
-    case 'funding:start':
-      console.log(`Depositing ${event.amount} USDFC...`)
-      break
-    case 'funding:complete':
-      console.log('Funded.')
-      break
-    case 'state:checkpoint':
-      // Persist state after every checkpoint — enables resume on crash
-      await fs.writeFile('migration-state.json', JSON.stringify(serializeState(event.state)))
-      break
-    case 'shard:failed':
-      console.error(`Shard failed: ${event.shard}`, event.error)
-      break
-    case 'migration:complete':
-      console.log(`Done. ${event.summary.succeeded} committed, ${event.summary.failed} failed.`)
-      break
-  }
-}
-```
-
----
-
-## Source URL strategies
-
-The `SourceURLResolver` controls the URL given to the storage provider for pulling each shard. It is applied at read time — `SpaceInventory` shards already carry final URLs by the time the planner sees them.
-
-| Resolver | URL format | When to use |
-|---|---|---|
-| `ClaimsResolver` | Raw R2 URL from indexing service claims | Curio supports arbitrary URLs |
-| `RoundaboutResolver` | `https://roundabout.web3.storage/piece/<pieceCID>` | Default — works with current SP configuration |
-
-```js
-import { ClaimsResolver, RoundaboutResolver, createResolver } from '@storacha/filecoin-pin-migration'
-
-// Explicit
-const resolver = new RoundaboutResolver()
-const resolver = new RoundaboutResolver('https://my-roundabout.example')
-
-// From MigrationConfig
-const resolver = createResolver(config) // reads config.sourceURL.strategy
-```
-
----
-
-## Configuration
-
-```ts
-interface MigrationConfig {
-  storacha: {
-    client: Client           // Authenticated @storacha/client instance
-    spaces?: SpaceDID[]      // Filter to specific spaces; default: all
-  }
-  foc: {
-    synapse: Synapse          // Initialized @filoz/synapse-sdk instance
-    providerIds?: bigint[]    // Target specific SPs; default: SDK auto-selects
-  }
-  sourceURL: {
-    strategy: 'roundabout' | 'claims'
-    roundaboutURL?: string   // Override default roundabout endpoint
-  }
-  options?: {
-    batchSize?: number        // Pieces per pull batch (default: 50)
-    stopOnError?: boolean     // If any shard of an upload fails to resolve, stop resolving remaining shards for that upload immediately. The upload is always excluded from migration when any shard is unresolvable (default: true)
-    signal?: AbortSignal      // Cancellation
-  }
-}
-```
-
----
-
-## Events
-
-All three stages yield events. Consumers should handle `state:checkpoint` at every stage to enable crash recovery.
-
-| Event | Stage | When | Key fields |
-|---|---|---|---|
-| `reader:space:start` | reader | Before first page of a space | `spaceDID` |
-| `reader:space:complete` | reader | After last page of a space | `spaceDID` |
-| `state:checkpoint` | reader | After every `upload.list` page | `state` |
-| `reader:complete` | reader | After all spaces read | — |
-| `state:checkpoint` | planner | After SP bindings written to state | `state` |
-| `plan:ready` | planner | Carries plan for display/approval | `plan` |
-| `funding:start` | migrator | Before `fundSync` transaction | `amount: bigint` |
-| `funding:complete` | migrator | After `fundSync` lands | — |
-| `funding:failed` | migrator | If `fundSync` throws — generator terminates | `error` |
-| `shard:failed` | migrator | Per shard that fails presign, pull, or commit | `spaceDID`, `root`, `shard`, `error` |
-| `state:checkpoint` | migrator | After each batch with ≥1 commit; after each space finalizes | `state` |
-| `migration:complete` | migrator | Once, after all spaces | `summary` |
-
-`funding:failed` is the only event that terminates the generator early. All per-shard failures surface as `shard:failed` — execution continues.
-
----
-
-## Error handling
-
-Each stage of a batch has distinct failure semantics:
-
-| Stage | Failure class | Scope |
-|---|---|---|
-| Presign | `PresignFailedFailure` | Whole batch — no EIP-712 signature, cannot proceed |
-| Pull | `PullFailedFailure` | Per piece — commit proceeds with pieces that pulled successfully |
-| Commit | `CommitFailedFailure` | All successfully pulled pieces in the batch |
-
-All failures are yielded as `shard:failed` events. `executeMigration` never throws for per-shard failures — only `funding:failed` terminates the generator early.
-
----
-
-## State lifecycle
-
-```
-Migration:  reading → planning → approved → funded → migrating → complete | incomplete
-Space:      pending → complete | incomplete | failed
-Upload:     pending → migrating → complete | incomplete   (computed, not stored)
-```
-
-- `complete` — every shard committed
-- `incomplete` — some shards committed, some not
-- `failed` — space processed with zero commits
-
-State is serialized/deserialized as JSON. `bigint` fields (`providerId`, `dataSetId`, `sizeBytes`) are encoded as decimal strings.
-
-```js
-import { serializeState, deserializeState } from '@storacha/filecoin-pin-migration'
-
-// Save
-const json = JSON.stringify(serializeState(state))
-
-// Load
-const state = deserializeState(JSON.parse(json))
 ```
 
 ---

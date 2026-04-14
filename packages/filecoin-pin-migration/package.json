@@ -43,21 +43,25 @@
 		"test:node": "vitest --run"
 	},
 	"dependencies": {
-		"@ucanto/server": "catalog:",
-		"@ucanto/interface": "catalog:",
-		"multiformats": "catalog:",
-		"@filoz/synapse-sdk": "^0.40.2",
 		"@filoz/synapse-core": "^0.3.3",
+		"@filoz/synapse-sdk": "^0.40.2",
+		"@storacha/client": "workspace:^",
+		"p-retry": "^6.2.1",
+		"@storacha/indexing-service-client": "^2.6.5",
+		"@ucanto/interface": "catalog:",
+		"@ucanto/principal": "catalog:",
+		"@ucanto/server": "catalog:",
 		"@web3-storage/data-segment": "catalog:",
-		"@storacha/client": "workspace:^"
+		"dotenv": "^17.2.3",
+		"multiformats": "catalog:"
 	},
 	"peerDependencies": {
-		"viem": "2.x"
+		"viem": "catalog:"
 	},
 	"devDependencies": {
 		"@storacha/eslint-config": "workspace:^",
-		"@typescript-eslint/eslint-plugin": "catalog:",
 		"@types/node": "^20.8.4",
+		"@typescript-eslint/eslint-plugin": "catalog:",
 		"typescript": "catalog:",
 		"viem": "catalog:",
 		"vitest": "^3.1.1"

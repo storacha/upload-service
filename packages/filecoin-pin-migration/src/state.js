@@ -10,7 +10,7 @@
 //   Migration: approved → funded → complete | incomplete   (set in finalizeMigration)
 //
 // resolveUploadPhase is exported as a consumer utility — not used internally.
-// Space phase is resolved directly from CommittedShards.count vs inventory.totalShards.
+// Space phase is resolved directly from committed count vs inventory.shards.length.
 
 /**
  * Compute upload phase from shard counts. Consumer utility — not used internally.
@@ -65,9 +65,8 @@ export function createInitialState() {
 /**
  * Checkpoint a completed upload.list page into the space's inventory entry.
  *
- * The reader builds uploads as a Record and accumulates totalShards/totalBytes
- * during its natural shard-resolution pass — no extra iteration here.
- * This function does an O(uploads-on-page) merge and cursor update only.
+ * Append-only: pushes flat shards, upload roots, and failed roots.
+ * Only totalBytes is accumulated — uploads.length and shards.length are free.
  *
  * cursor present → space is still being read, save cursor for resume
  * cursor absent  → last page processed, space reading is complete
@@ -75,31 +74,23 @@ export function createInitialState() {
  * @param {API.MigrationState} state - Mutated in place
  * @param {{
  *   spaceDID: API.SpaceDID
- *   uploads: Record<string, { shards: API.ResolvedShard[] }>
- *   failedUploads: Record<string, Array<{ cid: string; reason: string }>>
- *   totalShards: number
+ *   shards: API.ResolvedShard[]
+ *   uploads: string[]
+ *   failedUploads: string[]
  *   totalBytes: bigint
  *   cursor: string | undefined
  * }} page
  */
-export function checkpointInventoryPage(state, { spaceDID, uploads, failedUploads, totalShards, totalBytes, cursor }) {
+export function checkpointInventoryPage(state, { spaceDID, shards, uploads, failedUploads, totalBytes, cursor }) {
   let inventory = state.spacesInventories[spaceDID]
   if (!inventory) {
-    inventory = {
-      did: spaceDID,
-      uploads: {},
-      failedUploads: {},
-      totalUploads: 0,
-      totalShards: 0,
-      totalBytes: 0n,
-    }
+    inventory = { did: spaceDID, uploads: [], shards: [], failedUploads: [], totalBytes: 0n }
     state.spacesInventories[spaceDID] = inventory
   }
 
-  Object.assign(inventory.uploads, uploads)
-  Object.assign(inventory.failedUploads, failedUploads)
-  inventory.totalUploads += Object.keys(uploads).length
-  inventory.totalShards += totalShards
+  inventory.shards.push(...shards)
+  inventory.uploads.push(...uploads)
+  inventory.failedUploads.push(...failedUploads)
   inventory.totalBytes += totalBytes
 
   if (cursor) {
@@ -137,6 +128,7 @@ export function transitionToApproved(state, perSpaceCost) {
       serviceProvider: cost.serviceProvider,
       dataSetId: cost.dataSetId,
       committed: {},
+      failedUploads: {},
     }
   }
   state.phase = 'approved'
@@ -196,7 +188,7 @@ export function finalizeSpace(state, spaceDID) {
   const committedCount = Object.keys(space.committed).length
   if (committedCount === 0) {
     space.phase = 'failed'
-  } else if (committedCount === inventory.totalShards) {
+  } else if (committedCount === inventory.shards.length) {
     space.phase = 'complete'
   } else {
     space.phase = 'incomplete'
@@ -247,7 +239,7 @@ export function buildResumeState(state) {
  *   - spaces[did].providerId → decimal string
  *   - spaces[did].dataSetId → decimal string or null
  *   - spacesInventories[did].totalBytes → decimal string
- *   - spacesInventories[did].uploads[root].shards[].sizeBytes → decimal string
+ *   - spacesInventories[did].shards[].sizeBytes → decimal string
  *
  * @param {API.MigrationState} state
  */
@@ -262,30 +254,24 @@ export function serializeState(state) {
       serviceProvider: space.serviceProvider,
       dataSetId: space.dataSetId != null ? space.dataSetId.toString(10) : null,
       committed: { ...space.committed },
+      failedUploads: { ...space.failedUploads },
     }
   }
 
   /** @type {Record<string, unknown>} */
   const spacesInventories = {}
   for (const [did, inventory] of Object.entries(state.spacesInventories)) {
-    /** @type {Record<string, unknown>} */
-    const uploads = {}
-    for (const [root, upload] of Object.entries(inventory.uploads)) {
-      uploads[root] = {
-        shards: upload.shards.map((s) => ({
-          cid: s.cid,
-          pieceCID: s.pieceCID,
-          sourceURL: s.sourceURL,
-          sizeBytes: s.sizeBytes.toString(10),
-        })),
-      }
-    }
     spacesInventories[did] = {
       did: inventory.did,
-      uploads,
-      failedUploads: { ...inventory.failedUploads },
-      totalUploads: inventory.totalUploads,
-      totalShards: inventory.totalShards,
+      uploads: inventory.uploads,
+      shards: inventory.shards.map((s) => ({
+        root: s.root,
+        cid: s.cid,
+        pieceCID: s.pieceCID,
+        sourceURL: s.sourceURL,
+        sizeBytes: s.sizeBytes.toString(10),
+      })),
+      failedUploads: inventory.failedUploads,
       totalBytes: inventory.totalBytes.toString(10),
     }
   }
@@ -361,6 +347,7 @@ export function deserializeState(obj) {
           ? parseBigIntField(rawSpace.dataSetId, 'dataSetId', `space "${did}"`)
           : null,
       committed: /** @type {Record<string, true>} */ (rawSpace.committed ?? {}),
+      failedUploads: /** @type {Record<string, true>} */ (rawSpace.failedUploads ?? {}),
     }
   }
 
@@ -369,32 +356,20 @@ export function deserializeState(obj) {
   for (const [did, rawInv] of Object.entries(
     /** @type {Record<string, Record<string, unknown>>} */ (raw.spacesInventories)
   )) {
-    const rawUploads = /** @type {Record<string, Record<string, unknown>>} */ (
-      rawInv.uploads ?? {}
+    const rawShards = /** @type {Array<Record<string, unknown>>} */ (
+      rawInv.shards ?? []
     )
-    /** @type {Record<string, { shards: API.ResolvedShard[] }>} */
-    const uploads = {}
-    for (const [root, u] of Object.entries(rawUploads)) {
-      const rawShards = /** @type {Array<Record<string, unknown>>} */ (
-        u.shards ?? []
-      )
-      uploads[root] = {
-        shards: rawShards.map((s) => ({
-          cid: /** @type {string} */ (s.cid),
-          pieceCID: /** @type {string} */ (s.pieceCID),
-          sourceURL: /** @type {string} */ (s.sourceURL),
-          sizeBytes: parseBigIntField(s.sizeBytes, 'sizeBytes', `shard "${s.cid}"`),
-        })),
-      }
-    }
     spacesInventories[/** @type {API.SpaceDID} */ (did)] = {
       did: /** @type {API.SpaceDID} */ (rawInv.did),
-      uploads,
-      failedUploads: /** @type {Record<string, Array<{ cid: string; reason: string }>>} */ (
-        rawInv.failedUploads ?? {}
-      ),
-      totalUploads: /** @type {number} */ (rawInv.totalUploads),
-      totalShards: /** @type {number} */ (rawInv.totalShards),
+      uploads: /** @type {string[]} */ (rawInv.uploads ?? []),
+      shards: rawShards.map((s) => ({
+        root: /** @type {string} */ (s.root),
+        cid: /** @type {string} */ (s.cid),
+        pieceCID: /** @type {string} */ (s.pieceCID),
+        sourceURL: /** @type {string} */ (s.sourceURL),
+        sizeBytes: parseBigIntField(s.sizeBytes, 'sizeBytes', `shard "${s.cid}"`),
+      })),
+      failedUploads: /** @type {string[]} */ (rawInv.failedUploads ?? []),
       totalBytes: parseBigIntField(rawInv.totalBytes, 'totalBytes', `inventory "${did}"`),
     }
   }

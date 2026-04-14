@@ -112,7 +112,7 @@ describe('createMigrationPlan', () => {
   it('surfaces failed uploads as plan warnings', async () => {
     const inventory = createMockInventory({
       did: /** @type {API.SpaceDID} */ ('did:key:z6MkSkipped1'),
-      failedUploads: { bafyroot1: [{ cid: 'bafymissing', reason: 'MissingPieceCID' }] },
+      failedUploads: ['bafyroot1'],
     })
     const state = withInventories(createMockInitialState(), [inventory])
 
@@ -184,7 +184,7 @@ describe('createMigrationPlan', () => {
     )
 
     const inventory = createMockInventory({
-      failedUploads: { bafyroot1: [{ cid: 'bafymissing', reason: 'MissingPieceCID' }] },
+      failedUploads: ['bafyroot1'],
     })
     const state = withInventories(createMockInitialState(), [inventory])
 
@@ -253,14 +253,14 @@ describe('createMigrationPlan', () => {
   it('does not mutate inventories in state', async () => {
     const inventory = createMockInventory({})
     const state = withInventories(createMockInitialState(), [inventory])
-    const originalURL = Object.values(inventory.uploads)[0].shards[0].sourceURL
+    const originalURL = inventory.shards[0].sourceURL
 
     await collectPlan(
       createMigrationPlan({ synapse: mockSynapse, state })
     )
 
-    expect(
-      Object.values(state.spacesInventories[inventory.did].uploads)[0].shards[0].sourceURL
-    ).toBe(originalURL)
+    expect(state.spacesInventories[inventory.did].shards[0].sourceURL).toBe(
+      originalURL
+    )
   })
 })

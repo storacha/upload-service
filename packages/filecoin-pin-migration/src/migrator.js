@@ -1,3 +1,4 @@
+import pRetry from 'p-retry'
 import { Piece } from '@web3-storage/data-segment'
 import {
   FundingFailedFailure,
@@ -18,7 +19,8 @@ import {
  */
 
 const DEFAULT_BATCH_SIZE = 50
-// One dataset per space — avoids N× sybil fees and R2 egress.
+const STOP_ON_ERROR = true
+const PULL_RETRIES = 3
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -27,21 +29,19 @@ const DEFAULT_BATCH_SIZE = 50
  *
  * Yields MigrationEvents. Consumers iterate with `for await` and handle
  * persistence, progress display, and error reporting at their own pace.
- * The generator pauses at each yield — consumers can await async work
- * (e.g. writing state to disk) without blocking unrelated events.
  *
  * Flow:
  *   1. Fund once via synapse.payments.fundSync (pre-flight).
- *   2. For each space: process uploads in batches, checkpoint after each commit.
+ *   2. For each space: process shards in cross-upload batches, checkpoint after each commit.
  *   3. Yield migration:complete with a summary derived from final state.
  *
  * Resume: pass the deserialized MigrationState. Shards already in
- * state.committed are skipped per provider. createMigrationPlan() pins SP
+ * state.committed are skipped. createMigrationPlan() pins SP
  * and dataset bindings from state automatically.
  *
- * stopOnError: when true, a shard failure stops the remaining batches for
- * that upload only. Other uploads in the same space and other spaces continue.
- * Failed uploads appear as 'incomplete' in the final state.
+ * stopOnError: when true, a shard failure excludes remaining shards for
+ * that upload root from future batches. Other uploads in the same space
+ * and other spaces continue.
  *
  * @param {API.ExecuteMigrationInput} input
  * @returns {AsyncGenerator<API.MigrationEvent>}
@@ -49,9 +49,9 @@ const DEFAULT_BATCH_SIZE = 50
 export async function* executeMigration({ plan, state, synapse, batchSize: batchSizeOpt, stopOnError: stopOnErrorOpt, signal }) {
   const startedAt = Date.now()
   const batchSize = batchSizeOpt ?? DEFAULT_BATCH_SIZE
-  const stopOnError = stopOnErrorOpt ?? true
+  const stopOnError = stopOnErrorOpt ?? STOP_ON_ERROR
 
-  yield* ensureFunding(plan.costs, synapse, state)
+  yield* ensureFunding(plan.costs, plan.fundingAmount, synapse, state)
 
   state.phase = 'migrating'
 
@@ -91,24 +91,22 @@ export async function* executeMigration({ plan, state, synapse, batchSize: batch
  * and the consumer receives a terminal signal.
  *
  * @param {API.MigrationCostResult} costs
+ * @param {bigint} fundingAmount - Pre-computed by planner (deposit + safety buffer)
  * @param {API.Synapse} synapse
  * @param {API.MigrationState} state
  * @returns {AsyncGenerator<API.MigrationEvent>}
  */
-async function* ensureFunding(costs, synapse, state) {
+async function* ensureFunding(costs, fundingAmount, synapse, state) {
   if (costs.ready) {
     if (state.phase === 'approved') transitionToFunded(state)
     return
   }
 
-  yield { type: 'funding:start', amount: costs.totalDepositNeeded }
+  yield { type: 'funding:start', amount: fundingAmount }
 
   try {
-    // TODO: receive the result and check for success
-    const amount =
-      costs.totalDepositNeeded + (costs.totalDepositNeeded * 5n) / 10n // add 5% extra for safety
     const result = await synapse.payments.fundSync({
-      amount,
+      amount: fundingAmount,
       needsFwssMaxApproval: costs.needsFwssMaxApproval,
     })
     if (result.receipt.status === 'reverted') {
@@ -116,7 +114,6 @@ async function* ensureFunding(costs, synapse, state) {
         `Funding transaction ${result.hash} failed with status ${result.receipt.status}`
       )
     }
-    console.log(`Funding transaction ${result.hash} succeeded `)
   } catch (err) {
     const error = new FundingFailedFailure(
       err instanceof Error ? err.message : String(err)
@@ -132,16 +129,11 @@ async function* ensureFunding(costs, synapse, state) {
 // ── Per-space migration ───────────────────────────────────────────────────────
 
 /**
- * Migrate all uploads for one space in sequential batches.
+ * Migrate all shards for one space in cross-upload batches.
  *
- * Iterates uploads individually so stopOnError can be applied at upload
- * granularity: a failure stops the remaining batches for that upload only,
- * then the next upload proceeds normally.
- *
- * Skips shards already committed to this provider (resume path).
- * Yields shard:failed per failure and state:checkpoint after each batch
- * with at least one commit. Calls finalizeSpace before the last checkpoint
- * so the space phase is resolved before the consumer persists.
+ * Reads from the flat inventory.shards array. Filters committed shards once,
+ * then processes in full-sized batches. stopOnError tracks failed upload roots
+ * in a Set — shards from failed roots are excluded from future batches.
  *
  * @param {object} args
  * @param {API.SpaceInventory} args.inventory
@@ -160,49 +152,50 @@ async function* migrateSpace({
   stopOnError,
   signal,
 }) {
-  const { context, spaceDID, serviceProvider } = perSpaceCost
+  const { context, spaceDID } = perSpaceCost
   const space = state.spaces[spaceDID]
   if (!space) return
 
-  for (const [root, upload] of Object.entries(inventory.uploads)) {
+  // Single filter on flat array — O(n), unavoidable
+  const pending = inventory.shards.filter(
+    (shard) => !(shard.cid in space.committed)
+  )
+
+  /** @type {Set<string>} */
+  const failedRoots = new Set()
+
+  for (const batch of batches(pending, batchSize)) {
     if (signal?.aborted) break
 
-    const shards = upload.shards.map((shard) => ({ shard, root }))
+    // Exclude shards from uploads that already failed
+    const eligible = stopOnError
+      ? batch.filter((shard) => !failedRoots.has(shard.root))
+      : batch
 
-    // how to deal with cases where the batch is less than the batch size?
-    for (const batch of batches(shards, batchSize)) {
-      if (signal?.aborted) break
+    if (eligible.length === 0) continue
 
-      const pending = batch.filter(
-        ({ shard }) => !(shard.cid in space.committed)
-      )
-      if (pending.length === 0) continue
+    const result = await processBatch({ batch: eligible, context, signal })
 
-      const result = await processBatch({ batch: pending, context, signal })
+    for (const failure of result.failures) {
+      if (stopOnError) failedRoots.add(failure.root)
+      space.failedUploads[failure.root] = true
+      yield /** @type {API.MigrationEvent} */ ({
+        type: 'shard:failed',
+        spaceDID,
+        root: failure.root,
+        shard: failure.shardCid,
+        error: failure.error,
+      })
+    }
 
-      for (const failure of result.failures) {
-        yield /** @type {API.MigrationEvent} */ ({
-          type: 'shard:failed',
-          spaceDID,
-          root: failure.root,
-          shard: failure.shardCid,
-          error: failure.error,
-        })
+    if (result.committed.length > 0 && result.dataSetId !== undefined) {
+      for (const entry of result.committed) {
+        recordCommit(state, spaceDID, entry.shardCid, result.dataSetId)
       }
-
-      if (result.committed.length > 0 && result.dataSetId !== undefined) {
-        for (const entry of result.committed) {
-          recordCommit(state, spaceDID, entry.shardCid, result.dataSetId)
-        }
-        yield /** @type {API.MigrationEvent} */ ({
-          type: 'state:checkpoint',
-          state,
-        })
-      }
-
-      // stopOnError: stop remaining batches for this upload only.
-      // The next upload and other spaces are unaffected.
-      if (stopOnError && result.failures.length > 0) break
+      yield /** @type {API.MigrationEvent} */ ({
+        type: 'state:checkpoint',
+        state,
+      })
     }
   }
 
@@ -227,67 +220,67 @@ async function* migrateSpace({
  *   pull failure   — per-piece; commit proceeds with successfully pulled pieces only
  *   commit failure — all successfully-pulled pieces fail
  *
- * Pull status is read from pullResult.pieces (source of truth)
- *
  * @param {object} args
- * @param {Array<{ shard: API.ResolvedShard; root: string }>} args.batch
+ * @param {API.ResolvedShard[]} args.batch
  * @param {API.StorageContext} args.context
  * @param {AbortSignal | undefined} args.signal
  * @returns {Promise<BatchResult>}
  */
 async function processBatch({ batch, context, signal }) {
-  const pieceToEntry = new Map(batch.map((e) => [e.shard.pieceCID, e]))
+  const pieceToShard = new Map(batch.map((s) => [s.pieceCID, s]))
 
   // ── 1. Presign ──────────────────────────────────────────────────────────
+  // Per-batch: the EIP-712 signature is scoped to the exact pieces in the
+  // batch, so it cannot be hoisted to the space or migration level.
   let extraData
   try {
     extraData = await context.presignForCommit(
-      batch.map(({ shard, root }) => ({
+      batch.map((shard) => ({
         pieceCid: toPieceCID(shard.pieceCID),
-        pieceMetadata: { ipfsRootCID: root },
+        pieceMetadata: { ipfsRootCID: shard.root },
       }))
     )
   } catch (err) {
     return failBatch(batch, err, 'presign')
   }
 
-  // ── 2. Pull ─────────────────────────────────────────────────────────────
+  // ── 2. Pull (with retry — transient network errors are common) ──────────
   let pullResult
   try {
-    pullResult = await context.pull({
-      pieces: batch.map(({ shard }) => toPieceCID(shard.pieceCID)),
-      from: (cid) => {
-        const entry = pieceToEntry.get(String(cid))
-        // Invariant: map is built from the same batch so this should never miss.
-        if (!entry) throw new Error(`No entry for pieceCID ${cid}`)
-        return entry.shard.sourceURL
-      },
-      extraData,
-      signal,
-    })
+    pullResult = await pRetry(
+      () =>
+        context.pull({
+          pieces: batch.map((shard) => toPieceCID(shard.pieceCID)),
+          from: (cid) => {
+            const shard = pieceToShard.get(String(cid))
+            if (!shard) throw new Error(`No entry for pieceCID ${cid}`)
+            return shard.sourceURL
+          },
+          extraData,
+          signal,
+        }),
+      { retries: PULL_RETRIES, signal }
+    )
   } catch (err) {
     return failBatch(batch, err, 'pull')
   }
 
   // Partition pull result into succeeded entries and per-piece failures.
-  // pullResult.pieces enumerates every piece with its final status.
-  /** @type {Array<{ shard: API.ResolvedShard; root: string }>} */
+  /** @type {API.ResolvedShard[]} */
   const succeeded = []
   /** @type {FailureEntry[]} */
   const pullFailures = []
 
   for (const piece of pullResult.pieces) {
-    const entry = pieceToEntry.get(String(piece.pieceCid))
-    if (!entry) continue
+    const shard = pieceToShard.get(String(piece.pieceCid))
+    if (!shard) continue
     if (piece.status === 'complete') {
-      succeeded.push(entry)
+      succeeded.push(shard)
     } else {
       pullFailures.push({
-        root: entry.root,
-        shardCid: entry.shard.cid,
-        error: new PullFailedFailure(
-          `Pull failed for piece ${entry.shard.pieceCID}`
-        ),
+        root: shard.root,
+        shardCid: shard.cid,
+        error: new PullFailedFailure(`Pull failed for piece ${shard.pieceCID}`),
       })
     }
   }
@@ -300,9 +293,9 @@ async function processBatch({ batch, context, signal }) {
   let commitResult
   try {
     commitResult = await context.commit({
-      pieces: succeeded.map(({ shard, root }) => ({
+      pieces: succeeded.map((shard) => ({
         pieceCid: toPieceCID(shard.pieceCID),
-        pieceMetadata: { ipfsRootCID: root },
+        pieceMetadata: { ipfsRootCID: shard.root },
       })),
       extraData,
     })
@@ -312,10 +305,10 @@ async function processBatch({ batch, context, signal }) {
 
   return {
     dataSetId: commitResult.dataSetId,
-    committed: succeeded.map(({ shard, root }) => ({
+    committed: succeeded.map((shard) => ({
       shardCid: shard.cid,
       pieceCID: shard.pieceCID,
-      root,
+      root: shard.root,
     })),
     failures: pullFailures,
   }
@@ -340,16 +333,12 @@ function* batches(arr, size) {
 /**
  * Fail an entire batch at a named stage.
  *
- * Always wraps the error in the stage-specific Failure class so `.name`-based
- * error classification is reliable downstream. The SDK never throws our own
- * Failure classes so double-wrapping is not a concern.
- *
- * @param {Array<{ shard: API.ResolvedShard; root: string }>} entries
+ * @param {API.ResolvedShard[]} shards
  * @param {unknown} err
  * @param {'presign' | 'pull' | 'commit'} stage
  * @returns {BatchResult}
  */
-function failBatch(entries, err, stage) {
+function failBatch(shards, err, stage) {
   const msg = err instanceof Error ? err.message : String(err)
   const error =
     stage === 'presign'
@@ -360,8 +349,8 @@ function failBatch(entries, err, stage) {
   return {
     dataSetId: undefined,
     committed: [],
-    failures: entries.map(({ shard, root }) => ({
-      root,
+    failures: shards.map((shard) => ({
+      root: shard.root,
       shardCid: shard.cid,
       error,
     })),
@@ -370,9 +359,6 @@ function failBatch(entries, err, stage) {
 
 /**
  * Derive migration summary from final state.
- *
- * Called once after finalizeMigration() — counters are computed from
- * state.spaces rather than tracked separately during execution.
  *
  * @param {API.MigrationPlan} plan
  * @param {API.MigrationState} state
@@ -387,13 +373,13 @@ function deriveSummary(plan, state, startedAt) {
     if (!inventory) continue
     const committedCount = Object.keys(space.committed).length
     succeeded += committedCount
-    failed += inventory.totalShards - committedCount
+    failed += inventory.shards.length - committedCount
   }
   return {
     succeeded,
     failed,
     skippedUploads: Object.values(state.spacesInventories).reduce(
-      (n, inv) => n + Object.keys(inv.failedUploads).length,
+      (n, inv) => n + inv.failedUploads.length,
       0
     ),
     dataSetIds: Object.values(state.spaces)
@@ -406,7 +392,6 @@ function deriveSummary(plan, state, startedAt) {
 
 /**
  * Convert a pieceCID string to the SDK's typed PieceCID at the SDK boundary.
- * Strings are used throughout the plan/state surface (Pattern A).
  *
  * @param {string} str
  * @returns {PieceCID}

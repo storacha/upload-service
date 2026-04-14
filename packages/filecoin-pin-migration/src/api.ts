@@ -4,6 +4,7 @@ import type { StorageContext } from '@filoz/synapse-sdk/storage'
 import type { UnknownLink, MultihashDigest } from 'multiformats'
 import type { Client } from '@storacha/client'
 import type { Client as IndexingClient } from '@storacha/indexing-service-client'
+import { PieceView } from '@web3-storage/data-segment'
 
 export type { PieceLink, PieceView } from '@web3-storage/data-segment'
 export type { MultihashDigest, UnknownLink }
@@ -19,6 +20,8 @@ export type SpaceDID = DID<'key'>
  * migrator. Keeps serialization trivial.
  */
 export interface ResolvedShard {
+  /** Upload root CID this shard belongs to */
+  root: string
   /** Shard CID (base32 CIDv1) */
   cid: string
   /** Filecoin piece CID (bafkz...) */
@@ -33,19 +36,13 @@ export interface ResolvedShard {
 export interface SpaceInventory {
   /** DID identifying the space */
   did: SpaceDID
-  /** Uploads where all shards resolved successfully, keyed by root CID */
-  uploads: Record<string, { shards: ResolvedShard[] }>
-  /**
-   * Uploads excluded from migration because one or more shards could not be
-   * resolved. Keyed by root CID; value is the list of shards that failed.
-   * Mutually exclusive with uploads — a root appears in one or the other, never both.
-   */
-  failedUploads: Record<string, Array<{ cid: string; reason: string }>>
-  /** Number of uploads where all shards resolved (i.e. keys of uploads). */
-  totalUploads: number
-  /** Total number of resolved shards across all uploads. */
-  totalShards: number
-  /** Total size (bytes) of all resolved shards */
+  /** Root CIDs of uploads where all shards resolved successfully */
+  uploads: string[]
+  /** Flat list of resolved shards — each carries its upload root */
+  shards: ResolvedShard[]
+  /** Root CIDs of uploads excluded because one or more shards could not be resolved */
+  failedUploads: string[]
+  /** Total size (bytes) of all resolved shards — only counter that can't be derived from .length */
   totalBytes: bigint
 }
 
@@ -69,6 +66,11 @@ export interface MigrationPlan {
   warnings: string[]
   /** True when all prerequisites are met and migration can proceed */
   ready: boolean
+  /**
+   * Amount to pass to synapse.payments.fundSync — includes a 10% safety buffer
+   * over the deposit to cover gas estimation variance. 0n when no deposit is needed.
+   */
+  fundingAmount: bigint
 }
 
 /**
@@ -206,6 +208,8 @@ export interface SpaceState {
   dataSetId: bigint | null
   /** Shard CIDs that have been committed. Keyed for O(1) membership test. */
   committed: Record<string, true>
+  /** Upload root CIDs that had at least one shard failure during migration. */
+  failedUploads: Record<string, true>
 }
 
 /**
@@ -319,10 +323,11 @@ export interface ExecuteMigrationInput {
  *
  * Progress is derived from MigrationState on each state:checkpoint.
  * Upload progress (committed vs total shards) is computed from
- * space.committed + spacesInventories[did].uploads[root].shards.
+ * space.committed + spacesInventories[did].shards.
  */
 export type MigrationEvent =
   | { type: 'reader:space:start'; spaceDID: SpaceDID }
+  | { type: 'reader:shard:failed'; spaceDID: SpaceDID; root: string; shard: string; reason: string }
   | { type: 'reader:space:complete'; spaceDID: SpaceDID }
   | { type: 'reader:complete' }
   | { type: 'plan:ready'; plan: MigrationPlan }
@@ -356,14 +361,20 @@ export interface IndexerOptions {
   serviceURL?: URL
 }
 
-/** A shard discovered during inventory. */
+/** A shard discovered during inventory, before claim resolution. */
 export interface ShardEntry {
-  /** CID string from the upload table, or null if found only via indexing service */
+  /** CID string from the upload table */
   cidStr: string
   /** Raw multihash digest */
   multihash: MultihashDigest
   /** base58btc-encoded multihash bytes */
   b58: string
+}
+
+/** Claim data extracted from a batch queryClaims response, keyed by b58 multihash. */
+export interface ClaimsEntry {
+  locationURL: string | null
+  piece: PieceView | null
 }
 
 // ── Source URL resolver ────────────────────────────────────────────────────

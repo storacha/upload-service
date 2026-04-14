@@ -39,7 +39,7 @@ async function collectInventory(gen, state, spaceDID) {
 
 describe('buildMigrationInventories', () => {
   describe('single space — basic inventory', () => {
-    it('resolves shards and builds inventory keyed by root CID', async () => {
+    it('resolves shards and builds flat inventory with root on each shard', async () => {
       const rootCid = await createTestCID('root-a')
       const shardCid = await createTestCID('shard-a')
       const pieceCid = createPieceCID()
@@ -62,12 +62,12 @@ describe('buildMigrationInventories', () => {
         SPACE_DID
       )
 
-      expect(Object.keys(inventory.uploads)).toHaveLength(1)
-      const upload = inventory.uploads[rootCid.toString()]
-      expect(upload).toBeDefined()
-      expect(upload.shards).toHaveLength(1)
-      expect(upload.shards[0].sourceURL).toBe('https://r2.example/shard-a')
-      expect(upload.shards[0].pieceCID).toBe(pieceCid.toString())
+      expect(inventory.uploads).toHaveLength(1)
+      expect(inventory.uploads[0]).toBe(rootCid.toString())
+      expect(inventory.shards).toHaveLength(1)
+      expect(inventory.shards[0].root).toBe(rootCid.toString())
+      expect(inventory.shards[0].sourceURL).toBe('https://r2.example/shard-a')
+      expect(inventory.shards[0].pieceCID).toBe(pieceCid.toString())
     })
 
     it('filters out index-blob location claims', async () => {
@@ -107,9 +107,8 @@ describe('buildMigrationInventories', () => {
         SPACE_DID
       )
 
-      const upload = inventory.uploads[rootCid.toString()]
-      expect(upload.shards).toHaveLength(1)
-      expect(upload.shards[0].sourceURL).toBe('https://r2.example/shard')
+      expect(inventory.shards).toHaveLength(1)
+      expect(inventory.shards[0].sourceURL).toBe('https://r2.example/shard')
     })
 
     it('extracts pieceCID from assert/equals via Piece.fromLink', async () => {
@@ -133,7 +132,7 @@ describe('buildMigrationInventories', () => {
         SPACE_DID
       )
 
-      expect(inventory.uploads[rootCid.toString()].shards[0].pieceCID).toBe(pieceCid.toString())
+      expect(inventory.shards[0].pieceCID).toBe(pieceCid.toString())
     })
 
     it('populates sizeBytes from Piece.fromLink().size', async () => {
@@ -158,10 +157,10 @@ describe('buildMigrationInventories', () => {
       )
 
       const expectedSize = Piece.fromLink(pieceCid).size
-      expect(inventory.uploads[rootCid.toString()].shards[0].sizeBytes).toBe(expectedSize)
+      expect(inventory.shards[0].sizeBytes).toBe(expectedSize)
     })
 
-    it('skips shard missing pieceCID', async () => {
+    it('excludes upload with missing pieceCID and emits reader:shard:failed', async () => {
       const rootCid = await createTestCID('root-f')
       const shardCid = await createTestCID('shard-f')
       const shardB58 = base58btc.encode(shardCid.multihash.bytes)
@@ -175,19 +174,23 @@ describe('buildMigrationInventories', () => {
       )
 
       const state = createMockInitialState()
-      const inventory = await collectInventory(
-        buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } }),
-        state,
-        SPACE_DID
-      )
+      /** @type {API.MigrationEvent[]} */
+      const events = []
+      for await (const event of buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } })) {
+        events.push(event)
+      }
+      const inventory = state.spacesInventories[SPACE_DID]
 
       const rootStr = rootCid.toString()
-      expect(inventory.uploads[rootStr]).toBeUndefined()
-      expect(inventory.failedUploads[rootStr]).toHaveLength(1)
-      expect(inventory.failedUploads[rootStr][0].reason).toContain(shardCid.toString())
+      expect(inventory.shards).toHaveLength(0)
+      expect(inventory.failedUploads).toContain(rootStr)
+
+      const shardFailed = events.find((e) => e.type === 'reader:shard:failed')
+      expect(shardFailed).toBeDefined()
+      expect(shardFailed.reason).toContain(shardCid.toString())
     })
 
-    it('skips shard missing location URL', async () => {
+    it('excludes upload with missing location URL and emits reader:shard:failed', async () => {
       const rootCid = await createTestCID('root-g')
       const shardCid = await createTestCID('shard-g')
       const pieceCid = createPieceCID()
@@ -202,16 +205,20 @@ describe('buildMigrationInventories', () => {
       )
 
       const state = createMockInitialState()
-      const inventory = await collectInventory(
-        buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } }),
-        state,
-        SPACE_DID
-      )
+      /** @type {API.MigrationEvent[]} */
+      const events = []
+      for await (const event of buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } })) {
+        events.push(event)
+      }
+      const inventory = state.spacesInventories[SPACE_DID]
 
       const rootStr = rootCid.toString()
-      expect(inventory.uploads[rootStr]).toBeUndefined()
-      expect(inventory.failedUploads[rootStr]).toHaveLength(1)
-      expect(inventory.failedUploads[rootStr][0].reason).toContain(shardCid.toString())
+      expect(inventory.shards).toHaveLength(0)
+      expect(inventory.failedUploads).toContain(rootStr)
+
+      const shardFailed = events.find((e) => e.type === 'reader:shard:failed')
+      expect(shardFailed).toBeDefined()
+      expect(shardFailed.reason).toContain(shardCid.toString())
     })
 
     it('applies ClaimsResolver — sourceURL is the raw claim URL', async () => {
@@ -235,7 +242,7 @@ describe('buildMigrationInventories', () => {
         SPACE_DID
       )
 
-      expect(inventory.uploads[rootCid.toString()].shards[0].sourceURL).toBe('https://r2.example/shard-claims')
+      expect(inventory.shards[0].sourceURL).toBe('https://r2.example/shard-claims')
     })
 
     it('applies RoundaboutResolver — sourceURL is built from pieceCID', async () => {
@@ -259,10 +266,9 @@ describe('buildMigrationInventories', () => {
         SPACE_DID
       )
 
-      const shard = inventory.uploads[rootCid.toString()].shards[0]
-      expect(shard.sourceURL).toMatch(/^https:\/\/roundabout\.web3\.storage\/piece\//)
-      expect(shard.sourceURL).toContain(pieceCid.toString())
-      expect(shard.sourceURL).not.toBe('https://r2.example/shard-roundabout')
+      expect(inventory.shards[0].sourceURL).toMatch(/^https:\/\/roundabout\.web3\.storage\/piece\//)
+      expect(inventory.shards[0].sourceURL).toContain(pieceCid.toString())
+      expect(inventory.shards[0].sourceURL).not.toBe('https://r2.example/shard-roundabout')
     })
   })
 
@@ -292,10 +298,11 @@ describe('buildMigrationInventories', () => {
         SPACE_DID
       )
 
-      expect(Object.keys(inventory.uploads)).toHaveLength(2)
-      expect(inventory.uploads[rootA.toString()].shards).toHaveLength(1)
-      expect(inventory.uploads[rootB.toString()].shards).toHaveLength(1)
-      expect(inventory.totalUploads).toBe(2)
+      expect(inventory.uploads).toHaveLength(2)
+      expect(inventory.shards).toHaveLength(2)
+      expect(inventory.shards.map((s) => s.root)).toEqual(
+        expect.arrayContaining([rootA.toString(), rootB.toString()])
+      )
     })
 
     it('emits state:checkpoint after each page', async () => {
@@ -373,8 +380,8 @@ describe('buildMigrationInventories', () => {
 
       expect(state.spacesInventories[spaceA]).toBeDefined()
       expect(state.spacesInventories[spaceB]).toBeDefined()
-      expect(Object.keys(state.spacesInventories[spaceA].uploads)).toHaveLength(1)
-      expect(Object.keys(state.spacesInventories[spaceB].uploads)).toHaveLength(1)
+      expect(state.spacesInventories[spaceA].shards).toHaveLength(1)
+      expect(state.spacesInventories[spaceB].shards).toHaveLength(1)
     })
 
     it('builds inventories only for the specified space DIDs', async () => {
@@ -458,10 +465,9 @@ describe('buildMigrationInventories', () => {
       // Pre-populate as complete (no cursor)
       state.spacesInventories[spaceA] = {
         did: spaceA,
-        uploads: { bafyroot: { shards: [] } },
-        failedUploads: {},
-        totalUploads: 1,
-        totalShards: 0,
+        uploads: ['bafyroot'],
+        shards: [],
+        failedUploads: [],
         totalBytes: 0n,
       }
 
@@ -470,7 +476,7 @@ describe('buildMigrationInventories', () => {
       expect(setCurrentSpaceCalled).toBe(false)
     })
 
-    it('resumes a space from a saved cursor, preserving already-accumulated uploads', async () => {
+    it('resumes a space from a saved cursor, preserving already-accumulated shards', async () => {
       const rootA = await createTestCID('root-resume-a')
       const rootB = await createTestCID('root-resume-b')
       const shardA = await createTestCID('shard-resume-a')
@@ -491,13 +497,17 @@ describe('buildMigrationInventories', () => {
 
       const state = createMockInitialState()
       // Simulate a prior partial run: page 0 was processed, cursor '1' was saved
-      const rootAStr = /** @type {string} */ (rootA.toString())
       state.spacesInventories[SPACE_DID] = {
         did: SPACE_DID,
-        uploads: { [rootAStr]: { shards: [{ cid: shardA.toString(), pieceCID: pieceCid.toString(), sourceURL: 'https://r2.example/a', sizeBytes: Piece.fromLink(pieceCid).size }] } },
-        failedUploads: {},
-        totalUploads: 1,
-        totalShards: 1,
+        uploads: [rootA.toString()],
+        shards: [{
+          root: rootA.toString(),
+          cid: shardA.toString(),
+          pieceCID: pieceCid.toString(),
+          sourceURL: 'https://r2.example/a',
+          sizeBytes: Piece.fromLink(pieceCid).size,
+        }],
+        failedUploads: [],
         totalBytes: Piece.fromLink(pieceCid).size,
       }
       state.readerProgressCursors = { [SPACE_DID]: '1' }
@@ -508,10 +518,12 @@ describe('buildMigrationInventories', () => {
         SPACE_DID
       )
 
-      // rootA from the pre-populated state + rootB from the resumed page
-      expect(Object.keys(inventory.uploads)).toHaveLength(2)
-      expect(inventory.uploads[rootA.toString()]).toBeDefined()
-      expect(inventory.uploads[rootB.toString()]).toBeDefined()
+      // shardA from the pre-populated state + shardB from the resumed page
+      expect(inventory.uploads).toHaveLength(2)
+      expect(inventory.shards).toHaveLength(2)
+      expect(inventory.uploads).toEqual(
+        expect.arrayContaining([rootA.toString(), rootB.toString()])
+      )
       // Cursor should be cleared after completion
       expect(state.readerProgressCursors).toBeUndefined()
     })

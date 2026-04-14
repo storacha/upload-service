@@ -2,8 +2,12 @@ import { computeMigrationCosts } from './compute-migration-costs.js'
 import { buildResumeState, transitionToApproved } from './state.js'
 
 /**
- * @import { CreatePlanInput, MigrationEvent } from './api.js'
+ * @import { CreatePlanInput, MigrationEvent, MigrationPlan } from './api.js'
  */
+
+/** 10% safety buffer over the deposit to cover gas estimation variance. */
+const SAFETY_BUFFER_BPS = 1000n
+const BPS_BASE = 10000n
 
 /**
  * Build a migration plan from space inventories held in state.
@@ -41,30 +45,52 @@ import { buildResumeState, transitionToApproved } from './state.js'
  */
 export async function* createMigrationPlan({ synapse, state, providerIds }) {
   const inventories = Object.values(state.spacesInventories)
-  const totalUploads = inventories.reduce((n, inv) => n + inv.totalUploads, 0)
-  const totalShards = inventories.reduce((n, inv) => n + inv.totalShards, 0)
-  const totalBytes = inventories.reduce((n, inv) => n + inv.totalBytes, 0n)
+
+  let totalUploads = 0
+  let totalShards = 0
+  let totalBytes = 0n
+  /** @type {string[]} */
+  const warnings = []
+
+  for (const inv of inventories) {
+    totalUploads += inv.uploads.length
+    totalShards += inv.shards.length
+    totalBytes += inv.totalBytes
+
+    if (inv.failedUploads.length > 0) {
+      warnings.push(
+        `${inv.did}: ${inv.failedUploads.length} upload(s) have unresolvable shards and will not be migrated`
+      )
+    }
+  }
 
   // ── Cost aggregation (creates contexts + reads chain in one batch) ────────
   const costs = await computeMigrationCosts(inventories, synapse, {
     resumeState: buildResumeState(state),
     configuredProviderIds: providerIds,
   })
+  warnings.push(...costs.warnings)
 
-  // ── Plan-level warnings ───────────────────────────────────────────────────
-  const warnings = [...costs.warnings]
-  for (const inv of inventories) {
-    const failedCount = Object.keys(inv.failedUploads).length
-    if (failedCount > 0) {
-      warnings.push(`${inv.did}: ${failedCount} upload(s) have unresolvable shards and will not be migrated`)
-    }
+  // ── Funding amount with safety buffer ────────────────────────────────────
+  const fundingAmount =
+    costs.totalDepositNeeded > 0n
+      ? costs.totalDepositNeeded +
+        (costs.totalDepositNeeded * SAFETY_BUFFER_BPS) / BPS_BASE
+      : 0n
+
+  if (fundingAmount > 0n) {
+    warnings.push(
+      `Funding amount includes a 10% safety buffer over the deposit: ${fundingAmount} total (deposit: ${costs.totalDepositNeeded})`
+    )
   }
 
+  /** @type {MigrationPlan} */
   const plan = {
     totals: { uploads: totalUploads, shards: totalShards, bytes: totalBytes },
     costs,
     warnings,
     ready: costs.ready,
+    fundingAmount,
   }
 
   // ── Write SP bindings to state and checkpoint ─────────────────────────────

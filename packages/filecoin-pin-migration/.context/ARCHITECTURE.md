@@ -1,7 +1,7 @@
 # Architecture — `@storacha/filecoin-pin-migration`
 
 **Domain:** Storacha-to-FOC migration library
-**Last updated:** 2026-04-09
+**Last updated:** 2026-04-14
 
 ---
 
@@ -122,11 +122,14 @@ interface SpaceState {
   serviceProvider: `0x${string}`
   /** null until first commit; then passed as dataSetIds on resume. */
   dataSetId: bigint | null
-  committed: CommittedShards
+  /** Shard CIDs committed on-chain. Record for O(1) membership test. */
+  committed: Record<string, true>
+  /** Upload root CIDs that had at least one shard failure during migration. */
+  failedUploads: Record<string, true>
 }
 ```
 
-`committed.shards` is a flat `Record<shardCid, provider[]>` for O(1) skip checks — no need to walk uploads on every batch entry.
+`committed` is a flat `Record<shardCid, true>` for O(1) skip checks — no need to walk uploads on every batch entry.
 
 #### Phase FSM
 
@@ -170,12 +173,13 @@ All three stages yield `state:checkpoint` — consumers persist on every occurre
 | Event | Stage | When | Key fields |
 | --- | --- | --- | --- |
 | `reader:space:start` | reader | Before first page of a space | `spaceDID` |
+| `reader:shard:failed` | reader | Per shard that fails claim resolution | `spaceDID`, `root`, `shard`, `reason` |
 | `reader:space:complete` | reader | After last page of a space | `spaceDID` |
 | `state:checkpoint` | reader | After every `upload.list` page | `state` |
 | `reader:complete` | reader | After all spaces; `phase → planning` | — |
 | `state:checkpoint` | planner | After SP bindings written; `phase → approved` | `state` |
 | `plan:ready` | planner | Carries plan for consumer display/approval | `plan` |
-| `funding:start` | migrator | Before `fundSync` | `amount: bigint` |
+| `funding:start` | migrator | Before `fundSync` | `amount: bigint` (includes 10% safety buffer) |
 | `funding:complete` | migrator | After `fundSync` succeeds | — |
 | `funding:failed` | migrator | If `fundSync` throws — generator terminates | `error` |
 | `shard:failed` | migrator | Per shard that fails presign, pull, or commit | `spaceDID`, `root`, `shard`, `error` |
@@ -220,57 +224,69 @@ The output is a fully resolved dataset ready for planning and migration.
 #### Data Model
 
 ```ts
+interface ResolvedShard {
+  /** Upload root CID this shard belongs to */
+  root: string
+  /** Shard CID (base32 CIDv1) */
+  cid: string
+  /** Filecoin piece CID (bafkz...) */
+  pieceCID: string
+  /** Source URL for SP pull — final after reader, never re-resolved */
+  sourceURL: string
+  /** Shard size in bytes */
+  sizeBytes: bigint
+}
+
 interface SpaceInventory {
   /** DID identifying the space */
   did: SpaceDID
-  /** Uploads where all shards resolved successfully, keyed by root CID */
-  uploads: Record<
-    /** Root CID of the upload */
-    root: string
-    /** Fully resolved shards for this upload */
-    { shards: ResolvedShard[] }
-  >
-  /**
-   * Uploads excluded from migration because one or more shards could not be
-   * resolved. Keyed by root CID; value is the list of shards that failed.
-   * Mutually exclusive with uploads.
-   */
-  failedUploads: Record<string, Array<{ cid: string; reason: string }>>
-  /** Number of uploads where all shards resolved (i.e. keys of uploads). */
-  totalUploads: number
-  /** Total number of resolved shards across all uploads. */
-  totalShards: number
-  /** Total size (bytes) of all resolved shards */
+  /** Root CIDs of uploads where all shards resolved successfully */
+  uploads: string[]
+  /** Flat list of resolved shards — each carries its upload root */
+  shards: ResolvedShard[]
+  /** Root CIDs of uploads excluded because one or more shards could not be resolved */
+  failedUploads: string[]
+  /** Total size (bytes) of all resolved shards — only counter that can't be derived from .length */
   totalBytes: bigint
 }
 ```
 
+`uploads.length`, `shards.length`, and `failedUploads.length` are O(1) — no separate counters needed. `totalBytes` is kept because it would require an O(n) sum otherwise.
+
 #### Pipeline
 
-The inventory is built using the following pipeline:
+The inventory is built per page using a three-phase approach that minimises HTTP calls:
 
 ```
 storachaClient.capability.upload.list()          [paginated, cursor-based]
-  └─▶ for each upload root:
-        storachaClient.capability.upload.shard.list(root)   [cursor-paginated]
-          └─▶ for each shard:
-                indexer.queryClaims({ hashes: [shardMH], kind: 'standard' })
-                  └─▶ assert/location → locationURL  (filter out index-blob claims by multihash match)
-                  └─▶ assert/equals   → pieceCID     (Filecoin piece commitment)
-                resolver.resolve(resolvedShard)             → final sourceURL
+  └─▶ Phase 1 — list shards for all uploads in the page:
+        for each upload root:
+          storachaClient.capability.upload.shard.list(root)   [cursor-paginated]
+  └─▶ Phase 2 — one batch HTTP call for the entire page:
+        indexer.queryClaims({ hashes: allShardMultihashes, kind: 'standard' })
+          └─▶ assert/location → locationURL  (filter out index-blob claims by multihash match)
+          └─▶ assert/equals   → pieceCID     (Filecoin piece commitment)
+          └─▶ builds Map<b58multihash, { locationURL, piece }>
+  └─▶ Phase 3 — pure extraction (no I/O):
+        for each shard: lookup in claims map → extractShard() → ResolvedShard
+          └─▶ resolver.resolve(resolvedShard) → final sourceURL
 ```
+
+**Key efficiency property:** one `queryClaims` HTTP call per `upload.list` page regardless of how many shards are on that page.
 
 #### Resolution Semantics
 
 - A shard is considered resolved only if:
-  - A valid locationURL is found
-  - A valid pieceCID is found
+  - A valid locationURL is found in the claims index
+  - A valid pieceCID is found in the claims index
   - `resolver.resolve(...)` succeeds
 - If any of the above fails:
-  - The upload is added to `failedUploads` (keyed by root CID) with the failing shard and reason
+  - A `reader:shard:failed` event is emitted with `{ spaceDID, root, shard, reason }`
+  - The upload root CID is added to `failedUploads: string[]`
   - The upload is excluded from `uploads` — mutually exclusive
   - If `stopOnError` is true, remaining shards for that upload are not resolved
-  - A reason string MUST be provided
+
+Per-shard failure detail is available ephemerally via `reader:shard:failed` events. Only the root CID is persisted in state.
 
 **Key invariant:** resolver is applied **inline** as each shard is resolved. `SpaceInventory` shards carry final `sourceURL` values before the planner sees them.
 
@@ -294,6 +310,7 @@ When spaceDIDs is omitted, all spaces on the client are processed.
 #### Events
 
 - reader:space:start    — before the first page of each space
+- reader:shard:failed   — per shard that fails claim resolution (ephemeral — not persisted in state)
 - reader:space:complete — after the last page of each space
 - state:checkpoint      — after every upload.list page (persist on this event)
 - reader:complete       — after all spaces; state.phase set to 'planning'
@@ -336,6 +353,12 @@ interface MigrationPlan {
   warnings: string[]
   /** True when all prerequisites are met and migration can proceed */
   ready: boolean
+  /**
+   * Amount to pass to synapse.payments.fundSync — deposit + 10% safety buffer
+   * to cover gas estimation variance. 0n when no deposit is needed.
+   * Included in plan.warnings so the user sees the buffer before approving.
+   */
+  fundingAmount: bigint
 }
 ```
 
@@ -391,33 +414,36 @@ interface MigrationSummary {
 
 ```
 executeMigration({ plan, state, synapse, config })
-  └─▶ ensureFunding → yield funding:start / funding:complete / funding:failed
+  └─▶ ensureFunding(plan.fundingAmount) → yield funding:start / funding:complete / funding:failed
   └─▶ state.phase = 'migrating'
   └─▶ for each space in plan.costs.perSpace:
         inventory = state.spacesInventories[spaceDID]
-        for each upload → for each batch:
-          skip already-committed shards
-          processBatch → presign → pull → commit
-          yield shard:failed per failure
+        pending = inventory.shards.filter(shard not in space.committed)   [O(n), single pass]
+        for each cross-upload batch of `pending`:
+          eligible = batch.filter(shard.root not in failedRoots)          [stopOnError]
+          processBatch → presign → pull (with p-retry) → commit
+          yield shard:failed per failure; record failedRoots
           recordCommit() + yield state:checkpoint (if ≥1 commit)
         finalizeSpace() + yield state:checkpoint
   finalizeMigration()
   yield migration:complete { summary }
 ```
 
+**Cross-upload batching:** shards from all uploads are batched together from the flat `inventory.shards` array. This maximises batch utilisation regardless of how many shards each individual upload has.
+
 `sourceURL` is read directly from `shard.sourceURL` — the migrator never calls any resolver.
 
 #### Error Semantics
 
-| Stage | Failure class | Scope |
-|---|---|---|
-| Presign | `PresignFailedFailure` | Whole batch — no EIP-712 signature, cannot proceed |
-| Pull | `PullFailedFailure` | Per piece — commit proceeds with successfully pulled pieces only |
-| Commit | `CommitFailedFailure` | All successfully-pulled pieces in the batch |
+| Stage | Failure class | Scope | Retry |
+|---|---|---|---|
+| Presign | `PresignFailedFailure` | Whole batch — EIP-712 signature is scoped to exact pieces, cannot be hoisted | None |
+| Pull | `PullFailedFailure` | Per piece — commit proceeds with successfully pulled pieces only | `p-retry` (3 attempts, exponential backoff) |
+| Commit | `CommitFailedFailure` | All successfully-pulled pieces in the batch | None |
 
 `processBatch` never throws — all failures are returned in `BatchResult.failures`. `funding:failed` is the only event that terminates the generator early; all per-shard failures are yielded as `shard:failed` and execution continues.
 
-`stopOnError=true` breaks the batch loop for the **current upload only**. The next upload in the same space and all other spaces continue normally.
+`stopOnError=true` tracks failed upload roots in a `Set`. When a shard from a given root fails, that root is added to `failedRoots` and all subsequent shards from the same root are excluded from future batches within that space. Other upload roots in the same space and all other spaces continue normally.
 
 #### Resumability Support
 
@@ -431,7 +457,7 @@ On resume, `executeMigration` receives the deserialized `MigrationState` which a
 
 | Event | When | Key fields |
 |---|---|---|
-| `funding:start` | Before `fundSync` call | `amount: bigint` |
+| `funding:start` | Before `fundSync` call | `amount: bigint` (= `plan.fundingAmount`, includes 10% buffer) |
 | `funding:complete` | After `fundSync` succeeds | — |
 | `funding:failed` | If `fundSync` throws | `error: Error` — generator terminates |
 | `shard:failed` | Per shard that fails presign, pull, or commit | `spaceDID`, `root`, `shard`, `error` |
@@ -476,7 +502,6 @@ The SDK's `calculateMultiContextCosts` applies one `dataSize` to every context. 
 
 - No internal persistence (caller owns state)
 - No UI rendering or output
-- No retry orchestration (caller decides retry policy)
 - No re-fetching during execution
 - No mutation inside planner
 

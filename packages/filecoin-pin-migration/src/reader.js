@@ -1,7 +1,6 @@
 import { Piece } from '@web3-storage/data-segment'
 import { base58btc } from 'multiformats/bases/base58'
 import { Client as IndexingClient } from '@storacha/indexing-service-client'
-import { MissingPieceCIDFailure, MissingLocationURLFailure } from './errors.js'
 import { checkpointInventoryPage } from './state.js'
 
 /**
@@ -14,6 +13,7 @@ import { checkpointInventoryPage } from './state.js'
  *  SourceURLResolver,
  *  ResolvedShard,
  *  ShardEntry,
+ *  ClaimsEntry,
  *  PieceView,
  *  UnknownLink,
  *  PieceLink
@@ -35,10 +35,11 @@ import { checkpointInventoryPage } from './state.js'
  *
  * ## Events
  *
- *   reader:space:start    — before the first page of each space
- *   reader:space:complete — after the last page of each space
- *   state:checkpoint      — after every upload.list page (persist on this event)
- *   reader:complete       — after all spaces; state.phase set to 'planning'
+ *   reader:space:start       — before the first page of each space
+ *   reader:shard:failed      — per shard that fails claim resolution
+ *   reader:space:complete    — after the last page of each space
+ *   state:checkpoint         — after every upload.list page (persist on this event)
+ *   reader:complete          — after all spaces; state.phase set to 'planning'
  *
  * @param {BuildInventoriesInput} input
  * @returns {AsyncGenerator<MigrationEvent>}
@@ -81,10 +82,11 @@ export async function* buildMigrationInventories({
  *
  * Resumes from state.readerProgressCursors[spaceDID] if present.
  *
- * Builds pageUploads as a Record during the natural shard-resolution pass,
- * appending shards to an existing root entry if encountered more than once.
- * Aggregates (totalShards, totalBytes) are accumulated in the same loop —
- * no extra iteration needed in checkpointInventoryPage.
+ * Per page:
+ *   1. List shards for all uploads in the page
+ *   2. Batch-query claims for all shards in one HTTP call
+ *   3. Extract per-shard results from the claims index (pure, no I/O)
+ *   4. Checkpoint flat shards + upload roots + failed roots
  *
  * @param {object} args
  * @param {import('@storacha/client').Client} args.client
@@ -115,39 +117,58 @@ async function* buildSpaceInventory({
       size: 100,
     })
 
-    /** @type {Record<string, { shards: ResolvedShard[] }>} */
-    const pageUploads = {}
-    /** @type {Record<string, Array<{ cid: string; reason: string }>>} */
-    const pageFailedUploads = {}
-    let pageShards = 0
+    // Phase 1: list all shards for all uploads in the page
+    /** @type {Array<{ root: string; shards: ShardEntry[] }>} */
+    const uploadsWithShards = []
+    for (const upload of page.results) {
+      const root = upload.root.toString()
+      const shards = await listShardsFromStore(client, upload.root)
+      uploadsWithShards.push({ root, shards })
+    }
+
+    // Phase 2: batch-query claims for the entire page — one HTTP call
+    const allShards = uploadsWithShards.flatMap((u) => u.shards)
+    const claimsIndex = await batchResolveClaims(indexer, allShards)
+
+    // Phase 3: extract per-shard results from the claims index (pure, no I/O)
+    /** @type {ResolvedShard[]} */
+    const pageShards = []
+    /** @type {string[]} */
+    const pageUploadRoots = []
+    /** @type {string[]} */
+    const pageFailedRoots = []
     let pageBytes = 0n
 
-    for (const upload of page.results) {
-      const shards = await listShardsFromStore(client, upload.root)
-      const root = upload.root.toString()
-
+    for (const { root, shards } of uploadsWithShards) {
       /** @type {ResolvedShard[]} */
-      const resolvedShards = []
-      /** @type {Array<{ cid: string; reason: string }>} */
-      const uploadSkipped = []
+      const resolved = []
+      let uploadFailed = false
 
       for (const shard of shards) {
-        const result = await resolveShard(indexer, shard, resolver)
+        const result = extractShard(claimsIndex, shard, root, resolver)
         if (result.ok) {
-          resolvedShards.push(result.ok)
+          resolved.push(result.ok)
         } else {
-          uploadSkipped.push({ cid: shard.cidStr, reason: result.error.describe() })
-          // stopOnError: no need to resolve remaining shards — upload is already corrupted
+          yield /** @type {MigrationEvent} */ ({
+            type: 'reader:shard:failed',
+            spaceDID,
+            root,
+            shard: shard.cidStr,
+            reason: result.error,
+          })
+          uploadFailed = true
           if (stopOnError) break
         }
       }
 
-      if (uploadSkipped.length > 0) {
-        pageFailedUploads[root] = uploadSkipped
+      if (uploadFailed) {
+        pageFailedRoots.push(root)
       } else {
-        pageUploads[root] = { shards: resolvedShards }
-        pageShards += resolvedShards.length
-        for (const s of resolvedShards) pageBytes += s.sizeBytes
+        pageUploadRoots.push(root)
+        for (const s of resolved) {
+          pageShards.push(s)
+          pageBytes += s.sizeBytes
+        }
       }
     }
 
@@ -155,18 +176,23 @@ async function* buildSpaceInventory({
 
     checkpointInventoryPage(state, {
       spaceDID,
-      uploads: pageUploads,
-      failedUploads: pageFailedUploads,
-      totalShards: pageShards,
+      shards: pageShards,
+      uploads: pageUploadRoots,
+      failedUploads: pageFailedRoots,
       totalBytes: pageBytes,
       cursor,
     })
 
-    yield { type: 'state:checkpoint', state }
+    yield /** @type {MigrationEvent} */ ({ type: 'state:checkpoint', state })
   } while (cursor)
 
-  yield { type: 'reader:space:complete', spaceDID }
+  yield /** @type {MigrationEvent} */ ({
+    type: 'reader:space:complete',
+    spaceDID,
+  })
 }
+
+// ── Shard listing ─────────────────────────────────────────────────────────────
 
 /**
  * Paginate shard CIDs from the upload table for a given upload root.
@@ -190,58 +216,98 @@ async function listShardsFromStore(client, root) {
   return shards
 }
 
+// ── Batch claim resolution ────────────────────────────────────────────────────
+
 /**
- * Resolve a shard's pieceCID, sizeBytes, and sourceURL from indexing service claims.
- * The resolver is applied to produce the final sourceURL.
+ * Query claims for all shards in one HTTP call and build a lookup index.
+ *
+ * Returns a Map keyed by b58 multihash → { locationURL, piece }.
  *
  * @param {IndexingServiceReader} indexer
- * @param {ShardEntry} shard
- * @param {SourceURLResolver} resolver
+ * @param {ShardEntry[]} shards
+ * @returns {Promise<Map<string, ClaimsEntry>>}
  */
-async function resolveShard(indexer, shard, resolver) {
-  /** @type {string | null} */
-  let locationURL = null
-  /** @type {PieceView | null} */
-  let piece = null
+async function batchResolveClaims(indexer, shards) {
+  /** @type {Map<string, ClaimsEntry>} */
+  const index = new Map()
+
+  if (shards.length === 0) return index
 
   const claimsResult = await indexer.queryClaims({
-    hashes: [shard.multihash],
+    hashes: shards.map((s) => s.multihash),
     kind: 'standard',
   })
-  if (claimsResult.ok) {
-    for (const claim of claimsResult.ok.claims.values()) {
-      if (claim.type === 'assert/location' && locationURL === null) {
-        const bytes =
-          'digest' in claim.content
-            ? claim.content.digest
-            : claim.content.multihash.bytes
-        const claimMhB58 = base58btc.encode(bytes)
-        if (claimMhB58 === shard.b58) {
-          locationURL = claim.location[0]?.toString() ?? null
+
+  if (!claimsResult.ok) return index
+
+  for (const claim of claimsResult.ok.claims.values()) {
+    if (claim.type === 'assert/location') {
+      const bytes =
+        'digest' in claim.content
+          ? claim.content.digest
+          : claim.content.multihash.bytes
+      const b58 = base58btc.encode(bytes)
+      const entry = index.get(b58) ?? { locationURL: null, piece: null }
+      if (entry.locationURL === null) {
+        // Match by shard multihash — filters out index-blob location claims
+        for (const shard of shards) {
+          if (shard.b58 === b58) {
+            entry.locationURL = claim.location[0]?.toString() ?? null
+            index.set(b58, entry)
+            break
+          }
         }
       }
-      if (claim.type === 'assert/equals' && piece === null) {
+    }
+    if (claim.type === 'assert/equals') {
+      const bytes =
+        'digest' in claim.content
+          ? claim.content.digest
+          : claim.content.multihash.bytes
+      const b58 = base58btc.encode(bytes)
+      const entry = index.get(b58) ?? { locationURL: null, piece: null }
+      if (entry.piece === null) {
         try {
-          piece = Piece.fromLink(/** @type {PieceLink} */ (claim.equals))
+          entry.piece = Piece.fromLink(/** @type {PieceLink} */ (claim.equals))
+          index.set(b58, entry)
         } catch {
-          // not a piece CID
+          // not a piece CID — skip
         }
       }
     }
   }
 
-  if (!piece) {
-    return { error: new MissingPieceCIDFailure(`shard ${shard.cidStr}`) }
+  return index
+}
+
+// ── Per-shard extraction ──────────────────────────────────────────────────────
+
+/**
+ * Extract a ResolvedShard from the pre-built claims index.
+ * Pure function — no network calls.
+ *
+ * @param {Map<string, ClaimsEntry>} claimsIndex
+ * @param {ShardEntry} shard
+ * @param {string} root
+ * @param {SourceURLResolver} resolver
+ */
+function extractShard(claimsIndex, shard, root, resolver) {
+  const entry = claimsIndex.get(shard.b58)
+
+  if (!entry?.piece) {
+    return { error: `Missing piece CID: shard ${shard.cidStr}` }
   }
-  if (!locationURL) {
-    return { error: new MissingLocationURLFailure(`shard ${shard.cidStr}`) }
+  if (!entry.locationURL) {
+    return { error: `Missing location URL: shard ${shard.cidStr}` }
   }
 
+  /** @type {ResolvedShard} */
   const resolved = {
+    root,
     cid: shard.cidStr,
-    pieceCID: piece.link.toString(),
-    sourceURL: locationURL,
-    sizeBytes: piece.size,
+    pieceCID: entry.piece.link.toString(),
+    sourceURL: entry.locationURL,
+    sizeBytes: entry.piece.size,
   }
   resolved.sourceURL = resolver.resolve(resolved)
 

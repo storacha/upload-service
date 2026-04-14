@@ -59,21 +59,6 @@ Never break this separation.
 
 ---
 
-## Core Invariants (MUST NOT BE VIOLATED)
-
-- Resolver is applied **only in reader**
-- Planner is **pure** (no mutations, no writes)
-- Migrator is the **only mutation layer**
-- State is **mutated in place**
-- Reader runs **once**
-- Planner never mutates inputs
-- URLs are final after reader
-- `processBatch` never throws
-
-If your change breaks any of these → STOP.
-
----
-
 ## Allowed vs Forbidden Changes
 
 ### ✅ Allowed
@@ -90,8 +75,6 @@ If your change breaks any of these → STOP.
 
 - Adding cross-stage logic (e.g. planner calling migrator logic)
 - Resolving URLs outside reader
-- Adding side effects to planner
-- Mutating `MigrationPlan`
 - Copying state instead of mutating it
 - Adding I/O (disk, console, network unrelated to core flow)
 

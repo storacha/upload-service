@@ -90,10 +90,7 @@ export function buildShardClaims(shardCid, opts = {}) {
 /**
  * Create a mock IndexingServiceReader for tests.
  *
- * The mock satisfies the structural queryClaims contract but returns a plain
- * object instead of the full QueryOk class (which requires IPLD internals).
- * Casting to API.IndexingServiceReader is safe — the reader only accesses
- * .ok.claims and iterates claim fields; it never calls .archive() or .root.
+ * Supports batch hashes — builds a merged claims map from all matching hashes.
  *
  * @param {Map<string, { claims: Map<string, unknown>, indexes?: Map<string, unknown> }>} responses - keyed by base58btc multihash
  * @returns {API.IndexingServiceReader}
@@ -101,20 +98,27 @@ export function buildShardClaims(shardCid, opts = {}) {
 export function createMockIndexer(responses) {
   return /** @type {API.IndexingServiceReader} */ ({
     async queryClaims({ hashes }) {
-      const key = base58btc.encode(hashes[0].bytes)
-      const res = responses.get(key)
-      if (res) {
-        return {
-          ok: /** @type {import('@storacha/indexing-service-client/api').QueryOk} */ ({
-            claims: res.claims,
-            indexes: res.indexes ?? new Map(),
-          }),
+      // Merge claims from all queried hashes into one response
+      const mergedClaims = new Map()
+      const mergedIndexes = new Map()
+      for (const hash of hashes) {
+        const key = base58btc.encode(hash.bytes)
+        const res = responses.get(key)
+        if (res) {
+          for (const [k, v] of res.claims) {
+            mergedClaims.set(`${key}:${k}`, v)
+          }
+          if (res.indexes) {
+            for (const [k, v] of res.indexes) {
+              mergedIndexes.set(k, v)
+            }
+          }
         }
       }
       return {
         ok: /** @type {import('@storacha/indexing-service-client/api').QueryOk} */ ({
-          claims: new Map(),
-          indexes: new Map(),
+          claims: mergedClaims,
+          indexes: mergedIndexes,
         }),
       }
     },
@@ -124,40 +128,35 @@ export function createMockIndexer(responses) {
 /**
  * Create a mock SpaceInventory for planner tests.
  *
- * @param {{ did?: API.SpaceDID, uploads?: API.SpaceInventory['uploads'], failedUploads?: API.SpaceInventory['failedUploads'] }} [opts]
+ * @param {{ did?: API.SpaceDID, shards?: API.ResolvedShard[], uploads?: string[], failedUploads?: string[] }} [opts]
  * @returns {API.SpaceInventory}
  */
 export function createMockInventory(opts = {}) {
   const pieceCID = createPieceCID()
-  const uploads = opts.uploads ?? {
-    bafyroot1: {
-      shards: [
-        {
-          cid: 'bafyshard1',
-          pieceCID: pieceCID.toString(),
-          sourceURL: 'https://r2.example/shard1',
-          sizeBytes: 1024n,
-        },
-        {
-          cid: 'bafyshard2',
-          pieceCID: pieceCID.toString(),
-          sourceURL: 'https://r2.example/shard2',
-          sizeBytes: 2048n,
-        },
-      ],
+  const defaultShards = [
+    {
+      root: 'bafyroot1',
+      cid: 'bafyshard1',
+      pieceCID: pieceCID.toString(),
+      sourceURL: 'https://r2.example/shard1',
+      sizeBytes: 1024n,
     },
-  }
-  const uploadEntries = Object.values(uploads)
+    {
+      root: 'bafyroot1',
+      cid: 'bafyshard2',
+      pieceCID: pieceCID.toString(),
+      sourceURL: 'https://r2.example/shard2',
+      sizeBytes: 2048n,
+    },
+  ]
+  const shards = opts.shards ?? defaultShards
+  const uploads = opts.uploads ?? ['bafyroot1']
   return {
     did: opts.did ?? /** @type {API.SpaceDID} */ ('did:key:z6MkTestSpace1'),
+    shards,
     uploads,
-    failedUploads: opts.failedUploads ?? {},
-    totalUploads: uploadEntries.length,
-    totalShards: uploadEntries.reduce((n, u) => n + u.shards.length, 0),
-    totalBytes: uploadEntries.reduce(
-      (n, u) => u.shards.reduce((m, s) => m + s.sizeBytes, n),
-      0n
-    ),
+    failedUploads: opts.failedUploads ?? [],
+    totalBytes: shards.reduce((n, s) => n + s.sizeBytes, 0n),
   }
 }
 
@@ -179,7 +178,7 @@ export function createMockInitialState() {
  * Create an array of mock SpaceInventory for multi-space planner tests.
  *
  * @param {number} [count]
- * @param {{ failedUploads?: API.SpaceInventory['failedUploads'] }} [opts]
+ * @param {{ failedUploads?: string[] }} [opts]
  * @returns {API.SpaceInventory[]}
  */
 export function createMockInventories(count = 1, opts = {}) {
