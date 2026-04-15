@@ -414,6 +414,7 @@ export interface ShardEntry {
 export interface ClaimsEntry {
   locationURL: string | null
   piece: PieceView | null
+  size: bigint
 }
 
 // ── Source URL resolver ────────────────────────────────────────────────────

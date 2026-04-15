@@ -255,12 +255,13 @@ async function batchResolveClaims(indexer, shards) {
           ? claim.content.digest
           : claim.content.multihash.bytes
       const b58 = base58btc.encode(bytes)
-      const entry = index.get(b58) ?? { locationURL: null, piece: null }
+      const entry = getOrCreateClaimsEntry(index, b58)
       if (entry.locationURL === null) {
         // Match by shard multihash — filters out index-blob location claims
         for (const shard of shards) {
           if (shard.b58 === b58) {
             entry.locationURL = claim.location[0]?.toString() ?? null
+            entry.size = claim.range ? BigInt(claim.range.length ?? 0) : 0n
             index.set(b58, entry)
             break
           }
@@ -273,7 +274,7 @@ async function batchResolveClaims(indexer, shards) {
           ? claim.content.digest
           : claim.content.multihash.bytes
       const b58 = base58btc.encode(bytes)
-      const entry = index.get(b58) ?? { locationURL: null, piece: null }
+      const entry = getOrCreateClaimsEntry(index, b58)
       if (entry.piece === null) {
         try {
           entry.piece = Piece.fromLink(/** @type {PieceLink} */ (claim.equals))
@@ -315,9 +316,23 @@ function extractShard(claimsIndex, shard, root, resolver) {
     cid: shard.cidStr,
     pieceCID: entry.piece.link.toString(),
     sourceURL: entry.locationURL,
-    sizeBytes: entry.piece.size,
+    sizeBytes: entry.size > 0n ? entry.size : entry.piece.size,
   }
   resolved.sourceURL = resolver.resolve(resolved)
 
   return { ok: resolved }
+}
+
+/**
+ * @param {Map<string, ClaimsEntry>} index
+ * @param {string} b58
+ * @returns {ClaimsEntry}
+ */
+function getOrCreateClaimsEntry(index, b58) {
+  const existing = index.get(b58)
+  if (existing) return existing
+
+  const created = { locationURL: null, piece: null, size: 0n }
+  index.set(b58, created)
+  return created
 }
