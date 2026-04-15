@@ -4,7 +4,7 @@ import { PropsWithChildren, use, type JSX } from 'react';
 import { useW3 } from '@storacha/ui-react'
 import { DidIcon } from '@/components/DidIcon'
 import { Nav, NavLink } from '@/components/Nav'
-import { QueueListIcon, ShareIcon, CloudArrowUpIcon } from '@heroicons/react/24/outline'
+import { QueueListIcon, ShareIcon, CloudArrowUpIcon, ServerStackIcon } from '@heroicons/react/24/outline'
 
 interface LayoutProps extends PropsWithChildren {
   params: Promise<{
@@ -39,6 +39,7 @@ export default function Layout(props: LayoutProps): JSX.Element {
           <NavLink href={`/space/${space.did()}`} title='List uploads'><QueueListIcon className='w-5 inline-block' /> Uploads</NavLink>
           <NavLink href={`/space/${space.did()}/share`} title='Share this Space'><ShareIcon className='w-5 inline-block' /> Share</NavLink>
           <NavLink href={`/space/${space.did()}/upload`} title='Upload a file'><CloudArrowUpIcon className='w-5 inline-block' /> Upload</NavLink>
+          <NavLink href={`/space/${space.did()}/migrate`} title='Migrate to Filecoin'><ServerStackIcon className='w-5 inline-block' /> Migrate</NavLink>
         </Nav>
       </div>
       <header className='mt-4 mb-10 inline-block'>
