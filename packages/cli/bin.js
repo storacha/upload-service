@@ -28,6 +28,7 @@ import {
   createKey,
   reset,
   setupPlan,
+  spaceMigrate,
 } from './index.js'
 import {
   blobAdd,
@@ -57,6 +58,7 @@ const actions = {
   addSpace,
   listSpaces,
   spaceInfo,
+  spaceMigrate,
   revokeDelegation,
   usageReport,
   blobAdd,
@@ -304,6 +306,60 @@ cli
   .action(actions.spaceProvision)
 
 cli
+  .command('space migrate')
+  .describe('Migrate the current space to Filecoin on Chain (FOC).')
+  .option('-w, --wallet-pk <key>', '0x-prefixed EVM wallet private key')
+  .option(
+    '-f, --state-file <path>',
+    'Path to persist migration state for resume support.'
+  )
+  .option('--resume', 'Resume from an existing state file', false)
+  .option(
+    '-b, --batch-size <count>',
+    'Pieces per pull batch. Defaults to the migration library default.'
+  )
+  .option(
+    '-pc, --pull-concurrency <count>',
+    'Number of pull batches to process concurrently.'
+  )
+  .option(
+    '-s, --source-strategy <strategy>',
+    'Source URL strategy: "roundabout" or "claims". Defaults to "roundabout".'
+  )
+  .option(
+    '-r, --roundabout-url <url>',
+    'Override the roundabout base URL used with the "roundabout" strategy.'
+  )
+  .option(
+    '--stop-on-error',
+    'Stop remaining batches for an upload after the first upload-level failure. Pass --no-stop-on-error to continue.',
+    true
+  )
+  .option('--auto-approve', 'Skip the approval prompt before migration', false)
+  .action((options) => {
+    const walletPk = readRawOption(process.argv.slice(2), ['--wallet-pk', '-w'])
+
+    if (!walletPk) {
+      console.error('Error: missing required option "--wallet-pk"')
+      process.exit(1)
+    }
+
+    const parsedOptions = {
+      walletPk,
+      stateFile: options['state-file'],
+      resume: options.resume,
+      batchSize: options['batch-size'],
+      pullConcurrency: options['pull-concurrency'],
+      sourceStrategy: options['source-strategy'],
+      roundaboutURL: options['roundabout-url'],
+      stopOnError: options['stop-on-error'],
+      autoApprove: options['auto-approve'],
+    }
+
+    return actions.spaceMigrate(parsedOptions)
+  })
+
+cli
   .command('space add <proof>')
   .describe(
     'Import a space from a proof: a CAR encoded UCAN delegating capabilities to this agent. proof is a filesystem path, or a base64 encoded cid string.'
@@ -512,3 +568,23 @@ Run \`$ storacha --help\` for more info.
 })
 
 cli.parse(process.argv)
+
+/**
+ * Sade coerces `0x...` option values into numbers, which breaks private key
+ * handling. Read the raw argv value for options that must remain strings.
+ *
+ * @param {string[]} argv
+ * @param {string[]} names
+ */
+function readRawOption(argv, names) {
+  for (let i = 0; i < argv.length; i++) {
+    const token = argv[i]
+    if (!token) continue
+
+    const [name, inlineValue] = token.split('=', 2)
+    if (!names.includes(name)) continue
+
+    if (inlineValue != null) return inlineValue
+    return argv[i + 1]
+  }
+}

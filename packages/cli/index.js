@@ -34,6 +34,7 @@ import { Parallel } from 'parallel-transform-web'
 export * as Coupon from './coupon.js'
 export * as Bridge from './bridge.js'
 export { Account, Space }
+export { spaceMigrate } from './migrate.js'
 
 /**
  * @import { MultihashDigest, UnknownLink } from 'multiformats'

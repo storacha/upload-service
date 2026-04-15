@@ -100,6 +100,35 @@ export const testAccount = {
 }
 
 export const testSpace = {
+  'storacha space migrate requires wallet pk': test(async (assert, context) => {
+    const { status, error } = await storacha
+      .args(['space', 'migrate'])
+      .env(context.env.alice)
+      .join()
+      .catch()
+
+    assert.equal(status.code, 1)
+    assert.match(error, /missing required option "--wallet-pk"/i)
+  }),
+
+  'storacha space migrate requires current space': test(
+    async (assert, context) => {
+      const { status, error } = await storacha
+        .args([
+          'space',
+          'migrate',
+          '--wallet-pk',
+          '0x1111111111111111111111111111111111111111111111111111111111111111',
+        ])
+        .env(context.env.alice)
+        .join()
+        .catch()
+
+      assert.equal(status.code, 1)
+      assert.match(error, /no current space/i)
+    }
+  ),
+
   'storacha space create': test(async (assert, context) => {
     const command = storacha
       .args([
