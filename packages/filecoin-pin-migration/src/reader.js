@@ -14,7 +14,6 @@ import { checkpointInventoryPage } from './state.js'
  *  ResolvedShard,
  *  ShardEntry,
  *  ClaimsEntry,
- *  PieceView,
  *  UnknownLink,
  *  PieceLink
  * } from './api.js'

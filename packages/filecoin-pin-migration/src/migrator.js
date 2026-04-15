@@ -21,6 +21,8 @@ import {
 const DEFAULT_BATCH_SIZE = 50
 const STOP_ON_ERROR = true
 const PULL_RETRIES = 3
+const DEFAULT_MAX_COMMIT_RETRIES = 3
+const DEFAULT_COMMIT_RETRY_TIMEOUT = 30_000
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -46,10 +48,22 @@ const PULL_RETRIES = 3
  * @param {API.ExecuteMigrationInput} input
  * @returns {AsyncGenerator<API.MigrationEvent>}
  */
-export async function* executeMigration({ plan, state, synapse, batchSize: batchSizeOpt, stopOnError: stopOnErrorOpt, signal }) {
+export async function* executeMigration({
+  plan,
+  state,
+  synapse,
+  batchSize: batchSizeOpt,
+  stopOnError: stopOnErrorOpt,
+  maxCommitRetries: maxCommitRetriesOpt,
+  commitRetryTimeout: commitRetryTimeoutOpt,
+  signal,
+}) {
   const startedAt = Date.now()
   const batchSize = batchSizeOpt ?? DEFAULT_BATCH_SIZE
   const stopOnError = stopOnErrorOpt ?? STOP_ON_ERROR
+  const maxCommitRetries = maxCommitRetriesOpt ?? DEFAULT_MAX_COMMIT_RETRIES
+  const commitRetryTimeout =
+    commitRetryTimeoutOpt ?? DEFAULT_COMMIT_RETRY_TIMEOUT
 
   yield* ensureFunding(plan.costs, plan.fundingAmount, synapse, state)
 
@@ -67,6 +81,8 @@ export async function* executeMigration({ plan, state, synapse, batchSize: batch
       state,
       batchSize,
       stopOnError,
+      maxCommitRetries,
+      commitRetryTimeout,
       signal,
     })
   }
@@ -141,6 +157,8 @@ async function* ensureFunding(costs, fundingAmount, synapse, state) {
  * @param {API.MigrationState} args.state
  * @param {number} args.batchSize
  * @param {boolean} args.stopOnError
+ * @param {number} args.maxCommitRetries
+ * @param {number} args.commitRetryTimeout
  * @param {AbortSignal | undefined} args.signal
  * @returns {AsyncGenerator<API.MigrationEvent>}
  */
@@ -150,6 +168,8 @@ async function* migrateSpace({
   state,
   batchSize,
   stopOnError,
+  maxCommitRetries,
+  commitRetryTimeout,
   signal,
 }) {
   const { context, spaceDID } = perSpaceCost
@@ -174,20 +194,83 @@ async function* migrateSpace({
 
     if (eligible.length === 0) continue
 
-    const result = await processBatch({ batch: eligible, context, signal })
+    const result = await processBatch({
+      batch: eligible,
+      context,
+      signal,
+    })
 
-    for (const failure of result.failures) {
-      if (stopOnError) failedRoots.add(failure.root)
-      space.failedUploads[failure.root] = true
+    // ── Commit retry loop ──────────────────────────────────────────────
+    if (
+      result.stage === 'commit' &&
+      result.commitPieces &&
+      maxCommitRetries > 0
+    ) {
+      const piecesToRetry = result.commitPieces
+      let attempt = 1
+      while (attempt <= maxCommitRetries) {
+        const decision = createDecision(commitRetryTimeout)
+
+        yield /** @type {API.MigrationEvent} */ {
+          type: 'migration:commit:failed',
+          spaceDID,
+          error: /** @type {Error} */ (result.error),
+          roots: [...result.failedUploads],
+          attempt,
+          retry: decision.retry,
+          skip: decision.skip,
+        }
+
+        const choice = await decision.promise
+        if (choice !== 'retry') break
+
+        try {
+          const extraData = await context.presignForCommit(piecesToRetry)
+          const commitResult = await context.commit({
+            pieces: piecesToRetry,
+            extraData,
+          })
+
+          result.dataSetId = commitResult.dataSetId
+          result.committed = piecesToRetry.map((p) => ({
+            shardCid: p.shardCid,
+            pieceCID: String(p.pieceCid),
+            root: p.pieceMetadata.ipfsRootCID,
+          }))
+          for (const p of piecesToRetry) {
+            result.failedUploads.delete(p.pieceMetadata.ipfsRootCID)
+          }
+          result.stage = undefined
+          result.error = undefined
+          result.commitPieces = undefined
+          break
+        } catch (retryError) {
+          result.error = new CommitFailedFailure(
+            retryError instanceof Error
+              ? retryError.message
+              : String(retryError)
+          )
+          attempt++
+        }
+      }
+    }
+
+    if (result.failedUploads.size > 0) {
+      for (const root of result.failedUploads) {
+        if (stopOnError) failedRoots.add(root)
+        space.failedUploads[root] = true
+      }
+
       yield /** @type {API.MigrationEvent} */ ({
-        type: 'shard:failed',
+        type: 'migration:batch:failed',
         spaceDID,
-        root: failure.root,
-        shard: failure.shardCid,
-        error: failure.error,
+        stage: /** @type {API.MigratorPhase} */ (result.stage),
+        error: /** @type {Error} */ (result.error),
+        roots: [...result.failedUploads],
       })
     }
 
+    // Handle successful commits
     if (result.committed.length > 0 && result.dataSetId !== undefined) {
       for (const entry of result.committed) {
         recordCommit(state, spaceDID, entry.shardCid, result.dataSetId)
@@ -207,12 +290,6 @@ async function* migrateSpace({
 // ── Batch processing ──────────────────────────────────────────────────────────
 
 /**
- * @typedef {{ shardCid: string; pieceCID: string; root: string }} CommittedEntry
- * @typedef {{ root: string; shardCid: string; error: Error }} FailureEntry
- * @typedef {{ dataSetId: bigint | undefined; committed: CommittedEntry[]; failures: FailureEntry[] }} BatchResult
- */
-
-/**
  * Execute one presign → pull → commit cycle on a shard batch.
  *
  * Never throws. Each stage has distinct failure semantics:
@@ -224,24 +301,42 @@ async function* migrateSpace({
  * @param {API.ResolvedShard[]} args.batch
  * @param {API.StorageContext} args.context
  * @param {AbortSignal | undefined} args.signal
- * @returns {Promise<BatchResult>}
+ * @returns {Promise<API.BatchResult>}
  */
 async function processBatch({ batch, context, signal }) {
-  const pieceToShard = new Map(batch.map((s) => [s.pieceCID, s]))
+  // one pass pre-processing
+  /** @type {API.PieceCID[]} */
+  const pieces = []
+  const presignPayload = []
+  const allRoots = new Set()
+  const pieceToShard = new Map()
+
+  // question: can we add concurrency here?
+  for (const shard of batch) {
+    const pieceCid = toPieceCID(shard.pieceCID)
+
+    pieceToShard.set(shard.pieceCID, shard)
+    pieces.push(pieceCid)
+
+    presignPayload.push({
+      pieceCid,
+      pieceMetadata: { ipfsRootCID: shard.root },
+    })
+
+    allRoots.add(shard.root)
+  }
 
   // ── 1. Presign ──────────────────────────────────────────────────────────
   // Per-batch: the EIP-712 signature is scoped to the exact pieces in the
   // batch, so it cannot be hoisted to the space or migration level.
   let extraData
   try {
-    extraData = await context.presignForCommit(
-      batch.map((shard) => ({
-        pieceCid: toPieceCID(shard.pieceCID),
-        pieceMetadata: { ipfsRootCID: shard.root },
-      }))
-    )
-  } catch (err) {
-    return failBatch(batch, err, 'presign')
+    extraData = await context.presignForCommit(presignPayload)
+  } catch (error) {
+    return failBatch('presign', {
+      error,
+      failedUploads: allRoots,
+    })
   }
 
   // ── 2. Pull (with retry — transient network errors are common) ──────────
@@ -250,7 +345,7 @@ async function processBatch({ batch, context, signal }) {
     pullResult = await pRetry(
       () =>
         context.pull({
-          pieces: batch.map((shard) => toPieceCID(shard.pieceCID)),
+          pieces,
           from: (cid) => {
             const shard = pieceToShard.get(String(cid))
             if (!shard) throw new Error(`No entry for pieceCID ${cid}`)
@@ -261,60 +356,128 @@ async function processBatch({ batch, context, signal }) {
         }),
       { retries: PULL_RETRIES, signal }
     )
-  } catch (err) {
-    return failBatch(batch, err, 'pull')
+  } catch (error) {
+    return failBatch('pull', {
+      error,
+      failedUploads: allRoots,
+    })
   }
 
-  // Partition pull result into succeeded entries and per-piece failures.
   /** @type {API.ResolvedShard[]} */
-  const succeeded = []
-  /** @type {FailureEntry[]} */
-  const pullFailures = []
+  const commitCandidates = []
+  const failedUploadsInBatch = new Set()
 
   for (const piece of pullResult.pieces) {
     const shard = pieceToShard.get(String(piece.pieceCid))
     if (!shard) continue
+
     if (piece.status === 'complete') {
-      succeeded.push(shard)
+      commitCandidates.push(shard)
     } else {
-      pullFailures.push({
-        root: shard.root,
-        shardCid: shard.cid,
-        error: new PullFailedFailure(`Pull failed for piece ${shard.pieceCID}`),
-      })
+      failedUploadsInBatch.add(shard.root)
+      // Note: if we want to notify the user about the shard failure this could be the place
     }
   }
 
-  if (succeeded.length === 0) {
-    return { dataSetId: undefined, committed: [], failures: pullFailures }
+  const shardsToCommit =
+    failedUploadsInBatch.size === 0
+      ? commitCandidates
+      : commitCandidates.filter((s) => !failedUploadsInBatch.has(s.root))
+
+  if (shardsToCommit.length === 0) {
+    return failBatch('pull', {
+      failedUploads: failedUploadsInBatch,
+      error: new Error('All pieces in batch failed to pull'),
+    })
   }
+
+  // NOTE: if some pieces failed to pull, we need to verify if we can reuse the same signature or if we need to re-presign with the reduced piece set.
 
   // ── 3. Commit ────────────────────────────────────────────────────────────
+  /** @type {API.CommitPiece[]} */
+  const commitPieces = shardsToCommit.map((shard) => ({
+    pieceCid: toPieceCID(shard.pieceCID),
+    pieceMetadata: { ipfsRootCID: shard.root },
+    shardCid: shard.cid, // this is ignored by the context.commit, only used for post-commit bookkeeping
+  }))
+
   let commitResult
   try {
-    commitResult = await context.commit({
-      pieces: succeeded.map((shard) => ({
-        pieceCid: toPieceCID(shard.pieceCID),
-        pieceMetadata: { ipfsRootCID: shard.root },
-      })),
-      extraData,
-    })
-  } catch (err) {
-    return failBatch(succeeded, err, 'commit')
+    commitResult = await context.commit({ pieces: commitPieces, extraData })
+  } catch (error) {
+    const failedUploads = new Set(shardsToCommit.map((s) => s.root))
+    return failBatch('commit', { failedUploads, error, commitPieces })
   }
 
-  return {
+  /** @type {API.BatchResult} */
+  const batchResult = {
     dataSetId: commitResult.dataSetId,
-    committed: succeeded.map((shard) => ({
-      shardCid: shard.cid,
-      pieceCID: shard.pieceCID,
-      root: shard.root,
+    committed: commitPieces.map((p) => ({
+      shardCid: p.shardCid,
+      pieceCID: String(p.pieceCid),
+      root: p.pieceMetadata.ipfsRootCID,
     })),
-    failures: pullFailures,
+    failedUploads: failedUploadsInBatch,
   }
+
+  if (failedUploadsInBatch.size > 0) {
+    batchResult.stage = 'pull'
+    batchResult.error = new PullFailedFailure(
+      `${failedUploadsInBatch.size} upload(s) had pieces that failed to pull`
+    )
+  }
+
+  return batchResult
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
+
+/**
+ * Create a deferred decision with retry/skip callbacks.
+ * Resolves to 'skip' automatically after timeout.
+ *
+ * @param {number} timeoutMs
+ * @returns {{ promise: Promise<'retry' | 'skip'>, retry: () => void, skip: () => void }}
+ */
+function createDecision(timeoutMs) {
+  /** @type {(value: 'retry' | 'skip') => void} */
+  let resolve
+  const promise = /** @type {Promise<'retry' | 'skip'>} */ (
+    new Promise((r) => {
+      resolve = r
+    })
+  )
+
+  let settled = false
+  const retry = () => {
+    if (!settled) {
+      settled = true
+      resolve('retry')
+    }
+  }
+  const skip = () => {
+    if (!settled) {
+      settled = true
+      resolve('skip')
+    }
+  }
+
+  if (timeoutMs <= 0) {
+    // Zero or negative timeout — resolve immediately so we never hang
+    resolve('skip')
+  } else {
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true
+        resolve('skip')
+      }
+    }, timeoutMs)
+    if (typeof timer === 'object' && 'unref' in timer) timer.unref()
+    promise.then(() => clearTimeout(timer))
+  }
+
+  return { promise, retry, skip }
+}
 
 /**
  * Lazy batch iterator — yields slices of `arr` without upfront allocation.
@@ -333,27 +496,35 @@ function* batches(arr, size) {
 /**
  * Fail an entire batch at a named stage.
  *
- * @param {API.ResolvedShard[]} shards
- * @param {unknown} err
- * @param {'presign' | 'pull' | 'commit'} stage
- * @returns {BatchResult}
+ * @param {API.MigratorPhase} stage
+ * @param {object} args
+ * @param {unknown} args.error
+ * @param {Set<string>} args.failedUploads
+ * @param {API.CommittedEntry[]} [args.committed]
+ * @param {bigint | undefined} [args.dataSetId]
+ * @param {API.CommitPiece[]} [args.commitPieces]
+ * @returns {API.BatchResult}
  */
-function failBatch(shards, err, stage) {
-  const msg = err instanceof Error ? err.message : String(err)
-  const error =
+function failBatch(
+  stage,
+  { error, failedUploads, committed = [], dataSetId, commitPieces }
+) {
+  const msg = error instanceof Error ? error.message : String(error)
+
+  const err =
     stage === 'presign'
       ? new PresignFailedFailure(msg)
       : stage === 'commit'
       ? new CommitFailedFailure(msg)
       : new PullFailedFailure(msg)
+
   return {
-    dataSetId: undefined,
-    committed: [],
-    failures: shards.map((shard) => ({
-      root: shard.root,
-      shardCid: shard.cid,
-      error,
-    })),
+    dataSetId,
+    committed,
+    failedUploads,
+    error: err,
+    stage,
+    commitPieces,
   }
 }
 
@@ -368,9 +539,9 @@ function failBatch(shards, err, stage) {
 function deriveSummary(plan, state, startedAt) {
   let succeeded = 0
   let failed = 0
-  for (const [did, space] of Object.entries(state.spaces)) {
-    const inventory = state.spacesInventories[/** @type {API.SpaceDID} */ (did)]
-    if (!inventory) continue
+  for (const [did, inventory] of Object.entries(state.spacesInventories)) {
+    const space = state.spaces[/** @type {API.SpaceDID} */ (did)]
+    if (!space) continue
     const committedCount = Object.keys(space.committed).length
     succeeded += committedCount
     failed += inventory.shards.length - committedCount

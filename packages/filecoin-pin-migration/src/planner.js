@@ -17,7 +17,7 @@ const BPS_BASE = 10000n
  * totals, computes costs via the Synapse SDK, writes SP bindings to state, and
  * yields:
  *   state:checkpoint — SP bindings written; state.phase → 'approved'
- *   plan:ready       — carries the MigrationPlan for consumer display/approval
+ *   planner:ready       — carries the MigrationPlan for consumer display/approval
  *
  * The consumer shows the plan to the user. If approved, pass state and plan to
  * executeMigration(). SP bindings in state ensure the same provider is used on
@@ -34,7 +34,7 @@ const BPS_BASE = 10000n
  * ```js
  * const state = deserializeState(JSON.parse(raw))
  * for await (const event of createMigrationPlan({ synapse, state })) {
- *   if (event.type === 'plan:ready') plan = event.plan
+ *   if (event.type === 'planner:ready') plan = event.plan
  *   if (event.type === 'state:checkpoint') await saveState(event.state)
  * }
  * for await (const event of executeMigration({ plan, state, synapse })) { ... }
@@ -96,5 +96,5 @@ export async function* createMigrationPlan({ synapse, state, providerIds }) {
   // ── Write SP bindings to state and checkpoint ─────────────────────────────
   transitionToApproved(state, costs.perSpace)
   yield /** @type {MigrationEvent} */ ({ type: 'state:checkpoint', state })
-  yield /** @type {MigrationEvent} */ ({ type: 'plan:ready', plan })
+  yield /** @type {MigrationEvent} */ ({ type: 'planner:ready', plan })
 }

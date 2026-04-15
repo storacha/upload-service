@@ -294,6 +294,16 @@ export interface ExecuteMigrationInput {
   stopOnError?: boolean
   /** AbortSignal for cancellation */
   signal?: AbortSignal
+  /**
+   * Max commit retry attempts per batch (default: 3).
+   * 0 = auto-skip on commit failure, no commit:failed event yielded.
+   */
+  maxCommitRetries?: number
+  /**
+   * Timeout in ms for consumer to call retry/skip on a commit:failed event
+   * (default: 30000). Auto-skips when exceeded.
+   */
+  commitRetryTimeout?: number
 }
 
 /**
@@ -304,15 +314,15 @@ export interface ExecuteMigrationInput {
  *   reader:complete — once, after all spaces are inventoried; state.phase → 'planning'
  *
  * Planner lifecycle:
- *   plan:ready — once, after costs computed and SP bindings written to state;
+ *   planner:ready — once, after costs computed and SP bindings written to state;
  *   consumer displays plan to the user for approval before calling executeMigration
  *
  * Funding lifecycle (single pre-flight transaction):
  *   funding:start → funding:complete
  *   funding:failed (before re-throwing — generator terminates after this)
  *
- * Per-shard errors:
- *   shard:failed — emitted for every shard that fails presign, pull, or commit
+ * Per-batch errors:
+ *   migration:batch:failed — emitted once per batch that has failures (presign, pull, or commit)
  *
  * State persistence:
  *   state:checkpoint — emitted after each reader page, after planner writes SP
@@ -327,19 +337,40 @@ export interface ExecuteMigrationInput {
  */
 export type MigrationEvent =
   | { type: 'reader:space:start'; spaceDID: SpaceDID }
-  | { type: 'reader:shard:failed'; spaceDID: SpaceDID; root: string; shard: string; reason: string }
+  | {
+      type: 'reader:shard:failed'
+      spaceDID: SpaceDID
+      root: string
+      shard: string
+      reason: string
+    }
   | { type: 'reader:space:complete'; spaceDID: SpaceDID }
   | { type: 'reader:complete' }
-  | { type: 'plan:ready'; plan: MigrationPlan }
+  | { type: 'planner:ready'; plan: MigrationPlan }
   | { type: 'funding:start'; amount: bigint }
   | { type: 'funding:complete' }
   | { type: 'funding:failed'; error: Error }
   | {
-      type: 'shard:failed'
+      type: 'migration:batch:failed'
       spaceDID: SpaceDID
-      root: string
-      shard: string
+      /** Which processBatch stage produced the failures */
+      stage: MigratorPhase
       error: Error
+      /** Upload root CIDs affected by this batch failure */
+      roots: Array<string>
+    }
+  | {
+      type: 'migration:commit:failed'
+      spaceDID: SpaceDID
+      error: Error
+      /** Upload root CIDs affected */
+      roots: string[]
+      /** Current attempt number (1-based) */
+      attempt: number
+      /** Call to retry the commit (re-presign + commit) */
+      retry: () => void
+      /** Call to skip and continue with next batch */
+      skip: () => void
     }
   | { type: 'state:checkpoint'; state: MigrationState }
   | { type: 'migration:complete'; summary: MigrationSummary }
@@ -382,4 +413,40 @@ export interface ClaimsEntry {
 /** Resolves a source URL for a shard. Applied only in the reader. */
 export interface SourceURLResolver {
   resolve(shard: ResolvedShard): string
+}
+
+// ── Migrator interfaces ────────────────────────────────────────────────────────
+
+/**
+ * Migrator lifecycle per batch
+ *   presign    — EIP-712 signature obtained for the batch, but not yet submitted to SP
+ *   pull  — SP pull executed, pieces returned, but not yet committed
+ *   commit   — SP commit executed for the batch, but not yet confirmed on-chain
+ */
+export type MigratorPhase = 'presign' | 'pull' | 'commit'
+
+export interface CommittedEntry {
+  shardCid: string
+  pieceCID: string
+  root: string
+}
+
+/** Pre-mapped piece ready for presign/commit, carrying shard metadata for recording. */
+export interface CommitPiece {
+  pieceCid: PieceCID
+  pieceMetadata: { ipfsRootCID: string }
+  /** Shard CAR CID — needed for commit recording, ignored by presign/commit SDK calls */
+  shardCid: string
+}
+
+export interface BatchResult {
+  /** Stage that produced the failure, if any */
+  stage?: MigratorPhase
+  dataSetId: bigint | undefined
+  committed: CommittedEntry[]
+  error?: Error
+  /** Upload root CIDs that had at least one shard failure in this batch */
+  failedUploads: Set<string>
+  /** Pre-mapped commit pieces for retry — present only on commit stage failure */
+  commitPieces?: CommitPiece[]
 }
