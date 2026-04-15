@@ -1,3 +1,4 @@
+import pMap from 'p-map'
 import { Piece } from '@web3-storage/data-segment'
 import { base58btc } from 'multiformats/bases/base58'
 import { Client as IndexingClient } from '@storacha/indexing-service-client'
@@ -18,6 +19,8 @@ import { checkpointInventoryPage } from './state.js'
  *  PieceLink
  * } from './api.js'
  */
+
+const DEFAULT_SHARD_LIST_CONCURRENCY = 4
 
 /**
  * Build migration inventories for multiple spaces, checkpointing into state
@@ -53,6 +56,7 @@ export async function* buildMigrationInventories({
   const indexer =
     options?.indexer ?? new IndexingClient({ serviceURL: options?.serviceURL })
   const stopOnError = options?.stopOnError ?? true
+  const shardListConcurrency = DEFAULT_SHARD_LIST_CONCURRENCY
   const dids = spaceDIDs ?? client.spaces().map((s) => s.did())
 
   for (const did of dids) {
@@ -68,6 +72,7 @@ export async function* buildMigrationInventories({
       spaceDID: did,
       state,
       stopOnError,
+      shardListConcurrency,
     })
   }
 
@@ -94,6 +99,7 @@ export async function* buildMigrationInventories({
  * @param {SpaceDID} args.spaceDID
  * @param {MigrationState} args.state - Mutated in place
  * @param {boolean} args.stopOnError
+ * @param {number} args.shardListConcurrency
  * @returns {AsyncGenerator<MigrationEvent>}
  */
 async function* buildSpaceInventory({
@@ -103,6 +109,7 @@ async function* buildSpaceInventory({
   spaceDID,
   state,
   stopOnError,
+  shardListConcurrency,
 }) {
   yield { type: 'reader:space:start', spaceDID }
 
@@ -117,13 +124,15 @@ async function* buildSpaceInventory({
     })
 
     // Phase 1: list all shards for all uploads in the page
-    /** @type {Array<{ root: string; shards: ShardEntry[] }>} */
-    const uploadsWithShards = []
-    for (const upload of page.results) {
-      const root = upload.root.toString()
-      const shards = await listShardsFromStore(client, upload.root)
-      uploadsWithShards.push({ root, shards })
-    }
+    const uploadsWithShards = await pMap(
+      page.results,
+      async (upload) => {
+        const root = upload.root.toString()
+        const shards = await listShardsFromStore(client, upload.root)
+        return { root, shards }
+      },
+      { concurrency: shardListConcurrency }
+    )
 
     // Phase 2: batch-query claims for the entire page — one HTTP call
     const allShards = uploadsWithShards.flatMap((u) => u.shards)

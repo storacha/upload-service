@@ -59,9 +59,9 @@ async function collectPlan(gen) {
   const events = []
   for await (const event of gen) {
     events.push(event)
-    if (event.type === 'plan:ready') plan = event.plan
+    if (event.type === 'planner:ready') plan = event.plan
   }
-  if (!plan) throw new Error('plan:ready event was never yielded')
+  if (!plan) throw new Error('planner:ready event was never yielded')
   return { plan, events }
 }
 
@@ -87,7 +87,10 @@ beforeEach(() => {
 
 describe('createMigrationPlan', () => {
   it('returns correct totals from a single inventory', async () => {
-    const state = withInventories(createMockInitialState(), createMockInventories(1))
+    const state = withInventories(
+      createMockInitialState(),
+      createMockInventories(1)
+    )
     const { plan } = await collectPlan(
       createMigrationPlan({ synapse: mockSynapse, state })
     )
@@ -98,7 +101,10 @@ describe('createMigrationPlan', () => {
   })
 
   it('aggregates totals across multiple spaces', async () => {
-    const state = withInventories(createMockInitialState(), createMockInventories(3))
+    const state = withInventories(
+      createMockInitialState(),
+      createMockInventories(3)
+    )
     const { plan } = await collectPlan(
       createMigrationPlan({ synapse: mockSynapse, state })
     )
@@ -129,7 +135,10 @@ describe('createMigrationPlan', () => {
       makeCostResult({ totalDepositNeeded: 500n, ready: false })
     )
 
-    const state = withInventories(createMockInitialState(), createMockInventories(1))
+    const state = withInventories(
+      createMockInitialState(),
+      createMockInventories(1)
+    )
     const { plan } = await collectPlan(
       createMigrationPlan({ synapse: mockSynapse, state })
     )
@@ -139,7 +148,10 @@ describe('createMigrationPlan', () => {
   })
 
   it('sets ready=true when costs.ready is true', async () => {
-    const state = withInventories(createMockInitialState(), createMockInventories(1))
+    const state = withInventories(
+      createMockInitialState(),
+      createMockInventories(1)
+    )
     const { plan } = await collectPlan(
       createMigrationPlan({ synapse: mockSynapse, state })
     )
@@ -152,7 +164,10 @@ describe('createMigrationPlan', () => {
       makeCostResult({ totalDepositNeeded: 500n, ready: false })
     )
 
-    const state = withInventories(createMockInitialState(), createMockInventories(1))
+    const state = withInventories(
+      createMockInitialState(),
+      createMockInventories(1)
+    )
     const { plan } = await collectPlan(
       createMigrationPlan({ synapse: mockSynapse, state })
     )
@@ -166,7 +181,10 @@ describe('createMigrationPlan', () => {
       makeCostResult({ needsFwssMaxApproval: true, ready: false })
     )
 
-    const state = withInventories(createMockInitialState(), createMockInventories(1))
+    const state = withInventories(
+      createMockInitialState(),
+      createMockInventories(1)
+    )
     const { plan } = await collectPlan(
       createMigrationPlan({ synapse: mockSynapse, state })
     )
@@ -201,15 +219,18 @@ describe('createMigrationPlan', () => {
     )
   })
 
-  it('yields state:checkpoint before plan:ready', async () => {
-    const state = withInventories(createMockInitialState(), createMockInventories(1))
+  it('yields state:checkpoint before planner:ready', async () => {
+    const state = withInventories(
+      createMockInitialState(),
+      createMockInventories(1)
+    )
     const { events } = await collectPlan(
       createMigrationPlan({ synapse: mockSynapse, state })
     )
 
     expect(events).toHaveLength(2)
     expect(events[0].type).toBe('state:checkpoint')
-    expect(events[1].type).toBe('plan:ready')
+    expect(events[1].type).toBe('planner:ready')
   })
 
   it('sets state.phase to approved and writes SP bindings', async () => {
@@ -236,13 +257,10 @@ describe('createMigrationPlan', () => {
       })
     )
 
-    const state = withInventories(
-      createMockInitialState(),
-      [createMockInventory({ did: spaceDID })]
-    )
-    await collectPlan(
-      createMigrationPlan({ synapse: mockSynapse, state })
-    )
+    const state = withInventories(createMockInitialState(), [
+      createMockInventory({ did: spaceDID }),
+    ])
+    await collectPlan(createMigrationPlan({ synapse: mockSynapse, state }))
 
     expect(state.phase).toBe('approved')
     expect(state.spaces[spaceDID]).toBeDefined()
@@ -255,9 +273,7 @@ describe('createMigrationPlan', () => {
     const state = withInventories(createMockInitialState(), [inventory])
     const originalURL = inventory.shards[0].sourceURL
 
-    await collectPlan(
-      createMigrationPlan({ synapse: mockSynapse, state })
-    )
+    await collectPlan(createMigrationPlan({ synapse: mockSynapse, state }))
 
     expect(state.spacesInventories[inventory.did].shards[0].sourceURL).toBe(
       originalURL

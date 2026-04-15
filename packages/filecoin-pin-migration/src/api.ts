@@ -168,8 +168,8 @@ export type MigrationPhase =
 
 /**
  * Per-space lifecycle.
- *   pending    — no batches processed yet
- *   migrating  — at least one shard committed
+ *   pending    — no pulls or commits completed yet
+ *   migrating  — at least one shard pulled or committed
  *   complete   — every upload fully committed
  *   incomplete — space processed, some uploads have uncommitted shards
  *   failed     — space abandoned with zero commits
@@ -194,8 +194,8 @@ export type UploadPhase = 'pending' | 'migrating' | 'complete' | 'incomplete'
  * Per-space resume record and progress tracker.
  *
  * SP binding (providerId, dataSetId) enables planner resume.
- * committed tracks which shard CIDs have been committed,
- * enabling skip checks during migration and progress derivation.
+ * `pulled` tracks shard CIDs pulled successfully and ready for the final
+ * space-level commit. `committed` tracks shard CIDs already written on-chain.
  */
 export interface SpaceState {
   did: SpaceDID
@@ -206,10 +206,12 @@ export interface SpaceState {
   serviceProvider: `0x${string}`
   /** null until first commit; then passed as dataSetIds on resume. */
   dataSetId: bigint | null
-  /** Shard CIDs that have been committed. Keyed for O(1) membership test. */
-  committed: Record<string, true>
+  /** Shard CIDs pulled successfully and ready for final commit. */
+  pulled: Set<string>
+  /** Shard CIDs that have been committed on-chain. */
+  committed: Set<string>
   /** Upload root CIDs that had at least one shard failure during migration. */
-  failedUploads: Record<string, true>
+  failedUploads: Set<string>
 }
 
 /**
@@ -295,7 +297,7 @@ export interface ExecuteMigrationInput {
   /** AbortSignal for cancellation */
   signal?: AbortSignal
   /**
-   * Max commit retry attempts per batch (default: 3).
+   * Max commit retry attempts for the final per-space commit (default: 3).
    * 0 = auto-skip on commit failure, no commit:failed event yielded.
    */
   maxCommitRetries?: number
@@ -304,6 +306,12 @@ export interface ExecuteMigrationInput {
    * (default: 30000). Auto-skips when exceeded.
    */
   commitRetryTimeout?: number
+  /**
+   * Number of batches to presign+pull concurrently (default: 4).
+   * The final commit still runs once per space regardless of this value.
+   * Set to 1 to restore sequential behavior.
+   */
+  pullConcurrency?: number
 }
 
 /**
@@ -321,8 +329,8 @@ export interface ExecuteMigrationInput {
  *   funding:start → funding:complete
  *   funding:failed (before re-throwing — generator terminates after this)
  *
- * Per-batch errors:
- *   migration:batch:failed — emitted once per batch that has failures (presign, pull, or commit)
+ * Pull/commit errors:
+ *   migration:batch:failed — emitted for pull-batch failures and final commit failures
  *
  * State persistence:
  *   state:checkpoint — emitted after each reader page, after planner writes SP
@@ -353,7 +361,7 @@ export type MigrationEvent =
   | {
       type: 'migration:batch:failed'
       spaceDID: SpaceDID
-      /** Which processBatch stage produced the failures */
+      /** Which pull/commit stage produced the failure */
       stage: MigratorPhase
       error: Error
       /** Upload root CIDs affected by this batch failure */
@@ -367,9 +375,9 @@ export type MigrationEvent =
       roots: string[]
       /** Current attempt number (1-based) */
       attempt: number
-      /** Call to retry the commit (re-presign + commit) */
+      /** Call to retry the final space-level commit (re-presign + commit) */
       retry: () => void
-      /** Call to skip and continue with next batch */
+      /** Call to skip the final commit and continue with the next space */
       skip: () => void
     }
   | { type: 'state:checkpoint'; state: MigrationState }
@@ -441,12 +449,28 @@ export interface CommitPiece {
 
 export interface BatchResult {
   /** Stage that produced the failure, if any */
-  stage?: MigratorPhase
+  stage?: 'commit'
   dataSetId: bigint | undefined
   committed: CommittedEntry[]
   error?: Error
-  /** Upload root CIDs that had at least one shard failure in this batch */
+  /** Upload root CIDs affected by the final commit failure */
   failedUploads: Set<string>
-  /** Pre-mapped commit pieces for retry — present only on commit stage failure */
+  /** Pre-mapped commit pieces for retry — present only on commit failure */
   commitPieces?: CommitPiece[]
+}
+
+/**
+ * Result of presign+pull for a single batch.
+ */
+export interface PullResult {
+  /** Shards that pulled successfully before cross-batch failed-root reconciliation */
+  pulledCandidates: ResolvedShard[]
+  /** Upload root CIDs that had failures during presign or pull */
+  failedUploads: Set<string>
+  /** Distinguishes upload-quality failures from operational failures */
+  failureKind?: 'upload' | 'operational'
+  /** Stage that failed, if any (presign or pull) */
+  stage?: MigratorPhase
+  /** Error from the failed stage, if any */
+  error?: Error
 }

@@ -121,14 +121,16 @@ export function checkpointInventoryPage(state, { spaceDID, shards, uploads, fail
  */
 export function transitionToApproved(state, perSpaceCost) {
   for (const cost of perSpaceCost) {
+    const existing = state.spaces[cost.spaceDID]
     state.spaces[cost.spaceDID] = {
       did: cost.spaceDID,
-      phase: 'pending',
+      phase: existing?.phase ?? 'pending',
       providerId: cost.providerId,
       serviceProvider: cost.serviceProvider,
-      dataSetId: cost.dataSetId,
-      committed: {},
-      failedUploads: {},
+      dataSetId: existing?.dataSetId ?? cost.dataSetId,
+      pulled: existing?.pulled ?? new Set(),
+      committed: existing?.committed ?? new Set(),
+      failedUploads: existing?.failedUploads ?? new Set(),
     }
   }
   state.phase = 'approved'
@@ -144,7 +146,44 @@ export function transitionToFunded(state) {
 }
 
 /**
- * Checkpoint 3: a shard was successfully committed.
+ * Checkpoint 3: a shard was successfully pulled and is ready to commit.
+ *
+ * @param {API.MigrationState} state - Mutated in place
+ * @param {API.SpaceDID} spaceDID
+ * @param {string} shardCid
+ * @returns {boolean} true when state changed
+ */
+export function recordPull(state, spaceDID, shardCid) {
+  const space = state.spaces[spaceDID]
+  if (!space || space.committed.has(shardCid)) return false
+
+  const before = space.pulled.size
+  space.pulled.add(shardCid)
+  if (space.phase === 'pending') {
+    space.phase = 'migrating'
+  }
+  return space.pulled.size !== before
+}
+
+/**
+ * Checkpoint 4: an upload failed during migration.
+ *
+ * @param {API.MigrationState} state - Mutated in place
+ * @param {API.SpaceDID} spaceDID
+ * @param {string} root
+ * @returns {boolean} true when state changed
+ */
+export function recordFailedUpload(state, spaceDID, root) {
+  const space = state.spaces[spaceDID]
+  if (!space) return false
+
+  const before = space.failedUploads.size
+  space.failedUploads.add(root)
+  return space.failedUploads.size !== before
+}
+
+/**
+ * Checkpoint 5: a shard was successfully committed.
  *
  * Sets the shard CID key in the committed record.
  * The service provider is already on SpaceState — no need to track per shard.
@@ -158,7 +197,11 @@ export function recordCommit(state, spaceDID, shardCid, dataSetId) {
   const space = state.spaces[spaceDID]
   if (!space) return
 
-  space.committed[shardCid] = true
+  space.committed.add(shardCid)
+  space.pulled.delete(shardCid)
+  if (space.phase === 'pending') {
+    space.phase = 'migrating'
+  }
 
   if (space.dataSetId === null) {
     space.dataSetId = dataSetId
@@ -166,7 +209,7 @@ export function recordCommit(state, spaceDID, shardCid, dataSetId) {
 }
 
 /**
- * Checkpoint 4: space loop ends — resolve terminal phases for all uploads
+ * Checkpoint 6: space loop ends — resolve terminal phases for all uploads
  * and the space itself.
  *
  * Upload phases are computed from space.committed counts vs inventory shard
@@ -185,7 +228,7 @@ export function finalizeSpace(state, spaceDID) {
     return
   }
 
-  const committedCount = Object.keys(space.committed).length
+  const committedCount = space.committed.size
   if (committedCount === 0) {
     space.phase = 'failed'
   } else if (committedCount === inventory.shards.length) {
@@ -196,7 +239,7 @@ export function finalizeSpace(state, spaceDID) {
 }
 
 /**
- * Checkpoint 5: all spaces processed — resolve terminal migration phase.
+ * Checkpoint 7: all spaces processed — resolve terminal migration phase.
  *
  * @param {API.MigrationState} state - Mutated in place
  */
@@ -253,8 +296,9 @@ export function serializeState(state) {
       providerId: space.providerId.toString(10),
       serviceProvider: space.serviceProvider,
       dataSetId: space.dataSetId != null ? space.dataSetId.toString(10) : null,
-      committed: { ...space.committed },
-      failedUploads: { ...space.failedUploads },
+      pulled: [...space.pulled],
+      committed: [...space.committed],
+      failedUploads: [...space.failedUploads],
     }
   }
 
@@ -304,6 +348,31 @@ function parseBigIntField(value, field, context) {
 }
 
 /**
+ * @param {unknown} value
+ * @param {string} field
+ * @param {string} context
+ * @returns {Set<string>}
+ */
+function parseStringSetField(value, field, context) {
+  if (value == null) return new Set()
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      if (typeof item !== 'string') {
+        throw new TypeError(
+          `deserializeState: ${context} — "${field}" must contain only strings`
+        )
+      }
+    }
+    return new Set(value)
+  }
+
+  throw new TypeError(
+    `deserializeState: ${context} — "${field}" must be an array of strings`
+  )
+}
+
+/**
  * Hydrate a MigrationState from a JSON-parsed object.
  *
  * Reverses serializeState — decimal strings back to bigint.
@@ -346,8 +415,17 @@ export function deserializeState(obj) {
         rawSpace.dataSetId != null
           ? parseBigIntField(rawSpace.dataSetId, 'dataSetId', `space "${did}"`)
           : null,
-      committed: /** @type {Record<string, true>} */ (rawSpace.committed ?? {}),
-      failedUploads: /** @type {Record<string, true>} */ (rawSpace.failedUploads ?? {}),
+      pulled: parseStringSetField(rawSpace.pulled, 'pulled', `space "${did}"`),
+      committed: parseStringSetField(
+        rawSpace.committed,
+        'committed',
+        `space "${did}"`
+      ),
+      failedUploads: parseStringSetField(
+        rawSpace.failedUploads,
+        'failedUploads',
+        `space "${did}"`
+      ),
     }
   }
 

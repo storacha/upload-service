@@ -46,6 +46,7 @@
 		"@filoz/synapse-core": "^0.3.3",
 		"@filoz/synapse-sdk": "^0.40.2",
 		"@storacha/client": "workspace:^",
+		"p-map": "^7.0.3",
 		"p-retry": "^6.2.1",
 		"@storacha/indexing-service-client": "^2.6.5",
 		"@ucanto/interface": "catalog:",
