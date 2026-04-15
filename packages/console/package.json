@@ -49,7 +49,12 @@
     "react-hot-toast": "^2.4.1",
     "react-tooltip": "^5.28.0",
     "swr": "catalog:",
-    "web3.storage": "^4.5.5"
+    "web3.storage": "^4.5.5",
+    "@storacha/filecoin-pin-migration": "workspace:^",
+    "@filoz/synapse-sdk": "^0.40.2",
+    "viem": "catalog:",
+    "wagmi": "^2.x",
+    "@rainbow-me/rainbowkit": "^2.x"
   },
   "devDependencies": {
     "@cloudflare/next-on-pages": "^1.6.3",

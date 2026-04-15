@@ -27,22 +27,25 @@
   "exclude": ["node_modules"],
   "references": [
     {
+      "path": "../filecoin-pin-migration"
+    },
+    {
+      "path": "../ui/packages/react"
+    },
+    {
       "path": "../encrypt-upload-client"
     },
     {
-      "path": "../w3up-client"
+      "path": "../did-mailto"
     },
     {
-      "path": "../did-mailto"
+      "path": "../w3up-client"
     },
     {
       "path": "../capabilities"
     },
     {
       "path": "../access-client"
-    },
-    {
-      "path": "../ui/packages/react"
     }
   ]
 }
