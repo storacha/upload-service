@@ -65,7 +65,10 @@ function MigrateAllContent() {
         </ul>
       </div>
 
-      <MigrationWizard spaceDIDs={spaceDIDs} />
+      <MigrationWizard 
+        spaceDIDs={spaceDIDs} 
+        roundaboutURL={process.env.NEXT_PUBLIC_ROUNDABOUT_URL}
+      />
     </>
   )
 }

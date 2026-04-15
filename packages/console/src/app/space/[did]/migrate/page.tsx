@@ -31,7 +31,10 @@ export default function MigratePage(props: PageProps): JSX.Element {
           Migrate your content to Filecoin on Chain (FOC) for permanent decentralized storage.
           Storage providers will pull your data directly from Storacha — no re-upload needed.
         </p>
-        <MigrationWizard spaceDID={spaceDID} />
+        <MigrationWizard 
+          spaceDID={spaceDID} 
+          roundaboutURL={process.env.NEXT_PUBLIC_ROUNDABOUT_URL}
+        />
       </div>
     </PrivateSpaceGuard>
   )

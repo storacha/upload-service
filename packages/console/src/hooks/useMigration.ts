@@ -118,6 +118,8 @@ export interface MigrationProgress {
 
 interface UseMigrationOptions {
   spaceDIDs?: SpaceDID[]
+  /** Custom roundabout URL for source URL resolution */
+  roundaboutURL?: string
 }
 
 interface UseMigrationResult {
@@ -191,6 +193,7 @@ const initialProgress: MigrationProgress = {
 export function useMigration(options: UseMigrationOptions = {}): UseMigrationResult {
   const [{ client, spaces }] = useW3()
   const spaceDIDs = options.spaceDIDs ?? spaces.map(s => s.did() as SpaceDID)
+  const roundaboutURL = options.roundaboutURL ?? 'https://me9dd2ztdj.execute-api.us-west-2.amazonaws.com'
 
   const [step, setStep] = useState<MigrationStep>('connect')
   const [walletClient, setWalletClient] = useState<WalletClient | null>(null)
@@ -315,9 +318,9 @@ export function useMigration(options: UseMigrationOptions = {}): UseMigrationRes
       const migrationState = createInitialState()
       setState(migrationState as MigrationState)
 
-      const resolver = new RoundaboutResolver()
+      const resolver = new RoundaboutResolver(roundaboutURL)
 
-      console.log('Starting inventory scan for spaces:', spaceDIDs)
+      console.log('Starting inventory scan for spaces:', spaceDIDs, 'roundaboutURL:', roundaboutURL)
       let eventCount = 0
       
       for await (const event of buildMigrationInventories({
@@ -339,7 +342,7 @@ export function useMigration(options: UseMigrationOptions = {}): UseMigrationRes
       console.error('Inventory error:', err)
       setError(err instanceof Error ? err : new Error(String(err)))
     }
-  }, [client, spaceDIDs, state, handleEvent])
+  }, [client, spaceDIDs, roundaboutURL, handleEvent])
 
   const runPlanner = useCallback(async () => {
     if (!state) {

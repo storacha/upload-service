@@ -11,9 +11,11 @@ import { MigrationComplete } from './MigrationComplete'
 interface MigrationWizardProps {
   spaceDID?: string
   spaceDIDs?: `did:key:${string}`[]
+  /** Custom roundabout URL for source URL resolution */
+  roundaboutURL?: string
 }
 
-export function MigrationWizard({ spaceDID, spaceDIDs }: MigrationWizardProps) {
+export function MigrationWizard({ spaceDID, spaceDIDs, roundaboutURL }: MigrationWizardProps) {
   const resolvedSpaceDIDs = spaceDIDs ?? (spaceDID ? [spaceDID as `did:key:${string}`] : [])
   const [isPlanning, setIsPlanning] = useState(false)
   
@@ -29,7 +31,7 @@ export function MigrationWizard({ spaceDID, spaceDIDs }: MigrationWizardProps) {
     runPlanner,
     runMigration,
     reset,
-  } = useMigration({ spaceDIDs: resolvedSpaceDIDs })
+  } = useMigration({ spaceDIDs: resolvedSpaceDIDs, roundaboutURL })
 
   const handleWalletConnected = useCallback((client: any) => {
     setWalletClient(client)
