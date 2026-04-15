@@ -30,7 +30,7 @@
 
 ### Planner
 
-- [x] **PLAN-01** — `buildMigrationInventories` builds a full `SpaceInventory` per space into `state.spacesInventories`; `createMigrationPlan` is an async generator that reads inventories from `state.spacesInventories`, aggregates totals, computes costs, writes SP bindings to state, and yields a `plan:ready` event carrying the `MigrationPlan`
+- [x] **PLAN-01** — `buildMigrationInventories` builds a full `SpaceInventory` per space into `state.spacesInventories`; `createMigrationPlan` is an async generator that reads inventories from `state.spacesInventories`, aggregates totals, computes costs, writes SP bindings to state, and yields a `planner:ready` event carrying the `MigrationPlan`
 - [x] **PLAN-02** — `computeMigrationCosts` replicates the Synapse SDK `calculateMultiContextCosts` logic with heterogeneous per-space sizes — one `StorageContext` per space
 - [x] **PLAN-03** — `MigrationPlan` carries `costs.totalDepositNeeded`, `costs.needsFwssMaxApproval`, and `costs.ready` flag derived from USDFC balance, deposited balance, and FWSS approval state
 - [x] **PLAN-04** — `createMigrationPlan` requires a `MigrationState` for both fresh and resume runs; SP and dataset bindings are extracted automatically via `buildResumeState` and passed to `computeMigrationCosts` to pin the same provider and compute floor-aware rate deltas
@@ -40,7 +40,7 @@
 - [x] **MIG-01** — `executeMigration` orchestrates multi copies pull-based migration via Synapse SDK — 1 Storacha space → 1 FOC dataset per SP — processing uploads sequentially with configurable batch size
 - [x] **MIG-02** — Fund once pre-flight via `synapse.payments.fundSync`; skip funding on resume when deposit is already satisfied
 - [x] **MIG-03** — Commit pieces on-chain via `StorageContext.commit()` with `withIPFSIndexing: ''` dataset metadata and `ipfsRootCID: rootCID` per-piece metadata
-- [x] **MIG-04** — All three stages yield typed `MigrationEvent`. Reader: `reader:space:start`, `reader:space:complete`, `reader:complete`, `state:checkpoint`. Planner: `state:checkpoint`, `plan:ready`. Migrator: `funding:start`, `funding:complete`, `funding:failed`, `shard:failed`, `state:checkpoint`, `migration:complete`
+- [x] **MIG-04** — All three stages yield typed `MigrationEvent`. Reader: `reader:space:start`, `reader:space:complete`, `reader:complete`, `state:checkpoint`. Planner: `state:checkpoint`, `planner:ready`. Migrator: `funding:start`, `funding:complete`, `funding:failed`, `shard:failed`, `state:checkpoint`, `migration:complete`
 - [x] **MIG-05** — Resume: `MigrationState` tracks committed shards per provider in `state.committed`; shards already committed to the target provider are skipped at the start of each batch
 - [x] **MIG-06** — Respects `batchSize` option from `MigrationConfig` (default: 50 pieces per batch)
 - [ ] **MIG-07** — `concurrency` option in `MigrationConfig` (default: 1) — process multiple batches concurrently within an upload to reduce wall-clock time for large spaces
@@ -57,7 +57,7 @@
 ### Tests
 
 - [x] **TEST-01** — Unit tests for `reader.js`: index-blob claim filter, `pieceCID` extraction, missing `pieceCID` and missing location URL skip cases, multi-page pagination, `ClaimsResolver` and `RoundaboutResolver` application
-- [x] **TEST-02** — Unit tests for `planner.js`: totals aggregation, cost and warning propagation, skipped shards surfaced as plan warnings, `state:checkpoint` before `plan:ready` event order, SP bindings written to state (`computeMigrationCosts` is mocked — planner logic only)
+- [x] **TEST-02** — Unit tests for `planner.js`: totals aggregation, cost and warning propagation, skipped shards surfaced as plan warnings, `state:checkpoint` before `planner:ready` event order, SP bindings written to state (`computeMigrationCosts` is mocked — planner logic only)
 - [ ] **TEST-03** — Unit tests for `migrator.js`: mock Synapse SDK, presign/pull/commit flow, per-piece pull failure partitioning, `stopOnError` semantics, resume skip path, full event sequence
 - [x] **TEST-04** — Unit tests for `source-url.js`: `ClaimsResolver` pass-through, `RoundaboutResolver` URL construction, custom base URL override
 - [ ] **TEST-05** — Unit tests for `state.js`: phase FSM transitions, `recordCommit` double-commit guard, `serializeState` / `deserializeState` round-trip, `parseBigIntField` validation errors
@@ -69,10 +69,9 @@
 
 > Tracked here for visibility. Implementation lives in `@storacha/cli`.
 
-- [ ] **CLI-01** — `storacha migration migrate-to-foc` command wired into the CLI
-- [ ] **CLI-02** — CLI calls `createMigrationPlan()`, renders the plan (spaces, shards, cost, funding status, warnings), and gates execution on user confirmation
-- [ ] **CLI-03** — CLI renders `MigrationEvent` stream as real-time progress output during execution
-- [ ] **CLI-04** — Flags: `--space <DID>`, `--dry-run`, `--network calibration|mainnet`, `--source-url roundabout|claims`
+- [x] **CLI-01** — `storacha migration migrate-to-foc` command wired into the CLI
+- [x] **CLI-02** — CLI calls `createMigrationPlan()`, renders the plan (spaces, shards, cost, funding status, warnings), and gates execution on user confirmation
+- [x] **CLI-03** — CLI renders `MigrationEvent` stream as real-time progress output during execution
 
 ---
 
