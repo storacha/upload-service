@@ -38,18 +38,18 @@ const DEFAULT_PULL_CONCURRENCY = 4
  *
  * Flow:
  *   1. Fund once via synapse.payments.fundSync (pre-flight).
- *   2. For each space: presign+pull batches concurrently, checkpoint pulled shards,
- *      then do one final space-level commit.
+ *   2. For each space copy: presign+pull batches concurrently, checkpoint
+ *      pulled shards, then do one final copy-level commit.
  *   3. Yield migration:complete with a summary derived from final state.
  *
  * Concurrency model:
  *   presign+pull runs concurrently across `pullConcurrency` batches.
- *   Commit runs once per space after all pull batches finish.
+ *   Commit runs once per copy after all pull batches finish.
  *
- * Resume: pass the deserialized MigrationState. Shards already in
- * state.committed are skipped. Shards in state.pulled are not re-pulled and
- * go straight to the final commit. createMigrationPlan() pins SP and dataset
- * bindings from state automatically.
+ * Resume: pass the deserialized MigrationState. Shards already in a copy's
+ * committed set are skipped. Shards already in a copy's pulled set are not
+ * re-pulled and go straight to the final commit. createMigrationPlan() pins
+ * SP and dataset bindings from state automatically.
  *
  * stopOnError: when true, a shard failure excludes remaining shards for
  * that upload root from future batches. Other uploads in the same space
@@ -158,13 +158,13 @@ async function* ensureFunding(costs, fundingAmount, synapse, state) {
 // ── Per-space migration ───────────────────────────────────────────────────────
 
 /**
- * Migrate all shards for one space.
+ * Migrate all shards for one space across both copies.
  *
  * Pending shards are split into pull batches and processed concurrently.
  * Each batch returns pull candidates plus its failed upload roots. After all
  * pulls finish, the migrator reconciles failed roots once, checkpoints the
- * surviving pulled shards into state.pulled, then does one final per-space
- * commit.
+ * surviving pulled shards into the active copy state, then does one final
+ * commit for that copy.
  *
  * @param {object} args
  * @param {API.SpaceInventory} args.inventory
@@ -189,12 +189,63 @@ async function* migrateSpace({
   pullConcurrency,
   signal,
 }) {
-  const { context, spaceDID } = perSpaceCost
-  const space = state.spaces[spaceDID]
+  const space = state.spaces[perSpaceCost.spaceDID]
   if (!space) return
 
+  for (const copyCost of perSpaceCost.copies) {
+    if (signal?.aborted) break
+
+    yield* migrateCopy({
+      inventory,
+      copyCost,
+      state,
+      batchSize,
+      stopOnError,
+      maxCommitRetries,
+      commitRetryTimeout,
+      pullConcurrency,
+      signal,
+    })
+  }
+
+  finalizeSpace(state, perSpaceCost.spaceDID)
+  // Final space checkpoint — reflects terminal phase after finalization.
+  yield /** @type {API.MigrationEvent} */ ({ type: 'state:checkpoint', state })
+}
+
+/**
+ * Migrate one copy for a single space.
+ *
+ * @param {object} args
+ * @param {API.SpaceInventory} args.inventory
+ * @param {API.PerCopyCost} args.copyCost
+ * @param {API.MigrationState} args.state
+ * @param {number} args.batchSize
+ * @param {boolean} args.stopOnError
+ * @param {number} args.maxCommitRetries
+ * @param {number} args.commitRetryTimeout
+ * @param {number} args.pullConcurrency
+ * @param {AbortSignal | undefined} args.signal
+ * @returns {AsyncGenerator<API.MigrationEvent>}
+ */
+async function* migrateCopy({
+  inventory,
+  copyCost,
+  state,
+  batchSize,
+  stopOnError,
+  maxCommitRetries,
+  commitRetryTimeout,
+  pullConcurrency,
+  signal,
+}) {
+  const { context, copyIndex, spaceDID } = copyCost
+  const space = state.spaces[spaceDID]
+  const copy = space?.copies.find((item) => item.copyIndex === copyIndex)
+  if (!space || !copy) return
+
   /** @type {Set<string>} */
-  const failedRoots = new Set(space.failedUploads)
+  const activeFailedRoots = new Set(copy.failedUploads)
   /** @type {API.ResolvedShard[]} */
   const shardsToPull = []
   /** @type {Map<string, API.ResolvedShard>} */
@@ -202,8 +253,8 @@ async function* migrateSpace({
 
   for (const shard of inventory.shards) {
     shardByCid.set(shard.cid, shard)
-    if (space.committed.has(shard.cid) || space.pulled.has(shard.cid)) continue
-    if (stopOnError && failedRoots.has(shard.root)) continue
+    if (copy.committed.has(shard.cid) || copy.pulled.has(shard.cid)) continue
+    if (stopOnError && activeFailedRoots.has(shard.root)) continue
     shardsToPull.push(shard)
   }
 
@@ -222,13 +273,14 @@ async function* migrateSpace({
     for (const result of pullResults) {
       if (result.failedUploads.size > 0) {
         for (const root of result.failedUploads) {
-          if (stopOnError) failedRoots.add(root)
-          recordFailedUpload(state, spaceDID, root)
+          if (stopOnError) activeFailedRoots.add(root)
+          recordFailedUpload(state, spaceDID, copyIndex, root)
         }
 
         yield /** @type {API.MigrationEvent} */ ({
           type: 'migration:batch:failed',
           spaceDID,
+          copyIndex,
           stage: /** @type {API.MigratorPhase} */ (result.stage),
           error: /** @type {Error} */ (result.error),
           roots: [...result.failedUploads],
@@ -239,8 +291,9 @@ async function* migrateSpace({
     }
 
     for (const shard of pulledCandidates) {
-      if (stopOnError && failedRoots.has(shard.root)) continue
-      pulledChanged = recordPull(state, spaceDID, shard.cid) || pulledChanged
+      if (stopOnError && activeFailedRoots.has(shard.root)) continue
+      pulledChanged =
+        recordPull(state, spaceDID, copyIndex, shard.cid) || pulledChanged
     }
 
     if (pulledChanged) {
@@ -251,65 +304,63 @@ async function* migrateSpace({
     }
   }
 
-  if (!signal?.aborted) {
-    /** @type {API.ResolvedShard[]} */
-    const shardsToCommit = []
-    for (const cid of space.pulled) {
-      const shard = shardByCid.get(cid)
-      if (!shard) continue
-      if (stopOnError && failedRoots.has(shard.root)) continue
-      shardsToCommit.push(shard)
-    }
+  if (signal?.aborted) return
 
-    if (shardsToCommit.length > 0) {
-      const result = await commitPulledShards({
-        shards: shardsToCommit,
-        context,
-      })
-
-      if (
-        result.stage === 'commit' &&
-        result.commitPieces &&
-        maxCommitRetries > 0
-      ) {
-        yield* retryCommitInteractively(
-          result,
-          context,
-          spaceDID,
-          maxCommitRetries,
-          commitRetryTimeout
-        )
-      }
-
-      if (result.failedUploads.size > 0) {
-        for (const root of result.failedUploads) {
-          recordFailedUpload(state, spaceDID, root)
-        }
-
-        yield /** @type {API.MigrationEvent} */ ({
-          type: 'migration:batch:failed',
-          spaceDID,
-          stage: 'commit',
-          error: /** @type {Error} */ (result.error),
-          roots: [...result.failedUploads],
-        })
-      }
-
-      if (result.committed.length > 0 && result.dataSetId !== undefined) {
-        for (const entry of result.committed) {
-          recordCommit(state, spaceDID, entry.shardCid, result.dataSetId)
-        }
-        yield /** @type {API.MigrationEvent} */ ({
-          type: 'state:checkpoint',
-          state,
-        })
-      }
-    }
+  /** @type {API.ResolvedShard[]} */
+  const shardsToCommit = []
+  for (const cid of copy.pulled) {
+    const shard = shardByCid.get(cid)
+    if (!shard) continue
+    if (stopOnError && activeFailedRoots.has(shard.root)) continue
+    shardsToCommit.push(shard)
   }
 
-  finalizeSpace(state, spaceDID)
-  // Final space checkpoint — reflects terminal phase after finalization.
-  yield /** @type {API.MigrationEvent} */ ({ type: 'state:checkpoint', state })
+  if (shardsToCommit.length === 0) return
+
+  const result = await commitPulledShards({
+    shards: shardsToCommit,
+    context,
+  })
+
+  if (
+    result.stage === 'commit' &&
+    result.commitPieces &&
+    maxCommitRetries > 0
+  ) {
+    yield* retryCommitInteractively(
+      result,
+      context,
+      spaceDID,
+      copyIndex,
+      maxCommitRetries,
+      commitRetryTimeout
+    )
+  }
+
+  if (result.failedUploads.size > 0) {
+    for (const root of result.failedUploads) {
+      recordFailedUpload(state, spaceDID, copyIndex, root)
+    }
+
+    yield /** @type {API.MigrationEvent} */ ({
+      type: 'migration:batch:failed',
+      spaceDID,
+      copyIndex,
+      stage: 'commit',
+      error: /** @type {Error} */ (result.error),
+      roots: [...result.failedUploads],
+    })
+  }
+
+  if (result.committed.length > 0 && result.dataSetId !== undefined) {
+    for (const entry of result.committed) {
+      recordCommit(state, spaceDID, copyIndex, entry.shardCid, result.dataSetId)
+    }
+    yield /** @type {API.MigrationEvent} */ ({
+      type: 'state:checkpoint',
+      state,
+    })
+  }
 }
 
 // ── Batch processing ──────────────────────────────────────────────────────────
@@ -496,6 +547,7 @@ async function commitPulledShards({ shards, context }) {
  * @param {API.BatchResult} result — commit-stage failure (result.commitPieces must be set)
  * @param {API.StorageContext} context
  * @param {API.SpaceDID} spaceDID
+ * @param {number} copyIndex
  * @param {number} maxRetries
  * @param {number} retryTimeout
  * @returns {AsyncGenerator<API.MigrationEvent>}
@@ -504,6 +556,7 @@ async function* retryCommitInteractively(
   result,
   context,
   spaceDID,
+  copyIndex,
   maxRetries,
   retryTimeout
 ) {
@@ -516,6 +569,7 @@ async function* retryCommitInteractively(
     yield /** @type {API.MigrationEvent} */ ({
       type: 'migration:commit:failed',
       spaceDID,
+      copyIndex,
       error: /** @type {Error} */ (result.error),
       roots: [...result.failedUploads],
       attempt,
@@ -633,9 +687,12 @@ function deriveSummary(plan, state, startedAt) {
   for (const [did, inventory] of Object.entries(state.spacesInventories)) {
     const space = state.spaces[/** @type {API.SpaceDID} */ (did)]
     if (!space) continue
-    const committedCount = space.committed.size
+    const committedCount = space.copies.reduce(
+      (sum, copy) => sum + copy.committed.size,
+      0
+    )
     succeeded += committedCount
-    failed += inventory.shards.length - committedCount
+    failed += inventory.shards.length * space.copies.length - committedCount
   }
   return {
     succeeded,
@@ -644,9 +701,11 @@ function deriveSummary(plan, state, startedAt) {
       (n, inv) => n + inv.failedUploads.length,
       0
     ),
-    dataSetIds: Object.values(state.spaces)
-      .map((s) => s.dataSetId)
-      .filter(/** @returns {id is bigint} */ (id) => id != null),
+    dataSetIds: Object.values(state.spaces).flatMap((space) =>
+      space.copies
+        .map((copy) => copy.dataSetId)
+        .filter(/** @returns {id is bigint} */ (id) => id != null)
+    ),
     totalBytes: plan.totals.bytes,
     duration: Date.now() - startedAt,
   }

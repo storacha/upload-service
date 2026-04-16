@@ -17,7 +17,8 @@ Reader → Planner → Migrator
 - `planner` computes a `MigrationPlan`
 - `migrator` executes the approved plan and mutates `MigrationState`
 
-The library owns no UX or persistence. Callers persist `MigrationState` on `state:checkpoint` events and render progress however they want.
+The library owns no UX or persistence. Callers persist `MigrationState` on
+every `state:checkpoint` event.
 
 ---
 
@@ -26,8 +27,8 @@ The library owns no UX or persistence. Callers persist `MigrationState` on `stat
 | Stage | Responsibility | Output |
 |---|---|---|
 | reader | Fetch uploads, resolve shards via the indexing service, apply the source URL resolver inline | `SpaceInventory[]` |
-| planner | Aggregate inventories, compute costs via Synapse SDK, bind providers/datasets into state | `MigrationPlan` |
-| migrator | Fund once, pull shards in batches, commit once per space, emit progress/failure events | `AsyncGenerator<MigrationEvent>` |
+| planner | Aggregate inventories, create exactly 2 storage contexts per space, compute costs, write provider/dataset bindings into state | `MigrationPlan` |
+| migrator | Fund once, run pull batches per copy, commit once per copy, emit progress/failure events | `AsyncGenerator<MigrationEvent>` |
 
 ---
 
@@ -39,37 +40,12 @@ The library owns no UX or persistence. Callers persist `MigrationState` on `stat
 - `MigrationState` is mutated in place
 - Reader output is treated as immutable once written to `state.spacesInventories`
 - Resume behavior is driven only by persisted `MigrationState`
-
----
-
-## Dependency Direction
-
-```
-index.js
-  └─▶ reader.js
-  └─▶ source-url.js
-  └─▶ planner.js
-        └─▶ compute-migration-costs.js
-        └─▶ state.js
-  └─▶ migrator.js
-        └─▶ state.js
-  └─▶ state.js
-  └─▶ errors.js
-```
-
-`state.js` and `errors.js` remain standalone. No stage should depend on another stage's internals.
+- Every space always has exactly 2 copies
+- The 2 copies for a space must bind to 2 distinct providers
 
 ---
 
 ## State & Resumability
-
-### Key Principle
-
-The library is stateless by default:
-
-- it consumes and mutates `MigrationState`
-- it does not persist that state
-- the caller serializes/deserializes it
 
 ### Runtime State Model
 
@@ -84,6 +60,11 @@ interface MigrationState {
 interface SpaceState {
   did: SpaceDID
   phase: SpacePhase
+  copies: [SpaceCopyState, SpaceCopyState]
+}
+
+interface SpaceCopyState {
+  copyIndex: number
   providerId: bigint
   serviceProvider: `0x${string}`
   dataSetId: bigint | null
@@ -93,36 +74,100 @@ interface SpaceState {
 }
 ```
 
-State uses `Set<string>` at runtime for O(1) membership checks and cheap iteration. Serialization converts these sets to string arrays.
-
-### Phase FSM
-
-```
-Migration: reading → planning → approved → funded → migrating → complete | incomplete
-Space:     pending → complete | incomplete | failed
-Upload:    pending → migrating → complete | incomplete   (computed, not stored)
-```
-
-Important transitions:
-
-- `buildMigrationInventories` moves migration to `planning`
-- `createMigrationPlan` calls `transitionToApproved`
-- `executeMigration` calls `transitionToFunded` after funding succeeds
-- `recordPull` checkpoints successful pulls before commit
-- `recordCommit` moves shard CIDs from `pulled` to `committed`
-- `finalizeSpace` and `finalizeMigration` resolve final phases
+State uses `Set<string>` at runtime for O(1) membership checks and cheap
+iteration. Serialization converts these sets to arrays.
 
 ### Resume Contract
 
 On resume:
 
 1. `deserializeState()` restores persisted progress
-2. `buildMigrationInventories()` resumes from `readerProgressCursors` and skips completed spaces
-3. `createMigrationPlan()` rebuilds costs using `buildResumeState(state)` so provider/dataset bindings remain stable
-4. `executeMigration()`:
-   - skips shards already in `space.committed`
-   - does not re-pull shards already in `space.pulled`
-   - reuses `space.dataSetId` once a final commit has succeeded
+2. `buildMigrationInventories()` resumes from `readerProgressCursors`
+3. `buildResumeState(state)` extracts pinned provider IDs and existing dataset
+   IDs per space copy
+4. `createMigrationPlan()` rebuilds exactly 2 contexts per space using those
+   bindings
+5. `executeMigration()`:
+   - skips shards already in a copy's `committed`
+   - does not re-pull shards already in a copy's `pulled`
+   - reuses the copy's `dataSetId` after a successful commit
+
+---
+
+## Planner
+
+The planner always creates 2 contexts per space.
+
+Context creation rules:
+
+- copy `0` is created first
+- copy `1` is created second with `excludeProviderIds: [copy0.provider.id]`
+- if the caller provides `providerIds`, the first ID is used for copy `0` and
+  the second ID is used for copy `1`
+- on resume, pinned provider/dataset bindings win for each copy
+- if both copies resolve to the same provider, planning fails fast
+
+`PerSpaceCost` is now copy-based:
+
+```ts
+interface PerSpaceCost {
+  spaceDID: SpaceDID
+  copies: [PerCopyCost, PerCopyCost]
+  isResumed: boolean
+  bytesToMigrate: bigint
+  currentDataSetSize: bigint
+  lockupUSDFC: bigint
+  sybilFee: bigint
+  rateLockupDelta: bigint
+  ratePerEpoch: bigint
+  ratePerMonth: bigint
+}
+```
+
+Space-level numeric fields are sums of the two copy-level values.
+
+---
+
+## Migrator
+
+The migrator executes one space at a time, and within each space executes the
+same pull/commit flow independently for both copies.
+
+### Execution Model
+
+```
+executeMigration({ plan, state, synapse, config })
+  └─▶ ensureFunding(plan.fundingAmount)
+  └─▶ state.phase = 'migrating'
+  └─▶ for each space:
+        inventory = state.spacesInventories[spaceDID]
+        for each copy:
+          pending = inventory.shards excluding copy.committed and copy.pulled
+          activeFailedRoots = Set(copy.failedUploads)
+          run presign+pull over pending batches with configurable pull concurrency
+          reconcile failed roots across all batch results
+          checkpoint surviving pulled shards with recordPull(..., copyIndex, ...)
+          build final commit set from copy.pulled
+          commit all pulled shards for that copy in one call
+          on success: recordCommit(..., copyIndex, ...)
+        finalizeSpace()
+  └─▶ finalizeMigration()
+```
+
+### Pull/Commit Semantics
+
+- batches are only for presign + pull
+- commit is copy-scoped, not batch-scoped
+- `stopOnError` is enforced independently per copy via upload-root tracking
+- `retryCommitInteractively` is used only for the final commit of a copy
+
+### Error Model
+
+| Stage | Failure class | Scope | Retry |
+|---|---|---|---|
+| Presign | `PresignFailedFailure` | Whole pull batch for a copy | None |
+| Pull | `PullFailedFailure` | Per upload root within the batch | `p-retry` |
+| Commit | `CommitFailedFailure` | Final commit for one copy | Interactive retry |
 
 ---
 
@@ -140,8 +185,8 @@ All stages may yield `state:checkpoint`. Persist on every occurrence.
 | `funding:start` | migrator | Before `fundSync` | `amount` |
 | `funding:complete` | migrator | After `fundSync` succeeds | — |
 | `funding:failed` | migrator | `fundSync` threw; generator terminates | `error` |
-| `migration:batch:failed` | migrator | A pull batch or final commit produced failed upload roots | `spaceDID`, `stage`, `roots`, `error` |
-| `migration:commit:failed` | migrator | The final commit failed and the caller may choose to retry | `spaceDID`, `attempt`, `roots`, `error`, `retry` |
+| `migration:batch:failed` | migrator | A pull batch or final commit produced failed upload roots | `spaceDID`, `copyIndex`, `stage`, `roots`, `error` |
+| `migration:commit:failed` | migrator | The final commit failed and the caller may choose to retry | `spaceDID`, `copyIndex`, `attempt`, `roots`, `error`, `retry` |
 | `state:checkpoint` | all | Progress became durable | `state` |
 | `migration:complete` | migrator | All spaces processed | `summary` |
 
@@ -149,138 +194,25 @@ All stages may yield `state:checkpoint`. Persist on every occurrence.
 
 ---
 
-## Stage 1 — Reader
-
-The reader builds one `SpaceInventory` per space.
-
-For each `upload.list` page:
-
-1. list shards for every upload root in the page
-2. make one batched `queryClaims` call for every shard multihash in that page
-3. extract:
-   - `pieceCID` from `assert/equals`
-   - `locationURL` from `assert/location`
-   - `sizeBytes` from `assert/location.range.length` when present, otherwise fall back to the piece size
-4. apply the configured `SourceURLResolver`
-5. append resolved results into `state.spacesInventories[did]`
-
-### Reader Invariants
-
-- one `queryClaims` request per `upload.list` page
-- resolver is applied inline while constructing `ResolvedShard`
-- failed shard resolution emits `reader:shard:failed`
-- failed upload roots are recorded only in the inventory/state, not per-shard
-
----
-
-## Stage 2 — Planner
-
-The planner reduces inventories into totals and computes costs with Synapse SDK.
-
-It:
-
-- creates one storage context per space
-- reuses provider and dataset bindings from resume state when present
-- computes deposit and readiness
-- writes approved per-space bindings into `state.spaces`
-
-`MigrationPlan` is not persisted. It is recomputed against current chain state on every run.
-
----
-
-## Stage 3 — Migrator
-
-The migrator executes an approved plan in three broad steps:
-
-1. ensure funding
-2. for each space, pull pending shards in batches
-3. after all pull batches finish, commit all pulled shards for that space in one final commit
-
-### Execution Model
-
-```
-executeMigration({ plan, state, synapse, config })
-  └─▶ ensureFunding(plan.fundingAmount)
-  └─▶ state.phase = 'migrating'
-  └─▶ for each space:
-        inventory = state.spacesInventories[spaceDID]
-        pending = inventory.shards excluding space.committed and space.pulled
-        failedRoots = Set(space.failedUploads)
-        run presign+pull over pending batches with configurable pull concurrency
-        reconcile failed roots across all batch results
-        checkpoint surviving pulled shards with recordPull()
-        build final commit set from space.pulled
-        commit all pulled shards for the space in one call
-        on success: recordCommit() for each committed shard
-        finalizeSpace()
-  └─▶ finalizeMigration()
-```
-
-### Pull/Commit Semantics
-
-- batches are only for presign + pull
-- commit is space-scoped, not batch-scoped
-- `stopOnError` is enforced via upload-root tracking in `failedRoots`
-- pull failures and final commit failures are reported as migration events
-- `retryCommitInteractively` is used only for the final per-space commit
-
-### Error Model
-
-| Stage | Failure class | Scope | Retry |
-|---|---|---|---|
-| Presign | `PresignFailedFailure` | Whole pull batch | None |
-| Pull | `PullFailedFailure` | Per upload root within the batch | `p-retry` |
-| Commit | `CommitFailedFailure` | Final per-space commit | Interactive retry |
-
----
-
-## Source URL Strategy
-
-`SourceURLResolver` is applied exactly once in `reader.js`.
-
-Available implementations:
-
-- `ClaimsResolver` → raw location claim URL
-- `RoundaboutResolver` → roundabout URL for a piece CID
-
-Planner and migrator must treat `shard.sourceURL` as final.
-
----
-
 ## Key Design Decisions
 
-### 1 Storacha space → 1 FOC dataset
+### 1 Storacha space → 2 FOC datasets
 
-Each space maps to one Synapse storage context and one eventual dataset.
+Each space always creates 2 storage contexts on 2 distinct providers, producing
+2 independent datasets on success.
 
 ### Runtime sets, serialized arrays
 
-State uses sets in memory because migration logic does frequent membership checks and iteration. Serialization converts them to arrays because JSON has no set type.
+State uses sets in memory because migration logic does frequent membership
+checks and iteration. Serialization converts them to arrays because JSON has no
+set type.
 
 ### Size is taken from the location claim when available
 
-Piece CID derivation does not account for padding, so the reader prefers `assert/location.range.length` as the real byte size. Piece size is only a fallback.
+Piece CID derivation does not account for padding, so the reader prefers
+`assert/location.range.length` as the real byte size. Piece size is only a
+fallback.
 
 ### Reader output is final
 
 No later stage re-resolves URLs, sizes, or piece metadata.
-
----
-
-## Non-Goals
-
-- internal persistence
-- UI rendering
-- re-fetching claims during migration execution
-- hidden state outside `MigrationState`
-
----
-
-## When to Update This Document
-
-Update this document when:
-
-- state fields change
-- event contracts change
-- the execution model changes
-- stage responsibilities move

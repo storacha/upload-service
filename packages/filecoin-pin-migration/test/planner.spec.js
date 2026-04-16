@@ -37,13 +37,40 @@ function makeCostResult(overrides = {}) {
       buffer: 0n,
       availableFunds: 10_000n,
       skipBufferApplied: false,
-      resumedSpaces: 0,
+      resumedCopies: 0,
     },
     totalDepositNeeded: 0n,
     needsFwssMaxApproval: false,
     ready: true,
     warnings: [],
     ...overrides,
+  })
+}
+
+/**
+ * @param {Partial<API.PerCopyCost> & { copyIndex: number }} overrides
+ * @returns {API.PerCopyCost}
+ */
+function makePerCopyCost(overrides) {
+  return /** @type {API.PerCopyCost} */ ({
+    copyIndex: overrides.copyIndex,
+    spaceDID:
+      overrides.spaceDID ??
+      /** @type {API.SpaceDID} */ ('did:key:z6MkTestSpace1'),
+    context: overrides.context ?? /** @type {API.StorageContext} */ ({}),
+    providerId: overrides.providerId ?? 42n,
+    serviceProvider:
+      overrides.serviceProvider ??
+      /** @type {`0x${string}`} */ ('0xdeadbeef'),
+    dataSetId: overrides.dataSetId ?? null,
+    isResumed: overrides.isResumed ?? false,
+    bytesToMigrate: overrides.bytesToMigrate ?? 0n,
+    currentDataSetSize: overrides.currentDataSetSize ?? 0n,
+    lockupUSDFC: overrides.lockupUSDFC ?? 0n,
+    sybilFee: overrides.sybilFee ?? 0n,
+    rateLockupDelta: overrides.rateLockupDelta ?? 0n,
+    ratePerEpoch: overrides.ratePerEpoch ?? 0n,
+    ratePerMonth: overrides.ratePerMonth ?? 0n,
   })
 }
 
@@ -240,10 +267,20 @@ describe('createMigrationPlan', () => {
         perSpace: [
           /** @type {API.PerSpaceCost} */ ({
             spaceDID,
-            providerId: 42n,
-            serviceProvider: /** @type {`0x${string}`} */ ('0xdeadbeef'),
-            dataSetId: null,
-            context: {},
+            copies: [
+              makePerCopyCost({
+                copyIndex: 0,
+                spaceDID,
+                providerId: 42n,
+                serviceProvider: /** @type {`0x${string}`} */ ('0xdeadbeef'),
+              }),
+              makePerCopyCost({
+                copyIndex: 1,
+                spaceDID,
+                providerId: 43n,
+                serviceProvider: /** @type {`0x${string}`} */ ('0xbeefdead'),
+              }),
+            ],
             bytesToMigrate: 0n,
             currentDataSetSize: 0n,
             lockupUSDFC: 0n,
@@ -264,8 +301,15 @@ describe('createMigrationPlan', () => {
 
     expect(state.phase).toBe('approved')
     expect(state.spaces[spaceDID]).toBeDefined()
-    expect(state.spaces[spaceDID].providerId).toBe(42n)
-    expect(state.spaces[spaceDID].serviceProvider).toBe('0xdeadbeef')
+    expect(state.spaces[spaceDID].copies).toHaveLength(2)
+    expect(state.spaces[spaceDID].copies[0].providerId).toBe(42n)
+    expect(state.spaces[spaceDID].copies[0].serviceProvider).toBe(
+      '0xdeadbeef'
+    )
+    expect(state.spaces[spaceDID].copies[1].providerId).toBe(43n)
+    expect(state.spaces[spaceDID].copies[1].serviceProvider).toBe(
+      '0xbeefdead'
+    )
   })
 
   it('does not mutate inventories in state', async () => {

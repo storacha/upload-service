@@ -292,7 +292,7 @@ async function runMigration({
         break
       case 'migration:commit:failed': {
         const shouldRetry = await confirm({
-          message: `Final commit failed for ${event.roots.length} upload(s). Retry attempt ${event.attempt}?`,
+          message: `Final commit failed for copy ${event.copyIndex} with ${event.roots.length} upload(s). Retry attempt ${event.attempt}?`,
           default: true,
         }).catch(() => false)
 
@@ -305,7 +305,7 @@ async function runMigration({
       }
       case 'migration:batch:failed':
         console.warn(
-          `  batch:failed  stage=${event.stage}  roots=${event.roots.length}  error=${event.error.message}`
+          `  batch:failed  copy=${event.copyIndex}  stage=${event.stage}  roots=${event.roots.length}  error=${event.error.message}`
         )
         break
       case 'state:checkpoint':
@@ -337,6 +337,9 @@ async function runMigration({
  */
 function printPlan(plan) {
   console.log(`  Spaces: ${plan.costs.perSpace.length}`)
+  console.log(
+    `  Copies: ${plan.costs.perSpace.reduce((sum, space) => sum + space.copies.length, 0)}`
+  )
   console.log(`  Uploads: ${plan.totals.uploads}`)
   console.log(`  Shards: ${plan.totals.shards}`)
   console.log(`  Total bytes: ${formatBytes(plan.totals.bytes)}`)
@@ -345,6 +348,15 @@ function printPlan(plan) {
   )
   console.log(`  Funding amount: ${plan.fundingAmount.toString()} USDFC`)
   console.log(`  Ready: ${plan.ready ? 'yes' : 'no'}`)
+
+  for (const space of plan.costs.perSpace) {
+    console.log(`  Space ${space.spaceDID}:`)
+    for (const copy of space.copies) {
+      console.log(
+        `    copy ${copy.copyIndex}: provider=${copy.providerId.toString()} dataset=${copy.dataSetId != null ? copy.dataSetId.toString() : 'new'}`
+      )
+    }
+  }
 
   if (plan.warnings.length > 0) {
     console.warn('\nWarnings:')
@@ -449,15 +461,19 @@ function printCheckpointProgress(state, plan) {
   let pulled = 0
   let committed = 0
   let failedUploads = 0
+  let copies = 0
 
   for (const space of Object.values(state.spaces)) {
-    pulled += space.pulled.size
-    committed += space.committed.size
-    failedUploads += space.failedUploads.size
+    copies += space.copies.length
+    for (const copy of space.copies) {
+      pulled += copy.pulled.size
+      committed += copy.committed.size
+      failedUploads += copy.failedUploads.size
+    }
   }
 
   console.log(
-    `  Checkpoint  pulled=${pulled} committed=${committed}/${plan.totals.shards} failedUploads=${failedUploads}`
+    `  Checkpoint  pulled=${pulled} committed=${committed}/${plan.totals.shards * copies} failedUploads=${failedUploads}`
   )
 }
 

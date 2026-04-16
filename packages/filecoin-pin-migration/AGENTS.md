@@ -38,8 +38,8 @@ Never break this separation.
 | `src/reader.js` | Inventory building — paginates uploads, resolves shards via indexing service claims |
 | `src/source-url.js` | `ClaimsResolver` / `RoundaboutResolver` — applied at reader level |
 | `src/planner.js` | Aggregates inventories, delegates cost computation, returns `MigrationPlan` |
-| `src/compute-migration-costs.js` | Heavy Synapse SDK interaction — creates `StorageContext` per space, reads chain in one batch |
-| `src/migrator.js` | `executeMigration` AsyncGenerator — concurrent pull batches, then one final commit per space |
+| `src/compute-migration-costs.js` | Heavy Synapse SDK interaction — creates 2 `StorageContext`s per space, reads chain in one batch |
+| `src/migrator.js` | `executeMigration` AsyncGenerator — concurrent pull batches, then one final commit per copy |
 | `src/state.js` | Pure state mutations and phase FSM — checkpoint functions and serialization |
 | `src/errors.js` | Typed `Failure` subclasses — one per failure mode |
 | `src/index.js` | Barrel exports |
@@ -94,6 +94,9 @@ Never break this separation.
 
 Incorrect state handling will break resume.
 
+- Each space must keep exactly 2 copy records in `space.copies`
+- The 2 copies must stay bound to distinct providers
+
 ---
 
 ## Data Handling Rules
@@ -143,7 +146,7 @@ Avoid these mistakes:
 - ❌ Mutating inventories in planner
 - ❌ Introducing hidden state outside MigrationState
 - ❌ Re-fetching data during migration
-- ❌ Breaking idempotency (not checking `pulled` / `committed` sets)
+- ❌ Breaking idempotency (not checking per-copy `pulled` / `committed` sets)
 
 ---
 

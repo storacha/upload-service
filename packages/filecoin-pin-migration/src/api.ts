@@ -50,7 +50,7 @@ export interface SpaceInventory {
  * Pre-flight migration plan. Presented to the user for approval before execution.
  *
  * Carries the live `MigrationCostResult` (with live StorageContext handles in
- * `costs.perSpace[].context`) for in-process hand-off to the migrator.
+ * `costs.perSpace[].copies[].context`) for in-process hand-off to the migrator.
  *
  * Space-level upload data lives in `MigrationState.spacesInventories` — the
  * migrator reads from there directly, so `MigrationPlan` carries only what is
@@ -74,13 +74,13 @@ export interface MigrationPlan {
 }
 
 /**
- * Per-space cost breakdown returned by computeMigrationCosts().
+ * Per-copy cost breakdown returned by computeMigrationCosts().
  *
  * `context` is a live (non-serializable) StorageContext — used by the migrator
- * to skip re-creating contexts. Persistable identifiers live alongside it
- * (providerId, serviceProvider, dataSetId).
+ * to skip re-creating contexts. Persistable identifiers live alongside it.
  */
-export interface PerSpaceCost {
+export interface PerCopyCost {
+  copyIndex: number
   spaceDID: SpaceDID
   context: StorageContext
   /** bigint — persist for resume so the same SP is forced via createContext({ providerIds }). */
@@ -105,6 +105,25 @@ export interface PerSpaceCost {
   ratePerMonth: bigint
 }
 
+/**
+ * Per-space cost breakdown returned by computeMigrationCosts().
+ *
+ * A space always carries exactly two copies. Space-level numeric fields are
+ * sums of the two copy-level values for display and funding math.
+ */
+export interface PerSpaceCost {
+  spaceDID: SpaceDID
+  copies: [PerCopyCost, PerCopyCost]
+  isResumed: boolean
+  bytesToMigrate: bigint
+  currentDataSetSize: bigint
+  lockupUSDFC: bigint
+  sybilFee: bigint
+  rateLockupDelta: bigint
+  ratePerEpoch: bigint
+  ratePerMonth: bigint
+}
+
 export interface MigrationCostSummary {
   totalBytes: bigint
   totalLockupUSDFC: bigint
@@ -116,7 +135,7 @@ export interface MigrationCostSummary {
   buffer: bigint
   availableFunds: bigint
   skipBufferApplied: boolean
-  resumedSpaces: number
+  resumedCopies: number
 }
 
 export interface MigrationCostResult {
@@ -136,13 +155,13 @@ export interface MigrationCostResult {
  * called automatically by createMigrationPlan() when a state is passed.
  * Consumers do not construct this directly.
  *
- *  - `pinnedProviderIds` forces the same SP binding across runs.
+ *  - `pinnedProviderIds` forces the same SP binding across runs, per copy.
  *  - `existingDataSetIds` binds to the existing on-chain dataset for
  *    floor-aware rate delta computation.
  */
 export interface ResumeState {
-  existingDataSetIds?: Map<SpaceDID, bigint>
-  pinnedProviderIds?: Map<SpaceDID, bigint>
+  existingDataSetIds?: Map<SpaceDID, Map<number, bigint>>
+  pinnedProviderIds?: Map<SpaceDID, Map<number, bigint>>
 }
 
 // ── Migration state ───────────────────────────────────────────────────────────
@@ -182,7 +201,7 @@ export type SpacePhase =
   | 'failed'
 
 /**
- * Per-upload lifecycle — computed from space.committed + inventory, not stored.
+ * Per-upload lifecycle — computed from copy.committed + inventory, not stored.
  *   pending    — no shards committed yet
  *   migrating  — some shards committed, not all
  *   complete   — all shards committed
@@ -191,27 +210,38 @@ export type SpacePhase =
 export type UploadPhase = 'pending' | 'migrating' | 'complete' | 'incomplete'
 
 /**
- * Per-space resume record and progress tracker.
+ * Per-copy resume record and progress tracker within a space.
  *
- * SP binding (providerId, dataSetId) enables planner resume.
- * `pulled` tracks shard CIDs pulled successfully and ready for the final
- * space-level commit. `committed` tracks shard CIDs already written on-chain.
+ * Each copy binds to its own storage provider and eventual on-chain dataset.
+ * Pull/commit progress is tracked independently so resume can continue each
+ * copy without interfering with the other.
  */
-export interface SpaceState {
-  did: SpaceDID
-  phase: SpacePhase
+export interface SpaceCopyState {
+  copyIndex: number
   /** Locks SP selection across runs. Passed back as providerIds on resume. */
   providerId: bigint
   /** Display/audit only. */
   serviceProvider: `0x${string}`
   /** null until first commit; then passed as dataSetIds on resume. */
   dataSetId: bigint | null
-  /** Shard CIDs pulled successfully and ready for final commit. */
+  /** Shard CIDs pulled successfully and ready for the final commit. */
   pulled: Set<string>
   /** Shard CIDs that have been committed on-chain. */
   committed: Set<string>
   /** Upload root CIDs that had at least one shard failure during migration. */
   failedUploads: Set<string>
+}
+
+/**
+ * Per-space resume record and progress tracker.
+ *
+ * `copies` is the source of truth for provider bindings, datasets, and
+ * per-copy progress.
+ */
+export interface SpaceState {
+  did: SpaceDID
+  phase: SpacePhase
+  copies: SpaceCopyState[]
 }
 
 /**
@@ -276,8 +306,11 @@ export interface CreatePlanInput {
   /** Mutated in place; SP bindings written after cost computation */
   state: MigrationState
   /**
-   * Target storage provider IDs (default: SDK auto-select).
-   * On resume, pinned providers extracted from state always win.
+   * Target storage provider IDs. At least two distinct IDs are required when
+   * provided so the planner can bind one provider per copy. When omitted, the
+   * SDK auto-selects and the planner validates that the two chosen providers
+   * are distinct. On resume, pinned per-copy providers extracted from state
+   * always win.
    */
   providerIds?: bigint[]
 }
@@ -334,14 +367,15 @@ export interface ExecuteMigrationInput {
  *
  * State persistence:
  *   state:checkpoint — emitted after each reader page, after planner writes SP
- *   bindings, and after each migrator batch; consumer persists to disk on this event
+ *   bindings, and after migrator progress for each copy; consumer persists to
+ *   disk on this event
  *
  * Terminal:
  *   migration:complete — once, after all spaces are processed
  *
  * Progress is derived from MigrationState on each state:checkpoint.
- * Upload progress (committed vs total shards) is computed from
- * space.committed + spacesInventories[did].shards.
+ * Upload progress (committed vs total shards) is computed from each
+ * copy.committed set plus spacesInventories[did].shards.
  */
 export type MigrationEvent =
   | { type: 'reader:space:start'; spaceDID: SpaceDID }
@@ -361,6 +395,7 @@ export type MigrationEvent =
   | {
       type: 'migration:batch:failed'
       spaceDID: SpaceDID
+      copyIndex: number
       /** Which pull/commit stage produced the failure */
       stage: MigratorPhase
       error: Error
@@ -370,6 +405,7 @@ export type MigrationEvent =
   | {
       type: 'migration:commit:failed'
       spaceDID: SpaceDID
+      copyIndex: number
       error: Error
       /** Upload root CIDs affected */
       roots: string[]

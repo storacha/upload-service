@@ -2,6 +2,48 @@
  * @import * as API from './api.js'
  */
 
+/**
+ * Build a copy state entry.
+ *
+ * @param {object} input
+ * @param {number} input.copyIndex
+ * @param {bigint} input.providerId
+ * @param {`0x${string}`} input.serviceProvider
+ * @param {bigint | null} input.dataSetId
+ * @param {Set<string>} [input.pulled]
+ * @param {Set<string>} [input.committed]
+ * @param {Set<string>} [input.failedUploads]
+ * @returns {API.SpaceCopyState}
+ */
+function createSpaceCopyState({
+  copyIndex,
+  providerId,
+  serviceProvider,
+  dataSetId,
+  pulled = new Set(),
+  committed = new Set(),
+  failedUploads = new Set(),
+}) {
+  return {
+    copyIndex,
+    providerId,
+    serviceProvider,
+    dataSetId,
+    pulled,
+    committed,
+    failedUploads,
+  }
+}
+
+/**
+ * @param {API.SpaceState} space
+ * @param {number} copyIndex
+ * @returns {API.SpaceCopyState | undefined}
+ */
+function getCopy(space, copyIndex) {
+  return space.copies.find((copy) => copy.copyIndex === copyIndex)
+}
+
 // ── Phase resolvers ────────────────────────────────────────────────────────────
 //
 // Phase progression:
@@ -10,7 +52,7 @@
 //   Migration: approved → funded → complete | incomplete   (set in finalizeMigration)
 //
 // resolveUploadPhase is exported as a consumer utility — not used internally.
-// Space phase is resolved directly from committed count vs inventory.shards.length.
+// Space phase is resolved directly from per-copy committed counts vs inventory.shards.length.
 
 /**
  * Compute upload phase from shard counts. Consumer utility — not used internally.
@@ -109,12 +151,12 @@ export function checkpointInventoryPage(state, { spaceDID, shards, uploads, fail
 /**
  * Checkpoint 1: user approves plan — BEFORE fundSync.
  *
- * Populates state.spaces with SP bindings from the cost result. Upload tracking
- * is not pre-populated here — progress is derived at runtime from space.committed
- * and state.spacesInventories.
+ * Populates state.spaces with per-copy SP bindings from the cost result.
+ * Upload tracking is not pre-populated here — progress is derived at runtime
+ * from each copy's committed set and state.spacesInventories.
  *
- * SP bindings (providerId, serviceProvider) are captured here so a re-run
- * after a crash binds to the same SP even if fundSync never landed.
+ * SP bindings are captured here so a re-run after a crash binds each copy to
+ * the same provider even if fundSync never landed.
  *
  * @param {API.MigrationState} state - Mutated in place
  * @param {API.PerSpaceCost[]} perSpaceCost
@@ -122,15 +164,26 @@ export function checkpointInventoryPage(state, { spaceDID, shards, uploads, fail
 export function transitionToApproved(state, perSpaceCost) {
   for (const cost of perSpaceCost) {
     const existing = state.spaces[cost.spaceDID]
+    const existingByIndex = new Map(
+      existing?.copies.map((copy) => [copy.copyIndex, copy]) ?? []
+    )
+    const copies = cost.copies.map((plannedCopy) => {
+      const existingCopy = existingByIndex.get(plannedCopy.copyIndex)
+      return createSpaceCopyState({
+        copyIndex: plannedCopy.copyIndex,
+        providerId: plannedCopy.providerId,
+        serviceProvider: plannedCopy.serviceProvider,
+        dataSetId: existingCopy?.dataSetId ?? plannedCopy.dataSetId,
+        pulled: existingCopy?.pulled ?? new Set(),
+        committed: existingCopy?.committed ?? new Set(),
+        failedUploads: existingCopy?.failedUploads ?? new Set(),
+      })
+    })
+
     state.spaces[cost.spaceDID] = {
       did: cost.spaceDID,
       phase: existing?.phase ?? 'pending',
-      providerId: cost.providerId,
-      serviceProvider: cost.serviceProvider,
-      dataSetId: existing?.dataSetId ?? cost.dataSetId,
-      pulled: existing?.pulled ?? new Set(),
-      committed: existing?.committed ?? new Set(),
-      failedUploads: existing?.failedUploads ?? new Set(),
+      copies,
     }
   }
   state.phase = 'approved'
@@ -150,19 +203,25 @@ export function transitionToFunded(state) {
  *
  * @param {API.MigrationState} state - Mutated in place
  * @param {API.SpaceDID} spaceDID
+ * @param {number} copyIndex
  * @param {string} shardCid
  * @returns {boolean} true when state changed
  */
-export function recordPull(state, spaceDID, shardCid) {
+export function recordPull(state, spaceDID, copyIndex, shardCid) {
   const space = state.spaces[spaceDID]
-  if (!space || space.committed.has(shardCid)) return false
+  if (!space) return false
 
-  const before = space.pulled.size
-  space.pulled.add(shardCid)
+  const copy = getCopy(space, copyIndex)
+  if (!copy || copy.committed.has(shardCid)) {
+    return false
+  }
+
+  const before = copy.pulled.size
+  copy.pulled.add(shardCid)
   if (space.phase === 'pending') {
     space.phase = 'migrating'
   }
-  return space.pulled.size !== before
+  return copy.pulled.size !== before
 }
 
 /**
@@ -170,41 +229,48 @@ export function recordPull(state, spaceDID, shardCid) {
  *
  * @param {API.MigrationState} state - Mutated in place
  * @param {API.SpaceDID} spaceDID
+ * @param {number} copyIndex
  * @param {string} root
  * @returns {boolean} true when state changed
  */
-export function recordFailedUpload(state, spaceDID, root) {
+export function recordFailedUpload(state, spaceDID, copyIndex, root) {
   const space = state.spaces[spaceDID]
   if (!space) return false
 
-  const before = space.failedUploads.size
-  space.failedUploads.add(root)
-  return space.failedUploads.size !== before
+  const copy = getCopy(space, copyIndex)
+  if (!copy) return false
+
+  const before = copy.failedUploads.size
+  copy.failedUploads.add(root)
+  return copy.failedUploads.size !== before
 }
 
 /**
  * Checkpoint 5: a shard was successfully committed.
  *
- * Sets the shard CID key in the committed record.
- * The service provider is already on SpaceState — no need to track per shard.
+ * Sets the shard CID in the committed set for a specific copy.
  *
  * @param {API.MigrationState} state - Mutated in place
  * @param {API.SpaceDID} spaceDID
+ * @param {number} copyIndex
  * @param {string} shardCid
  * @param {bigint} dataSetId
  */
-export function recordCommit(state, spaceDID, shardCid, dataSetId) {
+export function recordCommit(state, spaceDID, copyIndex, shardCid, dataSetId) {
   const space = state.spaces[spaceDID]
   if (!space) return
 
-  space.committed.add(shardCid)
-  space.pulled.delete(shardCid)
+  const copy = getCopy(space, copyIndex)
+  if (!copy) return
+
+  copy.committed.add(shardCid)
+  copy.pulled.delete(shardCid)
   if (space.phase === 'pending') {
     space.phase = 'migrating'
   }
 
-  if (space.dataSetId === null) {
-    space.dataSetId = dataSetId
+  if (copy.dataSetId === null) {
+    copy.dataSetId = dataSetId
   }
 }
 
@@ -212,7 +278,7 @@ export function recordCommit(state, spaceDID, shardCid, dataSetId) {
  * Checkpoint 6: space loop ends — resolve terminal phases for all uploads
  * and the space itself.
  *
- * Upload phases are computed from space.committed counts vs inventory shard
+ * Upload phases are computed from per-copy committed counts vs inventory shard
  * counts — not stored. resolveUploadPhase is called with computed values.
  *
  * @param {API.MigrationState} state - Mutated in place
@@ -228,10 +294,20 @@ export function finalizeSpace(state, spaceDID) {
     return
   }
 
-  const committedCount = space.committed.size
-  if (committedCount === 0) {
+  const copyStates = space.copies
+  if (copyStates.length === 0) {
     space.phase = 'failed'
-  } else if (committedCount === inventory.shards.length) {
+    return
+  }
+
+  const allComplete = copyStates.every(
+    (copy) => copy.committed.size === inventory.shards.length
+  )
+  const anyCommitted = copyStates.some((copy) => copy.committed.size > 0)
+
+  if (!anyCommitted) {
+    space.phase = 'failed'
+  } else if (allComplete) {
     space.phase = 'complete'
   } else {
     space.phase = 'incomplete'
@@ -258,16 +334,28 @@ export function finalizeMigration(state) {
  * @returns {API.ResumeState}
  */
 export function buildResumeState(state) {
-  /** @type {Map<API.SpaceDID, bigint>} */
+  /** @type {Map<API.SpaceDID, Map<number, bigint>>} */
   const pinnedProviderIds = new Map()
-  /** @type {Map<API.SpaceDID, bigint>} */
+  /** @type {Map<API.SpaceDID, Map<number, bigint>>} */
   const existingDataSetIds = new Map()
 
   for (const [did, space] of Object.entries(state.spaces)) {
     const spaceDID = /** @type {API.SpaceDID} */ (did)
-    pinnedProviderIds.set(spaceDID, space.providerId)
-    if (space.dataSetId != null) {
-      existingDataSetIds.set(spaceDID, space.dataSetId)
+    const providers = new Map()
+    const dataSets = new Map()
+
+    for (const copy of space.copies) {
+      providers.set(copy.copyIndex, copy.providerId)
+      if (copy.dataSetId != null) {
+        dataSets.set(copy.copyIndex, copy.dataSetId)
+      }
+    }
+
+    if (providers.size > 0) {
+      pinnedProviderIds.set(spaceDID, providers)
+    }
+    if (dataSets.size > 0) {
+      existingDataSetIds.set(spaceDID, dataSets)
     }
   }
 
@@ -279,8 +367,8 @@ export function buildResumeState(state) {
  *
  * bigint fields are encoded as decimal strings since JSON.stringify cannot
  * serialize bigints:
- *   - spaces[did].providerId → decimal string
- *   - spaces[did].dataSetId → decimal string or null
+ *   - spaces[did].copies[*].providerId → decimal string
+ *   - spaces[did].copies[*].dataSetId → decimal string or null
  *   - spacesInventories[did].totalBytes → decimal string
  *   - spacesInventories[did].shards[].sizeBytes → decimal string
  *
@@ -293,12 +381,15 @@ export function serializeState(state) {
     spaces[did] = {
       did: space.did,
       phase: space.phase,
-      providerId: space.providerId.toString(10),
-      serviceProvider: space.serviceProvider,
-      dataSetId: space.dataSetId != null ? space.dataSetId.toString(10) : null,
-      pulled: [...space.pulled],
-      committed: [...space.committed],
-      failedUploads: [...space.failedUploads],
+      copies: space.copies.map((copy) => ({
+        copyIndex: copy.copyIndex,
+        providerId: copy.providerId.toString(10),
+        serviceProvider: copy.serviceProvider,
+        dataSetId: copy.dataSetId != null ? copy.dataSetId.toString(10) : null,
+        pulled: [...copy.pulled],
+        committed: [...copy.committed],
+        failedUploads: [...copy.failedUploads],
+      })),
     }
   }
 
@@ -402,30 +493,55 @@ export function deserializeState(obj) {
   for (const [did, rawSpace] of Object.entries(
     /** @type {Record<string, Record<string, unknown>>} */ (raw.spaces)
   )) {
+    const rawCopies = /** @type {Array<Record<string, unknown>>} */ (
+      rawSpace.copies ?? []
+    )
+    if (rawCopies.length === 0) {
+      throw new TypeError(
+        `deserializeState: space "${did}" — "copies" must be a non-empty array`
+      )
+    }
+
+    const copies = rawCopies.map((rawCopy, copyPosition) =>
+      createSpaceCopyState({
+        copyIndex:
+          typeof rawCopy.copyIndex === 'number' ? rawCopy.copyIndex : copyPosition,
+        providerId: parseBigIntField(
+          rawCopy.providerId,
+          'providerId',
+          `space "${did}" copy ${copyPosition}`
+        ),
+        serviceProvider: /** @type {`0x${string}`} */ (rawCopy.serviceProvider),
+        dataSetId:
+          rawCopy.dataSetId != null
+            ? parseBigIntField(
+                rawCopy.dataSetId,
+                'dataSetId',
+                `space "${did}" copy ${copyPosition}`
+              )
+            : null,
+        pulled: parseStringSetField(
+          rawCopy.pulled,
+          'pulled',
+          `space "${did}" copy ${copyPosition}`
+        ),
+        committed: parseStringSetField(
+          rawCopy.committed,
+          'committed',
+          `space "${did}" copy ${copyPosition}`
+        ),
+        failedUploads: parseStringSetField(
+          rawCopy.failedUploads,
+          'failedUploads',
+          `space "${did}" copy ${copyPosition}`
+        ),
+      })
+    )
+
     spaces[/** @type {API.SpaceDID} */ (did)] = {
       did: /** @type {API.SpaceDID} */ (rawSpace.did),
       phase: /** @type {API.SpacePhase} */ (rawSpace.phase),
-      providerId: parseBigIntField(
-        rawSpace.providerId,
-        'providerId',
-        `space "${did}"`
-      ),
-      serviceProvider: /** @type {`0x${string}`} */ (rawSpace.serviceProvider),
-      dataSetId:
-        rawSpace.dataSetId != null
-          ? parseBigIntField(rawSpace.dataSetId, 'dataSetId', `space "${did}"`)
-          : null,
-      pulled: parseStringSetField(rawSpace.pulled, 'pulled', `space "${did}"`),
-      committed: parseStringSetField(
-        rawSpace.committed,
-        'committed',
-        `space "${did}"`
-      ),
-      failedUploads: parseStringSetField(
-        rawSpace.failedUploads,
-        'failedUploads',
-        `space "${did}"`
-      ),
+      copies,
     }
   }
 

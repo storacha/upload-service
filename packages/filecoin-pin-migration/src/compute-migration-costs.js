@@ -27,6 +27,61 @@ const DATASET_METADATA_BASE = Object.freeze({
   source: 'storacha-migration',
   withIPFSIndexing: '',
 })
+const REQUIRED_COPIES = 2
+
+/**
+ * @param {API.SpaceDID} spaceDID
+ * @param {bigint[] | undefined} configuredProviderIds
+ * @returns {[bigint | undefined, bigint | undefined]}
+ */
+function resolveConfiguredCopyProviders(spaceDID, configuredProviderIds) {
+  if (configuredProviderIds && configuredProviderIds.length < REQUIRED_COPIES) {
+    throw new Error(
+      `At least ${REQUIRED_COPIES} distinct providerIds are required to enforce ${REQUIRED_COPIES} copies per space`
+    )
+  }
+  return [configuredProviderIds?.[0], configuredProviderIds?.[1]]
+}
+
+/**
+ * @param {API.SpaceInventory} space
+ * @param {number} copyIndex
+ * @param {API.Synapse} synapse
+ * @param {bigint | undefined} providerId
+ * @param {bigint | undefined} existingDataSetId
+ * @param {bigint[] | undefined} excludeProviderIds
+ * @returns {Promise<API.PerCopyCost['context']>}
+ */
+async function createCopyContext(
+  space,
+  copyIndex,
+  synapse,
+  providerId,
+  existingDataSetId,
+  excludeProviderIds
+) {
+  /** @type {import('@filoz/synapse-sdk').StorageServiceOptions} */
+  const options = {
+    metadata: {
+      ...DATASET_METADATA_BASE,
+      space: space.did,
+      copy: String(copyIndex),
+    },
+    ...(providerId != null && { providerIds: [providerId] }),
+    ...(existingDataSetId != null && { dataSetIds: [existingDataSetId] }),
+    ...(excludeProviderIds?.length && { excludeProviderIds }),
+  }
+
+  try {
+    return await synapse.storage.createContext(options)
+  } catch (err) {
+    throw new Error(
+      `Failed to create context for space ${space.did} copy ${copyIndex}: ${
+        err instanceof Error ? err.message : String(err)
+      }`
+    )
+  }
+}
 
 /**
  * Aggregate per-space upload costs into a single account-level deposit.
@@ -37,14 +92,14 @@ const DATASET_METADATA_BASE = Object.freeze({
  * migration where each space has a different total size.
  *
  * Returns:
- *  - `perSpace[]` — display values + the live StorageContext for the migrator
+ *  - `perSpace[]` — display values + the live StorageContext handles for the migrator
  *  - `summary` — account-level breakdown for UI
  *  - `totalDepositNeeded` — single fundSync amount
  *  - `needsFwssMaxApproval` — pass through to fundSync
  *
  * Resume contract: passing `resumeState.pinnedProviderIds` forces the SDK to
- * bind every space to the same SP across runs (the lockup is earmarked there).
- * Passing `resumeState.existingDataSetIds` binds to a previously-committed
+ * bind every space copy to the same SP across runs. Passing
+ * `resumeState.existingDataSetIds` binds each copy to its existing on-chain
  * dataset so floor-aware rate deltas are computed correctly.
  *
  * Fail-fast on createContext rejection: a plan with a silently missing space is
@@ -69,59 +124,70 @@ export async function computeMigrationCosts(spaces, synapse, opts = {}) {
     'Funding is irreversible. Verify source URLs are reachable before approving — if all commits fail permanently, deposited USDFC is locked until the rail period ends.',
   ]
 
-  // ── Step 1: Resolve/create one StorageContext per space ───────────────────
+  // ── Step 1: Resolve/create two StorageContexts per space ──────────────────
   // Fail-fast: if any createContext rejects, the whole plan fails with a clear
   // error naming the space. A plan with a silently missing space is a trap.
-  const contexts = await Promise.all(
+  const contextsBySpace = await Promise.all(
     spaces.map(async (space) => {
       const pinned = pinnedProviderIds?.get(space.did)
-      const existingDataSet = existingDataSetIds?.get(space.did)
+      const existingDataSets = existingDataSetIds?.get(space.did)
+      const [configuredPrimaryProviderId, configuredSecondaryProviderId] =
+        resolveConfiguredCopyProviders(space.did, configuredProviderIds)
+      const pinnedPrimaryProviderId = pinned?.get(0)
+      const pinnedSecondaryProviderId = pinned?.get(1)
 
-      // Conflict rule: pinned always wins. The pinned SP holds the lockup
-      // from the prior funding tx and cannot be changed without forfeiting it.
       if (
-        pinned != null &&
-        configuredProviderIds?.length &&
-        !configuredProviderIds.includes(pinned)
+        pinnedPrimaryProviderId != null &&
+        configuredPrimaryProviderId != null &&
+        pinnedPrimaryProviderId !== configuredPrimaryProviderId
       ) {
         warnings.push(
-          `${space.did}: configured providerIds conflict with pinned providerId ${pinned} from a prior run; pinned wins.`
+          `${space.did}: configured providerIds conflict with pinned providerId ${pinnedPrimaryProviderId} for copy 0; pinned wins.`
+        )
+      }
+      if (
+        pinnedSecondaryProviderId != null &&
+        configuredSecondaryProviderId != null &&
+        pinnedSecondaryProviderId !== configuredSecondaryProviderId
+      ) {
+        warnings.push(
+          `${space.did}: configured providerIds conflict with pinned providerId ${pinnedSecondaryProviderId} for copy 1; pinned wins.`
         )
       }
 
-      const providerIds =
-        pinned != null
-          ? [pinned]
-          : configuredProviderIds?.length
-          ? configuredProviderIds
-          : undefined
+      const primaryContext = await createCopyContext(
+        space,
+        0,
+        synapse,
+        pinnedPrimaryProviderId ?? configuredPrimaryProviderId,
+        existingDataSets?.get(0),
+        undefined
+      )
+      const secondaryContext = await createCopyContext(
+        space,
+        1,
+        synapse,
+        pinnedSecondaryProviderId ?? configuredSecondaryProviderId,
+        existingDataSets?.get(1),
+        [primaryContext.provider.id]
+      )
 
-      /** @type {import('@filoz/synapse-sdk').StorageServiceOptions} */
-      const options = {
-        metadata: {
-          ...DATASET_METADATA_BASE,
-          space: space.did,
-          // TODO: add space name
-        },
-        ...(providerIds && { providerIds }),
-        ...(existingDataSet != null && { dataSetIds: [existingDataSet] }),
-      }
-
-      try {
-        return await synapse.storage.createContext(options)
-      } catch (err) {
+      if (primaryContext.provider.id === secondaryContext.provider.id) {
         throw new Error(
-          `Failed to create context for space ${space.did}: ${
-            err instanceof Error ? err.message : String(err)
-          }`
+          `${space.did}: expected ${REQUIRED_COPIES} distinct providers, got the same provider twice`
         )
       }
+
+      return [
+        { context: primaryContext, copyIndex: 0 },
+        { context: secondaryContext, copyIndex: 1 },
+      ]
     })
   )
 
   // ── Step 2: Collect existing dataset IDs for on-chain size lookup ─────────
-  const existingIds = contexts
-    .map((c) => c.dataSetId)
+  const existingIds = contextsBySpace
+    .flatMap((copies) => copies.map((copy) => copy.context.dataSetId))
     .filter(
       /** @returns {id is bigint} @param {bigint | undefined} id */ (id) =>
         id != null
@@ -149,60 +215,81 @@ export async function computeMigrationCosts(spaces, synapse, opts = {}) {
   let totalRatePerEpoch = 0n
   let totalRatePerMonth = 0n
   let totalBytes = 0n
-  let resumedSpaces = 0
+  let resumedCopies = 0
 
   /** @type {API.PerSpaceCost[]} */
   const perSpace = spaces.map((space, i) => {
-    const ctx = contexts[i]
-    const isNewDataSet = ctx.dataSetId == null
-    const currentDataSetSize = isNewDataSet
-      ? 0n
-      : dataSetSizes.get(/** @type {bigint} */ (ctx.dataSetId)) ?? 0n
+    const copyContexts = contextsBySpace[i]
 
-    const lockup = calculateAdditionalLockupRequired({
-      dataSize: space.totalBytes,
-      currentDataSetSize,
-      pricePerTiBPerMonth: pricing.pricePerTiBPerMonthNoCDN,
-      minimumPricePerMonth: pricing.minimumPricePerMonth,
-      epochsPerMonth: pricing.epochsPerMonth,
-      lockupEpochs: LOCKUP_PERIOD,
-      isNewDataSet,
-      // Read withCDN from the live context — single source of truth, matches
-      // manager.ts:749. Hard-coding `false` would silently miscompute on
-      // CDN-enabled spaces.
-      withCDN: ctx.withCDN,
+    /** @type {API.PerCopyCost[]} */
+    const copyCosts = copyContexts.map(({ context, copyIndex }) => {
+      const isNewDataSet = context.dataSetId == null
+      const currentDataSetSize = isNewDataSet
+        ? 0n
+        : dataSetSizes.get(/** @type {bigint} */ (context.dataSetId)) ?? 0n
+
+      const lockup = calculateAdditionalLockupRequired({
+        dataSize: space.totalBytes,
+        currentDataSetSize,
+        pricePerTiBPerMonth: pricing.pricePerTiBPerMonthNoCDN,
+        minimumPricePerMonth: pricing.minimumPricePerMonth,
+        epochsPerMonth: pricing.epochsPerMonth,
+        lockupEpochs: LOCKUP_PERIOD,
+        isNewDataSet,
+        withCDN: context.withCDN,
+      })
+
+      const totalSize = currentDataSetSize + space.totalBytes
+      const rate = calculateEffectiveRate({
+        sizeInBytes: totalSize,
+        pricePerTiBPerMonth: pricing.pricePerTiBPerMonthNoCDN,
+        minimumPricePerMonth: pricing.minimumPricePerMonth,
+        epochsPerMonth: pricing.epochsPerMonth,
+      })
+
+      totalLockup += lockup.total
+      totalRateDelta += lockup.rateDeltaPerEpoch
+      totalRatePerEpoch += rate.ratePerEpoch
+      totalRatePerMonth += rate.ratePerMonth
+      totalBytes += space.totalBytes
+      if (!isNewDataSet) resumedCopies++
+
+      return {
+        copyIndex,
+        spaceDID: space.did,
+        context,
+        providerId: context.provider.id,
+        serviceProvider: context.serviceProvider,
+        dataSetId: context.dataSetId ?? null,
+        isResumed: !isNewDataSet,
+        bytesToMigrate: space.totalBytes,
+        currentDataSetSize,
+        lockupUSDFC: lockup.total,
+        sybilFee: lockup.sybilFee,
+        rateLockupDelta: lockup.rateLockupDelta,
+        ratePerEpoch: rate.ratePerEpoch,
+        ratePerMonth: rate.ratePerMonth,
+      }
     })
 
-    totalLockup += lockup.total
-    totalRateDelta += lockup.rateDeltaPerEpoch
-    totalBytes += space.totalBytes
-    if (!isNewDataSet) resumedSpaces++
-
-    // Display rate is for the post-migration TOTAL size, not the delta.
-    const totalSize = currentDataSetSize + space.totalBytes
-    const rate = calculateEffectiveRate({
-      sizeInBytes: totalSize,
-      pricePerTiBPerMonth: pricing.pricePerTiBPerMonthNoCDN,
-      minimumPricePerMonth: pricing.minimumPricePerMonth,
-      epochsPerMonth: pricing.epochsPerMonth,
-    })
-    totalRatePerEpoch += rate.ratePerEpoch
-    totalRatePerMonth += rate.ratePerMonth
-
+    const [copy0, copy1] = copyCosts
     return {
       spaceDID: space.did,
-      context: ctx,
-      providerId: ctx.provider.id,
-      serviceProvider: ctx.serviceProvider,
-      dataSetId: ctx.dataSetId ?? null,
-      isResumed: !isNewDataSet,
+      copies: /** @type {[API.PerCopyCost, API.PerCopyCost]} */ ([copy0, copy1]),
+      isResumed: copyCosts.some((copy) => copy.isResumed),
       bytesToMigrate: space.totalBytes,
-      currentDataSetSize,
-      lockupUSDFC: lockup.total,
-      sybilFee: lockup.sybilFee,
-      rateLockupDelta: lockup.rateLockupDelta,
-      ratePerEpoch: rate.ratePerEpoch,
-      ratePerMonth: rate.ratePerMonth,
+      currentDataSetSize: copyCosts.reduce(
+        (sum, copy) => sum + copy.currentDataSetSize,
+        0n
+      ),
+      lockupUSDFC: copyCosts.reduce((sum, copy) => sum + copy.lockupUSDFC, 0n),
+      sybilFee: copyCosts.reduce((sum, copy) => sum + copy.sybilFee, 0n),
+      rateLockupDelta: copyCosts.reduce(
+        (sum, copy) => sum + copy.rateLockupDelta,
+        0n
+      ),
+      ratePerEpoch: copyCosts.reduce((sum, copy) => sum + copy.ratePerEpoch, 0n),
+      ratePerMonth: copyCosts.reduce((sum, copy) => sum + copy.ratePerMonth, 0n),
     }
   })
 
@@ -230,7 +317,9 @@ export async function computeMigrationCosts(spaces, synapse, opts = {}) {
   // are draining funds AND every context is a new dataset (no pre-existing
   // rate locked in). On resume, any context with dataSetId != null means a
   // rail already exists, so skipBuffer naturally evaluates to false.
-  const allNewDatasets = contexts.every((c) => c.dataSetId == null)
+  const allNewDatasets = contextsBySpace.every((copies) =>
+    copies.every((copy) => copy.context.dataSetId == null)
+  )
   const skipBuffer = accountInfo.lockupRate === 0n && allNewDatasets
 
   const buffer = skipBuffer
@@ -259,7 +348,7 @@ export async function computeMigrationCosts(spaces, synapse, opts = {}) {
       buffer,
       availableFunds,
       skipBufferApplied: skipBuffer,
-      resumedSpaces,
+      resumedCopies,
     },
     totalDepositNeeded,
     needsFwssMaxApproval: !approved,

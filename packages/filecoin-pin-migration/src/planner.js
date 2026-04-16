@@ -20,15 +20,16 @@ const BPS_BASE = 10000n
  *   planner:ready       — carries the MigrationPlan for consumer display/approval
  *
  * The consumer shows the plan to the user. If approved, pass state and plan to
- * executeMigration(). SP bindings in state ensure the same provider is used on
- * resume even if the process crashes before executeMigration begins.
+ * executeMigration(). SP bindings in state ensure the same providers are used
+ * on resume even if the process crashes before executeMigration begins.
  *
  * ## Resume
  *
  * Pass the deserialized `MigrationState`. The planner extracts pinned SP and
  * dataset bindings via `buildResumeState` so:
- *  - Every space binds to the same storage provider as the original run.
- *  - Floor-aware rate deltas are computed against the existing on-chain dataset.
+ *  - Every space copy binds to the same storage provider as the original run.
+ *  - Floor-aware rate deltas are computed against the existing on-chain
+ *    datasets for each copy.
  *
  * Typical resume sequence:
  * ```js

@@ -28,7 +28,7 @@ The result is a `SpaceInventory` per space: a flat list of every resolved shard 
 
 ### 2. Planner — cost calculation and approval
 
-Takes space inventories, creates one `StorageContext` per space (each context binds a payer, provider, and on-chain dataset via the Synapse SDK), and computes the single USDFC deposit needed across all spaces. Writes SP bindings to state and yields a `planner:ready` event carrying a `MigrationPlan` the consumer can display for user approval before any on-chain action.
+Takes space inventories, creates exactly 2 `StorageContext`s per space, and computes the single USDFC deposit needed across all spaces. Each copy binds a payer, a distinct provider, and its own on-chain dataset via the Synapse SDK. The planner writes both copy bindings to state and yields a `planner:ready` event carrying a `MigrationPlan` the consumer can display for user approval before any on-chain action.
 
 The plan carries:
 
@@ -42,13 +42,13 @@ The plan carries:
 
 Executes the approved plan as an `AsyncGenerator`. Yields `MigrationEvent` objects the consumer handles at its own pace: persisting state to disk, displaying progress, logging failures.
 
-Shards from all uploads in a space are batched together (cross-upload) from the flat `inventory.shards` array, maximising batch utilisation regardless of how many shards each upload has. Pull work runs in concurrent batches, then all successfully pulled shards for the space are committed together once.
+Shards from all uploads in a space are batched together (cross-upload) from the flat `inventory.shards` array, maximising batch utilisation regardless of how many shards each upload has. The same pull/commit flow runs independently for each of the 2 copies in the space. Pull work runs in concurrent batches, then all successfully pulled shards for that copy are committed together once.
 
 1. **Presign** — EIP-712 signature scoped to the exact pieces in the batch
 2. **Pull** — SP fetches pieces from `sourceURL`; retried up to 3 times with exponential backoff; failures are tracked by upload root
-3. **Commit** — one final on-chain registration for all pulled pieces in the space; failed commits can be retried interactively by the caller
+3. **Commit** — one final on-chain registration for all pulled pieces in that copy; failed commits can be retried interactively by the caller
 
-State is checkpointed after pulled progress is recorded and after successful final commits. Pulled-but-not-yet-committed shards are persisted so resume can skip re-pulling them.
+State is checkpointed after pulled progress is recorded and after successful final commits. Pulled-but-not-yet-committed shards are persisted per copy so resume can skip re-pulling them.
 
 ---
 
@@ -72,7 +72,7 @@ State is checkpointed after pulled progress is recorded and after successful fin
                      ▼
 ┌────────────────────────────────────────────────────────────┐
 │                createMigrationPlan()                       │
-│  + Synapse SDK (createContext per space, chain reads)      │
+│  + Synapse SDK (2 contexts per space, chain reads)         │
 │                                                            │
 │  → planner:ready  (costs, totals, ready flag)              │
 └────────────────────┬───────────────────────────────────────┘
@@ -80,7 +80,7 @@ State is checkpointed after pulled progress is recorded and after successful fin
                      ▼
 ┌────────────────────────────────────────────────────────────┐
 │              executeMigration()  [AsyncGenerator]          │
-│  pull batches → final commit  (per space)                  │
+│  pull batches → final commit  (per copy)                   │
 │  checkpoints → MigrationState  (serializable, resumable)   │
 │                                                            │
 │  yields: funding:start/complete/failed                     │
@@ -90,6 +90,8 @@ State is checkpointed after pulled progress is recorded and after successful fin
 │          migration:complete                                │
 └────────────────────────────────────────────────────────────┘
 ```
+
+The library always enforces 2 copies per space on 2 distinct providers. A successful migration therefore produces 2 dataset IDs per space.
 
 ---
 
