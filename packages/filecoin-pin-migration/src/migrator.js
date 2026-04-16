@@ -133,6 +133,8 @@ async function* ensureFunding(costs, fundingAmount, synapse, state) {
 
   yield { type: 'funding:start', amount: fundingAmount }
 
+  /** @type {string} */
+  let txHash
   try {
     const result = await synapse.payments.fundSync({
       amount: fundingAmount,
@@ -143,6 +145,7 @@ async function* ensureFunding(costs, fundingAmount, synapse, state) {
         `Funding transaction ${result.hash} failed with status ${result.receipt.status}`
       )
     }
+    txHash = result.hash
   } catch (err) {
     const error = new FundingFailedFailure(
       err instanceof Error ? err.message : String(err)
@@ -152,7 +155,7 @@ async function* ensureFunding(costs, fundingAmount, synapse, state) {
   }
 
   transitionToFunded(state)
-  yield { type: 'funding:complete' }
+  yield { type: 'funding:complete', txHash }
 }
 
 // ── Per-space migration ───────────────────────────────────────────────────────
@@ -290,6 +293,7 @@ async function* migrateCopy({
       pulledCandidates.push(...result.pulledCandidates)
     }
 
+    // check if activeFailedRoots.size > 0
     for (const shard of pulledCandidates) {
       if (stopOnError && activeFailedRoots.has(shard.root)) continue
       pulledChanged =
@@ -464,9 +468,10 @@ async function presignAndPull({ batch, context, signal }) {
     }
   }
 
-  const pulledCandidatesFiltered = failedUploadsInBatch.size === 0
-    ? pulledCandidates
-    : pulledCandidates.filter((s) => !failedUploadsInBatch.has(s.root))
+  const pulledCandidatesFiltered =
+    failedUploadsInBatch.size === 0
+      ? pulledCandidates
+      : pulledCandidates.filter((s) => !failedUploadsInBatch.has(s.root))
 
   const baseResult = {
     pulledCandidates: pulledCandidatesFiltered,

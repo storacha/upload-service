@@ -390,7 +390,7 @@ export type MigrationEvent =
   | { type: 'reader:complete' }
   | { type: 'planner:ready'; plan: MigrationPlan }
   | { type: 'funding:start'; amount: bigint }
-  | { type: 'funding:complete' }
+  | { type: 'funding:complete'; txHash: string }
   | { type: 'funding:failed'; error: Error }
   | {
       type: 'migration:batch:failed'

@@ -5,8 +5,8 @@ import { buildResumeState, transitionToApproved } from './state.js'
  * @import { CreatePlanInput, MigrationEvent, MigrationPlan } from './api.js'
  */
 
-/** 10% safety buffer over the deposit to cover gas estimation variance. */
-const SAFETY_BUFFER_BPS = 1000n
+/** 5% safety buffer over the deposit to cover gas estimation variance. */
+const SAFETY_BUFFER_BPS = 500n
 const BPS_BASE = 10000n
 
 /**
@@ -80,9 +80,9 @@ export async function* createMigrationPlan({ synapse, state, providerIds }) {
       : 0n
 
   if (fundingAmount > 0n) {
-    warnings.push(
-      `Funding amount includes a 10% safety buffer over the deposit: ${fundingAmount} total (deposit: ${costs.totalDepositNeeded})`
-    )
+      warnings.push(
+      `Funding amount includes a ${Number((SAFETY_BUFFER_BPS * 100n) / BPS_BASE)}% safety buffer over the deposit: ${fundingAmount} total (deposit: ${costs.totalDepositNeeded})`
+      )
   }
 
   /** @type {MigrationPlan} */

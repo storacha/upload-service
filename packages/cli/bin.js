@@ -310,6 +310,10 @@ cli
   .describe('Migrate the current space to Filecoin on Chain (FOC).')
   .option('-w, --wallet-pk <key>', '0x-prefixed EVM wallet private key')
   .option(
+    '-n, --network <network>',
+    'FOC network: "mainnet" or "calibration". Defaults to "calibration".',
+  )
+  .option(
     '-f, --state-file <path>',
     'Path to persist migration state for resume support.'
   )
@@ -335,7 +339,6 @@ cli
     'Stop remaining batches for an upload after the first upload-level failure. Pass --no-stop-on-error to continue.',
     true
   )
-  .option('--auto-approve', 'Skip the approval prompt before migration', false)
   .action((options) => {
     const walletPk = readRawOption(process.argv.slice(2), ['--wallet-pk', '-w'])
 
@@ -346,6 +349,7 @@ cli
 
     const parsedOptions = {
       walletPk,
+      network: options.network,
       stateFile: options['state-file'],
       resume: options.resume,
       batchSize: options['batch-size'],
@@ -353,7 +357,6 @@ cli
       sourceStrategy: options['source-strategy'],
       roundaboutURL: options['roundabout-url'],
       stopOnError: options['stop-on-error'],
-      autoApprove: options['auto-approve'],
     }
 
     return actions.spaceMigrate(parsedOptions)

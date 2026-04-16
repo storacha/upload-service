@@ -2,7 +2,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { confirm } from '@inquirer/prompts'
-import { Synapse } from '@filoz/synapse-sdk'
+import chalk from 'chalk'
+import ora from 'ora'
+import ansiEscapes from 'ansi-escapes'
+import { Synapse, TOKENS, mainnet, calibration } from '@filoz/synapse-sdk'
 import {
   createInitialState,
   buildMigrationInventories,
@@ -12,20 +15,34 @@ import {
   serializeState,
   deserializeState,
 } from '@storacha/filecoin-pin-migration'
+import { parseEther } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
-import { filesize } from './lib.js'
 import { getClient } from './lib.js'
+import {
+  checkpointSpinnerText,
+  formatBytes,
+  formatTokenAmount,
+  printPhaseTitle,
+  printPlan,
+  printPreflight,
+  printReaderShardFailed,
+  printSummary,
+  renderCheckpointProgress,
+  truncateDID,
+} from './migrate-view.js'
 
-const DEFAULT_BATCH_SIZE = 50
+const DEFAULT_BATCH_SIZE = 100
 const DEFAULT_SOURCE_STRATEGY = 'roundabout'
 const DEFAULT_STATE_FILE_BASENAME = 'storacha-migration'
 const CLI_SOURCE = 'storacha-cli'
+const MIN_FIL_GAS_BALANCE = parseEther('0.1')
 
 /**
  * Migrate the current selected space to Filecoin on Chain.
  *
  * @typedef {object} SpaceMigrateOptions
  * @property {string} [walletPk]
+ * @property {string} [network]
  * @property {string} [stateFile]
  * @property {boolean} [resume]
  * @property {number|string} [batchSize]
@@ -33,7 +50,6 @@ const CLI_SOURCE = 'storacha-cli'
  * @property {boolean} [stopOnError]
  * @property {string} [sourceStrategy]
  * @property {string} [roundaboutURL]
- * @property {boolean} [autoApprove]
  */
 
 /**
@@ -42,23 +58,126 @@ const CLI_SOURCE = 'storacha-cli'
  * @param {SpaceMigrateOptions} opts
  */
 export async function spaceMigrate(opts = {}) {
-  const walletPk = opts.walletPk
-  const batchSize = parseBatchSize(opts.batchSize)
-  const pullConcurrency = parsePositiveInteger(
-    opts.pullConcurrency,
-    '--pull-concurrency'
-  )
-  const sourceStrategy = parseSourceStrategy(opts.sourceStrategy)
+  const config = parseMigrationOptions(opts)
+  const account = createWalletAccount(opts.walletPk)
 
-  let account
-  try {
-    account = privateKeyToAccount(/** @type {`0x${string}`} */ (walletPk))
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    console.error(`Error: invalid wallet private key - ${message}`)
-    process.exit(1)
+  const resolver = createResolver({
+    strategy: config.sourceStrategy,
+    roundaboutURL: config.roundaboutURL,
+  })
+
+  const context = await resolveMigrationContext(opts.stateFile)
+
+  const synapse = Synapse.create({
+    account,
+    chain: config.network,
+    source: CLI_SOURCE,
+  })
+
+  const state = config.resume
+    ? loadStateOrExit(context.stateFile)
+    : createInitialState()
+
+  const ac = new AbortController()
+  let stopRequested = false
+  const onSigint = () => {
+    if (stopRequested) return
+    stopRequested = true
+    console.log('\nStopping after the current step and persisting state...')
+    saveStateSync(context.stateFile, state)
+    ac.abort()
   }
 
+  process.on('SIGINT', onSigint)
+  // TODO: are we also listen for termination signals and throws of uncaught exceptions to persist state before exit?
+
+  try {
+    const preflight = await loadPreflight(synapse)
+    printPreflight({
+      spaceDID: context.spaceDID,
+      walletAddress: account.address,
+      chainId: synapse.chain.id,
+      chainName: synapse.chain.name,
+      stateFile: context.stateFile,
+      resume: config.resume,
+      preflight,
+      minFilGasBalance: MIN_FIL_GAS_BALANCE,
+    })
+
+    const readerResult = await readInventories({
+      client: context.client,
+      resolver,
+      state,
+      stateFile: context.stateFile,
+      spaceDIDs: [context.spaceDID],
+      stopOnError: config.stopOnError,
+      signal: ac.signal,
+    })
+    if (readerResult.interrupted) return
+
+    const planResult = await planMigration({
+      synapse,
+      state,
+      stateFile: context.stateFile,
+      signal: ac.signal,
+    })
+    if (planResult.interrupted || !planResult.plan) return
+    const { plan } = planResult
+
+    printPlan(plan)
+
+    const proceedWithPlan = await confirm({
+      message: 'Continue with migration?',
+      default: false,
+    }).catch(() => false)
+
+    if (!proceedWithPlan) {
+      console.log('Migration cancelled')
+      return
+    }
+
+    const migrationResult = await runMigration({
+      plan,
+      state,
+      stateFile: context.stateFile,
+      synapse,
+      batchSize: config.batchSize,
+      pullConcurrency: config.pullConcurrency,
+      stopOnError: config.stopOnError,
+      signal: ac.signal,
+    })
+    if (migrationResult.interrupted) return
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error(`Error: migration failed - ${message}`)
+    process.exitCode = 1
+  } finally {
+    process.off('SIGINT', onSigint)
+  }
+}
+
+/**
+ * @param {SpaceMigrateOptions} opts
+ */
+function parseMigrationOptions(opts) {
+  return {
+    network: parseNetwork(opts.network),
+    batchSize: parseBatchSize(opts.batchSize),
+    sourceStrategy: parseSourceStrategy(opts.sourceStrategy),
+    pullConcurrency: parsePositiveInteger(
+      opts.pullConcurrency,
+      '--pull-concurrency'
+    ),
+    stopOnError: opts.stopOnError ?? true,
+    resume: opts.resume ?? false,
+    roundaboutURL: opts.roundaboutURL,
+  }
+}
+
+/**
+ * @param {string | undefined} stateFile
+ */
+async function resolveMigrationContext(stateFile) {
   const client = await getClient()
   const currentSpace = client.currentSpace()
   if (!currentSpace) {
@@ -69,88 +188,24 @@ export async function spaceMigrate(opts = {}) {
   }
 
   const spaceDID = currentSpace.did()
-  const stateFile = path.resolve(
-    opts.stateFile ?? defaultStateFileForSpace(spaceDID)
-  )
-  const stopOnError = opts.stopOnError ?? true
-  const resume = opts.resume ?? false
-  const autoApprove = opts.autoApprove ?? false
-  const resolver = createResolver({
-    strategy: sourceStrategy,
-    roundaboutURL: opts.roundaboutURL,
-  })
-  const synapse = Synapse.create({
-    account,
-    source: CLI_SOURCE,
-  })
-  const state = resume ? loadStateOrExit(stateFile) : createInitialState()
 
-  const ac = new AbortController()
-  let stopRequested = false
-  const onSigint = () => {
-    if (stopRequested) return
-    stopRequested = true
-    console.log('\nStopping after the current step and persisting state...')
-    saveStateSync(stateFile, state)
-    ac.abort()
+  return {
+    client,
+    spaceDID,
+    stateFile: path.resolve(stateFile ?? defaultStateFileForSpace(spaceDID)),
   }
+}
 
-  process.on('SIGINT', onSigint)
-
+/**
+ * @param {string | undefined} walletPk
+ */
+function createWalletAccount(walletPk) {
   try {
-    console.log(`🐔 Migrating current space: ${spaceDID}`)
-    console.log(`🐔 State file: ${stateFile}`)
-
-    const readerResult = await readInventories({
-      client,
-      resolver,
-      state,
-      stateFile,
-      spaceDIDs: [spaceDID],
-      stopOnError,
-      signal: ac.signal,
-    })
-    if (readerResult.interrupted) return
-
-    const planResult = await planMigration({
-      synapse,
-      state,
-      stateFile,
-      signal: ac.signal,
-    })
-    if (planResult.interrupted) return
-    const { plan } = planResult
-
-    printPlan(plan)
-
-    if (
-      !autoApprove &&
-      !(await confirm({
-        message: 'Continue with migration?',
-        default: false,
-      }).catch(() => false))
-    ) {
-      console.log('Migration cancelled')
-      return
-    }
-
-    const migrationResult = await runMigration({
-      plan,
-      state,
-      stateFile,
-      synapse,
-      batchSize,
-      pullConcurrency,
-      stopOnError,
-      signal: ac.signal,
-    })
-    if (migrationResult.interrupted) return
+    return privateKeyToAccount(/** @type {`0x${string}`} */ (walletPk))
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    console.error(`Error: migration failed - ${message}`)
-    process.exitCode = 1
-  } finally {
-    process.off('SIGINT', onSigint)
+    console.error(`Error: invalid wallet private key - ${message}`)
+    process.exit(1)
   }
 }
 
@@ -173,7 +228,11 @@ async function readInventories({
   stopOnError,
   signal,
 }) {
-  console.log('\nReading inventories...')
+  printPhaseTitle('Scanning Space')
+  const spinner = ora({
+    text: 'Reading inventories...',
+    color: 'cyan',
+  }).start()
 
   for await (const event of buildMigrationInventories({
     client,
@@ -184,20 +243,26 @@ async function readInventories({
   })) {
     switch (event.type) {
       case 'reader:space:start':
-        console.log(`  Reading space ${event.spaceDID}`)
+        spinner.text = `Reading space ${truncateDID(event.spaceDID)}`
         break
       case 'reader:space:complete': {
         const inventory = state.spacesInventories[event.spaceDID]
         if (!inventory) break
-        console.log(
-          `  Completed ${inventory.uploads.length} uploads, ${inventory.shards.length} shards, ${inventory.failedUploads.length} failed uploads, ${formatBytes(inventory.totalBytes)}`
-        )
+        spinner.stopAndPersist({
+          symbol: chalk.green('✔'),
+          text: `  Completed ${inventory.uploads.length} uploads, ${inventory.shards.length} shards, ${inventory.failedUploads.length} failed uploads, ${formatBytes(inventory.totalBytes)}`,
+        })
+        spinner.start(`Reading inventories...`)
         break
       }
       case 'reader:shard:failed':
-        console.warn(
-          `  shard:failed  root=${event.root}  shard=${event.shard}  reason=${event.reason}`
+        spinner.stop()
+        printReaderShardFailed(
+          event.root,
+          event.shard,
+          event.reason.split(':')[0]
         )
+        spinner.start('Reading inventories...')
         break
       case 'state:checkpoint':
         await saveState(stateFile, event.state)
@@ -205,10 +270,12 @@ async function readInventories({
     }
 
     if (signal.aborted) {
+      spinner.stop()
       return { interrupted: true }
     }
   }
 
+  spinner.succeed('Inventories ready')
   return { interrupted: signal.aborted }
 }
 
@@ -220,7 +287,11 @@ async function readInventories({
  * @param {AbortSignal} args.signal
  */
 async function planMigration({ synapse, state, stateFile, signal }) {
-  console.log('\nCreating migration plan...')
+  printPhaseTitle('Planning')
+  const spinner = ora({
+    text: 'Creating migration plan...',
+    color: 'cyan',
+  }).start()
 
   /** @type {import('@storacha/filecoin-pin-migration/types').MigrationPlan | undefined} */
   let plan
@@ -236,14 +307,17 @@ async function planMigration({ synapse, state, stateFile, signal }) {
     }
 
     if (signal.aborted) {
+      spinner.stop()
       return { interrupted: true, plan }
     }
   }
 
   if (!plan) {
+    spinner.fail('Failed to create migration plan')
     throw new Error('planner:ready event was never yielded')
   }
 
+  spinner.succeed('Migration plan ready')
   return { interrupted: false, plan }
 }
 
@@ -268,7 +342,12 @@ async function runMigration({
   stopOnError,
   signal,
 }) {
-  console.log('\nStarting migration...')
+  printPhaseTitle('Migrating')
+  const spinner = ora({
+    text: 'Waiting for migration steps...',
+    color: 'cyan',
+  }).start()
+  let progressPrinted = false
 
   for await (const event of executeMigration({
     plan,
@@ -281,16 +360,20 @@ async function runMigration({
   })) {
     switch (event.type) {
       case 'funding:start':
-        console.log(`  Funding ${event.amount.toString()} USDFC...`)
+        spinner.start(
+          `Funding ${formatTokenAmount(event.amount)} USDFC into payments`
+        )
         break
       case 'funding:complete':
-        console.log('  Funding complete')
+        spinner.succeed(`Funding complete (tx hash: ${event.txHash})`)
+        spinner.start('Pulling and committing copy data...')
         break
       case 'funding:failed':
-        console.error(`  Funding failed: ${event.error.message}`)
+        spinner.fail(`Funding failed: ${event.error.message}`)
         process.exit(1)
         break
       case 'migration:commit:failed': {
+        spinner.stop()
         const shouldRetry = await confirm({
           message: `Final commit failed for copy ${event.copyIndex} with ${event.roots.length} upload(s). Retry attempt ${event.attempt}?`,
           default: true,
@@ -298,72 +381,52 @@ async function runMigration({
 
         if (shouldRetry) {
           event.retry()
+          spinner.start(`Retrying final commit for copy ${event.copyIndex}...`)
         } else {
           event.skip()
+          spinner.start(`Skipping final commit for copy ${event.copyIndex}...`)
         }
         break
       }
       case 'migration:batch:failed':
+        spinner.stop()
         console.warn(
-          `  batch:failed  copy=${event.copyIndex}  stage=${event.stage}  roots=${event.roots.length}  error=${event.error.message}`
+          chalk.yellow(
+            `  batch:failed  copy=${event.copyIndex}  stage=${event.stage}  roots=${event.roots.length}  error=${event.error.message}`
+          )
+        )
+        spinner.start(
+          `Continuing migration after copy ${event.copyIndex} ${event.stage} failure...`
         )
         break
       case 'state:checkpoint':
         await saveState(stateFile, event.state)
-        printCheckpointProgress(event.state, plan)
+        spinner.stop()
+        progressPrinted = renderCheckpointProgress(
+          event.state,
+          plan,
+          progressPrinted
+        )
+        spinner.start(checkpointSpinnerText(event.state, plan))
         if (signal.aborted) {
+          spinner.stop()
           return { interrupted: true }
         }
         break
       case 'migration:complete':
-        console.log('\nMigration complete')
-        console.log(`  Succeeded shards: ${event.summary.succeeded}`)
-        console.log(`  Failed shards: ${event.summary.failed}`)
-        console.log(`  Skipped uploads: ${event.summary.skippedUploads}`)
-        console.log(`  Total bytes: ${formatBytes(event.summary.totalBytes)}`)
-        console.log(
-          `  Data sets: ${event.summary.dataSetIds.join(', ') || 'none'}`
-        )
-        console.log(`  Duration: ${formatDuration(event.summary.duration)}`)
+        if (progressPrinted) {
+          spinner.stop()
+          process.stdout.write(ansiEscapes.eraseLines(3))
+        } else {
+          spinner.stop()
+        }
+        console.log(chalk.green('✔ Migration complete'))
+        printSummary(event.summary)
         break
     }
   }
 
   return { interrupted: signal.aborted }
-}
-
-/**
- * @param {import('@storacha/filecoin-pin-migration/types').MigrationPlan} plan
- */
-function printPlan(plan) {
-  console.log(`  Spaces: ${plan.costs.perSpace.length}`)
-  console.log(
-    `  Copies: ${plan.costs.perSpace.reduce((sum, space) => sum + space.copies.length, 0)}`
-  )
-  console.log(`  Uploads: ${plan.totals.uploads}`)
-  console.log(`  Shards: ${plan.totals.shards}`)
-  console.log(`  Total bytes: ${formatBytes(plan.totals.bytes)}`)
-  console.log(
-    `  Deposit needed: ${plan.costs.totalDepositNeeded.toString()} USDFC`
-  )
-  console.log(`  Funding amount: ${plan.fundingAmount.toString()} USDFC`)
-  console.log(`  Ready: ${plan.ready ? 'yes' : 'no'}`)
-
-  for (const space of plan.costs.perSpace) {
-    console.log(`  Space ${space.spaceDID}:`)
-    for (const copy of space.copies) {
-      console.log(
-        `    copy ${copy.copyIndex}: provider=${copy.providerId.toString()} dataset=${copy.dataSetId != null ? copy.dataSetId.toString() : 'new'}`
-      )
-    }
-  }
-
-  if (plan.warnings.length > 0) {
-    console.warn('\nWarnings:')
-    for (const warning of plan.warnings) {
-      console.warn(`  - ${warning}`)
-    }
-  }
 }
 
 /**
@@ -410,6 +473,7 @@ function loadStateOrExit(stateFile) {
 
 /**
  * @param {string | undefined} strategy
+ * @returns {'roundabout' | 'claims'}
  */
 function parseSourceStrategy(strategy) {
   if (strategy == null || strategy === '') {
@@ -443,38 +507,13 @@ function parsePositiveInteger(value, flag) {
     return undefined
   }
 
-  const parsed =
-    typeof value === 'number' ? value : Number.parseInt(value, 10)
+  const parsed = typeof value === 'number' ? value : Number.parseInt(value, 10)
   if (Number.isInteger(parsed) && parsed > 0) {
     return parsed
   }
 
   console.error(`Error: "${flag}" must be a positive integer`)
   process.exit(1)
-}
-
-/**
- * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
- * @param {import('@storacha/filecoin-pin-migration/types').MigrationPlan} plan
- */
-function printCheckpointProgress(state, plan) {
-  let pulled = 0
-  let committed = 0
-  let failedUploads = 0
-  let copies = 0
-
-  for (const space of Object.values(state.spaces)) {
-    copies += space.copies.length
-    for (const copy of space.copies) {
-      pulled += copy.pulled.size
-      committed += copy.committed.size
-      failedUploads += copy.failedUploads.size
-    }
-  }
-
-  console.log(
-    `  Checkpoint  pulled=${pulled} committed=${committed}/${plan.totals.shards * copies} failedUploads=${failedUploads}`
-  )
 }
 
 /**
@@ -489,20 +528,49 @@ function defaultStateFileForSpace(spaceDID) {
 }
 
 /**
- * @param {bigint} bytes
+ * @param {string | undefined} network
  */
-function formatBytes(bytes) {
-  return filesize(Number(bytes))
+function parseNetwork(network) {
+  if (network == null || network === '' || network === 'calibration') {
+    return calibration
+  }
+
+  if (network === 'mainnet') {
+    return mainnet
+  }
+
+  console.error(
+    `Error: invalid network "${network}". Expected "mainnet" or "calibration".`
+  )
+  process.exit(1)
 }
 
 /**
- * @param {number} durationMs
+ * @param {import('@filoz/synapse-sdk').Synapse} synapse
  */
-function formatDuration(durationMs) {
-  const totalSeconds = Math.max(Math.round(durationMs / 1000), 0)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
+async function loadPreflight(synapse) {
+  const spinner = ora({
+    text: 'Checking wallet and payments balances...',
+    color: 'cyan',
+  }).start()
 
-  if (minutes === 0) return `${seconds}s`
-  return `${minutes}m ${seconds}s`
+  try {
+    const [walletUSDFC, walletFIL, depositedUSDFC] = await Promise.all([
+      synapse.payments.walletBalance({ token: TOKENS.USDFC }),
+      synapse.payments.walletBalance({ token: TOKENS.FIL }),
+      synapse.payments.balance({ token: TOKENS.USDFC }),
+    ])
+
+    spinner.succeed('Balances loaded')
+    return {
+      walletUSDFC,
+      walletFIL,
+      depositedUSDFC,
+    }
+  } catch (err) {
+    spinner.fail(
+      `Failed to load balances: ${err instanceof Error ? err.message : String(err)}`
+    )
+    throw err
+  }
 }
