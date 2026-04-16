@@ -123,10 +123,19 @@ export function createInitialState() {
  *   cursor: string | undefined
  * }} page
  */
-export function checkpointInventoryPage(state, { spaceDID, shards, uploads, failedUploads, totalBytes, cursor }) {
+export function checkpointInventoryPage(
+  state,
+  { spaceDID, shards, uploads, failedUploads, totalBytes, cursor }
+) {
   let inventory = state.spacesInventories[spaceDID]
   if (!inventory) {
-    inventory = { did: spaceDID, uploads: [], shards: [], failedUploads: [], totalBytes: 0n }
+    inventory = {
+      did: spaceDID,
+      uploads: [],
+      shards: [],
+      failedUploads: [],
+      totalBytes: 0n,
+    }
     state.spacesInventories[spaceDID] = inventory
   }
 
@@ -505,7 +514,9 @@ export function deserializeState(obj) {
     const copies = rawCopies.map((rawCopy, copyPosition) =>
       createSpaceCopyState({
         copyIndex:
-          typeof rawCopy.copyIndex === 'number' ? rawCopy.copyIndex : copyPosition,
+          typeof rawCopy.copyIndex === 'number'
+            ? rawCopy.copyIndex
+            : copyPosition,
         providerId: parseBigIntField(
           rawCopy.providerId,
           'providerId',
@@ -548,7 +559,9 @@ export function deserializeState(obj) {
   /** @type {API.MigrationState['spacesInventories']} */
   const spacesInventories = {}
   for (const [did, rawInv] of Object.entries(
-    /** @type {Record<string, Record<string, unknown>>} */ (raw.spacesInventories)
+    /** @type {Record<string, Record<string, unknown>>} */ (
+      raw.spacesInventories
+    )
   )) {
     const rawShards = /** @type {Array<Record<string, unknown>>} */ (
       rawInv.shards ?? []
@@ -561,17 +574,24 @@ export function deserializeState(obj) {
         cid: /** @type {string} */ (s.cid),
         pieceCID: /** @type {string} */ (s.pieceCID),
         sourceURL: /** @type {string} */ (s.sourceURL),
-        sizeBytes: parseBigIntField(s.sizeBytes, 'sizeBytes', `shard "${s.cid}"`),
+        sizeBytes: parseBigIntField(
+          s.sizeBytes,
+          'sizeBytes',
+          `shard "${s.cid}"`
+        ),
       })),
       failedUploads: /** @type {string[]} */ (rawInv.failedUploads ?? []),
-      totalBytes: parseBigIntField(rawInv.totalBytes, 'totalBytes', `inventory "${did}"`),
+      totalBytes: parseBigIntField(
+        rawInv.totalBytes,
+        'totalBytes',
+        `inventory "${did}"`
+      ),
     }
   }
 
   /** @type {Record<API.SpaceDID, string> | undefined} */
   const readerProgressCursors =
-    raw.readerProgressCursors &&
-    typeof raw.readerProgressCursors === 'object'
+    raw.readerProgressCursors && typeof raw.readerProgressCursors === 'object'
       ? /** @type {Record<API.SpaceDID, string>} */ ({
           .../** @type {object} */ (raw.readerProgressCursors),
         })

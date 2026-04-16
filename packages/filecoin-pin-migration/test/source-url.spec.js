@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { RoundaboutResolver, ClaimsResolver, createResolver } from '../src/source-url.js'
+import {
+  RoundaboutResolver,
+  ClaimsResolver,
+  createResolver,
+} from '../src/source-url.js'
 
 /** @type {import('../src/api.js').ResolvedShard} */
 const shard = {

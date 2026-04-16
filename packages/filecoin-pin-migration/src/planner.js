@@ -80,9 +80,13 @@ export async function* createMigrationPlan({ synapse, state, providerIds }) {
       : 0n
 
   if (fundingAmount > 0n) {
-      warnings.push(
-      `Funding amount includes a ${Number((SAFETY_BUFFER_BPS * 100n) / BPS_BASE)}% safety buffer over the deposit: ${fundingAmount} total (deposit: ${costs.totalDepositNeeded})`
-      )
+    warnings.push(
+      `Funding amount includes a ${Number(
+        (SAFETY_BUFFER_BPS * 100n) / BPS_BASE
+      )}% safety buffer over the deposit: ${fundingAmount} total (deposit: ${
+        costs.totalDepositNeeded
+      })`
+    )
   }
 
   /** @type {MigrationPlan} */

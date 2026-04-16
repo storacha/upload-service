@@ -60,8 +60,7 @@ function makePerCopyCost(overrides) {
     context: overrides.context ?? /** @type {API.StorageContext} */ ({}),
     providerId: overrides.providerId ?? 42n,
     serviceProvider:
-      overrides.serviceProvider ??
-      /** @type {`0x${string}`} */ ('0xdeadbeef'),
+      overrides.serviceProvider ?? /** @type {`0x${string}`} */ ('0xdeadbeef'),
     dataSetId: overrides.dataSetId ?? null,
     isResumed: overrides.isResumed ?? false,
     bytesToMigrate: overrides.bytesToMigrate ?? 0n,
@@ -303,13 +302,9 @@ describe('createMigrationPlan', () => {
     expect(state.spaces[spaceDID]).toBeDefined()
     expect(state.spaces[spaceDID].copies).toHaveLength(2)
     expect(state.spaces[spaceDID].copies[0].providerId).toBe(42n)
-    expect(state.spaces[spaceDID].copies[0].serviceProvider).toBe(
-      '0xdeadbeef'
-    )
+    expect(state.spaces[spaceDID].copies[0].serviceProvider).toBe('0xdeadbeef')
     expect(state.spaces[spaceDID].copies[1].providerId).toBe(43n)
-    expect(state.spaces[spaceDID].copies[1].serviceProvider).toBe(
-      '0xbeefdead'
-    )
+    expect(state.spaces[spaceDID].copies[1].serviceProvider).toBe('0xbeefdead')
   })
 
   it('does not mutate inventories in state', async () => {

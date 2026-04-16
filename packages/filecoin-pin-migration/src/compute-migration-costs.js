@@ -189,8 +189,11 @@ export async function computeMigrationCosts(spaces, synapse, opts = {}) {
   const existingIds = contextsBySpace
     .flatMap((copies) => copies.map((copy) => copy.context.dataSetId))
     .filter(
-      /** @returns {id is bigint} @param {bigint | undefined} id */ (id) =>
-        id != null
+      /**
+       * @param {bigint | undefined} id
+       * @returns {id is bigint}
+       */
+      (id) => id != null
     )
 
   // ── Step 3: Single parallel chain batch (shared across all spaces) ────────
@@ -275,7 +278,10 @@ export async function computeMigrationCosts(spaces, synapse, opts = {}) {
     const [copy0, copy1] = copyCosts
     return {
       spaceDID: space.did,
-      copies: /** @type {[API.PerCopyCost, API.PerCopyCost]} */ ([copy0, copy1]),
+      copies: /** @type {[API.PerCopyCost, API.PerCopyCost]} */ ([
+        copy0,
+        copy1,
+      ]),
       isResumed: copyCosts.some((copy) => copy.isResumed),
       bytesToMigrate: space.totalBytes,
       currentDataSetSize: copyCosts.reduce(
@@ -288,8 +294,14 @@ export async function computeMigrationCosts(spaces, synapse, opts = {}) {
         (sum, copy) => sum + copy.rateLockupDelta,
         0n
       ),
-      ratePerEpoch: copyCosts.reduce((sum, copy) => sum + copy.ratePerEpoch, 0n),
-      ratePerMonth: copyCosts.reduce((sum, copy) => sum + copy.ratePerMonth, 0n),
+      ratePerEpoch: copyCosts.reduce(
+        (sum, copy) => sum + copy.ratePerEpoch,
+        0n
+      ),
+      ratePerMonth: copyCosts.reduce(
+        (sum, copy) => sum + copy.ratePerMonth,
+        0n
+      ),
     }
   })
 

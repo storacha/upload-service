@@ -71,21 +71,16 @@ export function printPreflight({
 
   if (warnings.length > 0) {
     console.log('')
-    console.warn(
-      renderWarningSection(
-        'Preflight Warnings',
-        warnings
-      )
-    )
+    console.warn(renderWarningSection('Preflight Warnings', warnings))
     console.warn('')
   }
 }
 
 /**
- * 
- * @param {string} root 
- * @param {string} shard 
- * @param {string} reason 
+ *
+ * @param {string} root
+ * @param {string} shard
+ * @param {string} reason
  */
 export function printReaderShardFailed(root, shard, reason) {
   console.warn(
@@ -142,12 +137,7 @@ export function printPlan(plan) {
 
   if (plan.warnings.length > 0) {
     console.warn('')
-    console.warn(
-      renderWarningSection(
-        'Warnings',
-        plan.warnings
-      )
-    )
+    console.warn(renderWarningSection('Warnings', plan.warnings))
     console.warn('')
   }
 }
@@ -359,5 +349,6 @@ function summarizeProgress(state, plan) {
  * @param {string} value
  */
 function stripAnsi(value) {
-  return value.replace(/\u001B\[[0-9;]*m/g, '')
+  const escape = String.fromCharCode(27)
+  return value.replace(new RegExp(`${escape}\\[[0-9;]*m`, 'g'), '')
 }

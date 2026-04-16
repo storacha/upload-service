@@ -658,7 +658,7 @@ function createDecision(timeoutMs) {
       }
     }, timeoutMs)
     if (typeof timer === 'object' && 'unref' in timer) timer.unref()
-    promise.then(() => clearTimeout(timer))
+    void promise.then(() => clearTimeout(timer))
   }
 
   return { promise, retry, skip }
@@ -709,7 +709,12 @@ function deriveSummary(plan, state, startedAt) {
     dataSetIds: Object.values(state.spaces).flatMap((space) =>
       space.copies
         .map((copy) => copy.dataSetId)
-        .filter(/** @returns {id is bigint} */ (id) => id != null)
+        .filter(
+          /**
+           * @param id
+           * @returns {id is bigint}
+           */ (id) => id != null
+        )
     ),
     totalBytes: plan.totals.bytes,
     duration: Date.now() - startedAt,

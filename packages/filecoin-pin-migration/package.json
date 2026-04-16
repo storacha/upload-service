@@ -1,91 +1,91 @@
 {
-	"name": "@storacha/filecoin-pin-migration",
-	"version": "0.1.0",
-	"description": "Migration library from Storacha to Filecoin on Chain (FOC)",
-	"publishConfig": {
-		"access": "public"
-	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/storacha/upload-service.git",
-		"directory": "packages/filecoin-pin-migration"
-	},
-	"license": "Apache-2.0 OR MIT",
-	"type": "module",
-	"main": "dist/index.js",
-	"types": "dist/index.d.ts",
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		},
-		"./types": {
-			"types": "./dist/api.d.ts",
-			"import": "./dist/api.js"
-		},
-		"./errors": {
-			"types": "./dist/errors.d.ts",
-			"import": "./dist/errors.js"
-		}
-	},
-	"files": [
-		"src",
-		"dist",
-		"!dist/**/*.js.map"
-	],
-	"scripts": {
-		"dev": "tsc --build --watch --preserveWatchOutput",
-		"clean": "rm -rf dist *.tsbuildinfo coverage",
-		"lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
-		"lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
-		"build": "tsc --build",
-		"test": "npm run test:node",
-		"test:node": "vitest --run"
-	},
-	"dependencies": {
-		"@filoz/synapse-core": "^0.3.3",
-		"@filoz/synapse-sdk": "^0.40.2",
-		"@storacha/client": "workspace:^",
-		"p-map": "^7.0.3",
-		"p-retry": "^6.2.1",
-		"@storacha/indexing-service-client": "^2.6.5",
-		"@ucanto/interface": "catalog:",
-		"@ucanto/principal": "catalog:",
-		"@ucanto/server": "catalog:",
-		"@web3-storage/data-segment": "catalog:",
-		"multiformats": "catalog:"
-	},
-	"peerDependencies": {
-		"viem": "catalog:"
-	},
-	"devDependencies": {
-		"@storacha/eslint-config": "workspace:^",
-		"@types/node": "^20.8.4",
-		"@typescript-eslint/eslint-plugin": "catalog:",
-		"typescript": "catalog:",
-		"viem": "catalog:",
-		"vitest": "^3.1.1"
-	},
-	"eslintConfig": {
-		"extends": [
-			"@storacha/eslint-config"
-		],
-		"parserOptions": {
-			"project": "./tsconfig.json"
-		},
-		"env": {
-			"es2022": true,
-			"mocha": true,
-			"browser": true,
-			"node": true
-		},
-		"ignorePatterns": [
-			"dist",
-			"coverage",
-			"src/api.js"
-		]
-	},
-	"engines": {
-		"node": ">=16.15"
-	}
+  "name": "@storacha/filecoin-pin-migration",
+  "version": "0.1.0",
+  "description": "Migration library from Storacha to Filecoin on Chain (FOC)",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storacha/upload-service.git",
+    "directory": "packages/filecoin-pin-migration"
+  },
+  "license": "Apache-2.0 OR MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/api.d.ts",
+      "import": "./dist/api.js"
+    },
+    "./errors": {
+      "types": "./dist/errors.d.ts",
+      "import": "./dist/errors.js"
+    }
+  },
+  "files": [
+    "src",
+    "dist",
+    "!dist/**/*.js.map"
+  ],
+  "scripts": {
+    "dev": "tsc --build --watch --preserveWatchOutput",
+    "clean": "rm -rf dist *.tsbuildinfo coverage",
+    "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+    "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
+    "build": "tsc --build",
+    "test": "npm run test:node",
+    "test:node": "vitest --run"
+  },
+  "dependencies": {
+    "@filoz/synapse-core": "^0.3.3",
+    "@filoz/synapse-sdk": "^0.40.2",
+    "@storacha/client": "workspace:^",
+    "p-map": "^7.0.3",
+    "p-retry": "^6.2.1",
+    "@storacha/indexing-service-client": "^2.6.5",
+    "@ucanto/interface": "catalog:",
+    "@ucanto/principal": "catalog:",
+    "@ucanto/server": "catalog:",
+    "@web3-storage/data-segment": "catalog:",
+    "multiformats": "catalog:"
+  },
+  "peerDependencies": {
+    "viem": "catalog:"
+  },
+  "devDependencies": {
+    "@storacha/eslint-config": "workspace:^",
+    "@types/node": "^20.8.4",
+    "@typescript-eslint/eslint-plugin": "catalog:",
+    "typescript": "catalog:",
+    "viem": "catalog:",
+    "vitest": "^3.1.1"
+  },
+  "eslintConfig": {
+    "extends": [
+      "@storacha/eslint-config"
+    ],
+    "parserOptions": {
+      "project": "./tsconfig.json"
+    },
+    "env": {
+      "es2022": true,
+      "mocha": true,
+      "browser": true,
+      "node": true
+    },
+    "ignorePatterns": [
+      "dist",
+      "coverage",
+      "src/api.js"
+    ]
+  },
+  "engines": {
+    "node": ">=16.15"
+  }
 }

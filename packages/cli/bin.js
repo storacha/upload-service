@@ -311,7 +311,7 @@ cli
   .option('-w, --wallet-pk <key>', '0x-prefixed EVM wallet private key')
   .option(
     '-n, --network <network>',
-    'FOC network: "mainnet" or "calibration". Defaults to "calibration".',
+    'FOC network: "mainnet" or "calibration". Defaults to "calibration".'
   )
   .option(
     '-f, --state-file <path>',

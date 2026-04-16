@@ -33,7 +33,9 @@ const claimsResolver = new ClaimsResolver()
  * @param {API.SpaceDID} spaceDID
  */
 async function collectInventory(gen, state, spaceDID) {
-  for await (const _ of gen) { /* drain */ }
+  for await (const _ of gen) {
+    /* drain */
+  }
   return state.spacesInventories[spaceDID]
 }
 
@@ -51,13 +53,27 @@ describe('buildMigrationInventories', () => {
       )
       const indexer = createMockIndexer(
         new Map([
-          [shardB58, { claims: buildShardClaims(shardCid, { locationURLs: ['https://r2.example/shard-a'], pieceCid }) }],
+          [
+            shardB58,
+            {
+              claims: buildShardClaims(shardCid, {
+                locationURLs: ['https://r2.example/shard-a'],
+                pieceCid,
+              }),
+            },
+          ],
         ])
       )
 
       const state = createMockInitialState()
       const inventory = await collectInventory(
-        buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } }),
+        buildMigrationInventories({
+          client,
+          resolver: claimsResolver,
+          state,
+          spaceDIDs: [SPACE_DID],
+          options: { indexer },
+        }),
         state,
         SPACE_DID
       )
@@ -82,27 +98,42 @@ describe('buildMigrationInventories', () => {
         new Map([[rootCid.toString(), [shardCid]]])
       )
       const claims = new Map([
-        ['location-shard', {
-          type: /** @type {const} */ ('assert/location'),
-          content: { multihash: shardCid.multihash },
-          location: [new URL('https://r2.example/shard')],
-        }],
-        ['location-index-blob', {
-          type: /** @type {const} */ ('assert/location'),
-          content: { multihash: indexBlobCid.multihash },
-          location: [new URL('https://r2.example/index-blob')],
-        }],
-        ['equals-claim', {
-          type: /** @type {const} */ ('assert/equals'),
-          content: { multihash: shardCid.multihash },
-          equals: pieceCid,
-        }],
+        [
+          'location-shard',
+          {
+            type: /** @type {const} */ ('assert/location'),
+            content: { multihash: shardCid.multihash },
+            location: [new URL('https://r2.example/shard')],
+          },
+        ],
+        [
+          'location-index-blob',
+          {
+            type: /** @type {const} */ ('assert/location'),
+            content: { multihash: indexBlobCid.multihash },
+            location: [new URL('https://r2.example/index-blob')],
+          },
+        ],
+        [
+          'equals-claim',
+          {
+            type: /** @type {const} */ ('assert/equals'),
+            content: { multihash: shardCid.multihash },
+            equals: pieceCid,
+          },
+        ],
       ])
       const indexer = createMockIndexer(new Map([[shardB58, { claims }]]))
 
       const state = createMockInitialState()
       const inventory = await collectInventory(
-        buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } }),
+        buildMigrationInventories({
+          client,
+          resolver: claimsResolver,
+          state,
+          spaceDIDs: [SPACE_DID],
+          options: { indexer },
+        }),
         state,
         SPACE_DID
       )
@@ -122,12 +153,28 @@ describe('buildMigrationInventories', () => {
         new Map([[rootCid.toString(), [shardCid]]])
       )
       const indexer = createMockIndexer(
-        new Map([[shardB58, { claims: buildShardClaims(shardCid, { locationURLs: ['https://r2.example/shard-d'], pieceCid }) }]])
+        new Map([
+          [
+            shardB58,
+            {
+              claims: buildShardClaims(shardCid, {
+                locationURLs: ['https://r2.example/shard-d'],
+                pieceCid,
+              }),
+            },
+          ],
+        ])
       )
 
       const state = createMockInitialState()
       const inventory = await collectInventory(
-        buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } }),
+        buildMigrationInventories({
+          client,
+          resolver: claimsResolver,
+          state,
+          spaceDIDs: [SPACE_DID],
+          options: { indexer },
+        }),
         state,
         SPACE_DID
       )
@@ -146,12 +193,28 @@ describe('buildMigrationInventories', () => {
         new Map([[rootCid.toString(), [shardCid]]])
       )
       const indexer = createMockIndexer(
-        new Map([[shardB58, { claims: buildShardClaims(shardCid, { locationURLs: ['https://r2.example/shard-e'], pieceCid }) }]])
+        new Map([
+          [
+            shardB58,
+            {
+              claims: buildShardClaims(shardCid, {
+                locationURLs: ['https://r2.example/shard-e'],
+                pieceCid,
+              }),
+            },
+          ],
+        ])
       )
 
       const state = createMockInitialState()
       const inventory = await collectInventory(
-        buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } }),
+        buildMigrationInventories({
+          client,
+          resolver: claimsResolver,
+          state,
+          spaceDIDs: [SPACE_DID],
+          options: { indexer },
+        }),
         state,
         SPACE_DID
       )
@@ -170,13 +233,28 @@ describe('buildMigrationInventories', () => {
         new Map([[rootCid.toString(), [shardCid]]])
       )
       const indexer = createMockIndexer(
-        new Map([[shardB58, { claims: buildShardClaims(shardCid, { locationURLs: ['https://r2.example/shard-f'] }) }]])
+        new Map([
+          [
+            shardB58,
+            {
+              claims: buildShardClaims(shardCid, {
+                locationURLs: ['https://r2.example/shard-f'],
+              }),
+            },
+          ],
+        ])
       )
 
       const state = createMockInitialState()
       /** @type {API.MigrationEvent[]} */
       const events = []
-      for await (const event of buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } })) {
+      for await (const event of buildMigrationInventories({
+        client,
+        resolver: claimsResolver,
+        state,
+        spaceDIDs: [SPACE_DID],
+        options: { indexer },
+      })) {
         events.push(event)
       }
       const inventory = state.spacesInventories[SPACE_DID]
@@ -203,13 +281,21 @@ describe('buildMigrationInventories', () => {
         new Map([[rootCid.toString(), [shardCid]]])
       )
       const indexer = createMockIndexer(
-        new Map([[shardB58, { claims: buildShardClaims(shardCid, { pieceCid }) }]])
+        new Map([
+          [shardB58, { claims: buildShardClaims(shardCid, { pieceCid }) }],
+        ])
       )
 
       const state = createMockInitialState()
       /** @type {API.MigrationEvent[]} */
       const events = []
-      for await (const event of buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } })) {
+      for await (const event of buildMigrationInventories({
+        client,
+        resolver: claimsResolver,
+        state,
+        spaceDIDs: [SPACE_DID],
+        options: { indexer },
+      })) {
         events.push(event)
       }
       const inventory = state.spacesInventories[SPACE_DID]
@@ -236,17 +322,35 @@ describe('buildMigrationInventories', () => {
         new Map([[rootCid.toString(), [shardCid]]])
       )
       const indexer = createMockIndexer(
-        new Map([[shardB58, { claims: buildShardClaims(shardCid, { locationURLs: ['https://r2.example/shard-claims'], pieceCid }) }]])
+        new Map([
+          [
+            shardB58,
+            {
+              claims: buildShardClaims(shardCid, {
+                locationURLs: ['https://r2.example/shard-claims'],
+                pieceCid,
+              }),
+            },
+          ],
+        ])
       )
 
       const state = createMockInitialState()
       const inventory = await collectInventory(
-        buildMigrationInventories({ client, resolver: new ClaimsResolver(), state, spaceDIDs: [SPACE_DID], options: { indexer } }),
+        buildMigrationInventories({
+          client,
+          resolver: new ClaimsResolver(),
+          state,
+          spaceDIDs: [SPACE_DID],
+          options: { indexer },
+        }),
         state,
         SPACE_DID
       )
 
-      expect(inventory.shards[0].sourceURL).toBe('https://r2.example/shard-claims')
+      expect(inventory.shards[0].sourceURL).toBe(
+        'https://r2.example/shard-claims'
+      )
     })
 
     it('applies RoundaboutResolver — sourceURL is built from pieceCID', async () => {
@@ -260,19 +364,39 @@ describe('buildMigrationInventories', () => {
         new Map([[rootCid.toString(), [shardCid]]])
       )
       const indexer = createMockIndexer(
-        new Map([[shardB58, { claims: buildShardClaims(shardCid, { locationURLs: ['https://r2.example/shard-roundabout'], pieceCid }) }]])
+        new Map([
+          [
+            shardB58,
+            {
+              claims: buildShardClaims(shardCid, {
+                locationURLs: ['https://r2.example/shard-roundabout'],
+                pieceCid,
+              }),
+            },
+          ],
+        ])
       )
 
       const state = createMockInitialState()
       const inventory = await collectInventory(
-        buildMigrationInventories({ client, resolver: new RoundaboutResolver(), state, spaceDIDs: [SPACE_DID], options: { indexer } }),
+        buildMigrationInventories({
+          client,
+          resolver: new RoundaboutResolver(),
+          state,
+          spaceDIDs: [SPACE_DID],
+          options: { indexer },
+        }),
         state,
         SPACE_DID
       )
 
-      expect(inventory.shards[0].sourceURL).toMatch(/^https:\/\/roundabout\.web3\.storage\/piece\//)
+      expect(inventory.shards[0].sourceURL).toMatch(
+        /^https:\/\/roundabout\.web3\.storage\/piece\//
+      )
       expect(inventory.shards[0].sourceURL).toContain(pieceCid.toString())
-      expect(inventory.shards[0].sourceURL).not.toBe('https://r2.example/shard-roundabout')
+      expect(inventory.shards[0].sourceURL).not.toBe(
+        'https://r2.example/shard-roundabout'
+      )
     })
   })
 
@@ -287,17 +411,47 @@ describe('buildMigrationInventories', () => {
       const shardBB58 = base58btc.encode(shardB.multihash.bytes)
 
       const client = createMockClient(
-        [{ results: [{ root: rootA }], cursor: '1' }, { results: [{ root: rootB }] }],
-        new Map([[rootA.toString(), [shardA]], [rootB.toString(), [shardB]]])
+        [
+          { results: [{ root: rootA }], cursor: '1' },
+          { results: [{ root: rootB }] },
+        ],
+        new Map([
+          [rootA.toString(), [shardA]],
+          [rootB.toString(), [shardB]],
+        ])
       )
-      const indexer = createMockIndexer(new Map([
-        [shardAB58, { claims: buildShardClaims(shardA, { locationURLs: ['https://r2.example/shard-a'], pieceCid }) }],
-        [shardBB58, { claims: buildShardClaims(shardB, { locationURLs: ['https://r2.example/shard-b'], pieceCid }) }],
-      ]))
+      const indexer = createMockIndexer(
+        new Map([
+          [
+            shardAB58,
+            {
+              claims: buildShardClaims(shardA, {
+                locationURLs: ['https://r2.example/shard-a'],
+                pieceCid,
+              }),
+            },
+          ],
+          [
+            shardBB58,
+            {
+              claims: buildShardClaims(shardB, {
+                locationURLs: ['https://r2.example/shard-b'],
+                pieceCid,
+              }),
+            },
+          ],
+        ])
+      )
 
       const state = createMockInitialState()
       const inventory = await collectInventory(
-        buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } }),
+        buildMigrationInventories({
+          client,
+          resolver: claimsResolver,
+          state,
+          spaceDIDs: [SPACE_DID],
+          options: { indexer },
+        }),
         state,
         SPACE_DID
       )
@@ -319,17 +473,47 @@ describe('buildMigrationInventories', () => {
       const shardBB58 = base58btc.encode(shardB.multihash.bytes)
 
       const client = createMockClient(
-        [{ results: [{ root: rootA }], cursor: '1' }, { results: [{ root: rootB }] }],
-        new Map([[rootA.toString(), [shardA]], [rootB.toString(), [shardB]]])
+        [
+          { results: [{ root: rootA }], cursor: '1' },
+          { results: [{ root: rootB }] },
+        ],
+        new Map([
+          [rootA.toString(), [shardA]],
+          [rootB.toString(), [shardB]],
+        ])
       )
-      const indexer = createMockIndexer(new Map([
-        [shardAB58, { claims: buildShardClaims(shardA, { locationURLs: ['https://r2.example/a'], pieceCid }) }],
-        [shardBB58, { claims: buildShardClaims(shardB, { locationURLs: ['https://r2.example/b'], pieceCid }) }],
-      ]))
+      const indexer = createMockIndexer(
+        new Map([
+          [
+            shardAB58,
+            {
+              claims: buildShardClaims(shardA, {
+                locationURLs: ['https://r2.example/a'],
+                pieceCid,
+              }),
+            },
+          ],
+          [
+            shardBB58,
+            {
+              claims: buildShardClaims(shardB, {
+                locationURLs: ['https://r2.example/b'],
+                pieceCid,
+              }),
+            },
+          ],
+        ])
+      )
 
       const state = createMockInitialState()
       const checkpoints = []
-      for await (const event of buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } })) {
+      for await (const event of buildMigrationInventories({
+        client,
+        resolver: claimsResolver,
+        state,
+        spaceDIDs: [SPACE_DID],
+        options: { indexer },
+      })) {
         if (event.type === 'state:checkpoint') checkpoints.push(event)
       }
 
@@ -353,12 +537,22 @@ describe('buildMigrationInventories', () => {
 
       /** @type {API.SpaceDID} */
       let currentSpace
-      const uploadsBySpace = new Map([[spaceA, [rootA]], [spaceB, [rootB]]])
-      const shardsByRoot = new Map([[rootA.toString(), [shardA]], [rootB.toString(), [shardB]]])
+      const uploadsBySpace = new Map([
+        [spaceA, [rootA]],
+        [spaceB, [rootB]],
+      ])
+      const shardsByRoot = new Map([
+        [rootA.toString(), [shardA]],
+        [rootB.toString(), [shardB]],
+      ])
 
       const client = /** @type {import('@storacha/client').Client} */ ({
-        spaces() { return [{ did: () => spaceA }, { did: () => spaceB }] },
-        async setCurrentSpace(did) { currentSpace = /** @type {API.SpaceDID} */ (did) },
+        spaces() {
+          return [{ did: () => spaceA }, { did: () => spaceB }]
+        },
+        async setCurrentSpace(did) {
+          currentSpace = /** @type {API.SpaceDID} */ (did)
+        },
         capability: {
           upload: {
             async list(_options) {
@@ -368,6 +562,7 @@ describe('buildMigrationInventories', () => {
             shard: {
               /**
                * @param {API.UnknownLink} root
+               * @param _options
                */
               async list(root, _options) {
                 return { results: shardsByRoot.get(`${root}`) ?? [] }
@@ -377,13 +572,38 @@ describe('buildMigrationInventories', () => {
         },
       })
 
-      const indexer = createMockIndexer(new Map([
-        [shardAB58, { claims: buildShardClaims(shardA, { locationURLs: ['https://r2.example/shard-a'], pieceCid }) }],
-        [shardBB58, { claims: buildShardClaims(shardB, { locationURLs: ['https://r2.example/shard-b'], pieceCid }) }],
-      ]))
+      const indexer = createMockIndexer(
+        new Map([
+          [
+            shardAB58,
+            {
+              claims: buildShardClaims(shardA, {
+                locationURLs: ['https://r2.example/shard-a'],
+                pieceCid,
+              }),
+            },
+          ],
+          [
+            shardBB58,
+            {
+              claims: buildShardClaims(shardB, {
+                locationURLs: ['https://r2.example/shard-b'],
+                pieceCid,
+              }),
+            },
+          ],
+        ])
+      )
 
       const state = createMockInitialState()
-      for await (const _ of buildMigrationInventories({ client, resolver: claimsResolver, state, options: { indexer } })) { /* drain */ }
+      for await (const _ of buildMigrationInventories({
+        client,
+        resolver: claimsResolver,
+        state,
+        options: { indexer },
+      })) {
+        /* drain */
+      }
 
       expect(state.spacesInventories[spaceA]).toBeDefined()
       expect(state.spacesInventories[spaceB]).toBeDefined()
@@ -406,11 +626,29 @@ describe('buildMigrationInventories', () => {
         [spaceA, spaceB]
       )
       const indexer = createMockIndexer(
-        new Map([[shardAB58, { claims: buildShardClaims(shardA, { locationURLs: ['https://r2.example/shard-a'], pieceCid }) }]])
+        new Map([
+          [
+            shardAB58,
+            {
+              claims: buildShardClaims(shardA, {
+                locationURLs: ['https://r2.example/shard-a'],
+                pieceCid,
+              }),
+            },
+          ],
+        ])
       )
 
       const state = createMockInitialState()
-      for await (const _ of buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [spaceA], options: { indexer } })) { /* drain */ }
+      for await (const _ of buildMigrationInventories({
+        client,
+        resolver: claimsResolver,
+        state,
+        spaceDIDs: [spaceA],
+        options: { indexer },
+      })) {
+        /* drain */
+      }
 
       expect(state.spacesInventories[spaceA]).toBeDefined()
       expect(state.spacesInventories[spaceB]).toBeUndefined()
@@ -429,11 +667,29 @@ describe('buildMigrationInventories', () => {
         new Map([[rootCid.toString(), [shardCid]]])
       )
       const indexer = createMockIndexer(
-        new Map([[shardB58, { claims: buildShardClaims(shardCid, { locationURLs: ['https://r2.example/shard'], pieceCid }) }]])
+        new Map([
+          [
+            shardB58,
+            {
+              claims: buildShardClaims(shardCid, {
+                locationURLs: ['https://r2.example/shard'],
+                pieceCid,
+              }),
+            },
+          ],
+        ])
       )
 
       const state = createMockInitialState()
-      for await (const _ of buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } })) { /* drain */ }
+      for await (const _ of buildMigrationInventories({
+        client,
+        resolver: claimsResolver,
+        state,
+        spaceDIDs: [SPACE_DID],
+        options: { indexer },
+      })) {
+        /* drain */
+      }
 
       expect(state.phase).toBe('planning')
     })
@@ -444,7 +700,13 @@ describe('buildMigrationInventories', () => {
 
       const state = createMockInitialState()
       const events = []
-      for await (const event of buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } })) {
+      for await (const event of buildMigrationInventories({
+        client,
+        resolver: claimsResolver,
+        state,
+        spaceDIDs: [SPACE_DID],
+        options: { indexer },
+      })) {
         events.push(event.type)
       }
 
@@ -461,11 +723,22 @@ describe('buildMigrationInventories', () => {
       const spaceA = /** @type {API.SpaceDID} */ ('did:key:z6MkResumeSkip')
       let setCurrentSpaceCalled = false
 
-      const client = /** @type {import('@storacha/client').Client} */ (/** @type {unknown} */ ({
-        spaces() { return [] },
-        async setCurrentSpace() { setCurrentSpaceCalled = true },
-        capability: { upload: { list: async () => ({ results: [] }), shard: { list: async () => ({ results: [] }) } } },
-      }))
+      const client = /** @type {import('@storacha/client').Client} */ (
+        /** @type {unknown} */ ({
+          spaces() {
+            return []
+          },
+          async setCurrentSpace() {
+            setCurrentSpaceCalled = true
+          },
+          capability: {
+            upload: {
+              list: async () => ({ results: [] }),
+              shard: { list: async () => ({ results: [] }) },
+            },
+          },
+        })
+      )
       const indexer = createMockIndexer(new Map())
 
       const state = createMockInitialState()
@@ -478,7 +751,15 @@ describe('buildMigrationInventories', () => {
         totalBytes: 0n,
       }
 
-      for await (const _ of buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [spaceA], options: { indexer } })) { /* drain */ }
+      for await (const _ of buildMigrationInventories({
+        client,
+        resolver: claimsResolver,
+        state,
+        spaceDIDs: [spaceA],
+        options: { indexer },
+      })) {
+        /* drain */
+      }
 
       expect(setCurrentSpaceCalled).toBe(false)
     })
@@ -494,33 +775,65 @@ describe('buildMigrationInventories', () => {
 
       // Mock returns page 0 at cursor undefined, page 1 at cursor '1'
       const client = createMockClient(
-        [{ results: [{ root: rootA }], cursor: '1' }, { results: [{ root: rootB }] }],
-        new Map([[rootA.toString(), [shardA]], [rootB.toString(), [shardB]]])
+        [
+          { results: [{ root: rootA }], cursor: '1' },
+          { results: [{ root: rootB }] },
+        ],
+        new Map([
+          [rootA.toString(), [shardA]],
+          [rootB.toString(), [shardB]],
+        ])
       )
-      const indexer = createMockIndexer(new Map([
-        [shardAB58, { claims: buildShardClaims(shardA, { locationURLs: ['https://r2.example/a'], pieceCid }) }],
-        [shardBB58, { claims: buildShardClaims(shardB, { locationURLs: ['https://r2.example/b'], pieceCid }) }],
-      ]))
+      const indexer = createMockIndexer(
+        new Map([
+          [
+            shardAB58,
+            {
+              claims: buildShardClaims(shardA, {
+                locationURLs: ['https://r2.example/a'],
+                pieceCid,
+              }),
+            },
+          ],
+          [
+            shardBB58,
+            {
+              claims: buildShardClaims(shardB, {
+                locationURLs: ['https://r2.example/b'],
+                pieceCid,
+              }),
+            },
+          ],
+        ])
+      )
 
       const state = createMockInitialState()
       // Simulate a prior partial run: page 0 was processed, cursor '1' was saved
       state.spacesInventories[SPACE_DID] = {
         did: SPACE_DID,
         uploads: [rootA.toString()],
-        shards: [{
-          root: rootA.toString(),
-          cid: shardA.toString(),
-          pieceCID: pieceCid.toString(),
-          sourceURL: 'https://r2.example/a',
-          sizeBytes: Piece.fromLink(pieceCid).size,
-        }],
+        shards: [
+          {
+            root: rootA.toString(),
+            cid: shardA.toString(),
+            pieceCID: pieceCid.toString(),
+            sourceURL: 'https://r2.example/a',
+            sizeBytes: Piece.fromLink(pieceCid).size,
+          },
+        ],
         failedUploads: [],
         totalBytes: Piece.fromLink(pieceCid).size,
       }
       state.readerProgressCursors = { [SPACE_DID]: '1' }
 
       const inventory = await collectInventory(
-        buildMigrationInventories({ client, resolver: claimsResolver, state, spaceDIDs: [SPACE_DID], options: { indexer } }),
+        buildMigrationInventories({
+          client,
+          resolver: claimsResolver,
+          state,
+          spaceDIDs: [SPACE_DID],
+          options: { indexer },
+        }),
         state,
         SPACE_DID
       )
