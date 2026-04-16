@@ -33,10 +33,13 @@
       "path": "../eslint-config-w3up"
     },
     {
-      "path": "../capabilities"
+      "path": "../filecoin-pin-migration"
     },
     {
       "path": "../access-client"
+    },
+    {
+      "path": "../capabilities"
     },
     {
       "path": "../did-mailto"

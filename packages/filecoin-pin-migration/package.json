@@ -53,7 +53,6 @@
 		"@ucanto/principal": "catalog:",
 		"@ucanto/server": "catalog:",
 		"@web3-storage/data-segment": "catalog:",
-		"dotenv": "^17.2.3",
 		"multiformats": "catalog:"
 	},
 	"peerDependencies": {

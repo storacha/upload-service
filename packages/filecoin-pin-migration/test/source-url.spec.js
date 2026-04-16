@@ -3,6 +3,7 @@ import { RoundaboutResolver, ClaimsResolver, createResolver } from '../src/sourc
 
 /** @type {import('../src/api.js').ResolvedShard} */
 const shard = {
+  root: 'bafyroot1',
   cid: 'bafyshard1',
   pieceCID: 'bafkzcibPIECE123',
   sourceURL: 'https://r2.example/shard1',

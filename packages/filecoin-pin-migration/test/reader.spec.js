@@ -186,7 +186,9 @@ describe('buildMigrationInventories', () => {
       expect(inventory.failedUploads).toContain(rootStr)
 
       const shardFailed = events.find((e) => e.type === 'reader:shard:failed')
-      expect(shardFailed).toBeDefined()
+      if (!shardFailed) {
+        throw new Error('expected reader:shard:failed event')
+      }
       expect(shardFailed.reason).toContain(shardCid.toString())
     })
 
@@ -217,7 +219,9 @@ describe('buildMigrationInventories', () => {
       expect(inventory.failedUploads).toContain(rootStr)
 
       const shardFailed = events.find((e) => e.type === 'reader:shard:failed')
-      expect(shardFailed).toBeDefined()
+      if (!shardFailed) {
+        throw new Error('expected reader:shard:failed event')
+      }
       expect(shardFailed.reason).toContain(shardCid.toString())
     })
 
@@ -362,8 +366,11 @@ describe('buildMigrationInventories', () => {
               return { results: roots.map((root) => ({ root })) }
             },
             shard: {
+              /**
+               * @param {API.UnknownLink} root
+               */
               async list(root, _options) {
-                return { results: shardsByRoot.get(root.toString()) ?? [] }
+                return { results: shardsByRoot.get(`${root}`) ?? [] }
               },
             },
           },
