@@ -2,6 +2,10 @@ import pMap from 'p-map'
 import { Piece } from '@web3-storage/data-segment'
 import { base58btc } from 'multiformats/bases/base58'
 import { Client as IndexingClient } from '@storacha/indexing-service-client'
+import {
+  DEFAULT_SHARD_LIST_CONCURRENCY,
+  DEFAULT_STOP_ON_ERROR,
+} from './constants.js'
 import { checkpointInventoryPage } from './state.js'
 
 /**
@@ -13,14 +17,13 @@ import { checkpointInventoryPage } from './state.js'
  *  IndexingServiceReader,
  *  SourceURLResolver,
  *  ResolvedShard,
+ *  StoreShard,
  *  ShardEntry,
  *  ClaimsEntry,
  *  UnknownLink,
  *  PieceLink
  * } from './api.js'
  */
-
-const DEFAULT_SHARD_LIST_CONCURRENCY = 4
 
 /**
  * Build migration inventories for multiple spaces, checkpointing into state
@@ -51,17 +54,32 @@ export async function* buildMigrationInventories({
   resolver,
   state,
   spaceDIDs,
+  uploadRootsBySpace,
   options,
 }) {
   const indexer =
     options?.indexer ?? new IndexingClient({ serviceURL: options?.serviceURL })
-  const stopOnError = options?.stopOnError ?? true
+  const stopOnError = options?.stopOnError ?? DEFAULT_STOP_ON_ERROR
   const shardListConcurrency = DEFAULT_SHARD_LIST_CONCURRENCY
-  const dids = spaceDIDs ?? client.spaces().map((s) => s.did())
+  if (spaceDIDs && uploadRootsBySpace) {
+    throw new TypeError(
+      'buildMigrationInventories: pass either "spaceDIDs" or "uploadRootsBySpace", not both'
+    )
+  }
+
+  const dids = /** @type {SpaceDID[]} */ (
+    uploadRootsBySpace
+      ? Object.keys(uploadRootsBySpace)
+      : spaceDIDs ?? client.spaces().map((s) => s.did())
+  )
 
   for (const did of dids) {
+    const spaceDID = /** @type {SpaceDID} */ (did)
     // Space already fully read — skip
-    if (state.spacesInventories[did] && !state.readerProgressCursors?.[did]) {
+    if (
+      state.spacesInventories[spaceDID] &&
+      !state.readerProgressCursors?.[spaceDID]
+    ) {
       continue
     }
 
@@ -69,8 +87,9 @@ export async function* buildMigrationInventories({
       client,
       indexer,
       resolver,
-      spaceDID: did,
+      spaceDID,
       state,
+      selectedUploadRoots: uploadRootsBySpace?.[spaceDID],
       stopOnError,
       shardListConcurrency,
     })
@@ -98,6 +117,7 @@ export async function* buildMigrationInventories({
  * @param {SourceURLResolver} args.resolver
  * @param {SpaceDID} args.spaceDID
  * @param {MigrationState} args.state - Mutated in place
+ * @param {string[] | undefined} args.selectedUploadRoots
  * @param {boolean} args.stopOnError
  * @param {number} args.shardListConcurrency
  * @returns {AsyncGenerator<MigrationEvent>}
@@ -108,24 +128,33 @@ async function* buildSpaceInventory({
   resolver,
   spaceDID,
   state,
+  selectedUploadRoots,
   stopOnError,
   shardListConcurrency,
 }) {
   yield { type: 'reader:space:start', spaceDID }
 
   await client.setCurrentSpace(spaceDID)
+  const spaceName = client.currentSpace?.()?.name || undefined
 
   let cursor = state.readerProgressCursors?.[spaceDID]
+  const selectedRoots =
+    selectedUploadRoots != null ? new Set(selectedUploadRoots) : undefined
 
   do {
     const page = await client.capability.upload.list({
       cursor,
       size: 100,
     })
+    const uploadsInPage = selectedRoots
+      ? page.results.filter((upload) =>
+          selectedRoots.has(upload.root.toString())
+        )
+      : page.results
 
     // Phase 1: list all shards for all uploads in the page
     const uploadsWithShards = await pMap(
-      page.results,
+      uploadsInPage,
       async (upload) => {
         const root = upload.root.toString()
         const shards = await listShardsFromStore(client, upload.root)
@@ -141,21 +170,30 @@ async function* buildSpaceInventory({
     // Phase 3: extract per-shard results from the claims index (pure, no I/O)
     /** @type {ResolvedShard[]} */
     const pageShards = []
+    /** @type {StoreShard[]} */
+    const pageShardsToStore = []
     /** @type {string[]} */
     const pageUploadRoots = []
     /** @type {string[]} */
-    const pageFailedRoots = []
+    const pageSkippedRoots = []
     let pageBytes = 0n
+    let pageBytesToMigrate = 0n
 
     for (const { root, shards } of uploadsWithShards) {
       /** @type {ResolvedShard[]} */
+      // Shards that stay on the existing source-pull fast path.
       const resolved = []
+      /** @type {StoreShard[]} */
+      // Shards that must be routed through the standalone store() flow.
+      const toStore = []
       let uploadFailed = false
 
       for (const shard of shards) {
         const result = extractShard(claimsIndex, shard, root, resolver)
         if (result.ok) {
           resolved.push(result.ok)
+        } else if (result.store) {
+          toStore.push(result.store)
         } else {
           yield /** @type {MigrationEvent} */ ({
             type: 'reader:shard:failed',
@@ -170,12 +208,19 @@ async function* buildSpaceInventory({
       }
 
       if (uploadFailed) {
-        pageFailedRoots.push(root)
+        pageSkippedRoots.push(root)
       } else {
         pageUploadRoots.push(root)
         for (const s of resolved) {
           pageShards.push(s)
           pageBytes += s.sizeBytes
+          pageBytesToMigrate += s.sizeBytes
+        }
+        for (const s of toStore) {
+          pageShardsToStore.push(s)
+          pageBytes += s.sizeBytes
+          // TODO: Once CAR padding is implemented, use 128 bytes here when sizeBytes is less than or equal to 127.
+          pageBytesToMigrate += s.sizeBytes
         }
       }
     }
@@ -184,10 +229,13 @@ async function* buildSpaceInventory({
 
     checkpointInventoryPage(state, {
       spaceDID,
+      name: spaceName,
       shards: pageShards,
+      shardsToStore: pageShardsToStore,
       uploads: pageUploadRoots,
-      failedUploads: pageFailedRoots,
+      skippedUploads: pageSkippedRoots,
       totalBytes: pageBytes,
+      totalSizeToMigrate: pageBytesToMigrate,
       cursor,
     })
 
@@ -229,7 +277,7 @@ async function listShardsFromStore(client, root) {
 /**
  * Query claims for all shards in one HTTP call and build a lookup index.
  *
- * Returns a Map keyed by b58 multihash → { locationURL, piece }.
+ * Returns a Map keyed by b58 multihash → { locationURL, piece, size }.
  *
  * @param {IndexingServiceReader} indexer
  * @param {ShardEntry[]} shards
@@ -240,6 +288,8 @@ async function batchResolveClaims(indexer, shards) {
   const index = new Map()
 
   if (shards.length === 0) return index
+
+  const requestedShardB58s = new Set(shards.map((shard) => shard.b58))
 
   const claimsResult = await indexer.queryClaims({
     hashes: shards.map((s) => s.multihash),
@@ -255,34 +305,40 @@ async function batchResolveClaims(indexer, shards) {
           ? claim.content.digest
           : claim.content.multihash.bytes
       const b58 = base58btc.encode(bytes)
+      // Ignore location claims for hashes outside the requested shard set,
+      // such as index-blob claims returned alongside shard claims.
+      if (!requestedShardB58s.has(b58)) continue
+
+      const locationURL = claim.location[0]?.toString()
+      if (!locationURL) continue
+
       const entry = getOrCreateClaimsEntry(index, b58)
-      if (entry.locationURL === null) {
-        // Match by shard multihash — filters out index-blob location claims
-        for (const shard of shards) {
-          if (shard.b58 === b58) {
-            entry.locationURL = claim.location[0]?.toString() ?? null
-            entry.size = claim.range ? BigInt(claim.range.length ?? 0) : 0n
-            index.set(b58, entry)
-            break
-          }
-        }
-      }
-    }
-    if (claim.type === 'assert/equals') {
+      if (entry.locationURL !== null) continue
+
+      entry.locationURL = locationURL
+      entry.size = claim.range ? BigInt(claim.range.length ?? 0) : 0n
+      index.set(b58, entry)
+    } else if (claim.type === 'assert/equals') {
       const bytes =
         'digest' in claim.content
           ? claim.content.digest
           : claim.content.multihash.bytes
       const b58 = base58btc.encode(bytes)
-      const entry = getOrCreateClaimsEntry(index, b58)
-      if (entry.piece === null) {
-        try {
-          entry.piece = Piece.fromLink(/** @type {PieceLink} */ (claim.equals))
-          index.set(b58, entry)
-        } catch {
-          // not a piece CID — skip
-        }
+      if (!requestedShardB58s.has(b58)) continue
+
+      let piece
+      try {
+        piece = Piece.fromLink(/** @type {PieceLink} */ (claim.equals))
+      } catch {
+        // not a piece CID — skip
+        continue
       }
+
+      const entry = getOrCreateClaimsEntry(index, b58)
+      if (entry.piece !== null) continue
+
+      entry.piece = piece
+      index.set(b58, entry)
     }
   }
 
@@ -292,7 +348,7 @@ async function batchResolveClaims(indexer, shards) {
 // ── Per-shard extraction ──────────────────────────────────────────────────────
 
 /**
- * Extract a ResolvedShard from the pre-built claims index.
+ * Extract a shard entry from the pre-built claims index.
  * Pure function — no network calls.
  *
  * @param {Map<string, ClaimsEntry>} claimsIndex
@@ -302,12 +358,30 @@ async function batchResolveClaims(indexer, shards) {
  */
 function extractShard(claimsIndex, shard, root, resolver) {
   const entry = claimsIndex.get(shard.b58)
+  const sizeBytes =
+    entry?.size && entry.size > 0n ? entry.size : entry?.piece?.size ?? 0n
+
+  if (!entry?.locationURL) {
+    return { error: `Missing location URL: shard ${shard.cidStr}` }
+  }
 
   if (!entry?.piece) {
-    return { error: `Missing piece CID: shard ${shard.cidStr}` }
+    /** @type {StoreShard} */
+    const storeShard = {
+      root,
+      cid: shard.cidStr,
+      sourceURL: entry.locationURL,
+      sizeBytes,
+    }
+    storeShard.sourceURL = resolver.resolve(storeShard)
+    return { store: storeShard }
   }
-  if (!entry.locationURL) {
-    return { error: `Missing location URL: shard ${shard.cidStr}` }
+
+  if (sizeBytes < 127n) {
+    // TODO: Route tiny shards through store() once deterministic CAR padding is implemented.
+    return {
+      error: `Shard ${shard.cidStr} is smaller than the minimum supported CAR size`,
+    }
   }
 
   /** @type {ResolvedShard} */
@@ -316,7 +390,7 @@ function extractShard(claimsIndex, shard, root, resolver) {
     cid: shard.cidStr,
     pieceCID: entry.piece.link.toString(),
     sourceURL: entry.locationURL,
-    sizeBytes: entry.size > 0n ? entry.size : entry.piece.size,
+    sizeBytes,
   }
   resolved.sourceURL = resolver.resolve(resolved)
 

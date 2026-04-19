@@ -141,10 +141,10 @@ describe('createMigrationPlan', () => {
     expect(plan.totals.bytes).toBe((1024n + 2048n) * 3n)
   })
 
-  it('surfaces failed uploads as plan warnings', async () => {
+  it('surfaces skipped uploads as plan warnings', async () => {
     const inventory = createMockInventory({
       did: /** @type {API.SpaceDID} */ ('did:key:z6MkSkipped1'),
-      failedUploads: ['bafyroot1'],
+      skippedUploads: ['bafyroot1'],
     })
     const state = withInventories(createMockInitialState(), [inventory])
 
@@ -153,7 +153,7 @@ describe('createMigrationPlan', () => {
     )
 
     expect(plan.warnings).toHaveLength(1)
-    expect(plan.warnings[0]).toContain('unresolvable shards')
+    expect(plan.warnings[0]).toContain('will be skipped')
   })
 
   it('surfaces costs from computeMigrationCosts', async () => {
@@ -228,7 +228,7 @@ describe('createMigrationPlan', () => {
     )
 
     const inventory = createMockInventory({
-      failedUploads: ['bafyroot1'],
+      skippedUploads: ['bafyroot1'],
     })
     const state = withInventories(createMockInitialState(), [inventory])
 
@@ -240,7 +240,7 @@ describe('createMigrationPlan', () => {
       expect.arrayContaining([
         expect.stringContaining('Deposit'),
         expect.stringContaining('Approval'),
-        expect.stringContaining('unresolvable shards'),
+        expect.stringContaining('will be skipped'),
       ])
     )
   })

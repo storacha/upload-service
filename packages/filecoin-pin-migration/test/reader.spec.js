@@ -261,13 +261,10 @@ describe('buildMigrationInventories', () => {
 
       const rootStr = rootCid.toString()
       expect(inventory.shards).toHaveLength(0)
-      expect(inventory.failedUploads).toContain(rootStr)
-
-      const shardFailed = events.find((e) => e.type === 'reader:shard:failed')
-      if (!shardFailed) {
-        throw new Error('expected reader:shard:failed event')
-      }
-      expect(shardFailed.reason).toContain(shardCid.toString())
+      expect(inventory.shardsToStore).toHaveLength(1)
+      expect(inventory.shardsToStore[0].root).toBe(rootStr)
+      expect(inventory.skippedUploads).toHaveLength(0)
+      expect(events.find((e) => e.type === 'reader:shard:failed')).toBeUndefined()
     })
 
     it('excludes upload with missing location URL and emits reader:shard:failed', async () => {
@@ -302,7 +299,7 @@ describe('buildMigrationInventories', () => {
 
       const rootStr = rootCid.toString()
       expect(inventory.shards).toHaveLength(0)
-      expect(inventory.failedUploads).toContain(rootStr)
+      expect(inventory.skippedUploads).toContain(rootStr)
 
       const shardFailed = events.find((e) => e.type === 'reader:shard:failed')
       if (!shardFailed) {
@@ -541,6 +538,10 @@ describe('buildMigrationInventories', () => {
         [spaceA, [rootA]],
         [spaceB, [rootB]],
       ])
+      const spaceNames = new Map([
+        [spaceA, 'Space A'],
+        [spaceB, 'Space B'],
+      ])
       const shardsByRoot = new Map([
         [rootA.toString(), [shardA]],
         [rootB.toString(), [shardB]],
@@ -549,6 +550,13 @@ describe('buildMigrationInventories', () => {
       const client = /** @type {import('@storacha/client').Client} */ ({
         spaces() {
           return [{ did: () => spaceA }, { did: () => spaceB }]
+        },
+        currentSpace() {
+          if (!currentSpace) return undefined
+          return {
+            did: () => currentSpace,
+            name: spaceNames.get(currentSpace) ?? '',
+          }
         },
         async setCurrentSpace(did) {
           currentSpace = /** @type {API.SpaceDID} */ (did)
@@ -607,6 +615,12 @@ describe('buildMigrationInventories', () => {
 
       expect(state.spacesInventories[spaceA]).toBeDefined()
       expect(state.spacesInventories[spaceB]).toBeDefined()
+      expect(state.spacesInventories[spaceA]).toEqual(
+        expect.objectContaining({ name: 'Space A' })
+      )
+      expect(state.spacesInventories[spaceB]).toEqual(
+        expect.objectContaining({ name: 'Space B' })
+      )
       expect(state.spacesInventories[spaceA].shards).toHaveLength(1)
       expect(state.spacesInventories[spaceB].shards).toHaveLength(1)
     })
@@ -747,8 +761,10 @@ describe('buildMigrationInventories', () => {
         did: spaceA,
         uploads: ['bafyroot'],
         shards: [],
-        failedUploads: [],
+        shardsToStore: [],
+        skippedUploads: [],
         totalBytes: 0n,
+        totalSizeToMigrate: 0n,
       }
 
       for await (const _ of buildMigrationInventories({
@@ -821,8 +837,10 @@ describe('buildMigrationInventories', () => {
             sizeBytes: Piece.fromLink(pieceCid).size,
           },
         ],
-        failedUploads: [],
+        shardsToStore: [],
+        skippedUploads: [],
         totalBytes: Piece.fromLink(pieceCid).size,
+        totalSizeToMigrate: Piece.fromLink(pieceCid).size,
       }
       state.readerProgressCursors = { [SPACE_DID]: '1' }
 

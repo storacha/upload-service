@@ -32,18 +32,30 @@ export interface ResolvedShard {
   sizeBytes: bigint
 }
 
+/** Shard entry routed through the store() migration flow. */
+export type StoreShard = Omit<ResolvedShard, 'pieceCID'> & {
+  /** Present when the source shard already has a piece CID, absent otherwise. */
+  pieceCID?: string
+}
+
 /** Return type of buildMigrationInventory(). */
 export interface SpaceInventory {
   /** DID identifying the space */
   did: SpaceDID
+  /** Space name */
+  name?: string
   /** Root CIDs of uploads where all shards resolved successfully */
   uploads: string[]
   /** Flat list of resolved shards — each carries its upload root */
   shards: ResolvedShard[]
-  /** Root CIDs of uploads excluded because one or more shards could not be resolved */
-  failedUploads: string[]
+  /** Shards that must be migrated via store() instead of source pull. */
+  shardsToStore: StoreShard[]
+  /** Root CIDs of uploads skipped because one or more shards could not be resolved */
+  skippedUploads: string[]
   /** Total size (bytes) of all resolved shards — only counter that can't be derived from .length */
   totalBytes: bigint
+  /** Total size (bytes) of all currently migratable shards used for cost pricing. */
+  totalSizeToMigrate: bigint
 }
 
 /**
@@ -61,6 +73,7 @@ export interface MigrationPlan {
     uploads: number
     shards: number
     bytes: bigint
+    bytesToMigrate: bigint
   }
   costs: MigrationCostResult
   warnings: string[]
@@ -230,6 +243,8 @@ export interface SpaceCopyState {
   committed: Set<string>
   /** Upload root CIDs that had at least one shard failure during migration. */
   failedUploads: Set<string>
+  /** Stored shard piece CIDs persisted after copy 0 store() succeeds. */
+  storedShards: Record<string, string>
 }
 
 /**
@@ -279,16 +294,15 @@ export interface MigrationSummary {
 
 // ── Stage inputs ─────────────────────────────────────────────────────────────
 
-/** Input for buildMigrationInventories() — the reader stage. */
-export interface BuildInventoriesInput {
+export type UploadRootsBySpace = Record<SpaceDID, string[]>
+
+interface BuildInventoriesBaseInput {
   /** Authenticated @storacha/client instance */
   client: Client
   /** Resolves the final sourceURL for each shard */
   resolver: SourceURLResolver
   /** Mutated in place; used for resume and checkpointing */
   state: MigrationState
-  /** Defaults to all spaces on the client */
-  spaceDIDs?: SpaceDID[]
   options?: {
     /** Override the default indexing service URL */
     serviceURL?: URL
@@ -298,6 +312,21 @@ export interface BuildInventoriesInput {
     stopOnError?: boolean
   }
 }
+
+/** Input for buildMigrationInventories() — the reader stage. */
+export type BuildInventoriesInput = BuildInventoriesBaseInput &
+  (
+    | {
+        /** Defaults to all spaces on the client when no selector is provided. */
+        spaceDIDs?: SpaceDID[]
+        uploadRootsBySpace?: never
+      }
+    | {
+        /** Restrict reading to explicit upload roots grouped by space. */
+        uploadRootsBySpace: UploadRootsBySpace
+        spaceDIDs?: never
+      }
+  )
 
 /** Input for createMigrationPlan() — the planner stage. */
 export interface CreatePlanInput {
@@ -330,7 +359,7 @@ export interface ExecuteMigrationInput {
   /** AbortSignal for cancellation */
   signal?: AbortSignal
   /**
-   * Max commit retry attempts for the final per-space commit (default: 3).
+   * Max commit retry attempts for a failing commit batch (default: 3).
    * 0 = auto-skip on commit failure, no commit:failed event yielded.
    */
   maxCommitRetries?: number
@@ -341,10 +370,35 @@ export interface ExecuteMigrationInput {
   commitRetryTimeout?: number
   /**
    * Number of batches to presign+pull concurrently (default: 4).
-   * The final commit still runs once per space regardless of this value.
+   * Commit batches still run sequentially per copy regardless of this value.
    * Set to 1 to restore sequential behavior.
    */
   pullConcurrency?: number
+}
+
+export interface ExecuteStoreMigrationInput {
+  /** Approved plan from createMigrationPlan() */
+  plan: MigrationPlan
+  /** Mutated in place; tracks stored and committed shards and phase */
+  state: MigrationState
+  /** Initialized Synapse SDK instance */
+  synapse: Synapse
+  /** Shards per store checkpoint batch and per secondary pull batch (default: 50) */
+  batchSize?: number
+  /** Fetch implementation used to download shard bytes */
+  fetcher?: typeof fetch
+  /** Number of shards to download+store concurrently per space (default: 10) */
+  storeConcurrency?: number
+  /** Number of secondary pull batches to run concurrently per space (default: 4) */
+  pullConcurrency?: number
+  /** A failure stops remaining batches in an upload (default: true) */
+  stopOnError?: boolean
+  /** AbortSignal for cancellation */
+  signal?: AbortSignal
+  /** Max commit retry attempts for a failing commit batch (default: 3) */
+  maxCommitRetries?: number
+  /** Timeout in ms for consumer to call retry/skip on a commit:failed event */
+  commitRetryTimeout?: number
 }
 
 /**
@@ -363,7 +417,7 @@ export interface ExecuteMigrationInput {
  *   funding:failed (before re-throwing — generator terminates after this)
  *
  * Pull/commit errors:
- *   migration:batch:failed — emitted for pull-batch failures and final commit failures
+ *   migration:batch:failed — emitted for pull/store batch failures and commit-batch failures
  *
  * State persistence:
  *   state:checkpoint — emitted after each reader page, after planner writes SP
@@ -411,9 +465,9 @@ export type MigrationEvent =
       roots: string[]
       /** Current attempt number (1-based) */
       attempt: number
-      /** Call to retry the final space-level commit (re-presign + commit) */
+      /** Call to retry the failing commit batch (re-presign + commit) */
       retry: () => void
-      /** Call to skip the final commit and continue with the next space */
+      /** Call to skip the failing commit batch and continue with later work */
       skip: () => void
     }
   | { type: 'state:checkpoint'; state: MigrationState }
@@ -457,24 +511,27 @@ export interface ClaimsEntry {
 
 /** Resolves a source URL for a shard. Applied only in the reader. */
 export interface SourceURLResolver {
-  resolve(shard: ResolvedShard): string
+  resolve(shard: ResolvedShard | StoreShard): string
 }
 
 // ── Migrator interfaces ────────────────────────────────────────────────────────
 
 /**
  * Migrator lifecycle per batch
+ *   store   — client-side store() executed for a batch, but not yet committed
  *   presign    — EIP-712 signature obtained for the batch, but not yet submitted to SP
  *   pull  — SP pull executed, pieces returned, but not yet committed
  *   commit   — SP commit executed for the batch, but not yet confirmed on-chain
  */
-export type MigratorPhase = 'presign' | 'pull' | 'commit'
+export type MigratorPhase = 'store' | 'presign' | 'pull' | 'commit'
 
-export interface CommittedEntry {
+export interface CommitEntry {
   shardCid: string
   pieceCID: string
   root: string
 }
+
+export interface CommittedEntry extends CommitEntry {}
 
 /** Pre-mapped piece ready for presign/commit, carrying shard metadata for recording. */
 export interface CommitPiece {
@@ -490,7 +547,7 @@ export interface BatchResult {
   dataSetId: bigint | undefined
   committed: CommittedEntry[]
   error?: Error
-  /** Upload root CIDs affected by the final commit failure */
+  /** Upload root CIDs affected by the commit batch failure */
   failedUploads: Set<string>
   /** Pre-mapped commit pieces for retry — present only on commit failure */
   commitPieces?: CommitPiece[]
@@ -499,9 +556,9 @@ export interface BatchResult {
 /**
  * Result of presign+pull for a single batch.
  */
-export interface PullResult {
-  /** Shards that pulled successfully before cross-batch failed-root reconciliation */
-  pulledCandidates: ResolvedShard[]
+export interface PullResult<T = ResolvedShard> {
+  /** Entries that pulled successfully before cross-batch failed-root reconciliation */
+  pulledCandidates: T[]
   /** Upload root CIDs that had failures during presign or pull */
   failedUploads: Set<string>
   /** Distinguishes upload-quality failures from operational failures */

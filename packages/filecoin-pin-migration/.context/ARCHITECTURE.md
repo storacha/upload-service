@@ -1,7 +1,7 @@
 # Architecture — `@storacha/filecoin-pin-migration`
 
 **Domain:** Storacha-to-FOC migration library  
-**Last updated:** 2026-04-15
+**Last updated:** 2026-04-19
 
 ---
 
@@ -13,7 +13,7 @@ A headless three-stage pipeline with explicit data contracts:
 Reader → Planner → Migrator
 ```
 
-- `reader` builds `SpaceInventory[]`
+- `reader` builds `SpaceInventory[]`, including optional space metadata such as the space name
 - `planner` computes a `MigrationPlan`
 - `migrator` executes the approved plan and mutates `MigrationState`
 
@@ -28,7 +28,7 @@ every `state:checkpoint` event.
 |---|---|---|
 | reader | Fetch uploads, resolve shards via the indexing service, apply the source URL resolver inline | `SpaceInventory[]` |
 | planner | Aggregate inventories, create exactly 2 storage contexts per space, compute costs, write provider/dataset bindings into state | `MigrationPlan` |
-| migrator | Fund once, run pull batches per copy, commit once per copy, emit progress/failure events | `AsyncGenerator<MigrationEvent>` |
+| migrator | Fund once, run pull batches per copy, commit sequential batches per copy, emit progress/failure events | `AsyncGenerator<MigrationEvent>` |
 
 ---
 
@@ -147,19 +147,27 @@ executeMigration({ plan, state, synapse, config })
           run presign+pull over pending batches with configurable pull concurrency
           reconcile failed roots across all batch results
           checkpoint surviving pulled shards with recordPull(..., copyIndex, ...)
-          build final commit set from copy.pulled
-          commit all pulled shards for that copy in one call
-          on success: recordCommit(..., copyIndex, ...)
+          build final commit stream from copy.pulled
+          split commit work into sequential internal batches
+          for each successful commit batch: recordCommit(..., copyIndex, ...)
         finalizeSpace()
   └─▶ finalizeMigration()
 ```
 
 ### Pull/Commit Semantics
 
-- batches are only for presign + pull
-- commit is copy-scoped, not batch-scoped
+- pull work is batched and runs concurrently per copy
+- commit is copy-scoped and executes in sequential internal commit batches
+- commit batching mode is resolved internally per batch:
+  - `count` when an internal max-pieces limit is configured
+  - `extraData` when count mode is disabled and the encoded `extraData` limit is active
+  - `none` when both internal limits are disabled
+- in `extraData` mode, the first commit batch may be smaller because it includes
+  the dataset-creation payload when `context.dataSetId` is not yet defined
+- once the first commit succeeds and the dataset exists, later batches switch to
+  add-pieces-only sizing
 - `stopOnError` is enforced independently per copy via upload-root tracking
-- `retryCommitInteractively` is used only for the final commit of a copy
+- `retryCommitInteractively` is used only for a failing commit batch
 
 ### Error Model
 
@@ -167,7 +175,7 @@ executeMigration({ plan, state, synapse, config })
 |---|---|---|---|
 | Presign | `PresignFailedFailure` | Whole pull batch for a copy | None |
 | Pull | `PullFailedFailure` | Per upload root within the batch | `p-retry` |
-| Commit | `CommitFailedFailure` | Final commit for one copy | Interactive retry |
+| Commit | `CommitFailedFailure` | One commit batch for one copy | Interactive retry |
 
 ---
 
@@ -185,8 +193,8 @@ All stages may yield `state:checkpoint`. Persist on every occurrence.
 | `funding:start` | migrator | Before `fundSync` | `amount` |
 | `funding:complete` | migrator | After `fundSync` succeeds | — |
 | `funding:failed` | migrator | `fundSync` threw; generator terminates | `error` |
-| `migration:batch:failed` | migrator | A pull batch or final commit produced failed upload roots | `spaceDID`, `copyIndex`, `stage`, `roots`, `error` |
-| `migration:commit:failed` | migrator | The final commit failed and the caller may choose to retry | `spaceDID`, `copyIndex`, `attempt`, `roots`, `error`, `retry` |
+| `migration:batch:failed` | migrator | A pull/store batch or commit batch produced failed upload roots | `spaceDID`, `copyIndex`, `stage`, `roots`, `error` |
+| `migration:commit:failed` | migrator | A commit batch failed and the caller may choose to retry | `spaceDID`, `copyIndex`, `attempt`, `roots`, `error`, `retry` |
 | `state:checkpoint` | all | Progress became durable | `state` |
 | `migration:complete` | migrator | All spaces processed | `summary` |
 
@@ -209,8 +217,7 @@ set type.
 
 ### Size is taken from the location claim when available
 
-Piece CID derivation does not account for padding, so the reader prefers
-`assert/location.range.length` as the real byte size. Piece size is only a
+The reader prefers `assert/location.range.length` as the real byte size. Piece size is only a
 fallback.
 
 ### Reader output is final

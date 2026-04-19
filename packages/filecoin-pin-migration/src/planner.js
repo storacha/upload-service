@@ -5,8 +5,8 @@ import { buildResumeState, transitionToApproved } from './state.js'
  * @import { CreatePlanInput, MigrationEvent, MigrationPlan } from './api.js'
  */
 
-/** 5% safety buffer over the deposit to cover gas estimation variance. */
-const SAFETY_BUFFER_BPS = 500n
+/** 3% safety buffer over the deposit to cover gas estimation variance. */
+const SAFETY_BUFFER_BPS = 300n
 const BPS_BASE = 10000n
 
 /**
@@ -50,6 +50,7 @@ export async function* createMigrationPlan({ synapse, state, providerIds }) {
   let totalUploads = 0
   let totalShards = 0
   let totalBytes = 0n
+  let bytesToMigrate = 0n
   /** @type {string[]} */
   const warnings = []
 
@@ -57,10 +58,11 @@ export async function* createMigrationPlan({ synapse, state, providerIds }) {
     totalUploads += inv.uploads.length
     totalShards += inv.shards.length
     totalBytes += inv.totalBytes
+    bytesToMigrate += inv.totalSizeToMigrate
 
-    if (inv.failedUploads.length > 0) {
+    if (inv.skippedUploads.length > 0) {
       warnings.push(
-        `${inv.did}: ${inv.failedUploads.length} upload(s) have unresolvable shards and will not be migrated`
+        `${inv.did}: ${inv.skippedUploads.length} upload(s) have unresolvable shards and will be skipped`
       )
     }
   }
@@ -73,25 +75,21 @@ export async function* createMigrationPlan({ synapse, state, providerIds }) {
   warnings.push(...costs.warnings)
 
   // ── Funding amount with safety buffer ────────────────────────────────────
+  // TODO: allow user to specify custom buffer
   const fundingAmount =
     costs.totalDepositNeeded > 0n
       ? costs.totalDepositNeeded +
         (costs.totalDepositNeeded * SAFETY_BUFFER_BPS) / BPS_BASE
       : 0n
 
-  if (fundingAmount > 0n) {
-    warnings.push(
-      `Funding amount includes a ${Number(
-        (SAFETY_BUFFER_BPS * 100n) / BPS_BASE
-      )}% safety buffer over the deposit: ${fundingAmount} total (deposit: ${
-        costs.totalDepositNeeded
-      })`
-    )
-  }
-
   /** @type {MigrationPlan} */
   const plan = {
-    totals: { uploads: totalUploads, shards: totalShards, bytes: totalBytes },
+    totals: {
+      uploads: totalUploads,
+      shards: totalShards,
+      bytes: totalBytes,
+      bytesToMigrate,
+    },
     costs,
     warnings,
     ready: costs.ready,

@@ -11,6 +11,7 @@ import {
   buildMigrationInventories,
   createMigrationPlan,
   executeMigration,
+  executeStoreMigration,
   createResolver,
   serializeState,
   deserializeState,
@@ -47,6 +48,7 @@ const MIN_FIL_GAS_BALANCE = parseEther('0.1')
  * @property {boolean} [resume]
  * @property {number|string} [batchSize]
  * @property {number|string} [pullConcurrency]
+ * @property {'pull' | 'store'} [uploadMode]
  * @property {boolean} [stopOnError]
  * @property {string} [sourceStrategy]
  * @property {string} [roundaboutURL]
@@ -92,7 +94,7 @@ export async function spaceMigrate(opts = {}) {
   // TODO: are we also listen for termination signals and throws of uncaught exceptions to persist state before exit?
 
   try {
-    const preflight = await loadPreflight(synapse)
+    const userWalletInfo = await loadPreflight(synapse)
     printPreflight({
       spaceDID: context.spaceDID,
       walletAddress: account.address,
@@ -100,7 +102,8 @@ export async function spaceMigrate(opts = {}) {
       chainName: synapse.chain.name,
       stateFile: context.stateFile,
       resume: config.resume,
-      preflight,
+      uploadMode: config.uploadMode,
+      preflight: userWalletInfo,
       minFilGasBalance: MIN_FIL_GAS_BALANCE,
     })
 
@@ -115,6 +118,14 @@ export async function spaceMigrate(opts = {}) {
     })
     if (readerResult.interrupted) return
 
+    const spaceInventory = state.spacesInventories[context.spaceDID]
+    if (!spaceInventory || spaceInventory.uploads.length === 0) {
+      console.warn(
+        'No uploads are available to migrate. All uploads failed during the reader phase.'
+      )
+      return
+    }
+
     const planResult = await planMigration({
       synapse,
       state,
@@ -124,7 +135,13 @@ export async function spaceMigrate(opts = {}) {
     if (planResult.interrupted || !planResult.plan) return
     const { plan } = planResult
 
-    printPlan(plan)
+    printPlan(plan, userWalletInfo.walletUSDFC, userWalletInfo.depositedUSDFC)
+
+    console.log(
+      chalk.inverse(
+        'Funding is irreversible. Verify contents are reachable before continuing.\n'
+      )
+    )
 
     const proceedWithPlan = await confirm({
       message: 'Continue with migration?',
@@ -143,6 +160,7 @@ export async function spaceMigrate(opts = {}) {
       synapse,
       batchSize: config.batchSize,
       pullConcurrency: config.pullConcurrency,
+      uploadMode: config.uploadMode,
       stopOnError: config.stopOnError,
       signal: ac.signal,
     })
@@ -163,6 +181,7 @@ function parseMigrationOptions(opts) {
   return {
     network: parseNetwork(opts.network),
     batchSize: parseBatchSize(opts.batchSize),
+    uploadMode: parseUploadMode(opts.uploadMode),
     sourceStrategy: parseSourceStrategy(opts.sourceStrategy),
     pullConcurrency: parsePositiveInteger(
       opts.pullConcurrency,
@@ -172,6 +191,25 @@ function parseMigrationOptions(opts) {
     resume: opts.resume ?? false,
     roundaboutURL: opts.roundaboutURL,
   }
+}
+
+/**
+ * @param {'pull' | 'store' | string | undefined} mode
+ * @returns {'pull' | 'store'}
+ */
+function parseUploadMode(mode) {
+  if (mode == null || mode === '') {
+    return 'pull'
+  }
+
+  if (mode === 'pull' || mode === 'store') {
+    return mode
+  }
+
+  console.error(
+    `Error: invalid upload mode "${mode}". Expected "pull" or "store".`
+  )
+  process.exit(1)
 }
 
 /**
@@ -250,7 +288,7 @@ async function readInventories({
         if (!inventory) break
         spinner.stopAndPersist({
           symbol: chalk.green('✔'),
-          text: `  Completed ${inventory.uploads.length} uploads, ${inventory.shards.length} shards, ${inventory.failedUploads.length} failed uploads, ${formatBytes(inventory.totalBytes)}`,
+          text: `  Completed ${inventory.uploads.length} uploads, ${inventory.shards.length} shards, ${inventory.skippedUploads.length} skipped uploads, ${formatBytes(inventory.totalBytes)}`,
         })
         spinner.start(`Reading inventories...`)
         break
@@ -329,6 +367,7 @@ async function planMigration({ synapse, state, stateFile, signal }) {
  * @param {import('@filoz/synapse-sdk').Synapse} args.synapse
  * @param {number} args.batchSize
  * @param {number | undefined} args.pullConcurrency
+ * @param {'pull' | 'store'} args.uploadMode
  * @param {boolean} args.stopOnError
  * @param {AbortSignal} args.signal
  */
@@ -339,6 +378,7 @@ async function runMigration({
   synapse,
   batchSize,
   pullConcurrency,
+  uploadMode,
   stopOnError,
   signal,
 }) {
@@ -348,16 +388,28 @@ async function runMigration({
     color: 'cyan',
   }).start()
   let progressPrinted = false
+  const migrationEvents =
+    uploadMode === 'store'
+      ? executeStoreMigration({
+          plan,
+          state,
+          synapse,
+          batchSize,
+          pullConcurrency,
+          stopOnError,
+          signal,
+        })
+      : executeMigration({
+          plan,
+          state,
+          synapse,
+          batchSize,
+          pullConcurrency,
+          stopOnError,
+          signal,
+        })
 
-  for await (const event of executeMigration({
-    plan,
-    state,
-    synapse,
-    batchSize,
-    pullConcurrency,
-    stopOnError,
-    signal,
-  })) {
+  for await (const event of migrationEvents) {
     switch (event.type) {
       case 'funding:start':
         spinner.start(
@@ -366,7 +418,11 @@ async function runMigration({
         break
       case 'funding:complete':
         spinner.succeed(`Funding complete (tx hash: ${event.txHash})`)
-        spinner.start('Pulling and committing copy data...')
+        spinner.start(
+          uploadMode === 'store'
+            ? 'Storing, pulling, and committing copy data...'
+            : 'Pulling and committing copy data...'
+        )
         break
       case 'funding:failed':
         spinner.fail(`Funding failed: ${event.error.message}`)
@@ -375,16 +431,16 @@ async function runMigration({
       case 'migration:commit:failed': {
         spinner.stop()
         const shouldRetry = await confirm({
-          message: `Final commit failed for copy ${event.copyIndex} with ${event.roots.length} upload(s). Retry attempt ${event.attempt}?`,
+          message: `Commit batch failed for copy ${event.copyIndex} with ${event.roots.length} upload(s). Retry attempt ${event.attempt}?`,
           default: true,
         }).catch(() => false)
 
         if (shouldRetry) {
           event.retry()
-          spinner.start(`Retrying final commit for copy ${event.copyIndex}...`)
+          spinner.start(`Retrying commit batch for copy ${event.copyIndex}...`)
         } else {
           event.skip()
-          spinner.start(`Skipping final commit for copy ${event.copyIndex}...`)
+          spinner.start(`Skipping commit batch for copy ${event.copyIndex}...`)
         }
         break
       }
@@ -405,9 +461,10 @@ async function runMigration({
         progressPrinted = renderCheckpointProgress(
           event.state,
           plan,
-          progressPrinted
+          progressPrinted,
+          uploadMode
         )
-        spinner.start(checkpointSpinnerText(event.state, plan))
+        spinner.start(checkpointSpinnerText(event.state, plan, uploadMode))
         if (signal.aborted) {
           spinner.stop()
           return { interrupted: true }

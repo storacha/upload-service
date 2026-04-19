@@ -13,6 +13,7 @@
  * @param {Set<string>} [input.pulled]
  * @param {Set<string>} [input.committed]
  * @param {Set<string>} [input.failedUploads]
+ * @param {Record<string, string>} [input.storedShards]
  * @returns {API.SpaceCopyState}
  */
 function createSpaceCopyState({
@@ -23,6 +24,7 @@ function createSpaceCopyState({
   pulled = new Set(),
   committed = new Set(),
   failedUploads = new Set(),
+  storedShards = {},
 }) {
   return {
     copyIndex,
@@ -32,6 +34,7 @@ function createSpaceCopyState({
     pulled,
     committed,
     failedUploads,
+    storedShards,
   }
 }
 
@@ -108,7 +111,7 @@ export function createInitialState() {
  * Checkpoint a completed upload.list page into the space's inventory entry.
  *
  * Append-only: pushes flat shards, upload roots, and failed roots.
- * Only totalBytes is accumulated — uploads.length and shards.length are free.
+ * Only byte counters are accumulated — uploads.length and shard bucket lengths are free.
  *
  * cursor present → space is still being read, save cursor for resume
  * cursor absent  → last page processed, space reading is complete
@@ -116,33 +119,53 @@ export function createInitialState() {
  * @param {API.MigrationState} state - Mutated in place
  * @param {{
  *   spaceDID: API.SpaceDID
+ *   name?: string
  *   shards: API.ResolvedShard[]
+ *   shardsToStore: API.StoreShard[]
  *   uploads: string[]
- *   failedUploads: string[]
+ *   skippedUploads: string[]
  *   totalBytes: bigint
+ *   totalSizeToMigrate: bigint
  *   cursor: string | undefined
  * }} page
  */
 export function checkpointInventoryPage(
   state,
-  { spaceDID, shards, uploads, failedUploads, totalBytes, cursor }
+  {
+    spaceDID,
+    name,
+    shards,
+    shardsToStore,
+    uploads,
+    skippedUploads,
+    totalBytes,
+    totalSizeToMigrate,
+    cursor,
+  }
 ) {
   let inventory = state.spacesInventories[spaceDID]
   if (!inventory) {
     inventory = {
       did: spaceDID,
+      name,
       uploads: [],
       shards: [],
-      failedUploads: [],
+      shardsToStore: [],
+      skippedUploads: [],
       totalBytes: 0n,
+      totalSizeToMigrate: 0n,
     }
     state.spacesInventories[spaceDID] = inventory
+  } else if (name !== undefined) {
+    inventory.name = name
   }
 
   inventory.shards.push(...shards)
+  inventory.shardsToStore.push(...shardsToStore)
   inventory.uploads.push(...uploads)
-  inventory.failedUploads.push(...failedUploads)
+  inventory.skippedUploads.push(...skippedUploads)
   inventory.totalBytes += totalBytes
+  inventory.totalSizeToMigrate += totalSizeToMigrate
 
   if (cursor) {
     if (!state.readerProgressCursors) state.readerProgressCursors = {}
@@ -186,6 +209,7 @@ export function transitionToApproved(state, perSpaceCost) {
         pulled: existingCopy?.pulled ?? new Set(),
         committed: existingCopy?.committed ?? new Set(),
         failedUploads: existingCopy?.failedUploads ?? new Set(),
+        storedShards: existingCopy?.storedShards ?? {},
       })
     })
 
@@ -255,7 +279,33 @@ export function recordFailedUpload(state, spaceDID, copyIndex, root) {
 }
 
 /**
- * Checkpoint 5: a shard was successfully committed.
+ * Checkpoint 5: a shard was successfully stored and its pieceCID is now durable.
+ *
+ * Stored shard tracking is only meaningful for copy 0, which performs store().
+ *
+ * @param {API.MigrationState} state - Mutated in place
+ * @param {API.SpaceDID} spaceDID
+ * @param {string} shardCid
+ * @param {string} pieceCID
+ * @returns {boolean} true when state changed
+ */
+export function recordStoredShard(state, spaceDID, shardCid, pieceCID) {
+  const space = state.spaces[spaceDID]
+  if (!space) return false
+
+  const copy = getCopy(space, 0)
+  if (!copy) return false
+
+  const before = copy.storedShards[shardCid]
+  copy.storedShards[shardCid] = pieceCID
+  if (space.phase === 'pending') {
+    space.phase = 'migrating'
+  }
+  return before !== pieceCID
+}
+
+/**
+ * Checkpoint 6: a shard was successfully committed.
  *
  * Sets the shard CID in the committed set for a specific copy.
  *
@@ -284,7 +334,7 @@ export function recordCommit(state, spaceDID, copyIndex, shardCid, dataSetId) {
 }
 
 /**
- * Checkpoint 6: space loop ends — resolve terminal phases for all uploads
+ * Checkpoint 7: space loop ends — resolve terminal phases for all uploads
  * and the space itself.
  *
  * Upload phases are computed from per-copy committed counts vs inventory shard
@@ -309,8 +359,9 @@ export function finalizeSpace(state, spaceDID) {
     return
   }
 
+  const totalShards = inventory.shards.length + inventory.shardsToStore.length
   const allComplete = copyStates.every(
-    (copy) => copy.committed.size === inventory.shards.length
+    (copy) => copy.committed.size === totalShards
   )
   const anyCommitted = copyStates.some((copy) => copy.committed.size > 0)
 
@@ -324,7 +375,7 @@ export function finalizeSpace(state, spaceDID) {
 }
 
 /**
- * Checkpoint 7: all spaces processed — resolve terminal migration phase.
+ * Checkpoint 8: all spaces processed — resolve terminal migration phase.
  *
  * @param {API.MigrationState} state - Mutated in place
  */
@@ -379,6 +430,7 @@ export function buildResumeState(state) {
  *   - spaces[did].copies[*].providerId → decimal string
  *   - spaces[did].copies[*].dataSetId → decimal string or null
  *   - spacesInventories[did].totalBytes → decimal string
+ *   - spacesInventories[did].totalSizeToMigrate → decimal string
  *   - spacesInventories[did].shards[].sizeBytes → decimal string
  *
  * @param {API.MigrationState} state
@@ -398,6 +450,7 @@ export function serializeState(state) {
         pulled: [...copy.pulled],
         committed: [...copy.committed],
         failedUploads: [...copy.failedUploads],
+        storedShards: { ...copy.storedShards },
       })),
     }
   }
@@ -407,6 +460,7 @@ export function serializeState(state) {
   for (const [did, inventory] of Object.entries(state.spacesInventories)) {
     spacesInventories[did] = {
       did: inventory.did,
+      ...(inventory.name !== undefined ? { name: inventory.name } : {}),
       uploads: inventory.uploads,
       shards: inventory.shards.map((s) => ({
         root: s.root,
@@ -415,8 +469,16 @@ export function serializeState(state) {
         sourceURL: s.sourceURL,
         sizeBytes: s.sizeBytes.toString(10),
       })),
-      failedUploads: inventory.failedUploads,
+      shardsToStore: inventory.shardsToStore.map((s) => ({
+        root: s.root,
+        cid: s.cid,
+        pieceCID: s.pieceCID,
+        sourceURL: s.sourceURL,
+        sizeBytes: s.sizeBytes.toString(10),
+      })),
+      skippedUploads: inventory.skippedUploads,
       totalBytes: inventory.totalBytes.toString(10),
+      totalSizeToMigrate: inventory.totalSizeToMigrate.toString(10),
     }
   }
 
@@ -454,8 +516,6 @@ function parseBigIntField(value, field, context) {
  * @returns {Set<string>}
  */
 function parseStringSetField(value, field, context) {
-  if (value == null) return new Set()
-
   if (Array.isArray(value)) {
     for (const item of value) {
       if (typeof item !== 'string') {
@@ -470,6 +530,34 @@ function parseStringSetField(value, field, context) {
   throw new TypeError(
     `deserializeState: ${context} — "${field}" must be an array of strings`
   )
+}
+
+/**
+ * @param {unknown} value
+ * @param {string} field
+ * @param {string} context
+ * @returns {Record<string, string>}
+ */
+function parseStringRecordField(value, field, context) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new TypeError(
+      `deserializeState: ${context} — "${field}" must be an object of string values`
+    )
+  }
+
+  /** @type {Record<string, string>} */
+  const record = {}
+  for (const [key, item] of Object.entries(
+    /** @type {Record<string, unknown>} */ (value)
+  )) {
+    if (typeof item !== 'string') {
+      throw new TypeError(
+        `deserializeState: ${context} — "${field}" must contain only string values`
+      )
+    }
+    record[key] = item
+  }
+  return record
 }
 
 /**
@@ -546,6 +634,11 @@ export function deserializeState(obj) {
           'failedUploads',
           `space "${did}" copy ${copyPosition}`
         ),
+        storedShards: parseStringRecordField(
+          rawCopy.storedShards,
+          'storedShards',
+          `space "${did}" copy ${copyPosition}`
+        ),
       })
     )
 
@@ -566,8 +659,12 @@ export function deserializeState(obj) {
     const rawShards = /** @type {Array<Record<string, unknown>>} */ (
       rawInv.shards ?? []
     )
+    const rawShardsToStore = /** @type {Array<Record<string, unknown>>} */ (
+      rawInv.shardsToStore
+    )
     spacesInventories[/** @type {API.SpaceDID} */ (did)] = {
       did: /** @type {API.SpaceDID} */ (rawInv.did),
+      ...(typeof rawInv.name === 'string' ? { name: rawInv.name } : {}),
       uploads: /** @type {string[]} */ (rawInv.uploads ?? []),
       shards: rawShards.map((s) => ({
         root: /** @type {string} */ (s.root),
@@ -580,10 +677,28 @@ export function deserializeState(obj) {
           `shard "${s.cid}"`
         ),
       })),
-      failedUploads: /** @type {string[]} */ (rawInv.failedUploads ?? []),
+      shardsToStore: rawShardsToStore.map((s) => ({
+        root: /** @type {string} */ (s.root),
+        cid: /** @type {string} */ (s.cid),
+        ...(s.pieceCID != null
+          ? { pieceCID: /** @type {string} */ (s.pieceCID) }
+          : {}),
+        sourceURL: /** @type {string} */ (s.sourceURL),
+        sizeBytes: parseBigIntField(
+          s.sizeBytes,
+          'sizeBytes',
+          `store shard "${s.cid}"`
+        ),
+      })),
+      skippedUploads: /** @type {string[]} */ (rawInv.skippedUploads ?? []),
       totalBytes: parseBigIntField(
         rawInv.totalBytes,
         'totalBytes',
+        `inventory "${did}"`
+      ),
+      totalSizeToMigrate: parseBigIntField(
+        rawInv.totalSizeToMigrate,
+        'totalSizeToMigrate',
         `inventory "${did}"`
       ),
     }

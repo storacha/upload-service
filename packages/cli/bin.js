@@ -327,6 +327,10 @@ cli
     'Number of pull batches to process concurrently.'
   )
   .option(
+    '-um, --upload-mode <mode>',
+    'Upload execution mode: "pull" or "store". Defaults to "pull".'
+  )
+  .option(
     '-s, --source-strategy <strategy>',
     'Source URL strategy: "roundabout" or "claims". Defaults to "roundabout".'
   )
@@ -354,6 +358,7 @@ cli
       resume: options.resume,
       batchSize: options['batch-size'],
       pullConcurrency: options['pull-concurrency'],
+      uploadMode: options['upload-mode'],
       sourceStrategy: options['source-strategy'],
       roundaboutURL: options['roundabout-url'],
       stopOnError: options['stop-on-error'],

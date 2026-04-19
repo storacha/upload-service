@@ -64,8 +64,9 @@ async function createCopyContext(
   const options = {
     metadata: {
       ...DATASET_METADATA_BASE,
-      space: space.did,
-      copy: String(copyIndex),
+      'space-did': space.did,
+      ...(space.name && { 'space-name': space.name }),
+      //copy: String(copyIndex), // TODO: check with team if this is needed
     },
     ...(providerId != null && { providerIds: [providerId] }),
     ...(existingDataSetId != null && { dataSetIds: [existingDataSetId] }),
@@ -120,9 +121,7 @@ export async function computeMigrationCosts(spaces, synapse, opts = {}) {
   const existingDataSetIds = resumeState?.existingDataSetIds
 
   /** @type {string[]} */
-  const warnings = [
-    'Funding is irreversible. Verify source URLs are reachable before approving — if all commits fail permanently, deposited USDFC is locked until the rail period ends.',
-  ]
+  const warnings = []
 
   // ── Step 1: Resolve/create two StorageContexts per space ──────────────────
   // Fail-fast: if any createContext rejects, the whole plan fails with a clear
@@ -223,6 +222,7 @@ export async function computeMigrationCosts(spaces, synapse, opts = {}) {
   /** @type {API.PerSpaceCost[]} */
   const perSpace = spaces.map((space, i) => {
     const copyContexts = contextsBySpace[i]
+    const bytesToMigrate = space.totalSizeToMigrate
 
     /** @type {API.PerCopyCost[]} */
     const copyCosts = copyContexts.map(({ context, copyIndex }) => {
@@ -232,7 +232,7 @@ export async function computeMigrationCosts(spaces, synapse, opts = {}) {
         : dataSetSizes.get(/** @type {bigint} */ (context.dataSetId)) ?? 0n
 
       const lockup = calculateAdditionalLockupRequired({
-        dataSize: space.totalBytes,
+        dataSize: bytesToMigrate,
         currentDataSetSize,
         pricePerTiBPerMonth: pricing.pricePerTiBPerMonthNoCDN,
         minimumPricePerMonth: pricing.minimumPricePerMonth,
@@ -242,7 +242,7 @@ export async function computeMigrationCosts(spaces, synapse, opts = {}) {
         withCDN: context.withCDN,
       })
 
-      const totalSize = currentDataSetSize + space.totalBytes
+      const totalSize = currentDataSetSize + bytesToMigrate
       const rate = calculateEffectiveRate({
         sizeInBytes: totalSize,
         pricePerTiBPerMonth: pricing.pricePerTiBPerMonthNoCDN,
@@ -254,7 +254,7 @@ export async function computeMigrationCosts(spaces, synapse, opts = {}) {
       totalRateDelta += lockup.rateDeltaPerEpoch
       totalRatePerEpoch += rate.ratePerEpoch
       totalRatePerMonth += rate.ratePerMonth
-      totalBytes += space.totalBytes
+      totalBytes += bytesToMigrate
       if (!isNewDataSet) resumedCopies++
 
       return {
@@ -265,7 +265,7 @@ export async function computeMigrationCosts(spaces, synapse, opts = {}) {
         serviceProvider: context.serviceProvider,
         dataSetId: context.dataSetId ?? null,
         isResumed: !isNewDataSet,
-        bytesToMigrate: space.totalBytes,
+        bytesToMigrate,
         currentDataSetSize,
         lockupUSDFC: lockup.total,
         sybilFee: lockup.sybilFee,
@@ -283,7 +283,7 @@ export async function computeMigrationCosts(spaces, synapse, opts = {}) {
         copy1,
       ]),
       isResumed: copyCosts.some((copy) => copy.isResumed),
-      bytesToMigrate: space.totalBytes,
+      bytesToMigrate,
       currentDataSetSize: copyCosts.reduce(
         (sum, copy) => sum + copy.currentDataSetSize,
         0n

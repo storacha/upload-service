@@ -128,7 +128,7 @@ export function createMockIndexer(responses) {
 /**
  * Create a mock SpaceInventory for planner tests.
  *
- * @param {{ did?: API.SpaceDID, shards?: API.ResolvedShard[], uploads?: string[], failedUploads?: string[] }} [opts]
+ * @param {{ did?: API.SpaceDID, name?: string, shards?: API.ResolvedShard[], uploads?: string[], skippedUploads?: string[] }} [opts]
  * @returns {API.SpaceInventory}
  */
 export function createMockInventory(opts = {}) {
@@ -153,10 +153,13 @@ export function createMockInventory(opts = {}) {
   const uploads = opts.uploads ?? ['bafyroot1']
   return {
     did: opts.did ?? /** @type {API.SpaceDID} */ ('did:key:z6MkTestSpace1'),
+    ...(opts.name !== undefined ? { name: opts.name } : {}),
     shards,
+    shardsToStore: [],
     uploads,
-    failedUploads: opts.failedUploads ?? [],
+    skippedUploads: opts.skippedUploads ?? [],
     totalBytes: shards.reduce((n, s) => n + s.sizeBytes, 0n),
+    totalSizeToMigrate: shards.reduce((n, s) => n + s.sizeBytes, 0n),
   }
 }
 
@@ -178,7 +181,7 @@ export function createMockInitialState() {
  * Create an array of mock SpaceInventory for multi-space planner tests.
  *
  * @param {number} [count]
- * @param {{ failedUploads?: string[] }} [opts]
+ * @param {{ skippedUploads?: string[] }} [opts]
  * @returns {API.SpaceInventory[]}
  */
 export function createMockInventories(count = 1, opts = {}) {

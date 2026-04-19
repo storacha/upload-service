@@ -129,6 +129,26 @@ export const testSpace = {
     }
   ),
 
+  'storacha space migrate rejects invalid upload mode': test(
+    async (assert, context) => {
+      const { status, error } = await storacha
+        .args([
+          'space',
+          'migrate',
+          '--wallet-pk',
+          '0x1111111111111111111111111111111111111111111111111111111111111111',
+          '--upload-mode',
+          'invalid',
+        ])
+        .env(context.env.alice)
+        .join()
+        .catch()
+
+      assert.equal(status.code, 1)
+      assert.match(error, /invalid upload mode/i)
+    }
+  ),
+
   'storacha space create': test(async (assert, context) => {
     const command = storacha
       .args([

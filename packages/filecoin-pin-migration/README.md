@@ -24,7 +24,7 @@ Walks every space on the Storacha client, paginates all uploads, and per page ba
 - `sourceURL` — the URL the SP will pull from (resolved by the chosen strategy)
 - `sizeBytes` — derived from the `assert/location` claim range length when present, otherwise from the piece claim
 
-The result is a `SpaceInventory` per space: a flat list of every resolved shard (each carrying its upload root), the list of successful upload root CIDs, and the list of failed upload root CIDs. Inventories are written into `state.spacesInventories` as each page completes.
+The result is a `SpaceInventory` per space: a flat list of every resolved shard (each carrying its upload root), the list of successful upload root CIDs, and the list of skipped upload root CIDs. Inventories are written into `state.spacesInventories` as each page completes.
 
 ### 2. Planner — cost calculation and approval
 
@@ -42,13 +42,21 @@ The plan carries:
 
 Executes the approved plan as an `AsyncGenerator`. Yields `MigrationEvent` objects the consumer handles at its own pace: persisting state to disk, displaying progress, logging failures.
 
-Shards from all uploads in a space are batched together (cross-upload) from the flat `inventory.shards` array, maximising batch utilisation regardless of how many shards each upload has. The same pull/commit flow runs independently for each of the 2 copies in the space. Pull work runs in concurrent batches, then all successfully pulled shards for that copy are committed together once.
+Shards from all uploads in a space are batched together (cross-upload) from the flat `inventory.shards` array, maximising batch utilisation regardless of how many shards each upload has. The same pull/commit flow runs independently for each of the 2 copies in the space. Pull work runs in concurrent batches, then successfully pulled shards for that copy are committed in sequential internal commit batches.
 
 1. **Presign** — EIP-712 signature scoped to the exact pieces in the batch
 2. **Pull** — SP fetches pieces from `sourceURL`; retried up to 3 times with exponential backoff; failures are tracked by upload root
-3. **Commit** — one final on-chain registration for all pulled pieces in that copy; failed commits can be retried interactively by the caller
+3. **Commit** — sequential on-chain registration batches for that copy; failed commit batches can be retried interactively by the caller
 
-State is checkpointed after pulled progress is recorded and after successful final commits. Pulled-but-not-yet-committed shards are persisted per copy so resume can skip re-pulling them.
+Commit batching is internal to the library:
+
+- `count` mode is used when an internal max-pieces cap is configured
+- otherwise `extraData` mode is used while the encoded Synapse `extraData` limit is active
+- if both internal limits are disabled, commit falls back to one single call
+
+In `extraData` mode the first commit batch can be smaller than later ones, because it may include dataset-creation metadata (`CreateDataSetAndAddPieces`) before the copy has a dataset id. Once the first commit succeeds, later batches use the cheaper add-pieces-only payload.
+
+State is checkpointed after pulled progress is recorded and after each successful commit batch. Pulled-but-not-yet-committed shards are persisted per copy so resume can skip re-pulling them.
 
 ---
 
@@ -80,7 +88,7 @@ State is checkpointed after pulled progress is recorded and after successful fin
                      ▼
 ┌────────────────────────────────────────────────────────────┐
 │              executeMigration()  [AsyncGenerator]          │
-│  pull batches → final commit  (per copy)                   │
+│  pull batches → sequential commit batches (per copy)       │
 │  checkpoints → MigrationState  (serializable, resumable)   │
 │                                                            │
 │  yields: funding:start/complete/failed                     │

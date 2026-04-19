@@ -13,6 +13,7 @@ import { filesize } from './lib.js'
  * @param {string} args.chainName
  * @param {string} args.stateFile
  * @param {boolean} args.resume
+ * @param {'pull' | 'store'} args.uploadMode
  * @param {{ walletUSDFC: bigint, walletFIL: bigint, depositedUSDFC: bigint }} args.preflight
  * @param {bigint} args.minFilGasBalance
  */
@@ -23,6 +24,7 @@ export function printPreflight({
   chainName,
   stateFile,
   resume,
+  uploadMode,
   preflight,
   minFilGasBalance,
 }) {
@@ -36,6 +38,7 @@ export function printPreflight({
         line('Chain', chainName),
         line('Chain ID', String(chainId)),
         line('Mode', resume ? 'resume' : 'fresh'),
+        line('Upload mode', uploadMode),
       ],
       chalk.cyan
     )
@@ -98,8 +101,10 @@ export function printReaderShardFailed(root, shard, reason) {
 
 /**
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationPlan} plan
+ * @param {bigint} userWalletBalance
+ * @param {bigint} userDeposit
  */
-export function printPlan(plan) {
+export function printPlan(plan, userWalletBalance, userDeposit) {
   console.log('')
   console.log(
     renderBox(
@@ -117,15 +122,8 @@ export function printPlan(plan) {
         ),
         line('Uploads', String(plan.totals.uploads)),
         line('Shard roots', String(plan.totals.shards)),
-        line('Total bytes', formatBytes(plan.totals.bytes)),
-        line(
-          'Deposit needed',
-          `${formatTokenAmount(plan.costs.totalDepositNeeded)} USDFC`
-        ),
-        line(
-          'Funding amount',
-          `${formatTokenAmount(plan.fundingAmount)} USDFC`
-        ),
+        line('Source bytes', formatBytes(plan.totals.bytes)),
+        line('Bytes to migrate', formatBytes(plan.totals.bytesToMigrate)),
         line('Ready', plan.ready ? chalk.green('yes') : chalk.yellow('no')),
       ],
       chalk.cyan
@@ -139,6 +137,43 @@ export function printPlan(plan) {
     console.warn('')
     console.warn(renderWarningSection('Warnings', plan.warnings))
     console.warn('')
+  }
+
+  if (plan.fundingAmount > 0n && userDeposit < plan.fundingAmount) {
+    const walletHasEnough = userWalletBalance >= plan.fundingAmount
+    const walletStatus = walletHasEnough
+      ? ` ${chalk.bgGreen.black(' AVAILABLE ')}`
+      : ''
+
+    console.log('')
+    console.log(
+      renderBox(
+        walletHasEnough ? 'Deposit Required' : 'Insufficient Funds',
+        [
+          line('Requirement', `${formatTokenAmount(plan.fundingAmount)} USDFC`),
+          line(
+            'Wallet balance',
+            `${formatTokenAmount(userWalletBalance)} USDFC${walletStatus}`
+          ),
+        ],
+        walletHasEnough ? chalk.blue : chalk.red
+      )
+    )
+    console.log(
+      chalk.dim(
+        `(${formatTokenAmount(plan.costs.totalDepositNeeded)} USDFC deposit + 3% for safety reasons to avoid transaction failure)`
+      )
+    )
+
+    console.log(
+      walletHasEnough
+        ? chalk.cyan(
+            `\nThe required funding is available in the wallet and will be processed during the funding phase.\n`
+          )
+        : chalk.red(
+            `\nYou need at least ${formatTokenAmount(plan.fundingAmount)} USDFC in your wallet before the funding phase can proceed.\n`
+          )
+    )
   }
 }
 
@@ -190,9 +225,15 @@ export function renderNotice(title, lines, color) {
 /**
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationPlan} plan
+ * @param {'pull' | 'store'} [uploadMode]
  */
-export function checkpointSpinnerText(state, plan) {
+export function checkpointSpinnerText(state, plan, uploadMode = 'pull') {
   const progress = summarizeProgress(state, plan)
+
+  if (uploadMode === 'store') {
+    return `Storing, pulling, and committing copies... stored=${progress.stored} pulled=${progress.pulled} committed=${progress.committed}/${progress.total} failedUploads=${progress.failedUploads}`
+  }
+
   return `Pulling and committing copies... pulled=${progress.pulled} committed=${progress.committed}/${progress.total} failedUploads=${progress.failedUploads}`
 }
 
@@ -200,13 +241,25 @@ export function checkpointSpinnerText(state, plan) {
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationPlan} plan
  * @param {boolean} alreadyPrinted
+ * @param {'pull' | 'store'} [uploadMode]
  */
-export function renderCheckpointProgress(state, plan, alreadyPrinted) {
+export function renderCheckpointProgress(
+  state,
+  plan,
+  alreadyPrinted,
+  uploadMode = 'pull'
+) {
   const progress = summarizeProgress(state, plan)
-  const lines = [
-    chalk.dim('Progress'),
-    `  pulled ${progress.pulled}  committed ${progress.committed}/${progress.total}  failed uploads ${progress.failedUploads}`,
-  ]
+  const lines =
+    uploadMode === 'store'
+      ? [
+          chalk.dim('Progress'),
+          `  stored ${progress.stored}  pulled ${progress.pulled}  committed ${progress.committed}/${progress.total}  failed uploads ${progress.failedUploads}`,
+        ]
+      : [
+          chalk.dim('Progress'),
+          `  pulled ${progress.pulled}  committed ${progress.committed}/${progress.total}  failed uploads ${progress.failedUploads}`,
+        ]
 
   if (alreadyPrinted) {
     process.stdout.write(ansiEscapes.eraseLines(lines.length))
@@ -323,6 +376,7 @@ function renderPlanTree(plan) {
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationPlan} plan
  */
 function summarizeProgress(state, plan) {
+  let stored = 0
   let pulled = 0
   let committed = 0
   let failedUploads = 0
@@ -331,6 +385,7 @@ function summarizeProgress(state, plan) {
   for (const space of Object.values(state.spaces)) {
     copies += space.copies.length
     for (const copy of space.copies) {
+      stored += Object.keys(copy.storedShards).length
       pulled += copy.pulled.size
       committed += copy.committed.size
       failedUploads += copy.failedUploads.size
@@ -338,6 +393,7 @@ function summarizeProgress(state, plan) {
   }
 
   return {
+    stored,
     pulled,
     committed,
     failedUploads,
