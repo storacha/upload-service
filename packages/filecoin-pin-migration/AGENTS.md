@@ -35,11 +35,22 @@ Never break this separation.
 | File | Responsibility |
 |---|---|
 | `src/api.ts` | **All types.** Single source of truth. Read this first. |
-| `src/reader.js` | Inventory building — paginates uploads, resolves shards via indexing service claims |
-| `src/source-url.js` | `ClaimsResolver` / `RoundaboutResolver` — applied at reader level |
-| `src/planner.js` | Aggregates inventories, delegates cost computation, returns `MigrationPlan` |
-| `src/compute-migration-costs.js` | Heavy Synapse SDK interaction — creates 2 `StorageContext`s per space, reads chain in one batch |
-| `src/migrator.js` | `executeMigration` AsyncGenerator — concurrent pull batches, then one final commit per copy |
+| `src/reader/reader.js` | Inventory building — paginates uploads, resolves shards via indexing service claims |
+| `src/reader/source-url.js` | `ClaimsResolver` / `RoundaboutResolver` — applied at reader level |
+| `src/planner/planner.js` | Aggregates inventories, delegates cost computation, returns `MigrationPlan` |
+| `src/planner/compute-migration-costs.js` | Heavy Synapse SDK interaction — creates 2 `StorageContext`s per space, reads chain in one batch |
+| `src/migrator/migrator.js` | Public mixed migration entrypoint — resolves defaults, validates capabilities, then delegates execution to the shared runner |
+| `src/migrator/execution-config.js` | Shared entrypoint config normalization — defaults and conditional fetcher validation |
+| `src/migrator/concurrent.js` | Shared bounded-concurrency runner — preserves completed results on abort |
+| `src/migrator/pull-results.js` | Shared pull-result reconciliation — failed roots, pull checkpoints, batch failure events |
+| `src/migrator/retry-policy.js` | Shared store retry classification — typed retryable errors and fetch/store retry decisions |
+| `src/migrator/run-migration.js` | Shared outer migration runner — funding, phase transition, per-space loop, finalization, summary |
+| `src/migrator/space-runner.js` | Deep per-space migrator — source-pull for `shards`, store-on-copy0 for `shardsToStore`, then sequential internal commit batches per copy |
+| `src/migrator/store-flow.js` | Store-specific execution helpers — `store()` on copy 0 and pull-from-copy0 on copy 1 |
+| `src/migrator/store-executor.js` | Standalone store-only executor — prepares an all-store inventory view and delegates to the shared migrator |
+| `src/migrator/commit.js` | Shared commit batching/execution — internal `count` / `extraData` / `none` batch modes |
+| `src/migrator/pull.js` | Shared presign+pull batch helper |
+| `src/migrator/summary.js` | Shared migration summary derivation across executors |
 | `src/state.js` | Pure state mutations and phase FSM — checkpoint functions and serialization |
 | `src/errors.js` | Typed `Failure` subclasses — one per failure mode |
 | `src/index.js` | Barrel exports |
@@ -49,11 +60,11 @@ Never break this separation.
 
 ## Where to Make Changes
 
-- Data fetching / indexing logic → `reader.js`
-- URL resolution → `source-url.js`
-- Cost logic → `compute-migration-costs.js`
-- Plan construction → `planner.js`
-- Execution logic → `migrator.js`
+- Data fetching / indexing logic → `reader/reader.js`
+- URL resolution → `reader/source-url.js`
+- Cost logic → `planner/compute-migration-costs.js`
+- Plan construction → `planner/planner.js`
+- Execution logic → `migrator/migrator.js` / `migrator/space-runner.js` / `migrator/store-flow.js`
 - State transitions → `state.js`
 - Types → `api.ts` (only place for types)
 

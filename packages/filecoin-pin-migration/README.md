@@ -42,11 +42,19 @@ The plan carries:
 
 Executes the approved plan as an `AsyncGenerator`. Yields `MigrationEvent` objects the consumer handles at its own pace: persisting state to disk, displaying progress, logging failures.
 
-Shards from all uploads in a space are batched together (cross-upload) from the flat `inventory.shards` array, maximising batch utilisation regardless of how many shards each upload has. The same pull/commit flow runs independently for each of the 2 copies in the space. Pull work runs in concurrent batches, then successfully pulled shards for that copy are committed in sequential internal commit batches.
+Shards from all uploads in a space are still processed cross-upload from the flat inventory, but the migrator now has 2 execution paths:
 
-1. **Presign** — EIP-712 signature scoped to the exact pieces in the batch
-2. **Pull** — SP fetches pieces from `sourceURL`; retried up to 3 times with exponential backoff; failures are tracked by upload root
-3. **Commit** — sequential on-chain registration batches for that copy; failed commit batches can be retried interactively by the caller
+- `inventory.shards` stay on the normal source-pull flow for both copies
+- `inventory.shardsToStore` are downloaded and `store()`d on copy 0, then pulled from copy 0 on copy 1
+
+Per space the order is:
+
+1. **Copy 0 store** — `shardsToStore` are downloaded and stored client-side
+2. **Copy 0 source pull** — normal `shards` are presigned and pulled from `sourceURL`
+3. **Copy 0 commit** — stored entries and pulled entries are committed together in sequential internal commit batches
+4. **Copy 1 source pull** — normal `shards` are presigned and pulled from `sourceURL`
+5. **Copy 1 stored-piece pull** — stored piece CIDs are pulled from copy 0
+6. **Copy 1 commit** — both buckets are committed together in sequential internal commit batches
 
 Commit batching is internal to the library:
 
@@ -57,6 +65,11 @@ Commit batching is internal to the library:
 In `extraData` mode the first commit batch can be smaller than later ones, because it may include dataset-creation metadata (`CreateDataSetAndAddPieces`) before the copy has a dataset id. Once the first commit succeeds, later batches use the cheaper add-pieces-only payload.
 
 State is checkpointed after pulled progress is recorded and after each successful commit batch. Pulled-but-not-yet-committed shards are persisted per copy so resume can skip re-pulling them.
+
+`executeStoreMigration()` remains available as a standalone store-focused executor.
+It prepares a per-space execution view where all actionable shards are routed into
+`shardsToStore`, then delegates to the same shared `migrateSpace()` logic used by
+the default `executeMigration()`.
 
 ---
 
@@ -88,7 +101,7 @@ State is checkpointed after pulled progress is recorded and after each successfu
                      ▼
 ┌────────────────────────────────────────────────────────────┐
 │              executeMigration()  [AsyncGenerator]          │
-│  pull batches → sequential commit batches (per copy)       │
+│  source pull + store flow → sequential commit batches      │
 │  checkpoints → MigrationState  (serializable, resumable)   │
 │                                                            │
 │  yields: funding:start/complete/failed                     │
@@ -100,6 +113,10 @@ State is checkpointed after pulled progress is recorded and after each successfu
 ```
 
 The library always enforces 2 copies per space on 2 distinct providers. A successful migration therefore produces 2 dataset IDs per space.
+
+`executeStoreMigration()` is a wrapper over the same shared per-space migrator.
+It only changes the execution view by routing `inventory.shards` into
+`inventory.shardsToStore` for that run.
 
 ---
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { createMigrationPlan } from '../src/planner.js'
+import { createMigrationPlan } from '../src/planner/planner.js'
 import {
   createMockInventory,
   createMockInventories,
@@ -12,11 +12,11 @@ import {
 
 // Mock computeMigrationCosts so planner tests don't require a live Synapse SDK.
 // Cost computation logic is tested separately in compute-migration-costs.spec.js.
-vi.mock('../src/compute-migration-costs.js', () => ({
+vi.mock('../src/planner/compute-migration-costs.js', () => ({
   computeMigrationCosts: vi.fn(),
 }))
 
-import { computeMigrationCosts } from '../src/compute-migration-costs.js'
+import { computeMigrationCosts } from '../src/planner/compute-migration-costs.js'
 
 /**
  * Build a minimal valid MigrationCostResult for mock use.
@@ -124,6 +124,39 @@ describe('createMigrationPlan', () => {
     expect(plan.totals.uploads).toBe(1)
     expect(plan.totals.shards).toBe(2)
     expect(plan.totals.bytes).toBe(1024n + 2048n)
+  })
+
+  it('counts both shards and shardsToStore in plan totals', async () => {
+    const inventory = createMockInventory({
+      shards: [
+        {
+          root: 'bafyroot1',
+          cid: 'bafyshard1',
+          pieceCID: 'piece1',
+          sourceURL: 'https://r2.example/shard1',
+          sizeBytes: 1024n,
+        },
+      ],
+      shardsToStore: [
+        {
+          root: 'bafyroot2',
+          cid: 'bafyshard2',
+          pieceCID: 'piece2',
+          sourceURL: 'https://r2.example/shard2',
+          sizeBytes: 2048n,
+        },
+      ],
+    })
+    const state = withInventories(createMockInitialState(), [inventory])
+
+    const { plan } = await collectPlan(
+      createMigrationPlan({ synapse: mockSynapse, state })
+    )
+
+    expect(plan.totals.uploads).toBe(1)
+    expect(plan.totals.shards).toBe(2)
+    expect(plan.totals.bytes).toBe(3072n)
+    expect(plan.totals.bytesToMigrate).toBe(3072n)
   })
 
   it('aggregates totals across multiple spaces', async () => {

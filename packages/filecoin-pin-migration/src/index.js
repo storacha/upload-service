@@ -1,15 +1,15 @@
 export * from './errors.js'
-export { buildMigrationInventories } from './reader.js'
+export { buildMigrationInventories } from './reader/reader.js'
 export {
   RoundaboutResolver,
   ClaimsResolver,
   createResolver,
-} from './source-url.js'
-export { createMigrationPlan } from './planner.js'
-export { computeMigrationCosts } from './compute-migration-costs.js'
-export { ensureFunding } from './funding.js'
-export { executeMigration } from './migrator.js'
-export { executeStoreMigration } from './store-executor.js'
+} from './reader/source-url.js'
+export { createMigrationPlan } from './planner/planner.js'
+export { computeMigrationCosts } from './planner/compute-migration-costs.js'
+export { ensureFunding } from './migrator/funding.js'
+export { executeMigration } from './migrator/migrator.js'
+export { executeStoreMigration } from './migrator/store-executor.js'
 export {
   createInitialState,
   transitionToFunded,

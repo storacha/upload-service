@@ -1,7 +1,7 @@
 import pRetry from 'p-retry'
-import { PresignFailedFailure, PullFailedFailure } from './errors.js'
-import { DEFAULT_PULL_RETRIES } from './constants.js'
-import { toPieceCID } from './utils.js'
+import { PresignFailedFailure, PullFailedFailure } from '../errors.js'
+import { DEFAULT_PULL_RETRIES } from '../constants.js'
+import { toPieceCID } from '../utils.js'
 
 /**
  * Shared presign + pull flow for both source-URL and store-to-store pulls.
@@ -12,12 +12,12 @@ import { toPieceCID } from './utils.js'
  * @template T
  * @param {object} args
  * @param {T[]} args.batch
- * @param {import('./api.js').StorageContext} args.context
+ * @param {import('../api.js').StorageContext} args.context
  * @param {(entry: T) => string} args.getPieceCID
  * @param {(entry: T) => string} args.getRoot
- * @param {(entry: T, pieceCid: import('./api.js').PieceCID) => string} args.getSourceURL
+ * @param {(entry: T, pieceCid: import('../api.js').PieceCID) => string} args.getSourceURL
  * @param {AbortSignal | undefined} args.signal
- * @returns {Promise<import('./api.js').PullResult<T>>}
+ * @returns {Promise<import('../api.js').PullResult<T>>}
  */
 export async function presignAndPullBatch({
   batch,
@@ -27,9 +27,9 @@ export async function presignAndPullBatch({
   getSourceURL,
   signal,
 }) {
-  /** @type {import('./api.js').PieceCID[]} */
+  /** @type {import('../api.js').PieceCID[]} */
   const pieces = []
-  /** @type {Array<{ pieceCid: import('./api.js').PieceCID; pieceMetadata: { ipfsRootCID: string } }>} */
+  /** @type {Array<{ pieceCid: import('../api.js').PieceCID; pieceMetadata: { ipfsRootCID: string } }>} */
   const presignPayload = []
   const allRoots = new Set()
   const pieceToEntry = new Map()
@@ -37,7 +37,7 @@ export async function presignAndPullBatch({
   /**
    * @param {'presign' | 'pull'} stage
    * @param {unknown} error
-   * @returns {{ pulledCandidates: T[], failedUploads: Set<string>, failureKind: 'operational', stage: import('./api.js').MigratorPhase, error: Error }}
+   * @returns {{ pulledCandidates: T[], failedUploads: Set<string>, failureKind: 'operational', stage: import('../api.js').MigratorPhase, error: Error }}
    */
   const toOperationalFailure = (stage, error) => {
     const msg = error instanceof Error ? error.message : String(error)
@@ -111,7 +111,9 @@ export async function presignAndPullBatch({
   const pulledCandidatesFiltered =
     failedUploadsInBatch.size === 0
       ? pulledCandidates
-      : pulledCandidates.filter((entry) => !failedUploadsInBatch.has(getRoot(entry)))
+      : pulledCandidates.filter(
+          (entry) => !failedUploadsInBatch.has(getRoot(entry))
+        )
 
   const baseResult = {
     pulledCandidates: pulledCandidatesFiltered,

@@ -338,11 +338,6 @@ cli
     '-r, --roundabout-url <url>',
     'Override the roundabout base URL used with the "roundabout" strategy.'
   )
-  .option(
-    '--stop-on-error',
-    'Stop remaining batches for an upload after the first upload-level failure. Pass --no-stop-on-error to continue.',
-    true
-  )
   .action((options) => {
     const walletPk = readRawOption(process.argv.slice(2), ['--wallet-pk', '-w'])
 
@@ -361,7 +356,6 @@ cli
       uploadMode: options['upload-mode'],
       sourceStrategy: options['source-strategy'],
       roundaboutURL: options['roundabout-url'],
-      stopOnError: options['stop-on-error'],
     }
 
     return actions.spaceMigrate(parsedOptions)

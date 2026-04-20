@@ -1,8 +1,8 @@
-import { FundingFailedFailure } from './errors.js'
-import { transitionToFunded } from './state.js'
+import { FundingFailedFailure } from '../errors.js'
+import { transitionToFunded } from '../state.js'
 
 /**
- * @import * as API from './api.js'
+ * @import * as API from '../api.js'
  */
 
 /**

@@ -3,7 +3,7 @@ import {
   RoundaboutResolver,
   ClaimsResolver,
   createResolver,
-} from '../src/source-url.js'
+} from '../src/reader/source-url.js'
 
 /** @type {import('../src/api.js').ResolvedShard} */
 const shard = {

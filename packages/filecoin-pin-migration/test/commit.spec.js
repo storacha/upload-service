@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { iterateCommitPieces, commitPieceBatches } from '../src/commit.js'
+import {
+  iterateCommitPieces,
+  commitPieceBatches,
+} from '../src/migrator/commit.js'
 import { createPieceCID } from './helpers.js'
 
 /**
@@ -26,16 +29,19 @@ describe('commit batching', () => {
       copyIndex: 0,
       maxCommitRetries: 0,
       commitRetryTimeout: 0,
+      signal: undefined,
       activeFailedRoots: new Set(),
     })) {
       events.push(event)
     }
 
     expect(presignCalls.length).toBeGreaterThan(1)
-    expect(state.spaces[SPACE_DID].copies[0].committed.size).toBe(entries.length)
-    expect(events.filter((event) => event.type === 'state:checkpoint')).toHaveLength(
-      presignCalls.length
+    expect(state.spaces[SPACE_DID].copies[0].committed.size).toBe(
+      entries.length
     )
+    expect(
+      events.filter((event) => event.type === 'state:checkpoint')
+    ).toHaveLength(presignCalls.length)
   })
 
   it('allows a larger first batch when the dataset already exists', async () => {
@@ -54,6 +60,39 @@ describe('commit batching', () => {
     expect(resumed.presignCalls.length).toBeGreaterThan(0)
     expect(resumed.presignCalls[0]).toBeGreaterThan(fresh.presignCalls[0])
   })
+
+  it('stops before starting the next commit batch after abort', async () => {
+    const entries = createCommitEntries(30)
+    const controller = new AbortController()
+    const { context, commitCalls } = createMockCommitContext({
+      onCommit() {
+        controller.abort()
+      },
+    })
+    const state = createMockCommitState()
+
+    for await (const _ of commitPieceBatches({
+      commitPieceIterable: iterateCommitPieces(entries),
+      context,
+      state,
+      spaceDID: SPACE_DID,
+      copyIndex: 0,
+      maxCommitRetries: 0,
+      commitRetryTimeout: 0,
+      signal: controller.signal,
+      activeFailedRoots: new Set(),
+    })) {
+      /* drain */
+    }
+
+    expect(commitCalls.length).toBe(1)
+    expect(state.spaces[SPACE_DID].copies[0].committed.size).toBe(
+      commitCalls[0]
+    )
+    expect(state.spaces[SPACE_DID].copies[0].committed.size).toBeLessThan(
+      entries.length
+    )
+  })
 })
 
 /**
@@ -71,6 +110,7 @@ async function collectCommitRun(entries, run) {
     copyIndex: 0,
     maxCommitRetries: 0,
     commitRetryTimeout: 0,
+    signal: undefined,
     activeFailedRoots: new Set(),
   })) {
     /* drain */
@@ -128,56 +168,65 @@ function createCopyState(copyIndex) {
 }
 
 /**
- * @param {{ dataSetId?: bigint | undefined }} [options]
+ * @param {{
+ *   dataSetId?: bigint | undefined
+ *   onCommit?: () => void
+ * }} [options]
  */
 function createMockCommitContext(options = {}) {
   let dataSetId = options.dataSetId
   /** @type {number[]} */
   const presignCalls = []
+  /** @type {number[]} */
+  const commitCalls = []
 
-  const context = /** @type {API.StorageContext} */ (/** @type {unknown} */ ({
-    get dataSetId() {
-      return dataSetId
-    },
-    get dataSetMetadata() {
-      return {
-        source: 'storacha-migration',
-        withIPFSIndexing: '',
-        'space-did': SPACE_DID,
-        'space-name': 'Commit Test Space',
-      }
-    },
-    get withCDN() {
-      return false
-    },
-    /**
-     * @param {Array<{ pieceCid: API.PieceLink, pieceMetadata?: Record<string, string> }>} pieces
-     */
-    async presignForCommit(pieces) {
-      presignCalls.push(pieces.length)
-      return /** @type {import('viem').Hex} */ ('0x1234')
-    },
-    /**
-     * @param {{ pieces: Array<{ pieceCid: API.PieceLink }> }} args
-     */
-    async commit({ pieces }) {
-      if (dataSetId == null) {
-        dataSetId = 999n
-      }
-      return {
-        txHash: /** @type {import('viem').Hex} */ ('0x1234'),
-        pieceIds: pieces.map(
-          /**
-           * @param {{ pieceCid: API.PieceLink }} _piece
-           * @param {number} index
-           */
-          (_piece, index) => BigInt(index + 1)
-        ),
-        dataSetId,
-        isNewDataSet: options.dataSetId == null,
-      }
-    },
-  }))
+  const context = /** @type {API.StorageContext} */ (
+    /** @type {unknown} */ ({
+      get dataSetId() {
+        return dataSetId
+      },
+      get dataSetMetadata() {
+        return {
+          source: 'storacha-migration',
+          withIPFSIndexing: '',
+          'space-did': SPACE_DID,
+          'space-name': 'Commit Test Space',
+        }
+      },
+      get withCDN() {
+        return false
+      },
+      /**
+       * @param {Array<{ pieceCid: API.PieceLink, pieceMetadata?: Record<string, string> }>} pieces
+       */
+      async presignForCommit(pieces) {
+        presignCalls.push(pieces.length)
+        return /** @type {import('viem').Hex} */ ('0x1234')
+      },
+      /**
+       * @param {{ pieces: Array<{ pieceCid: API.PieceLink }> }} args
+       */
+      async commit({ pieces }) {
+        commitCalls.push(pieces.length)
+        if (dataSetId == null) {
+          dataSetId = 999n
+        }
+        options.onCommit?.()
+        return {
+          txHash: /** @type {import('viem').Hex} */ ('0x1234'),
+          pieceIds: pieces.map(
+            /**
+             * @param {{ pieceCid: API.PieceLink }} _piece
+             * @param {number} index
+             */
+            (_piece, index) => BigInt(index + 1)
+          ),
+          dataSetId,
+          isNewDataSet: options.dataSetId == null,
+        }
+      },
+    })
+  )
 
-  return { context, presignCalls }
+  return { context, presignCalls, commitCalls }
 }

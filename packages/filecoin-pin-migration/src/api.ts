@@ -237,7 +237,10 @@ export interface SpaceCopyState {
   serviceProvider: `0x${string}`
   /** null until first commit; then passed as dataSetIds on resume. */
   dataSetId: bigint | null
-  /** Shard CIDs pulled successfully and ready for the final commit. */
+  /**
+   * Shard CIDs pulled successfully and ready for commit.
+   * This set can contain both source-pull and store-path shard CIDs.
+   */
   pulled: Set<string>
   /** Shard CIDs that have been committed on-chain. */
   committed: Set<string>
@@ -288,8 +291,6 @@ export interface MigrationSummary {
   dataSetIds: bigint[]
   /** Total bytes across all resolved shards in the plan. */
   totalBytes: bigint
-  /** Duration in milliseconds */
-  duration: number
 }
 
 // ── Stage inputs ─────────────────────────────────────────────────────────────
@@ -354,8 +355,10 @@ export interface ExecuteMigrationInput {
   synapse: Synapse
   /** Pieces per pull batch (default: 50) */
   batchSize?: number
-  /** A failure stops remaining batches in an upload (default: true) */
-  stopOnError?: boolean
+  /** Fetch implementation used when the inventory contains shardsToStore */
+  fetcher?: typeof fetch
+  /** Number of shards to download+store concurrently per space (default: 10) */
+  storeConcurrency?: number
   /** AbortSignal for cancellation */
   signal?: AbortSignal
   /**
@@ -391,8 +394,6 @@ export interface ExecuteStoreMigrationInput {
   storeConcurrency?: number
   /** Number of secondary pull batches to run concurrently per space (default: 4) */
   pullConcurrency?: number
-  /** A failure stops remaining batches in an upload (default: true) */
-  stopOnError?: boolean
   /** AbortSignal for cancellation */
   signal?: AbortSignal
   /** Max commit retry attempts for a failing commit batch (default: 3) */
@@ -429,7 +430,8 @@ export interface ExecuteStoreMigrationInput {
  *
  * Progress is derived from MigrationState on each state:checkpoint.
  * Upload progress (committed vs total shards) is computed from each
- * copy.committed set plus spacesInventories[did].shards.
+ * copy.committed set plus the actionable shard buckets in
+ * spacesInventories[did] (`shards` and `shardsToStore`).
  */
 export type MigrationEvent =
   | { type: 'reader:space:start'; spaceDID: SpaceDID }
@@ -531,7 +533,7 @@ export interface CommitEntry {
   root: string
 }
 
-export interface CommittedEntry extends CommitEntry {}
+export type CommittedEntry = CommitEntry
 
 /** Pre-mapped piece ready for presign/commit, carrying shard metadata for recording. */
 export interface CommitPiece {

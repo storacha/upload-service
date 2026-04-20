@@ -20,7 +20,7 @@ import {
 import { getBlockNumber } from 'viem/actions'
 
 /**
- * @import * as API from './api.js'
+ * @import * as API from '../api.js'
  */
 
 const DATASET_METADATA_BASE = Object.freeze({

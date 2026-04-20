@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { Piece } from '@web3-storage/data-segment'
 import { base58btc } from 'multiformats/bases/base58'
 
-import { buildMigrationInventories } from '../src/reader.js'
-import { ClaimsResolver, RoundaboutResolver } from '../src/source-url.js'
+import { buildMigrationInventories } from '../src/reader/reader.js'
+import { ClaimsResolver, RoundaboutResolver } from '../src/reader/source-url.js'
 import {
   createTestCID,
   createPieceCID,
@@ -264,7 +264,9 @@ describe('buildMigrationInventories', () => {
       expect(inventory.shardsToStore).toHaveLength(1)
       expect(inventory.shardsToStore[0].root).toBe(rootStr)
       expect(inventory.skippedUploads).toHaveLength(0)
-      expect(events.find((e) => e.type === 'reader:shard:failed')).toBeUndefined()
+      expect(
+        events.find((e) => e.type === 'reader:shard:failed')
+      ).toBeUndefined()
     })
 
     it('excludes upload with missing location URL and emits reader:shard:failed', async () => {
@@ -570,7 +572,7 @@ describe('buildMigrationInventories', () => {
             shard: {
               /**
                * @param {API.UnknownLink} root
-               * @param _options
+               * @param {unknown} _options
                */
               async list(root, _options) {
                 return { results: shardsByRoot.get(`${root}`) ?? [] }

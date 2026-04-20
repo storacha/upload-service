@@ -27,3 +27,32 @@ export function* batches(arr, size) {
 export function toPieceCID(str) {
   return Piece.fromString(str).link
 }
+
+/**
+ * Best-effort abort detection for APIs that may throw DOMException,
+ * AbortError-like objects, or plain Errors with the standard message.
+ *
+ * @param {unknown} error
+ * @returns {boolean}
+ */
+export function isAbortError(error) {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'name' in error &&
+    error.name === 'AbortError'
+  ) {
+    return true
+  }
+
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof error.message === 'string'
+  ) {
+    return error.message === 'This operation was aborted'
+  }
+
+  return false
+}

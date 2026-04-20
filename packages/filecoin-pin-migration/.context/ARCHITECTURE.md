@@ -28,7 +28,7 @@ every `state:checkpoint` event.
 |---|---|---|
 | reader | Fetch uploads, resolve shards via the indexing service, apply the source URL resolver inline | `SpaceInventory[]` |
 | planner | Aggregate inventories, create exactly 2 storage contexts per space, compute costs, write provider/dataset bindings into state | `MigrationPlan` |
-| migrator | Fund once, run pull batches per copy, commit sequential batches per copy, emit progress/failure events | `AsyncGenerator<MigrationEvent>` |
+| migrator | Fund once, run mixed source-pull/store execution per copy, commit sequential internal batches per copy, emit progress/failure events | `AsyncGenerator<MigrationEvent>` |
 
 ---
 
@@ -71,6 +71,7 @@ interface SpaceCopyState {
   pulled: Set<string>
   committed: Set<string>
   failedUploads: Set<string>
+  storedShards: Record<string, string>
 }
 ```
 
@@ -107,7 +108,7 @@ Context creation rules:
 - on resume, pinned provider/dataset bindings win for each copy
 - if both copies resolve to the same provider, planning fails fast
 
-`PerSpaceCost` is now copy-based:
+`PerSpaceCost` is copy-based:
 
 ```ts
 interface PerSpaceCost {
@@ -130,43 +131,37 @@ Space-level numeric fields are sums of the two copy-level values.
 
 ## Migrator
 
-The migrator executes one space at a time, and within each space executes the
-same pull/commit flow independently for both copies.
+The migrator executes one space at a time. Within each space:
 
-### Execution Model
+- `inventory.shards` stay on the normal source-pull path for both copies
+- `inventory.shardsToStore` run `store()` on copy 0, then pull from copy 0 on copy 1
+- each copy still commits once logically through sequential internal commit batches
+- `executeStoreMigration()` is a thin wrapper that prepares an all-store inventory
+  view, then delegates to the same shared `migrateSpace()` executor
 
-```
-executeMigration({ plan, state, synapse, config })
-  └─▶ ensureFunding(plan.fundingAmount)
-  └─▶ state.phase = 'migrating'
-  └─▶ for each space:
-        inventory = state.spacesInventories[spaceDID]
-        for each copy:
-          pending = inventory.shards excluding copy.committed and copy.pulled
-          activeFailedRoots = Set(copy.failedUploads)
-          run presign+pull over pending batches with configurable pull concurrency
-          reconcile failed roots across all batch results
-          checkpoint surviving pulled shards with recordPull(..., copyIndex, ...)
-          build final commit stream from copy.pulled
-          split commit work into sequential internal batches
-          for each successful commit batch: recordCommit(..., copyIndex, ...)
-        finalizeSpace()
-  └─▶ finalizeMigration()
-```
+Internally, migrator execution is split into two layers:
+
+- `runMigration()` owns the outer lifecycle: funding, phase transition, space loop,
+  finalization, and summary emission
+- `migrateSpace()` owns the deep per-space execution: copy ordering, source pull,
+  store flow, commit stream composition, and final per-space checkpointing
 
 ### Pull/Commit Semantics
 
-- pull work is batched and runs concurrently per copy
+- source pull work is batched and runs concurrently per copy
+- store-routed shards are downloaded+stored in batches on copy 0, then pulled in
+  batches from copy 0 on copy 1
 - commit is copy-scoped and executes in sequential internal commit batches
 - commit batching mode is resolved internally per batch:
   - `count` when an internal max-pieces limit is configured
   - `extraData` when count mode is disabled and the encoded `extraData` limit is active
-  - `none` when both internal limits are disabled
+  - `none` when both internal limits are disabled - (one single commit batch)
 - in `extraData` mode, the first commit batch may be smaller because it includes
   the dataset-creation payload when `context.dataSetId` is not yet defined
 - once the first commit succeeds and the dataset exists, later batches switch to
   add-pieces-only sizing
-- `stopOnError` is enforced independently per copy via upload-root tracking
+- failed upload roots are tracked independently per copy; once a root fails,
+  later shards under that root are skipped for that copy
 - `retryCommitInteractively` is used only for a failing commit batch
 
 ### Error Model

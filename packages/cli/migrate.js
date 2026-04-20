@@ -49,7 +49,6 @@ const MIN_FIL_GAS_BALANCE = parseEther('0.1')
  * @property {number|string} [batchSize]
  * @property {number|string} [pullConcurrency]
  * @property {'pull' | 'store'} [uploadMode]
- * @property {boolean} [stopOnError]
  * @property {string} [sourceStrategy]
  * @property {string} [roundaboutURL]
  */
@@ -113,7 +112,6 @@ export async function spaceMigrate(opts = {}) {
       state,
       stateFile: context.stateFile,
       spaceDIDs: [context.spaceDID],
-      stopOnError: config.stopOnError,
       signal: ac.signal,
     })
     if (readerResult.interrupted) return
@@ -161,7 +159,6 @@ export async function spaceMigrate(opts = {}) {
       batchSize: config.batchSize,
       pullConcurrency: config.pullConcurrency,
       uploadMode: config.uploadMode,
-      stopOnError: config.stopOnError,
       signal: ac.signal,
     })
     if (migrationResult.interrupted) return
@@ -187,7 +184,6 @@ function parseMigrationOptions(opts) {
       opts.pullConcurrency,
       '--pull-concurrency'
     ),
-    stopOnError: opts.stopOnError ?? true,
     resume: opts.resume ?? false,
     roundaboutURL: opts.roundaboutURL,
   }
@@ -254,7 +250,6 @@ function createWalletAccount(walletPk) {
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} args.state
  * @param {string} args.stateFile
  * @param {string[]} args.spaceDIDs
- * @param {boolean} args.stopOnError
  * @param {AbortSignal} args.signal
  */
 async function readInventories({
@@ -263,7 +258,6 @@ async function readInventories({
   state,
   stateFile,
   spaceDIDs,
-  stopOnError,
   signal,
 }) {
   printPhaseTitle('Scanning Space')
@@ -277,7 +271,6 @@ async function readInventories({
     resolver,
     state,
     spaceDIDs: /** @type {`did:key:${string}`[]} */ (spaceDIDs),
-    options: { stopOnError },
   })) {
     switch (event.type) {
       case 'reader:space:start':
@@ -288,7 +281,7 @@ async function readInventories({
         if (!inventory) break
         spinner.stopAndPersist({
           symbol: chalk.green('✔'),
-          text: `  Completed ${inventory.uploads.length} uploads, ${inventory.shards.length} shards, ${inventory.skippedUploads.length} skipped uploads, ${formatBytes(inventory.totalBytes)}`,
+          text: ` Completed ${inventory.uploads.length} uploads, ${inventory.shards.length} shards, ${inventory.skippedUploads.length} skipped uploads, ${formatBytes(inventory.totalBytes)}`,
         })
         spinner.start(`Reading inventories...`)
         break
@@ -368,7 +361,6 @@ async function planMigration({ synapse, state, stateFile, signal }) {
  * @param {number} args.batchSize
  * @param {number | undefined} args.pullConcurrency
  * @param {'pull' | 'store'} args.uploadMode
- * @param {boolean} args.stopOnError
  * @param {AbortSignal} args.signal
  */
 async function runMigration({
@@ -379,7 +371,6 @@ async function runMigration({
   batchSize,
   pullConcurrency,
   uploadMode,
-  stopOnError,
   signal,
 }) {
   printPhaseTitle('Migrating')
@@ -396,7 +387,6 @@ async function runMigration({
           synapse,
           batchSize,
           pullConcurrency,
-          stopOnError,
           signal,
         })
       : executeMigration({
@@ -405,7 +395,6 @@ async function runMigration({
           synapse,
           batchSize,
           pullConcurrency,
-          stopOnError,
           signal,
         })
 

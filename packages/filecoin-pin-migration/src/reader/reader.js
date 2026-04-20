@@ -5,8 +5,8 @@ import { Client as IndexingClient } from '@storacha/indexing-service-client'
 import {
   DEFAULT_SHARD_LIST_CONCURRENCY,
   DEFAULT_STOP_ON_ERROR,
-} from './constants.js'
-import { checkpointInventoryPage } from './state.js'
+} from '../constants.js'
+import { checkpointInventoryPage } from '../state.js'
 
 /**
  * @import {
@@ -22,7 +22,7 @@ import { checkpointInventoryPage } from './state.js'
  *  ClaimsEntry,
  *  UnknownLink,
  *  PieceLink
- * } from './api.js'
+ * } from '../api.js'
  */
 
 /**
@@ -373,7 +373,7 @@ function extractShard(claimsIndex, shard, root, resolver) {
       sourceURL: entry.locationURL,
       sizeBytes,
     }
-    storeShard.sourceURL = resolver.resolve(storeShard)
+    // storeShard.sourceURL = resolver.resolve(storeShard) // the roundabout needs the pieceCID, for now, just use the location URL directly.
     return { store: storeShard }
   }
 

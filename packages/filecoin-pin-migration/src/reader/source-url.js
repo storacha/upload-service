@@ -1,5 +1,5 @@
 /**
- * @import * as API from './api.js'
+ * @import * as API from '../api.js'
  */
 
 const DEFAULT_ROUNDABOUT_URL = 'https://roundabout.web3.storage'

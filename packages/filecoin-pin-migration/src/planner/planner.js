@@ -1,8 +1,8 @@
 import { computeMigrationCosts } from './compute-migration-costs.js'
-import { buildResumeState, transitionToApproved } from './state.js'
+import { buildResumeState, transitionToApproved } from '../state.js'
 
 /**
- * @import { CreatePlanInput, MigrationEvent, MigrationPlan } from './api.js'
+ * @import { CreatePlanInput, MigrationEvent, MigrationPlan } from '../api.js'
  */
 
 /** 3% safety buffer over the deposit to cover gas estimation variance. */
@@ -56,7 +56,7 @@ export async function* createMigrationPlan({ synapse, state, providerIds }) {
 
   for (const inv of inventories) {
     totalUploads += inv.uploads.length
-    totalShards += inv.shards.length
+    totalShards += inv.shards.length + inv.shardsToStore.length
     totalBytes += inv.totalBytes
     bytesToMigrate += inv.totalSizeToMigrate
 

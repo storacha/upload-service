@@ -1,14 +1,14 @@
-import { CommitFailedFailure } from './errors.js'
+import { CommitFailedFailure } from '../errors.js'
 import {
   MAX_ADD_PIECES_COMMIT_BATCH_PIECES,
   MAX_COMMIT_EXTRADATA_BYTES,
   MAX_CREATE_DATASET_COMMIT_BATCH_PIECES,
-} from './constants.js'
-import { recordCommit, recordFailedUpload } from './state.js'
-import { toPieceCID } from './utils.js'
+} from '../constants.js'
+import { recordCommit, recordFailedUpload } from '../state.js'
+import { toPieceCID } from '../utils.js'
 
 /**
- * @import * as API from './api.js'
+ * @import * as API from '../api.js'
  */
 
 const STRING_ENCODER = new TextEncoder()
@@ -70,6 +70,7 @@ export function* iterateCommitPieces(entries, include) {
  * @param {number} args.copyIndex
  * @param {number} args.maxCommitRetries
  * @param {number} args.commitRetryTimeout
+ * @param {AbortSignal | undefined} args.signal
  * @param {Set<string>} [args.activeFailedRoots]
  * @returns {AsyncGenerator<API.MigrationEvent>}
  */
@@ -81,6 +82,7 @@ export async function* commitPieceBatches({
   copyIndex,
   maxCommitRetries,
   commitRetryTimeout,
+  signal,
   activeFailedRoots,
 }) {
   /** @type {IteratorResult<API.CommitPiece> | undefined} */
@@ -89,6 +91,8 @@ export async function* commitPieceBatches({
   const iterator = commitPieceIterable[Symbol.iterator]()
 
   while (true) {
+    if (signal?.aborted) break
+
     const batch = takeNextCommitBatch({
       iterator,
       pending,
@@ -112,6 +116,7 @@ export async function* commitPieceBatches({
       copyIndex,
       maxCommitRetries,
       commitRetryTimeout,
+      signal,
     })
 
     if (activeFailedRoots && result.failedUploads.size > 0) {
@@ -164,6 +169,7 @@ async function commitPreparedBatch({ context, commitPieces }) {
  * @param {number} args.copyIndex
  * @param {number} args.maxCommitRetries
  * @param {number} args.commitRetryTimeout
+ * @param {AbortSignal | undefined} args.signal
  * @returns {AsyncGenerator<API.MigrationEvent>}
  */
 async function* handleCommitBatchResult({
@@ -174,8 +180,10 @@ async function* handleCommitBatchResult({
   copyIndex,
   maxCommitRetries,
   commitRetryTimeout,
+  signal,
 }) {
   if (
+    !signal?.aborted &&
     result.stage === 'commit' &&
     result.commitPieces &&
     maxCommitRetries > 0
@@ -186,7 +194,8 @@ async function* handleCommitBatchResult({
       spaceDID,
       copyIndex,
       maxCommitRetries,
-      commitRetryTimeout
+      commitRetryTimeout,
+      signal
     )
   }
 
@@ -229,6 +238,7 @@ async function* handleCommitBatchResult({
  * @param {number} copyIndex
  * @param {number} maxRetries
  * @param {number} retryTimeout
+ * @param {AbortSignal | undefined} signal
  * @returns {AsyncGenerator<API.MigrationEvent>}
  */
 async function* retryCommitInteractively(
@@ -237,12 +247,15 @@ async function* retryCommitInteractively(
   spaceDID,
   copyIndex,
   maxRetries,
-  retryTimeout
+  retryTimeout,
+  signal
 ) {
   const piecesToRetry = /** @type {API.CommitPiece[]} */ (result.commitPieces)
   let attempt = 1
 
   while (attempt <= maxRetries) {
+    if (signal?.aborted) break
+
     const decision = createDecision(retryTimeout)
 
     yield /** @type {API.MigrationEvent} */ ({
@@ -257,6 +270,7 @@ async function* retryCommitInteractively(
     })
 
     const choice = await decision.promise
+    if (signal?.aborted) break
     if (choice !== 'retry') break
 
     try {
@@ -299,8 +313,9 @@ function takeNextCommitBatch({
   const batchMode = resolveBatchMode(datasetMetadata)
   let batchRootValuePaddedBytes = 0
   let next = pending
+  let hasMore = true
 
-  while (true) {
+  while (hasMore) {
     next = next ?? iterator.next()
     if (next.done) {
       return { commitPieces, pending: undefined }
@@ -325,7 +340,10 @@ function takeNextCommitBatch({
         batchMode.createDataSetOverheadBytes
       )
 
-      if (shouldApplyExtraDataLimit && projectedSize > MAX_COMMIT_EXTRADATA_BYTES) {
+      if (
+        shouldApplyExtraDataLimit &&
+        projectedSize > MAX_COMMIT_EXTRADATA_BYTES
+      ) {
         return { commitPieces, pending: next }
       }
 
@@ -335,10 +353,15 @@ function takeNextCommitBatch({
     commitPieces.push(next.value)
     next = undefined
 
-    if (batchMode.kind === 'count' && commitPieces.length >= batchMode.countLimit) {
+    if (
+      batchMode.kind === 'count' &&
+      commitPieces.length >= batchMode.countLimit
+    ) {
       return { commitPieces, pending: undefined }
     }
   }
+
+  return { commitPieces, pending: undefined }
 }
 
 /**
@@ -393,7 +416,9 @@ function projectedCommitExtraDataBytes(
   )
   if (createDataSetOverheadBytes === 0) return addPiecesBytes
 
-  return CREATE_AND_ADD_WRAPPER_BYTES + createDataSetOverheadBytes + addPiecesBytes
+  return (
+    CREATE_AND_ADD_WRAPPER_BYTES + createDataSetOverheadBytes + addPiecesBytes
+  )
 }
 
 /**

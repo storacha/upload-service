@@ -121,7 +121,7 @@ export function printPlan(plan, userWalletBalance, userDeposit) {
           )
         ),
         line('Uploads', String(plan.totals.uploads)),
-        line('Shard roots', String(plan.totals.shards)),
+        line('Shards', String(plan.totals.shards)),
         line('Source bytes', formatBytes(plan.totals.bytes)),
         line('Bytes to migrate', formatBytes(plan.totals.bytesToMigrate)),
         line('Ready', plan.ready ? chalk.green('yes') : chalk.yellow('no')),
@@ -194,7 +194,6 @@ export function printSummary(summary) {
           'Data sets',
           summary.dataSetIds.length > 0 ? summary.dataSetIds.join(', ') : 'none'
         ),
-        line('Duration', formatDuration(summary.duration)),
       ],
       chalk.green
     )
@@ -292,18 +291,6 @@ export function truncateValue(value, maxLength = 64) {
  */
 export function formatBytes(bytes) {
   return filesize(Number(bytes))
-}
-
-/**
- * @param {number} durationMs
- */
-function formatDuration(durationMs) {
-  const totalSeconds = Math.max(Math.round(durationMs / 1000), 0)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-
-  if (minutes === 0) return `${seconds}s`
-  return `${minutes}m ${seconds}s`
 }
 
 /**

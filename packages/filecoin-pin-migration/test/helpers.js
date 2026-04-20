@@ -128,7 +128,16 @@ export function createMockIndexer(responses) {
 /**
  * Create a mock SpaceInventory for planner tests.
  *
- * @param {{ did?: API.SpaceDID, name?: string, shards?: API.ResolvedShard[], uploads?: string[], skippedUploads?: string[] }} [opts]
+ * @param {{
+ *   did?: API.SpaceDID
+ *   name?: string
+ *   shards?: API.ResolvedShard[]
+ *   shardsToStore?: API.StoreShard[]
+ *   uploads?: string[]
+ *   skippedUploads?: string[]
+ *   totalBytes?: bigint
+ *   totalSizeToMigrate?: bigint
+ * }} [opts]
  * @returns {API.SpaceInventory}
  */
 export function createMockInventory(opts = {}) {
@@ -150,16 +159,21 @@ export function createMockInventory(opts = {}) {
     },
   ]
   const shards = opts.shards ?? defaultShards
+  const shardsToStore = opts.shardsToStore ?? []
   const uploads = opts.uploads ?? ['bafyroot1']
   return {
     did: opts.did ?? /** @type {API.SpaceDID} */ ('did:key:z6MkTestSpace1'),
     ...(opts.name !== undefined ? { name: opts.name } : {}),
     shards,
-    shardsToStore: [],
+    shardsToStore,
     uploads,
     skippedUploads: opts.skippedUploads ?? [],
-    totalBytes: shards.reduce((n, s) => n + s.sizeBytes, 0n),
-    totalSizeToMigrate: shards.reduce((n, s) => n + s.sizeBytes, 0n),
+    totalBytes:
+      opts.totalBytes ??
+      [...shards, ...shardsToStore].reduce((n, s) => n + s.sizeBytes, 0n),
+    totalSizeToMigrate:
+      opts.totalSizeToMigrate ??
+      [...shards, ...shardsToStore].reduce((n, s) => n + s.sizeBytes, 0n),
   }
 }
 
