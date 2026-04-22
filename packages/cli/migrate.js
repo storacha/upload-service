@@ -2,9 +2,9 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { confirm } from '@inquirer/prompts'
+import ansiEscapes from 'ansi-escapes'
 import chalk from 'chalk'
 import ora from 'ora'
-import ansiEscapes from 'ansi-escapes'
 import { Synapse, TOKENS, mainnet, calibration } from '@filoz/synapse-sdk'
 import {
   createInitialState,
@@ -13,6 +13,7 @@ import {
   executeMigration,
   executeStoreMigration,
   createResolver,
+  clearFailedUploadsForRetry,
   serializeState,
   deserializeState,
 } from '@storacha/filecoin-pin-migration'
@@ -20,19 +21,22 @@ import { parseEther } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { getClient } from './lib.js'
 import {
-  checkpointSpinnerText,
   formatBytes,
-  formatTokenAmount,
   printPhaseTitle,
   printPlan,
   printPreflight,
   printReaderShardFailed,
+  printCommitBatchResult,
+  printResumeStatus,
+  renderMigrationStatusBlock,
   printSummary,
-  renderCheckpointProgress,
+  formatDuration,
   truncateDID,
 } from './migrate-view.js'
 
-const DEFAULT_BATCH_SIZE = 100
+const LIVE_STATUS_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+
+const DEFAULT_BATCH_SIZE = 20
 const DEFAULT_SOURCE_STRATEGY = 'roundabout'
 const DEFAULT_STATE_FILE_BASENAME = 'storacha-migration'
 const CLI_SOURCE = 'storacha-cli'
@@ -46,6 +50,7 @@ const MIN_FIL_GAS_BALANCE = parseEther('0.1')
  * @property {string} [network]
  * @property {string} [stateFile]
  * @property {boolean} [resume]
+ * @property {boolean} [retry]
  * @property {number|string} [batchSize]
  * @property {number|string} [pullConcurrency]
  * @property {'pull' | 'store'} [uploadMode]
@@ -75,9 +80,15 @@ export async function spaceMigrate(opts = {}) {
     source: CLI_SOURCE,
   })
 
-  const state = config.resume
-    ? loadStateOrExit(context.stateFile)
-    : createInitialState()
+  const state =
+    config.resume || config.retry
+      ? loadStateOrExit(context.stateFile)
+      : createInitialState()
+
+  if (config.retry) {
+    const retriedUploads = clearFailedUploadsForRetry(state, context.spaceDID)
+    console.log(`Retrying ${retriedUploads} failed uploads...`)
+  }
 
   const ac = new AbortController()
   let stopRequested = false
@@ -185,6 +196,7 @@ function parseMigrationOptions(opts) {
       '--pull-concurrency'
     ),
     resume: opts.resume ?? false,
+    retry: opts.retry ?? false,
     roundaboutURL: opts.roundaboutURL,
   }
 }
@@ -374,11 +386,128 @@ async function runMigration({
   signal,
 }) {
   printPhaseTitle('Migrating')
-  const spinner = ora({
-    text: 'Waiting for migration steps...',
-    color: 'cyan',
-  }).start()
-  let progressPrinted = false
+  printResumeStatus(state, plan)
+  const startedAt = Date.now()
+  const canRedraw = process.stdout.isTTY === true
+  let statusBlockPrinted = 0
+  let statusUpdatesPaused = false
+  let frameIndex = 0
+  /** @type {NodeJS.Timeout | undefined} */
+  let heartbeat
+  /** @type {{
+   * currentSpaceDID?: string
+   * currentCopyIndex?: number
+   * currentPhase?: import('@storacha/filecoin-pin-migration/types').MigrationExecutionPhase | 'funding'
+   * currentItemCount?: number
+   * currentBatchCount?: number
+   * }} */
+  const liveStatus = {}
+
+  /**
+   * @param {() => void} print
+   */
+  const printPersistentMigrationLine = (print) => {
+    statusUpdatesPaused = true
+    clearStatusBlock()
+    print()
+    console.log('')
+    statusUpdatesPaused = false
+    renderStatusBlock()
+  }
+
+  const clearStatusBlock = () => {
+    if (!canRedraw || statusBlockPrinted === 0) return
+    process.stdout.write(ansiEscapes.eraseLines(statusBlockPrinted))
+    statusBlockPrinted = 0
+  }
+
+  const renderStatusBlock = () => {
+    if (statusUpdatesPaused) return
+    clearStatusBlock()
+    const block = renderMigrationStatusBlock({
+      state,
+      plan,
+      uploadMode,
+      startedAt,
+      activityFrame: LIVE_STATUS_FRAMES[frameIndex],
+      currentSpaceDID: liveStatus.currentSpaceDID,
+      currentCopyIndex: liveStatus.currentCopyIndex,
+      currentPhase: liveStatus.currentPhase,
+      currentItemCount: liveStatus.currentItemCount,
+      currentBatchCount: liveStatus.currentBatchCount,
+    })
+
+    if (canRedraw) {
+      process.stdout.write(`${block}\n`)
+      statusBlockPrinted = block.split('\n').length + 1
+      return
+    }
+
+    console.log(block)
+  }
+
+  const startHeartbeat = () => {
+    if (!canRedraw) return
+    heartbeat = setInterval(() => {
+      frameIndex = (frameIndex + 1) % LIVE_STATUS_FRAMES.length
+      renderStatusBlock()
+    }, 250)
+  }
+
+  const stopHeartbeat = () => {
+    if (heartbeat) {
+      clearInterval(heartbeat)
+      heartbeat = undefined
+    }
+  }
+
+  const updateLiveStatusFromEvent = (event) => {
+    switch (event.type) {
+      case 'funding:start':
+        liveStatus.currentPhase = 'funding'
+        liveStatus.currentItemCount = undefined
+        liveStatus.currentBatchCount = undefined
+        break
+      case 'migration:space:start':
+        liveStatus.currentSpaceDID = event.spaceDID
+        break
+      case 'migration:space:complete':
+        liveStatus.currentPhase = undefined
+        liveStatus.currentItemCount = undefined
+        liveStatus.currentBatchCount = undefined
+        break
+      case 'migration:copy:start':
+        liveStatus.currentCopyIndex = event.copyIndex
+        break
+      case 'migration:copy:complete':
+        if (liveStatus.currentCopyIndex === event.copyIndex) {
+          liveStatus.currentPhase = undefined
+          liveStatus.currentItemCount = undefined
+          liveStatus.currentBatchCount = undefined
+        }
+        break
+      case 'migration:phase:start':
+        liveStatus.currentCopyIndex = event.copyIndex
+        liveStatus.currentPhase = event.phase
+        liveStatus.currentItemCount = event.itemCount
+        liveStatus.currentBatchCount = event.batchCount
+        break
+      case 'migration:phase:complete':
+        if (
+          liveStatus.currentCopyIndex === event.copyIndex &&
+          liveStatus.currentPhase === event.phase
+        ) {
+          liveStatus.currentPhase = undefined
+          liveStatus.currentItemCount = undefined
+          liveStatus.currentBatchCount = undefined
+        }
+        break
+    }
+  }
+
+  renderStatusBlock()
+  startHeartbeat()
+
   const migrationEvents =
     uploadMode === 'store'
       ? executeStoreMigration({
@@ -401,76 +530,113 @@ async function runMigration({
   for await (const event of migrationEvents) {
     switch (event.type) {
       case 'funding:start':
-        spinner.start(
-          `Funding ${formatTokenAmount(event.amount)} USDFC into payments`
-        )
+        updateLiveStatusFromEvent(event)
+        renderStatusBlock()
         break
       case 'funding:complete':
-        spinner.succeed(`Funding complete (tx hash: ${event.txHash})`)
-        spinner.start(
-          uploadMode === 'store'
-            ? 'Storing, pulling, and committing copy data...'
-            : 'Pulling and committing copy data...'
-        )
+        liveStatus.currentPhase = undefined
+        printPersistentMigrationLine(() => {
+          console.log(
+            `${chalk.green('✓')} Funding complete (tx hash: ${event.txHash})`
+          )
+        })
         break
       case 'funding:failed':
-        spinner.fail(`Funding failed: ${event.error.message}`)
+        stopHeartbeat()
+        clearStatusBlock()
+        console.error(chalk.red(`Funding failed: ${event.error.message}`))
         process.exit(1)
         break
       case 'migration:commit:failed': {
-        spinner.stop()
+        statusUpdatesPaused = true
+        clearStatusBlock()
         const shouldRetry = await confirm({
-          message: `Commit batch failed for copy ${event.copyIndex} with ${event.roots.length} upload(s). Retry attempt ${event.attempt}?`,
+          message: `Commit ${event.commitIndex} failed for copy ${event.copyIndex} with ${event.pieceCount} piece(s). Retry attempt ${event.attempt}?`,
           default: true,
         }).catch(() => false)
 
         if (shouldRetry) {
           event.retry()
-          spinner.start(`Retrying commit batch for copy ${event.copyIndex}...`)
+          console.log(
+            chalk.cyan(
+              `Retrying commit ${event.commitIndex} for copy ${event.copyIndex}...`
+            )
+          )
         } else {
           event.skip()
-          spinner.start(`Skipping commit batch for copy ${event.copyIndex}...`)
+          console.log(
+            chalk.yellow(
+              `Skipping commit ${event.commitIndex} for copy ${event.copyIndex}...`
+            )
+          )
         }
+        statusUpdatesPaused = false
+        renderStatusBlock()
         break
       }
+      case 'migration:commit:settled':
+        printPersistentMigrationLine(() => {
+          printCommitBatchResult(event)
+        })
+        break
       case 'migration:batch:failed':
-        spinner.stop()
-        console.warn(
-          chalk.yellow(
-            `  batch:failed  copy=${event.copyIndex}  stage=${event.stage}  roots=${event.roots.length}  error=${event.error.message}`
+        printPersistentMigrationLine(() => {
+          console.warn(
+            chalk.yellow(
+              `  migration:batch:failed  copy=${event.copyIndex}  stage=${event.stage}  roots=${event.roots.length}  error=${event.error.message}`
+            )
           )
-        )
-        spinner.start(
-          `Continuing migration after copy ${event.copyIndex} ${event.stage} failure...`
-        )
+        })
+        break
+      case 'migration:space:start':
+      case 'migration:copy:start':
+      case 'migration:phase:start':
+      case 'migration:phase:complete':
+      case 'migration:space:complete':
+      case 'migration:copy:complete':
+        updateLiveStatusFromEvent(event)
+
+        if (event.type === 'migration:space:complete') {
+          printPersistentMigrationLine(() => {
+            console.log(
+              `${chalk.green('✓')} ${chalk.dim('space')} ${truncateDID(event.spaceDID)}  ${event.phase}`
+            )
+          })
+          break
+        }
+
+        if (event.type === 'migration:copy:complete') {
+          printPersistentMigrationLine(() => {
+            console.log(
+              `${event.completed ? chalk.green('✓') : chalk.yellow('!')} ${chalk.dim('copy')} ${event.copyIndex}  ${event.completed ? chalk.green('completed') : chalk.yellow('stopped')}`
+            )
+          })
+          break
+        }
+        renderStatusBlock()
         break
       case 'state:checkpoint':
         await saveState(stateFile, event.state)
-        spinner.stop()
-        progressPrinted = renderCheckpointProgress(
-          event.state,
-          plan,
-          progressPrinted,
-          uploadMode
-        )
-        spinner.start(checkpointSpinnerText(event.state, plan, uploadMode))
+        renderStatusBlock()
         if (signal.aborted) {
-          spinner.stop()
+          stopHeartbeat()
+          console.log(
+            chalk.yellow(
+              `Migration interrupted after ${formatDuration(Date.now() - startedAt)}.`
+            )
+          )
           return { interrupted: true }
         }
         break
       case 'migration:complete':
-        if (progressPrinted) {
-          spinner.stop()
-          process.stdout.write(ansiEscapes.eraseLines(3))
-        } else {
-          spinner.stop()
-        }
-        console.log(chalk.green('✔ Migration complete'))
-        printSummary(event.summary)
+        stopHeartbeat()
+        clearStatusBlock()
+        printSummary(event.summary, Date.now() - startedAt)
         break
     }
   }
+
+  stopHeartbeat()
 
   return { interrupted: signal.aborted }
 }

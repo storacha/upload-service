@@ -31,6 +31,10 @@ import { PRIMARY_COPY_INDEX } from '../constants.js'
 const PHASE_COMPLETE = { completed: true }
 /** @type {PhaseResult} */
 const PHASE_INCOMPLETE = { completed: false }
+/** @type {'source-pull'} */
+const SOURCE_PULL_PHASE = 'source-pull'
+/** @type {'commit'} */
+const COMMIT_PHASE = 'commit'
 
 /**
  * Execute one space across both copies.
@@ -73,6 +77,11 @@ export async function* migrateSpace({
     return
   }
 
+  yield {
+    type: 'migration:space:start',
+    spaceDID: perSpaceCost.spaceDID,
+  }
+
   const copy0FailedRoots = new Set(copy0State.failedUploads)
   const copy1FailedRoots = new Set(copy1State.failedUploads)
 
@@ -92,7 +101,12 @@ export async function* migrateSpace({
     activeFailedRoots: copy0FailedRoots,
   })
 
-  if (!copy0StoreEntries.completed || signal?.aborted) return
+  if (!copy0StoreEntries.completed || signal?.aborted) {
+    if (!signal?.aborted) {
+      yield* finalizeSpaceExecution(state, perSpaceCost.spaceDID)
+    }
+    return
+  }
 
   const copy1Completed = yield* runCopy1({
     inventory,
@@ -106,10 +120,14 @@ export async function* migrateSpace({
     activeFailedRoots: copy1FailedRoots,
   })
 
-  if (!copy1Completed.completed || signal?.aborted) return
+  if (!copy1Completed.completed || signal?.aborted) {
+    if (!signal?.aborted) {
+      yield* finalizeSpaceExecution(state, perSpaceCost.spaceDID)
+    }
+    return
+  }
 
-  finalizeSpace(state, perSpaceCost.spaceDID)
-  yield /** @type {API.MigrationEvent} */ ({ type: 'state:checkpoint', state })
+  yield* finalizeSpaceExecution(state, perSpaceCost.spaceDID)
 }
 
 /**
@@ -147,6 +165,13 @@ async function* runCopy0({
   } = config
   /** @type {Map<string, API.CommitEntry>} */
   let storeEntries = new Map()
+  const { copyIndex } = copyCost
+
+  yield {
+    type: 'migration:copy:start',
+    spaceDID: copyCost.spaceDID,
+    copyIndex,
+  }
 
   if (inventory.shardsToStore.length > 0) {
     const entriesByShardCid = yield* storeShardsOnPrimaryCopy({
@@ -161,7 +186,10 @@ async function* runCopy0({
       signal,
     })
 
-    if (!entriesByShardCid) return { completed: false }
+    if (!entriesByShardCid) {
+      yield emitCopyComplete(copyCost.spaceDID, copyIndex, false)
+      return { completed: false }
+    }
     storeEntries = entriesByShardCid
   }
 
@@ -175,8 +203,18 @@ async function* runCopy0({
     activeFailedRoots,
   })
 
-  if (!sourcePullCompleted.completed) return { completed: false }
+  if (
+    !sourcePullCompleted.completed &&
+    !hasPreparedOrCommittedCopyWork({
+      copyState,
+      storeEntries: storeEntries.values(),
+    })
+  ) {
+    yield emitCopyComplete(copyCost.spaceDID, copyIndex, false)
+    return { completed: false }
+  }
 
+  yield emitPhaseStart(copyCost.spaceDID, copyIndex, COMMIT_PHASE)
   yield* commitPieceBatches({
     commitPieceIterable: iterateCopyCommitPieces({
       copyState,
@@ -194,8 +232,14 @@ async function* runCopy0({
     activeFailedRoots,
   })
 
-  if (signal?.aborted) return { completed: false }
+  const completed = !signal?.aborted
+  yield emitPhaseComplete(copyCost.spaceDID, copyIndex, COMMIT_PHASE, completed)
+  if (!completed) {
+    yield emitCopyComplete(copyCost.spaceDID, copyIndex, false)
+    return { completed: false }
+  }
 
+  yield emitCopyComplete(copyCost.spaceDID, copyIndex, true)
   return { completed: true, storeEntries }
 }
 
@@ -235,6 +279,13 @@ async function* runCopy1({
     pullConcurrency,
     signal,
   } = config
+  const { copyIndex } = copyCost
+
+  yield {
+    type: 'migration:copy:start',
+    spaceDID: copyCost.spaceDID,
+    copyIndex,
+  }
   const sourcePullCompleted = yield* pullSourceShardsForCopy({
     inventory,
     sourceShardsByCid,
@@ -245,7 +296,16 @@ async function* runCopy1({
     activeFailedRoots,
   })
 
-  if (!sourcePullCompleted.completed) return PHASE_INCOMPLETE
+  if (
+    !sourcePullCompleted.completed &&
+    !hasPreparedOrCommittedCopyWork({
+      copyState,
+      storeEntries: copy0StoreEntries.values(),
+    })
+  ) {
+    yield emitCopyComplete(copyCost.spaceDID, copyIndex, false)
+    return PHASE_INCOMPLETE
+  }
 
   /** @type {Map<string, API.CommitEntry>} */
   let storeEntries = new Map()
@@ -263,10 +323,14 @@ async function* runCopy1({
       signal,
     })
 
-    if (!entriesByShardCid) return PHASE_INCOMPLETE
+    if (!entriesByShardCid) {
+      yield emitCopyComplete(copyCost.spaceDID, copyIndex, false)
+      return PHASE_INCOMPLETE
+    }
     storeEntries = entriesByShardCid
   }
 
+  yield emitPhaseStart(copyCost.spaceDID, copyIndex, COMMIT_PHASE)
   yield* commitPieceBatches({
     commitPieceIterable: iterateCopyCommitPieces({
       copyState,
@@ -284,8 +348,14 @@ async function* runCopy1({
     activeFailedRoots,
   })
 
-  if (signal?.aborted) return PHASE_INCOMPLETE
+  const completed = !signal?.aborted
+  yield emitPhaseComplete(copyCost.spaceDID, copyIndex, COMMIT_PHASE, completed)
+  if (!completed) {
+    yield emitCopyComplete(copyCost.spaceDID, copyIndex, false)
+    return PHASE_INCOMPLETE
+  }
 
+  yield emitCopyComplete(copyCost.spaceDID, copyIndex, true)
   return PHASE_COMPLETE
 }
 
@@ -324,12 +394,24 @@ async function* pullSourceShardsForCopy({
     shardsToPull.push(shard)
   }
 
+  const batchCount = Math.ceil(shardsToPull.length / batchSize)
+  yield emitPhaseStart(spaceDID, copyIndex, SOURCE_PULL_PHASE, {
+    itemCount: shardsToPull.length,
+    batchCount,
+  })
+
   if (shardsToPull.length > 0 && !signal?.aborted) {
     const { results: pullResults, aborted } = await runConcurrentTasks({
       items: batches(shardsToPull, batchSize),
       concurrency: pullConcurrency,
       signal,
-      run: (batch) => presignAndPull({ batch, context, signal }),
+      run: (batch) =>
+        presignAndPull({
+          batch,
+          context,
+          phase: SOURCE_PULL_PHASE,
+          signal,
+        }),
     })
 
     yield* applyPullResults({
@@ -342,12 +424,28 @@ async function* pullSourceShardsForCopy({
         recordPull(state, spaceDID, copyIndex, shard.cid),
     })
 
-    if (aborted) return PHASE_INCOMPLETE
+    if (aborted) {
+      yield emitPhaseComplete(spaceDID, copyIndex, SOURCE_PULL_PHASE, false)
+      return PHASE_INCOMPLETE
+    }
   }
 
-  if (signal?.aborted) return PHASE_INCOMPLETE
+  if (signal?.aborted) {
+    yield emitPhaseComplete(spaceDID, copyIndex, SOURCE_PULL_PHASE, false)
+    return PHASE_INCOMPLETE
+  }
 
-  return PHASE_COMPLETE
+  if (sourceShardsByCid.size === 0) {
+    yield emitPhaseComplete(spaceDID, copyIndex, SOURCE_PULL_PHASE, true)
+    return PHASE_COMPLETE
+  }
+
+  const completed = hasPreparedOrCommittedSourceWork({
+    copyState,
+    sourceShardsByCid,
+  })
+  yield emitPhaseComplete(spaceDID, copyIndex, SOURCE_PULL_PHASE, completed)
+  return completed ? PHASE_COMPLETE : PHASE_INCOMPLETE
 }
 
 /**
@@ -356,18 +454,38 @@ async function* pullSourceShardsForCopy({
  * @param {object} args
  * @param {API.ResolvedShard[]} args.batch
  * @param {API.StorageContext} args.context
+ * @param {'source-pull' | 'secondary-pull'} args.phase
  * @param {AbortSignal | undefined} args.signal
  * @returns {Promise<API.PullResult>}
  */
-async function presignAndPull({ batch, context, signal }) {
+async function presignAndPull({ batch, context, phase, signal }) {
   return await presignAndPullBatch({
     batch,
     context,
     getPieceCID: (shard) => shard.pieceCID,
     getRoot: (shard) => shard.root,
     getSourceURL: (shard) => shard.sourceURL,
+    phase,
     signal,
   })
+}
+
+/**
+ * @param {API.MigrationState} state
+ * @param {API.SpaceDID} spaceDID
+ * @returns {AsyncGenerator<API.MigrationEvent>}
+ */
+async function* finalizeSpaceExecution(state, spaceDID) {
+  finalizeSpace(state, spaceDID)
+  const phase = state.spaces[spaceDID]?.phase
+  if (phase) {
+    yield {
+      type: 'migration:space:complete',
+      spaceDID,
+      phase,
+    }
+  }
+  yield { type: 'state:checkpoint', state }
 }
 
 /**
@@ -427,6 +545,36 @@ function* iterateSourceCommitPieces({
 }
 
 /**
+ * @param {object} args
+ * @param {API.SpaceCopyState} args.copyState
+ * @param {Iterable<API.CommitEntry>} args.storeEntries
+ */
+function hasPreparedOrCommittedCopyWork({ copyState, storeEntries }) {
+  if (copyState.pulled.size > 0 || copyState.committed.size > 0) return true
+
+  for (const _entry of storeEntries) {
+    return true
+  }
+
+  return false
+}
+
+/**
+ * @param {object} args
+ * @param {API.SpaceCopyState} args.copyState
+ * @param {Map<string, API.ResolvedShard>} args.sourceShardsByCid
+ */
+function hasPreparedOrCommittedSourceWork({ copyState, sourceShardsByCid }) {
+  for (const shard of sourceShardsByCid.values()) {
+    if (copyState.pulled.has(shard.cid) || copyState.committed.has(shard.cid)) {
+      return true
+    }
+  }
+
+  return false
+}
+
+/**
  * Resolve the ordered [copy0, copy1] state/cost pairs for a space.
  *
  * @param {object} args
@@ -445,4 +593,53 @@ function resolveSpaceCopyPairs({ space, perSpaceCost }) {
       : [perSpaceCost.copies[1], perSpaceCost.copies[0]]
 
   return { copy0State, copy1State, copy0Cost, copy1Cost }
+}
+
+/**
+ * @param {API.SpaceDID} spaceDID
+ * @param {number} copyIndex
+ * @param {boolean} completed
+ * @returns {API.MigrationEvent}
+ */
+function emitCopyComplete(spaceDID, copyIndex, completed) {
+  return {
+    type: 'migration:copy:complete',
+    spaceDID,
+    copyIndex,
+    completed,
+  }
+}
+
+/**
+ * @param {API.SpaceDID} spaceDID
+ * @param {number} copyIndex
+ * @param {API.MigrationExecutionPhase} phase
+ * @param {{ itemCount?: number, batchCount?: number }} [counts]
+ * @returns {API.MigrationEvent}
+ */
+function emitPhaseStart(spaceDID, copyIndex, phase, counts = {}) {
+  return {
+    type: 'migration:phase:start',
+    spaceDID,
+    copyIndex,
+    phase,
+    ...counts,
+  }
+}
+
+/**
+ * @param {API.SpaceDID} spaceDID
+ * @param {number} copyIndex
+ * @param {API.MigrationExecutionPhase} phase
+ * @param {boolean} completed
+ * @returns {API.MigrationEvent}
+ */
+function emitPhaseComplete(spaceDID, copyIndex, phase, completed) {
+  return {
+    type: 'migration:phase:complete',
+    spaceDID,
+    copyIndex,
+    phase,
+    completed,
+  }
 }

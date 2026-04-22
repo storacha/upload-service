@@ -5,8 +5,8 @@ import { buildResumeState, transitionToApproved } from '../state.js'
  * @import { CreatePlanInput, MigrationEvent, MigrationPlan } from '../api.js'
  */
 
-/** 3% safety buffer over the deposit to cover gas estimation variance. */
-const SAFETY_BUFFER_BPS = 300n
+/** 5% safety buffer over the deposit to cover gas estimation variance. */
+const SAFETY_BUFFER_BPS = 500n
 const BPS_BASE = 10000n
 
 /**

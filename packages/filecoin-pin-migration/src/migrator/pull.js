@@ -16,6 +16,7 @@ import { toPieceCID } from '../utils.js'
  * @param {(entry: T) => string} args.getPieceCID
  * @param {(entry: T) => string} args.getRoot
  * @param {(entry: T, pieceCid: import('../api.js').PieceCID) => string} args.getSourceURL
+ * @param {'source-pull' | 'secondary-pull'} args.phase
  * @param {AbortSignal | undefined} args.signal
  * @returns {Promise<import('../api.js').PullResult<T>>}
  */
@@ -25,6 +26,7 @@ export async function presignAndPullBatch({
   getPieceCID,
   getRoot,
   getSourceURL,
+  phase,
   signal,
 }) {
   /** @type {import('../api.js').PieceCID[]} */
@@ -35,21 +37,17 @@ export async function presignAndPullBatch({
   const pieceToEntry = new Map()
 
   /**
-   * @param {'presign' | 'pull'} stage
    * @param {unknown} error
-   * @returns {{ pulledCandidates: T[], failedUploads: Set<string>, failureKind: 'operational', stage: import('../api.js').MigratorPhase, error: Error }}
+   * @returns {{ pulledCandidates: T[], failedUploads: Set<string>, failureKind: 'operational', stage: import('../api.js').MigrationExecutionPhase, error: Error }}
    */
-  const toOperationalFailure = (stage, error) => {
+  const toPullOperationalFailure = (error) => {
     const msg = error instanceof Error ? error.message : String(error)
     return {
       pulledCandidates: [],
       failedUploads: allRoots,
       failureKind: 'operational',
-      stage,
-      error:
-        stage === 'presign'
-          ? new PresignFailedFailure(msg)
-          : new PullFailedFailure(msg),
+      stage: phase,
+      error: new PullFailedFailure(msg),
     }
   }
 
@@ -70,7 +68,15 @@ export async function presignAndPullBatch({
   try {
     extraData = await context.presignForCommit(presignPayload)
   } catch (error) {
-    return toOperationalFailure('presign', error)
+    return {
+      pulledCandidates: [],
+      failedUploads: allRoots,
+      failureKind: 'operational',
+      stage: phase,
+      error: new PresignFailedFailure(
+        error instanceof Error ? error.message : String(error)
+      ),
+    }
   }
 
   let pullResult
@@ -90,7 +96,7 @@ export async function presignAndPullBatch({
       { retries: DEFAULT_PULL_RETRIES, signal }
     )
   } catch (error) {
-    return toOperationalFailure('pull', error)
+    return toPullOperationalFailure(error)
   }
 
   /** @type {T[]} */
@@ -124,7 +130,7 @@ export async function presignAndPullBatch({
     return {
       ...baseResult,
       failureKind: 'upload',
-      stage: /** @type {const} */ ('pull'),
+      stage: phase,
       error: new PullFailedFailure('All pieces in batch failed to pull'),
     }
   }
@@ -133,7 +139,7 @@ export async function presignAndPullBatch({
     return {
       ...baseResult,
       failureKind: 'upload',
-      stage: 'pull',
+      stage: phase,
       error: new PullFailedFailure(
         `${failedUploadsInBatch.size} upload(s) had pieces that failed to pull`
       ),

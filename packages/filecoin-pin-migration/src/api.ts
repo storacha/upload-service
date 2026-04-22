@@ -417,8 +417,17 @@ export interface ExecuteStoreMigrationInput {
  *   funding:start → funding:complete
  *   funding:failed (before re-throwing — generator terminates after this)
  *
+ * Migrator lifecycle:
+ *   migration:space:start / migration:space:complete
+ *   migration:copy:start / migration:copy:complete
+ *   migration:phase:start / migration:phase:complete
+ *
  * Pull/commit errors:
  *   migration:batch:failed — emitted for pull/store batch failures and commit-batch failures
+ *   migration:commit:failed — emitted when a commit batch fails and the
+ *   consumer may decide retry vs skip
+ *   migration:commit:settled — emitted when a commit batch finally succeeds or
+ *   fails
  *
  * State persistence:
  *   state:checkpoint — emitted after each reader page, after planner writes SP
@@ -448,12 +457,44 @@ export type MigrationEvent =
   | { type: 'funding:start'; amount: bigint }
   | { type: 'funding:complete'; txHash: string }
   | { type: 'funding:failed'; error: Error }
+  | { type: 'migration:space:start'; spaceDID: SpaceDID }
+  | {
+      type: 'migration:space:complete'
+      spaceDID: SpaceDID
+      phase: SpacePhase
+    }
+  | {
+      type: 'migration:copy:start'
+      spaceDID: SpaceDID
+      copyIndex: number
+    }
+  | {
+      type: 'migration:copy:complete'
+      spaceDID: SpaceDID
+      copyIndex: number
+      completed: boolean
+    }
+  | {
+      type: 'migration:phase:start'
+      spaceDID: SpaceDID
+      copyIndex: number
+      phase: MigrationExecutionPhase
+      itemCount?: number
+      batchCount?: number
+    }
+  | {
+      type: 'migration:phase:complete'
+      spaceDID: SpaceDID
+      copyIndex: number
+      phase: MigrationExecutionPhase
+      completed: boolean
+    }
   | {
       type: 'migration:batch:failed'
       spaceDID: SpaceDID
       copyIndex: number
       /** Which pull/commit stage produced the failure */
-      stage: MigratorPhase
+      stage: MigrationExecutionPhase
       error: Error
       /** Upload root CIDs affected by this batch failure */
       roots: Array<string>
@@ -462,6 +503,8 @@ export type MigrationEvent =
       type: 'migration:commit:failed'
       spaceDID: SpaceDID
       copyIndex: number
+      commitIndex: number
+      pieceCount: number
       error: Error
       /** Upload root CIDs affected */
       roots: string[]
@@ -471,6 +514,17 @@ export type MigrationEvent =
       retry: () => void
       /** Call to skip the failing commit batch and continue with later work */
       skip: () => void
+    }
+  | {
+      type: 'migration:commit:settled'
+      spaceDID: SpaceDID
+      copyIndex: number
+      commitIndex: number
+      pieceCount: number
+      status: 'succeeded' | 'failed'
+      txHash?: string
+      error?: Error
+      roots: string[]
     }
   | { type: 'state:checkpoint'; state: MigrationState }
   | { type: 'migration:complete'; summary: MigrationSummary }
@@ -519,13 +573,13 @@ export interface SourceURLResolver {
 // ── Migrator interfaces ────────────────────────────────────────────────────────
 
 /**
- * Migrator lifecycle per batch
- *   store   — client-side store() executed for a batch, but not yet committed
- *   presign    — EIP-712 signature obtained for the batch, but not yet submitted to SP
- *   pull  — SP pull executed, pieces returned, but not yet committed
- *   commit   — SP commit executed for the batch, but not yet confirmed on-chain
+ * User-facing execution phases emitted by the migrator.
  */
-export type MigratorPhase = 'store' | 'presign' | 'pull' | 'commit'
+export type MigrationExecutionPhase =
+  | 'store'
+  | 'source-pull'
+  | 'secondary-pull'
+  | 'commit'
 
 export interface CommitEntry {
   shardCid: string
@@ -545,8 +599,10 @@ export interface CommitPiece {
 
 export interface BatchResult {
   /** Stage that produced the failure, if any */
-  stage?: 'commit'
+  stage?: MigrationExecutionPhase
   dataSetId: bigint | undefined
+  /** Transaction hash for a successful commit batch */
+  txHash?: string
   committed: CommittedEntry[]
   error?: Error
   /** Upload root CIDs affected by the commit batch failure */
@@ -565,8 +621,8 @@ export interface PullResult<T = ResolvedShard> {
   failedUploads: Set<string>
   /** Distinguishes upload-quality failures from operational failures */
   failureKind?: 'upload' | 'operational'
-  /** Stage that failed, if any (presign or pull) */
-  stage?: MigratorPhase
+  /** User-facing execution phase that failed */
+  stage?: MigrationExecutionPhase
   /** Error from the failed stage, if any */
   error?: Error
 }

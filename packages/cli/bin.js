@@ -338,6 +338,10 @@ cli
     '-r, --roundabout-url <url>',
     'Override the roundabout base URL used with the "roundabout" strategy.'
   )
+  .option(
+    '--retry',
+    'When resuming, clear persisted failed upload roots for the selected space and retry them.'
+  )
   .action((options) => {
     const walletPk = readRawOption(process.argv.slice(2), ['--wallet-pk', '-w'])
 
@@ -351,6 +355,7 @@ cli
       network: options.network,
       stateFile: options['state-file'],
       resume: options.resume,
+      retry: options.retry,
       batchSize: options['batch-size'],
       pullConcurrency: options['pull-concurrency'],
       uploadMode: options['upload-mode'],

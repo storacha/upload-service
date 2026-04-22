@@ -52,8 +52,6 @@ export async function* storeShardsOnPrimaryCopy({
   if (copyState.copyIndex !== PRIMARY_COPY_INDEX) return
 
   const entriesByShardCid = new Map()
-  /** @type {API.StoreShard[]} */
-  let pendingStoreBatch = []
 
   for (const shard of inventory.shardsToStore) {
     const storedPieceCID = copyState.storedShards[shard.cid]
@@ -64,32 +62,31 @@ export async function* storeShardsOnPrimaryCopy({
         root: shard.root,
       })
     }
+  }
 
+  /** @type {API.StoreShard[]} */
+  const actionableShards = []
+  for (const shard of inventory.shardsToStore) {
+    const storedPieceCID = copyState.storedShards[shard.cid]
     if (copyState.committed.has(shard.cid)) continue
     if (storedPieceCID) continue
     if (activeFailedRoots.has(shard.root)) continue
-    pendingStoreBatch.push(shard)
-
-    if (pendingStoreBatch.length >= batchSize) {
-      yield* processStoreBatch({
-        batch: pendingStoreBatch,
-        context,
-        fetcher,
-        state,
-        spaceDID,
-        copyState,
-        entriesByShardCid,
-        activeFailedRoots,
-        storeConcurrency,
-        signal,
-      })
-      pendingStoreBatch = []
-    }
+    actionableShards.push(shard)
   }
 
-  if (pendingStoreBatch.length > 0) {
+  const batchCount = Math.ceil(actionableShards.length / batchSize)
+  yield {
+    type: 'migration:phase:start',
+    spaceDID,
+    copyIndex: copyState.copyIndex,
+    phase: 'store',
+    itemCount: actionableShards.length,
+    batchCount,
+  }
+
+  for (const batch of batches(actionableShards, batchSize)) {
     yield* processStoreBatch({
-      batch: pendingStoreBatch,
+      batch,
       context,
       fetcher,
       state,
@@ -102,7 +99,15 @@ export async function* storeShardsOnPrimaryCopy({
     })
   }
 
-  if (signal?.aborted) return
+  const completed = !signal?.aborted
+  yield {
+    type: 'migration:phase:complete',
+    spaceDID,
+    copyIndex: copyState.copyIndex,
+    phase: 'store',
+    completed,
+  }
+  if (!completed) return
 
   return entriesByShardCid
 }
@@ -163,6 +168,16 @@ export async function* pullStoredShardsOnSecondaryCopy({
     }
   }
 
+  const batchCount = Math.ceil(entriesToPull.length / batchSize)
+  yield {
+    type: 'migration:phase:start',
+    spaceDID,
+    copyIndex,
+    phase: 'secondary-pull',
+    itemCount: entriesToPull.length,
+    batchCount,
+  }
+
   if (entriesToPull.length > 0 && !signal?.aborted) {
     const { results: pullResults, aborted } = await runConcurrentTasks({
       items: batches(entriesToPull, batchSize),
@@ -173,6 +188,7 @@ export async function* pullStoredShardsOnSecondaryCopy({
           batch,
           context,
           sourceContext,
+          phase: 'secondary-pull',
           signal,
         }),
     })
@@ -189,10 +205,36 @@ export async function* pullStoredShardsOnSecondaryCopy({
       },
     })
 
-    if (aborted) return
+    if (aborted) {
+      yield {
+        type: 'migration:phase:complete',
+        spaceDID,
+        copyIndex,
+        phase: 'secondary-pull',
+        completed: false,
+      }
+      return
+    }
   }
 
-  if (signal?.aborted) return
+  if (signal?.aborted) {
+    yield {
+      type: 'migration:phase:complete',
+      spaceDID,
+      copyIndex,
+      phase: 'secondary-pull',
+      completed: false,
+    }
+    return
+  }
+
+  yield {
+    type: 'migration:phase:complete',
+    spaceDID,
+    copyIndex,
+    phase: 'secondary-pull',
+    completed: true,
+  }
 
   return pulledEntriesByShardCid
 }
@@ -359,6 +401,7 @@ async function fetchShardBody({ shard, fetcher, signal }) {
  * @param {API.CommitEntry[]} args.batch
  * @param {API.StorageContext} args.context
  * @param {API.StorageContext} args.sourceContext
+ * @param {'source-pull' | 'secondary-pull'} args.phase
  * @param {AbortSignal | undefined} args.signal
  * @returns {Promise<API.PullResult<API.CommitEntry>>}
  */
@@ -366,6 +409,7 @@ async function presignAndPullFromStore({
   batch,
   context,
   sourceContext,
+  phase,
   signal,
 }) {
   return await presignAndPullBatch({
@@ -374,6 +418,7 @@ async function presignAndPullFromStore({
     getPieceCID: (entry) => entry.pieceCID,
     getRoot: (entry) => entry.root,
     getSourceURL: (_entry, pieceCid) => sourceContext.getPieceUrl(pieceCid),
+    phase,
     signal,
   })
 }

@@ -89,6 +89,7 @@ export async function* commitPieceBatches({
   let pending
   let datasetMetadata = context.dataSetId ? undefined : context.dataSetMetadata
   const iterator = commitPieceIterable[Symbol.iterator]()
+  let commitIndex = 1
 
   while (true) {
     if (signal?.aborted) break
@@ -114,6 +115,7 @@ export async function* commitPieceBatches({
       state,
       spaceDID,
       copyIndex,
+      commitIndex,
       maxCommitRetries,
       commitRetryTimeout,
       signal,
@@ -128,6 +130,8 @@ export async function* commitPieceBatches({
     if (result.dataSetId !== undefined) {
       datasetMetadata = undefined
     }
+
+    commitIndex++
   }
 }
 
@@ -142,6 +146,7 @@ async function commitPreparedBatch({ context, commitPieces }) {
     const result = await attemptCommitBatch(context, commitPieces)
     return {
       dataSetId: result.dataSetId,
+      txHash: result.txHash,
       committed: result.committed,
       failedUploads: new Set(),
     }
@@ -167,6 +172,7 @@ async function commitPreparedBatch({ context, commitPieces }) {
  * @param {API.MigrationState} args.state
  * @param {API.SpaceDID} args.spaceDID
  * @param {number} args.copyIndex
+ * @param {number} args.commitIndex
  * @param {number} args.maxCommitRetries
  * @param {number} args.commitRetryTimeout
  * @param {AbortSignal | undefined} args.signal
@@ -178,6 +184,7 @@ async function* handleCommitBatchResult({
   state,
   spaceDID,
   copyIndex,
+  commitIndex,
   maxCommitRetries,
   commitRetryTimeout,
   signal,
@@ -193,11 +200,24 @@ async function* handleCommitBatchResult({
       context,
       spaceDID,
       copyIndex,
+      commitIndex,
       maxCommitRetries,
       commitRetryTimeout,
       signal
     )
   }
+
+  yield /** @type {API.MigrationEvent} */ ({
+    type: 'migration:commit:settled',
+    spaceDID,
+    copyIndex,
+    commitIndex,
+    pieceCount: getBatchPieceCount(result),
+    status: result.failedUploads.size > 0 ? 'failed' : 'succeeded',
+    txHash: result.txHash,
+    error: result.error,
+    roots: [...result.failedUploads],
+  })
 
   if (result.failedUploads.size > 0) {
     for (const root of result.failedUploads) {
@@ -236,6 +256,7 @@ async function* handleCommitBatchResult({
  * @param {API.StorageContext} context
  * @param {API.SpaceDID} spaceDID
  * @param {number} copyIndex
+ * @param {number} commitIndex
  * @param {number} maxRetries
  * @param {number} retryTimeout
  * @param {AbortSignal | undefined} signal
@@ -246,6 +267,7 @@ async function* retryCommitInteractively(
   context,
   spaceDID,
   copyIndex,
+  commitIndex,
   maxRetries,
   retryTimeout,
   signal
@@ -262,6 +284,8 @@ async function* retryCommitInteractively(
       type: 'migration:commit:failed',
       spaceDID,
       copyIndex,
+      commitIndex,
+      pieceCount: piecesToRetry.length,
       error: /** @type {Error} */ (result.error),
       roots: [...result.failedUploads],
       attempt,
@@ -277,6 +301,7 @@ async function* retryCommitInteractively(
       const commitResult = await attemptCommitBatch(context, piecesToRetry)
 
       result.dataSetId = commitResult.dataSetId
+      result.txHash = commitResult.txHash
       result.committed = commitResult.committed
       for (const piece of piecesToRetry) {
         result.failedUploads.delete(piece.pieceMetadata[IPFS_ROOT_CID_KEY])
@@ -439,7 +464,7 @@ function addPiecesExtraDataBytes(pieceCount, rootValuePaddedBytes) {
 /**
  * @param {API.StorageContext} context
  * @param {API.CommitPiece[]} commitPieces
- * @returns {Promise<{ dataSetId: bigint, committed: API.CommittedEntry[] }>}
+ * @returns {Promise<{ dataSetId: bigint, txHash: string, committed: API.CommittedEntry[] }>}
  */
 async function attemptCommitBatch(context, commitPieces) {
   const extraData = await context.presignForCommit(commitPieces)
@@ -450,8 +475,18 @@ async function attemptCommitBatch(context, commitPieces) {
 
   return {
     dataSetId: result.dataSetId,
+    txHash: result.txHash,
     committed: toCommittedEntries(commitPieces),
   }
+}
+
+/**
+ * @param {API.BatchResult} result
+ */
+function getBatchPieceCount(result) {
+  if (result.committed.length > 0) return result.committed.length
+  if (result.commitPieces) return result.commitPieces.length
+  return 0
 }
 
 /**

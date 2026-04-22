@@ -279,6 +279,43 @@ export function recordFailedUpload(state, spaceDID, copyIndex, root) {
 }
 
 /**
+ * Clear persisted failed upload roots for a space so a resumed run can retry
+ * them again on both copies.
+ *
+ * Returns the unique failed root count that was cleared across both copies.
+ *
+ * @param {API.MigrationState} state - Mutated in place
+ * @param {API.SpaceDID} spaceDID
+ * @returns {number}
+ */
+export function clearFailedUploadsForRetry(state, spaceDID) {
+  const space = state.spaces[spaceDID]
+  if (!space) return 0
+
+  const clearedRoots = new Set()
+
+  for (const copy of space.copies) {
+    for (const root of copy.failedUploads) {
+      clearedRoots.add(root)
+    }
+    copy.failedUploads.clear()
+  }
+
+  if (clearedRoots.size === 0) return 0
+
+  const hasProgress = space.copies.some(
+    (copy) =>
+      copy.committed.size > 0 ||
+      copy.pulled.size > 0 ||
+      Object.keys(copy.storedShards).length > 0
+  )
+
+  space.phase = hasProgress ? 'migrating' : 'pending'
+
+  return clearedRoots.size
+}
+
+/**
  * Checkpoint 5: a shard was successfully stored and its pieceCID is now durable.
  *
  * Stored shard tracking is only meaningful for copy 0, which performs store().

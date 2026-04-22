@@ -36,7 +36,9 @@ export function* applyPullResults({
         type: 'migration:batch:failed',
         spaceDID,
         copyIndex,
-        stage: /** @type {import('../api.js').MigratorPhase} */ (result.stage),
+        stage: /** @type {import('../api.js').MigrationExecutionPhase} */ (
+          result.stage
+        ),
         error: /** @type {Error} */ (result.error),
         roots: [...result.failedUploads],
       })

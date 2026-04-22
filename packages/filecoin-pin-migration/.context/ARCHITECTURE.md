@@ -24,10 +24,10 @@ every `state:checkpoint` event.
 
 ## Responsibilities by Stage
 
-| Stage | Responsibility | Output |
-|---|---|---|
-| reader | Fetch uploads, resolve shards via the indexing service, apply the source URL resolver inline | `SpaceInventory[]` |
-| planner | Aggregate inventories, create exactly 2 storage contexts per space, compute costs, write provider/dataset bindings into state | `MigrationPlan` |
+| Stage    | Responsibility                                                                                                                       | Output                           |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------- |
+| reader   | Fetch uploads, resolve shards via the indexing service, apply the source URL resolver inline                                         | `SpaceInventory[]`               |
+| planner  | Aggregate inventories, create exactly 2 storage contexts per space, compute costs, write provider/dataset bindings into state        | `MigrationPlan`                  |
 | migrator | Fund once, run mixed source-pull/store execution per copy, commit sequential internal batches per copy, emit progress/failure events | `AsyncGenerator<MigrationEvent>` |
 
 ---
@@ -166,11 +166,11 @@ Internally, migrator execution is split into two layers:
 
 ### Error Model
 
-| Stage | Failure class | Scope | Retry |
-|---|---|---|---|
-| Presign | `PresignFailedFailure` | Whole pull batch for a copy | None |
-| Pull | `PullFailedFailure` | Per upload root within the batch | `p-retry` |
-| Commit | `CommitFailedFailure` | One commit batch for one copy | Interactive retry |
+| Stage   | Failure class          | Scope                            | Retry             |
+| ------- | ---------------------- | -------------------------------- | ----------------- |
+| Presign | `PresignFailedFailure` | Whole pull batch for a copy      | None              |
+| Pull    | `PullFailedFailure`    | Per upload root within the batch | `p-retry`         |
+| Commit  | `CommitFailedFailure`  | One commit batch for one copy    | Interactive retry |
 
 ---
 
@@ -178,20 +178,27 @@ Internally, migrator execution is split into two layers:
 
 All stages may yield `state:checkpoint`. Persist on every occurrence.
 
-| Event | Stage | When | Key fields |
-|---|---|---|---|
-| `reader:space:start` | reader | Before the first page of a space | `spaceDID` |
-| `reader:shard:failed` | reader | A shard cannot be resolved | `spaceDID`, `root`, `shard`, `reason` |
-| `reader:space:complete` | reader | After the last page of a space | `spaceDID` |
-| `reader:complete` | reader | After all spaces are read | — |
-| `planner:ready` | planner | Plan is ready for approval | `plan` |
-| `funding:start` | migrator | Before `fundSync` | `amount` |
-| `funding:complete` | migrator | After `fundSync` succeeds | — |
-| `funding:failed` | migrator | `fundSync` threw; generator terminates | `error` |
-| `migration:batch:failed` | migrator | A pull/store batch or commit batch produced failed upload roots | `spaceDID`, `copyIndex`, `stage`, `roots`, `error` |
-| `migration:commit:failed` | migrator | A commit batch failed and the caller may choose to retry | `spaceDID`, `copyIndex`, `attempt`, `roots`, `error`, `retry` |
-| `state:checkpoint` | all | Progress became durable | `state` |
-| `migration:complete` | migrator | All spaces processed | `summary` |
+| Event                      | Stage    | When                                                            | Key fields                                                                                 |
+| -------------------------- | -------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `reader:space:start`       | reader   | Before the first page of a space                                | `spaceDID`                                                                                 |
+| `reader:shard:failed`      | reader   | A shard cannot be resolved                                      | `spaceDID`, `root`, `shard`, `reason`                                                      |
+| `reader:space:complete`    | reader   | After the last page of a space                                  | `spaceDID`                                                                                 |
+| `reader:complete`          | reader   | After all spaces are read                                       | —                                                                                          |
+| `planner:ready`            | planner  | Plan is ready for approval                                      | `plan`                                                                                     |
+| `funding:start`            | migrator | Before `fundSync`                                               | `amount`                                                                                   |
+| `funding:complete`         | migrator | After `fundSync` succeeds                                       | —                                                                                          |
+| `funding:failed`           | migrator | `fundSync` threw; generator terminates                          | `error`                                                                                    |
+| `migration:space:start`    | migrator | Before a space starts executing                                 | `spaceDID`                                                                                 |
+| `migration:space:complete` | migrator | After a space is finalized                                      | `spaceDID`, `phase`                                                                        |
+| `migration:copy:start`     | migrator | Before copy 0 or copy 1 starts                                  | `spaceDID`, `copyIndex`                                                                    |
+| `migration:copy:complete`  | migrator | After a copy stops or completes                                 | `spaceDID`, `copyIndex`, `completed`                                                       |
+| `migration:phase:start`    | migrator | Before a copy phase starts                                      | `spaceDID`, `copyIndex`, `phase`, `itemCount?`, `batchCount?`                              |
+| `migration:phase:complete` | migrator | After a copy phase stops or completes                           | `spaceDID`, `copyIndex`, `phase`, `completed`                                              |
+| `migration:batch:failed`   | migrator | A pull/store batch or commit batch produced failed upload roots | `spaceDID`, `copyIndex`, `stage`, `roots`, `error`                                         |
+| `migration:commit:failed`  | migrator | A commit batch failed and the caller may choose to retry        | `spaceDID`, `copyIndex`, `commitIndex`, `pieceCount`, `attempt`, `roots`, `error`, `retry` |
+| `migration:commit:settled` | migrator | A commit batch finished with success or final failure           | `spaceDID`, `copyIndex`, `commitIndex`, `pieceCount`, `status`, `txHash?`, `error?`        |
+| `state:checkpoint`         | all      | Progress became durable                                         | `state`                                                                                    |
+| `migration:complete`       | migrator | All spaces processed                                            | `summary`                                                                                  |
 
 `funding:failed` is the only event that terminates execution early.
 

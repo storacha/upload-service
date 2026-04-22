@@ -261,6 +261,76 @@ describe('executeMigration', () => {
     expect(space.copies[0].storedShards).toHaveProperty('bafy-shard-store')
     expect(state.phase).toBe('complete')
 
+    expect(
+      events.some(
+        (event) =>
+          /** @type {any} */ (event).type === 'migration:space:start' &&
+          /** @type {any} */ (event).spaceDID === spaceDID
+      )
+    ).toBe(true)
+    expect(
+      events.some(
+        (event) =>
+          /** @type {any} */ (event).type === 'migration:space:complete' &&
+          /** @type {any} */ (event).spaceDID === spaceDID &&
+          /** @type {any} */ (event).phase === 'complete'
+      )
+    ).toBe(true)
+    expect(
+      events.some(
+        (event) =>
+          /** @type {any} */ (event).type === 'migration:copy:start' &&
+          /** @type {any} */ (event).copyIndex === 0
+      )
+    ).toBe(true)
+    expect(
+      events.some(
+        (event) =>
+          /** @type {any} */ (event).type === 'migration:copy:start' &&
+          /** @type {any} */ (event).copyIndex === 1
+      )
+    ).toBe(true)
+    expect(
+      events.some(
+        (event) =>
+          /** @type {any} */ (event).type === 'migration:phase:start' &&
+          /** @type {any} */ (event).copyIndex === 0 &&
+          /** @type {any} */ (event).phase === 'store' &&
+          /** @type {any} */ (event).itemCount === 1 &&
+          /** @type {any} */ (event).batchCount === 1
+      )
+    ).toBe(true)
+    expect(
+      events.some(
+        (event) =>
+          /** @type {any} */ (event).type === 'migration:phase:start' &&
+          /** @type {any} */ (event).copyIndex === 0 &&
+          /** @type {any} */ (event).phase === 'source-pull' &&
+          /** @type {any} */ (event).itemCount === 1 &&
+          /** @type {any} */ (event).batchCount === 1
+      )
+    ).toBe(true)
+    expect(
+      events.some(
+        (event) =>
+          /** @type {any} */ (event).type === 'migration:phase:start' &&
+          /** @type {any} */ (event).copyIndex === 1 &&
+          /** @type {any} */ (event).phase === 'secondary-pull' &&
+          /** @type {any} */ (event).itemCount === 1 &&
+          /** @type {any} */ (event).batchCount === 1
+      )
+    ).toBe(true)
+    expect(
+      events.some(
+        (event) =>
+          /** @type {any} */ (event).type === 'migration:phase:start' &&
+          /** @type {any} */ (event).phase === 'commit' &&
+          /** @type {any} */ (
+            event.copyIndex === 0 || /** @type {any} */ (event).copyIndex === 1
+          )
+      )
+    ).toBe(true)
+
     const completionEvent = events.at(-1)
     expect(completionEvent?.type).toBe('migration:complete')
     if (completionEvent?.type !== 'migration:complete') {
@@ -272,7 +342,7 @@ describe('executeMigration', () => {
     expect(completionEvent.summary.totalBytes).toBe(384n)
   })
 
-  it('skips later successful shards from the same root after an earlier failure', async () => {
+  it('stops before copy 1 when copy 0 source pull fully fails for a root', async () => {
     const spaceDID = /** @type {API.SpaceDID} */ (
       'did:key:z6MkMixedMigrationSpace2'
     )
@@ -345,7 +415,7 @@ describe('executeMigration', () => {
     }
 
     expect(copy0Context.pull).toHaveBeenCalledTimes(2)
-    expect(copy1Context.pull).toHaveBeenCalledTimes(2)
+    expect(copy1Context.pull).not.toHaveBeenCalled()
     expect(copy0Context.commit).not.toHaveBeenCalled()
     expect(copy1Context.commit).not.toHaveBeenCalled()
 
@@ -353,7 +423,7 @@ describe('executeMigration', () => {
       true
     )
     expect(state.spaces[spaceDID].copies[1].failedUploads.has(sharedRoot)).toBe(
-      true
+      false
     )
     expect(
       state.spaces[spaceDID].copies[0].committed.has('bafy-shard-success')

@@ -42,6 +42,13 @@ describe('commit batching', () => {
     expect(
       events.filter((event) => event.type === 'state:checkpoint')
     ).toHaveLength(presignCalls.length)
+    expect(
+      events.filter(
+        (event) =>
+          event.type === 'migration:commit:settled' &&
+          /** @type {{ status?: string }} */ (event).status === 'succeeded'
+      )
+    ).toHaveLength(presignCalls.length)
   })
 
   it('allows a larger first batch when the dataset already exists', async () => {
@@ -92,6 +99,46 @@ describe('commit batching', () => {
     expect(state.spaces[SPACE_DID].copies[0].committed.size).toBeLessThan(
       entries.length
     )
+  })
+
+  it('emits a failed commit result with batch metadata when commit throws', async () => {
+    const entries = createCommitEntries(2)
+    const { context } = createMockCommitContext({
+      failCommit: new Error('commit exploded'),
+    })
+    const state = createMockCommitState()
+
+    /** @type {API.MigrationEvent[]} */
+    const events = []
+    for await (const event of commitPieceBatches({
+      commitPieceIterable: iterateCommitPieces(entries),
+      context,
+      state,
+      spaceDID: SPACE_DID,
+      copyIndex: 0,
+      maxCommitRetries: 0,
+      commitRetryTimeout: 0,
+      signal: undefined,
+      activeFailedRoots: new Set(),
+    })) {
+      events.push(event)
+    }
+
+    const settledEvent = /** @type {API.MigrationEvent | undefined} */ (
+      events.find((event) => event.type === 'migration:commit:settled')
+    )
+    expect(settledEvent?.type).toBe('migration:commit:settled')
+    if (settledEvent?.type !== 'migration:commit:settled') {
+      throw new Error('expected migration:commit:settled')
+    }
+
+    const commitSettledEvent = /** @type {any} */ (settledEvent)
+
+    expect(commitSettledEvent.commitIndex).toBe(1)
+    expect(commitSettledEvent.pieceCount).toBe(2)
+    expect(commitSettledEvent.status).toBe('failed')
+    expect(commitSettledEvent.txHash).toBeUndefined()
+    expect(commitSettledEvent.error?.message).toBe('commit exploded')
   })
 })
 
@@ -171,6 +218,7 @@ function createCopyState(copyIndex) {
  * @param {{
  *   dataSetId?: bigint | undefined
  *   onCommit?: () => void
+ *   failCommit?: Error
  * }} [options]
  */
 function createMockCommitContext(options = {}) {
@@ -207,6 +255,9 @@ function createMockCommitContext(options = {}) {
        * @param {{ pieces: Array<{ pieceCid: API.PieceLink }> }} args
        */
       async commit({ pieces }) {
+        if (options.failCommit) {
+          throw options.failCommit
+        }
         commitCalls.push(pieces.length)
         if (dataSetId == null) {
           dataSetId = 999n

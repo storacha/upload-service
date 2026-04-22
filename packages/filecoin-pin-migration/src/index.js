@@ -15,6 +15,7 @@ export {
   transitionToFunded,
   checkpointInventoryPage,
   recordCommit,
+  clearFailedUploadsForRetry,
   finalizeSpace,
   finalizeMigration,
   buildResumeState,
