@@ -45,6 +45,7 @@
   "dependencies": {
     "@filoz/synapse-core": "^0.3.3",
     "@filoz/synapse-sdk": "^0.40.2",
+    "@ipld/dag-cbor": "catalog:",
     "@storacha/client": "workspace:^",
     "@storacha/indexing-service-client": "^2.6.5",
     "@ucanto/interface": "catalog:",
@@ -71,7 +72,11 @@
       "@storacha/eslint-config"
     ],
     "parserOptions": {
-      "project": "./tsconfig.json"
+      "projectService": {
+        "allowDefaultProject": [
+          "src/reader/indexer.types.js"
+        ]
+      }
     },
     "env": {
       "es2022": true,

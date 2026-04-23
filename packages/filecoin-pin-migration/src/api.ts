@@ -309,6 +309,8 @@ interface BuildInventoriesBaseInput {
     serviceURL?: URL
     /** Inject a custom indexing service reader (tests) */
     indexer?: IndexingServiceReader
+    /** Fetch implementation used for the built-in cid.contact fallback. */
+    fetcher?: typeof fetch
     /** Stop resolving remaining shards on first failure per upload (default: true) */
     stopOnError?: boolean
   }

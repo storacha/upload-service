@@ -1,5 +1,4 @@
 import pMap from 'p-map'
-import { Piece } from '@web3-storage/data-segment'
 import { base58btc } from 'multiformats/bases/base58'
 import { Client as IndexingClient } from '@storacha/indexing-service-client'
 import {
@@ -7,6 +6,7 @@ import {
   DEFAULT_STOP_ON_ERROR,
 } from '../constants.js'
 import { checkpointInventoryPage } from '../state.js'
+import { resolveClaimsIndex } from './indexer.js'
 
 /**
  * @import {
@@ -21,7 +21,6 @@ import { checkpointInventoryPage } from '../state.js'
  *  ShardEntry,
  *  ClaimsEntry,
  *  UnknownLink,
- *  PieceLink
  * } from '../api.js'
  */
 
@@ -61,6 +60,7 @@ export async function* buildMigrationInventories({
     options?.indexer ?? new IndexingClient({ serviceURL: options?.serviceURL })
   const stopOnError = options?.stopOnError ?? DEFAULT_STOP_ON_ERROR
   const shardListConcurrency = DEFAULT_SHARD_LIST_CONCURRENCY
+  const fetcher = options?.fetcher ?? globalThis.fetch
   if (spaceDIDs && uploadRootsBySpace) {
     throw new TypeError(
       'buildMigrationInventories: pass either "spaceDIDs" or "uploadRootsBySpace", not both'
@@ -92,6 +92,7 @@ export async function* buildMigrationInventories({
       selectedUploadRoots: uploadRootsBySpace?.[spaceDID],
       stopOnError,
       shardListConcurrency,
+      fetcher,
     })
   }
 
@@ -107,7 +108,7 @@ export async function* buildMigrationInventories({
  *
  * Per page:
  *   1. List shards for all uploads in the page
- *   2. Batch-query claims for all shards in one HTTP call
+ *   2. Query the indexing service and repair missing claims from cid.contact
  *   3. Extract per-shard results from the claims index (pure, no I/O)
  *   4. Checkpoint flat shards + upload roots + failed roots
  *
@@ -120,6 +121,7 @@ export async function* buildMigrationInventories({
  * @param {string[] | undefined} args.selectedUploadRoots
  * @param {boolean} args.stopOnError
  * @param {number} args.shardListConcurrency
+ * @param {typeof fetch | undefined} args.fetcher
  * @returns {AsyncGenerator<MigrationEvent>}
  */
 async function* buildSpaceInventory({
@@ -131,6 +133,7 @@ async function* buildSpaceInventory({
   selectedUploadRoots,
   stopOnError,
   shardListConcurrency,
+  fetcher,
 }) {
   yield { type: 'reader:space:start', spaceDID }
 
@@ -163,9 +166,13 @@ async function* buildSpaceInventory({
       { concurrency: shardListConcurrency }
     )
 
-    // Phase 2: batch-query claims for the entire page — one HTTP call
+    // Phase 2: query the primary indexer, then repair missing claims from IPNI.
     const allShards = uploadsWithShards.flatMap((u) => u.shards)
-    const claimsIndex = await batchResolveClaims(indexer, allShards)
+    const claimsIndex = await resolveClaimsIndex({
+      indexer,
+      shards: allShards,
+      fetcher,
+    })
 
     // Phase 3: extract per-shard results from the claims index (pure, no I/O)
     /** @type {ResolvedShard[]} */
@@ -272,79 +279,6 @@ async function listShardsFromStore(client, root) {
   return shards
 }
 
-// ── Batch claim resolution ────────────────────────────────────────────────────
-
-/**
- * Query claims for all shards in one HTTP call and build a lookup index.
- *
- * Returns a Map keyed by b58 multihash → { locationURL, piece, size }.
- *
- * @param {IndexingServiceReader} indexer
- * @param {ShardEntry[]} shards
- * @returns {Promise<Map<string, ClaimsEntry>>}
- */
-async function batchResolveClaims(indexer, shards) {
-  /** @type {Map<string, ClaimsEntry>} */
-  const index = new Map()
-
-  if (shards.length === 0) return index
-
-  const requestedShardB58s = new Set(shards.map((shard) => shard.b58))
-
-  const claimsResult = await indexer.queryClaims({
-    hashes: shards.map((s) => s.multihash),
-    kind: 'standard',
-  })
-
-  if (!claimsResult.ok) return index
-
-  for (const claim of claimsResult.ok.claims.values()) {
-    if (claim.type === 'assert/location') {
-      const bytes =
-        'digest' in claim.content
-          ? claim.content.digest
-          : claim.content.multihash.bytes
-      const b58 = base58btc.encode(bytes)
-      // Ignore location claims for hashes outside the requested shard set,
-      // such as index-blob claims returned alongside shard claims.
-      if (!requestedShardB58s.has(b58)) continue
-
-      const locationURL = claim.location[0]?.toString()
-      if (!locationURL) continue
-
-      const entry = getOrCreateClaimsEntry(index, b58)
-      if (entry.locationURL !== null) continue
-
-      entry.locationURL = locationURL
-      entry.size = claim.range ? BigInt(claim.range.length ?? 0) : 0n
-      index.set(b58, entry)
-    } else if (claim.type === 'assert/equals') {
-      const bytes =
-        'digest' in claim.content
-          ? claim.content.digest
-          : claim.content.multihash.bytes
-      const b58 = base58btc.encode(bytes)
-      if (!requestedShardB58s.has(b58)) continue
-
-      let piece
-      try {
-        piece = Piece.fromLink(/** @type {PieceLink} */ (claim.equals))
-      } catch {
-        // not a piece CID — skip
-        continue
-      }
-
-      const entry = getOrCreateClaimsEntry(index, b58)
-      if (entry.piece !== null) continue
-
-      entry.piece = piece
-      index.set(b58, entry)
-    }
-  }
-
-  return index
-}
-
 // ── Per-shard extraction ──────────────────────────────────────────────────────
 
 /**
@@ -395,18 +329,4 @@ function extractShard(claimsIndex, shard, root, resolver) {
   resolved.sourceURL = resolver.resolve(resolved)
 
   return { ok: resolved }
-}
-
-/**
- * @param {Map<string, ClaimsEntry>} index
- * @param {string} b58
- * @returns {ClaimsEntry}
- */
-function getOrCreateClaimsEntry(index, b58) {
-  const existing = index.get(b58)
-  if (existing) return existing
-
-  const created = { locationURL: null, piece: null, size: 0n }
-  index.set(b58, created)
-  return created
 }

@@ -2,7 +2,10 @@ import * as Link from 'multiformats/link'
 import * as raw from 'multiformats/codecs/raw'
 import { sha256 } from 'multiformats/hashes/sha2'
 import { base58btc } from 'multiformats/bases/base58'
+import { base32upper } from 'multiformats/bases/base32'
 import { Piece, MIN_PAYLOAD_SIZE } from '@web3-storage/data-segment'
+import { encode as encodeDagCbor } from '@ipld/dag-cbor'
+import { CID } from 'multiformats/cid'
 
 /**
  * @import * as API from '../src/api.js'
@@ -123,6 +126,137 @@ export function createMockIndexer(responses) {
       }
     },
   })
+}
+
+const LOCATION_COMMITMENT_PROTOCOL = 0x3e0002
+const EQUALS_CLAIM_PROTOCOL = 0x3e0001
+
+/**
+ * Build a cid.contact-style response body keyed by provider results.
+ *
+ * @param {Array<{ Metadata?: string, Provider?: { Addrs?: string[] } }>} providerResults
+ */
+export function buildIPNIFindResponse(providerResults) {
+  return {
+    MultihashResults: [
+      {
+        ProviderResults: providerResults,
+      },
+    ],
+  }
+}
+
+/**
+ * Encode Storacha location commitment metadata for tests.
+ *
+ * @param {{ size?: bigint }} [opts]
+ */
+export function buildLocationCommitmentMetadata(opts = {}) {
+  const payload = {
+    e: 0,
+    c: createPieceCID(),
+    ...(opts.size != null
+      ? {
+          r: [0, Number(opts.size)],
+        }
+      : {}),
+  }
+
+  return encodeProtocolMetadata(
+    LOCATION_COMMITMENT_PROTOCOL,
+    encodeDagCbor(payload)
+  )
+}
+
+/**
+ * Encode Storacha equals-claim metadata with a piece CID for tests.
+ *
+ * @param {API.UnknownLink} pieceCid
+ */
+export function buildEqualsClaimMetadata(pieceCid) {
+  return encodeProtocolMetadata(
+    EQUALS_CLAIM_PROTOCOL,
+    encodeDagCbor({ '=': pieceCid })
+  )
+}
+
+/**
+ * Build a Storacha http-path provider multiaddr for cid.contact tests.
+ *
+ * @param {string} host
+ */
+export function buildCIDContactProviderAddr(host) {
+  return `/dns4/${host}/https/http-path/%7Bblob%7D%2F%7BblobCID%7D.blob`
+}
+
+/**
+ * Build the expanded HTTPS URL that httpURLFromMultiaddrs() should derive.
+ *
+ * @param {API.UnknownLink} shardCid
+ * @param {string} host
+ */
+export function buildExpectedCIDContactURL(shardCid, host) {
+  const blob = base32upper.encode(shardCid.multihash.bytes)
+  const blobCID = CID.createV1(raw.code, shardCid.multihash).toString()
+  return `https://${host}/${blob}/${blobCID}.blob`
+}
+
+/**
+ * Create a mock fetcher for cid.contact responses keyed by shard multihash b58.
+ *
+ * @param {Map<string, unknown>} responses
+ * @returns {typeof fetch}
+ */
+export function createMockFetch(responses) {
+  return /** @type {typeof fetch} */ (
+    async (input) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      const b58 = url.split('/').pop() ?? ''
+      const body = responses.get(b58) ?? responses.get(`z${b58}`)
+      if (body == null) {
+        return /** @type {Response} */ ({
+          ok: false,
+          status: 404,
+          json: async () => ({}),
+        })
+      }
+
+      return /** @type {Response} */ ({
+        ok: true,
+        status: 200,
+        json: async () => body,
+      })
+    }
+  )
+}
+
+/**
+ * @param {number} protocol
+ * @param {Uint8Array} payload
+ */
+function encodeProtocolMetadata(protocol, payload) {
+  const prefix = encodeVarint(protocol)
+  const bytes = new Uint8Array(prefix.length + payload.length)
+  bytes.set(prefix)
+  bytes.set(payload, prefix.length)
+  return Buffer.from(bytes).toString('base64')
+}
+
+/**
+ * @param {number} value
+ */
+function encodeVarint(value) {
+  /** @type {number[]} */
+  const bytes = []
+  let remaining = value
+
+  while (remaining >= 0x80) {
+    bytes.push((remaining & 0x7f) | 0x80)
+    remaining = Math.floor(remaining / 128)
+  }
+
+  bytes.push(remaining)
+  return Uint8Array.from(bytes)
 }
 
 /**

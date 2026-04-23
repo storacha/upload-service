@@ -65,7 +65,7 @@ async function createCopyContext(
     metadata: {
       ...DATASET_METADATA_BASE,
       'space-did': space.did,
-      ...(space.name && { 'space-name': space.name }),
+      ...(space.name && { 'space-name': space.name.slice(0, 100) }), // limiting name to 100 chars to avoid hitting metadata size limit
       //copy: String(copyIndex), // TODO: check with team if this is needed
     },
     ...(providerId != null && { providerIds: [providerId] }),

@@ -9,6 +9,7 @@ import {
   createPieceCID,
   createMockClient,
   createMockIndexer,
+  createMockFetch,
   buildShardClaims,
   createMockInitialState,
 } from './helpers.js'
@@ -284,6 +285,7 @@ describe('buildMigrationInventories', () => {
           [shardB58, { claims: buildShardClaims(shardCid, { pieceCid }) }],
         ])
       )
+      const fetcher = createMockFetch(new Map())
 
       const state = createMockInitialState()
       /** @type {API.MigrationEvent[]} */
@@ -293,7 +295,7 @@ describe('buildMigrationInventories', () => {
         resolver: claimsResolver,
         state,
         spaceDIDs: [SPACE_DID],
-        options: { indexer },
+        options: { indexer, fetcher },
       })) {
         events.push(event)
       }

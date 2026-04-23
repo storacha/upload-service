@@ -26,7 +26,7 @@ every `state:checkpoint` event.
 
 | Stage    | Responsibility                                                                                                                       | Output                           |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------- |
-| reader   | Fetch uploads, resolve shards via the indexing service, apply the source URL resolver inline                                         | `SpaceInventory[]`               |
+| reader   | Fetch uploads, resolve shards via the indexing service with a built-in cid.contact fallback, apply the source URL resolver inline    | `SpaceInventory[]`               |
 | planner  | Aggregate inventories, create exactly 2 storage contexts per space, compute costs, write provider/dataset bindings into state        | `MigrationPlan`                  |
 | migrator | Fund once, run mixed source-pull/store execution per copy, commit sequential internal batches per copy, emit progress/failure events | `AsyncGenerator<MigrationEvent>` |
 
