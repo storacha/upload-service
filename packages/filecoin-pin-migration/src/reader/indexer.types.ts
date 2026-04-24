@@ -1,15 +1,20 @@
 import type { UnknownLink } from '../api.js'
 
-export type LocationCommitmentRange = [number | bigint, (number | bigint)?]
+export type LocationCommitmentRange = [number, number?]
 
 export interface LocationCommitmentMetadata {
+  /** shard */
   s?: UnknownLink
+  /** range */
   r?: LocationCommitmentRange
+  /** expiration */
   e?: number | bigint
+  /** claim */
   c?: UnknownLink
 }
 
 export interface EqualsClaimMetadata {
+  /** equals link */
   '='?: UnknownLink
 }
 

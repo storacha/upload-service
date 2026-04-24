@@ -1,4 +1,5 @@
 import {
+  DEFAULT_COMMIT_CONCURRENCY,
   DEFAULT_MAX_COMMIT_RETRIES,
   DEFAULT_COMMIT_RETRY_TIMEOUT,
   DEFAULT_PULL_BATCH_SIZE,
@@ -20,6 +21,7 @@ import {
  * @param {number | undefined} input.commitRetryTimeout
  * @param {number | undefined} input.pullConcurrency
  * @param {number | undefined} input.storeConcurrency
+ * @param {number | undefined} input.commitConcurrency
  * @param {typeof fetch | undefined} input.fetcher
  * @param {AbortSignal | undefined} input.signal
  * @param {string | undefined} input.fetcherErrorMessage
@@ -30,6 +32,7 @@ export function createExecutionConfig({
   commitRetryTimeout,
   pullConcurrency,
   storeConcurrency,
+  commitConcurrency,
   fetcher,
   signal,
   fetcherErrorMessage,
@@ -47,6 +50,7 @@ export function createExecutionConfig({
     commitRetryTimeout: commitRetryTimeout ?? DEFAULT_COMMIT_RETRY_TIMEOUT,
     pullConcurrency: pullConcurrency ?? DEFAULT_PULL_CONCURRENCY,
     storeConcurrency: storeConcurrency ?? DEFAULT_STORE_CONCURRENCY,
+    commitConcurrency: commitConcurrency ?? DEFAULT_COMMIT_CONCURRENCY,
     signal,
   }
 }

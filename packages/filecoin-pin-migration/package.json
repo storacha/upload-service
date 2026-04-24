@@ -74,6 +74,7 @@
     "parserOptions": {
       "projectService": {
         "allowDefaultProject": [
+          "vitest.config.js",
           "src/reader/indexer.types.js"
         ]
       }

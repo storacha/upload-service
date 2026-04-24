@@ -35,6 +35,7 @@ export async function* executeMigration({
   commitRetryTimeout: commitRetryTimeoutOpt,
   pullConcurrency: pullConcurrencyOpt,
   storeConcurrency: storeConcurrencyOpt,
+  commitConcurrency: commitConcurrencyOpt,
   fetcher: fetcherOpt,
   signal,
 }) {
@@ -49,6 +50,7 @@ export async function* executeMigration({
     commitRetryTimeout: commitRetryTimeoutOpt,
     pullConcurrency: pullConcurrencyOpt,
     storeConcurrency: storeConcurrencyOpt,
+    commitConcurrency: commitConcurrencyOpt,
     fetcher: fetcherOpt,
     signal,
     fetcherErrorMessage: requiresStoreFlow

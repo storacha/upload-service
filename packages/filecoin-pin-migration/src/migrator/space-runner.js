@@ -22,6 +22,7 @@ import { PRIMARY_COPY_INDEX } from '../constants.js'
  * @property {number} commitRetryTimeout
  * @property {number} pullConcurrency
  * @property {number} storeConcurrency
+ * @property {number} commitConcurrency
  * @property {AbortSignal | undefined} signal
  */
 
@@ -161,6 +162,7 @@ async function* runCopy0({
     maxCommitRetries,
     commitRetryTimeout,
     storeConcurrency,
+    commitConcurrency,
     signal,
   } = config
   /** @type {Map<string, API.CommitEntry>} */
@@ -228,6 +230,7 @@ async function* runCopy0({
     copyIndex: copyCost.copyIndex,
     maxCommitRetries,
     commitRetryTimeout,
+    commitConcurrency,
     signal,
     activeFailedRoots,
   })
@@ -277,6 +280,7 @@ async function* runCopy1({
     maxCommitRetries,
     commitRetryTimeout,
     pullConcurrency,
+    commitConcurrency,
     signal,
   } = config
   const { copyIndex } = copyCost
@@ -344,6 +348,7 @@ async function* runCopy1({
     copyIndex: copyCost.copyIndex,
     maxCommitRetries,
     commitRetryTimeout,
+    commitConcurrency,
     signal,
     activeFailedRoots,
   })

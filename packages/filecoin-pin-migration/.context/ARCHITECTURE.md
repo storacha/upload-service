@@ -24,11 +24,11 @@ every `state:checkpoint` event.
 
 ## Responsibilities by Stage
 
-| Stage    | Responsibility                                                                                                                       | Output                           |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------- |
-| reader   | Fetch uploads, resolve shards via the indexing service with a built-in cid.contact fallback, apply the source URL resolver inline    | `SpaceInventory[]`               |
-| planner  | Aggregate inventories, create exactly 2 storage contexts per space, compute costs, write provider/dataset bindings into state        | `MigrationPlan`                  |
-| migrator | Fund once, run mixed source-pull/store execution per copy, commit sequential internal batches per copy, emit progress/failure events | `AsyncGenerator<MigrationEvent>` |
+| Stage    | Responsibility                                                                                                                                                                           | Output                           |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| reader   | Fetch uploads, resolve shards via the indexing service with a built-in cid.contact fallback, apply the source URL resolver inline                                                        | `SpaceInventory[]`               |
+| planner  | Aggregate inventories, create exactly 2 storage contexts per space, compute costs, write provider/dataset bindings into state                                                            | `MigrationPlan`                  |
+| migrator | Fund once, run mixed source-pull/store execution per copy, commit in two phases (sequential dataset creation then bounded-concurrency add-pieces) per copy, emit progress/failure events | `AsyncGenerator<MigrationEvent>` |
 
 ---
 
@@ -135,7 +135,9 @@ The migrator executes one space at a time. Within each space:
 
 - `inventory.shards` stay on the normal source-pull path for both copies
 - `inventory.shardsToStore` run `store()` on copy 0, then pull from copy 0 on copy 1
-- each copy still commits once logically through sequential internal commit batches
+- each copy commits through a two-phase flow: Phase 1 runs sequentially until a
+  commit establishes the dataset id; Phase 2 pre-packs the remaining pieces and
+  runs them concurrently up to `commitConcurrency`
 - `executeStoreMigration()` is a thin wrapper that prepares an all-store inventory
   view, then delegates to the same shared `migrateSpace()` executor
 
@@ -151,7 +153,14 @@ Internally, migrator execution is split into two layers:
 - source pull work is batched and runs concurrently per copy
 - store-routed shards are downloaded+stored in batches on copy 0, then pulled in
   batches from copy 0 on copy 1
-- commit is copy-scoped and executes in sequential internal commit batches
+- commit is copy-scoped and runs in two phases:
+  - Phase 1 is sequential and covers dataset-creation batches. It loops until a
+    successful commit returns a `dataSetId`, so failed create-dataset batches
+    can be retried against the next batch of pieces.
+  - Phase 2 keeps batch packing single-writer but lazy: the remaining
+    add-pieces batches are packed serially through one shared iterator and
+    dispatched concurrently up to `commitConcurrency` via `runConcurrentTasks`
+    without materializing the full wave up front.
 - commit batching mode is resolved internally per batch:
   - `count` when an internal max-pieces limit is configured
   - `extraData` when count mode is disabled and the encoded `extraData` limit is active
@@ -161,8 +170,34 @@ Internally, migrator execution is split into two layers:
 - once the first commit succeeds and the dataset exists, later batches switch to
   add-pieces-only sizing
 - failed upload roots are tracked independently per copy; once a root fails,
-  later shards under that root are skipped for that copy
+  later shards under that root are skipped for that copy. Phase 2 reads
+  `activeFailedRoots` at pre-pack time only, so failures inside a concurrent
+  wave do not retroactively drop pieces that were already packed into sibling
+  batches.
 - `retryCommitInteractively` is used only for a failing commit batch
+
+### Phase 2 persistence ordering
+
+Once a Phase 2 concurrent wave settles, the completed results are processed in
+two passes:
+
+1. **Pass A — persistence and successful settled events.** Every succeeded
+   batch whose `result.dataSetId ?? context.dataSetId` is known is recorded to
+   state first. If any successes were recorded, one `state:checkpoint` event is
+   yielded for the whole settled success wave. After that checkpoint, succeeded
+   `migration:commit:settled` events are emitted for those successful batches.
+   This all happens before any retry interaction.
+2. **Pass B — failed batches only.** Failed batches drive interactive retry. On
+   retry win, commits are recorded, a checkpoint is yielded, and the final
+   succeeded `migration:commit:settled` event is emitted. On final failure,
+   failed roots are recorded and `migration:batch:failed` is yielded.
+
+The guarantee is now durability first and early success visibility: successful
+Phase 2 commits are persisted before any retry interaction for failures in the
+same wave, and their succeeded `migration:commit:settled` events are emitted
+before the failed batches enter retry handling. This means `commitIndex`
+remains an identifier, but successful settled events may appear ahead of an
+earlier failed batch that is still waiting on retry/skip.
 
 ### Error Model
 

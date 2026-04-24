@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { executeMigration } from '../src/migrator/migrator.js'
+import { executeStoreMigration } from '../src/migrator/store-executor.js'
 import { createMockInitialState, createPieceCID } from './helpers.js'
 import { transitionToApproved } from '../src/state.js'
 
@@ -807,5 +808,104 @@ describe('executeMigration', () => {
     )
     expect(state.spaces[spaceDID].copies[1].committed.size).toBe(0)
     expect(state.phase).toBe('migrating')
+  })
+
+  it('forwards commitConcurrency through executeMigration to the commit phase', async () => {
+    const spaceDID = /** @type {API.SpaceDID} */ (
+      'did:key:z6MkCommitConcurrencyWiring1'
+    )
+    const pieceCID = createPieceCID().toString()
+    const state = withInventory(createMockInitialState(), {
+      did: spaceDID,
+      name: 'Commit Concurrency Wiring Space',
+      uploads: ['bafy-root-1'],
+      shards: [
+        {
+          root: 'bafy-root-1',
+          cid: 'bafy-shard-1',
+          pieceCID,
+          sourceURL: 'https://source.example/s1',
+          sizeBytes: 128n,
+        },
+      ],
+      shardsToStore: [],
+      skippedUploads: [],
+      totalBytes: 128n,
+      totalSizeToMigrate: 128n,
+    })
+
+    const copy0Context = createStorageContext({ spaceDID, name: 'copy0' })
+    const copy1Context = createStorageContext({ spaceDID, name: 'copy1' })
+    const plan = createPlan({ spaceDID, copy0Context, copy1Context })
+    plan.totals.shards = 1
+    plan.totals.bytes = 128n
+    plan.totals.bytesToMigrate = 128n
+
+    transitionToApproved(state, plan.costs.perSpace)
+
+    for await (const _event of executeMigration({
+      plan,
+      state,
+      synapse: /** @type {API.Synapse} */ ({}),
+      commitConcurrency: 2,
+    })) {
+      // drain
+    }
+
+    expect(state.phase).toBe('complete')
+    expect(state.spaces[spaceDID].copies[0].committed.size).toBe(1)
+    expect(state.spaces[spaceDID].copies[1].committed.size).toBe(1)
+  })
+
+  it('forwards commitConcurrency through executeStoreMigration to the commit phase', async () => {
+    const spaceDID = /** @type {API.SpaceDID} */ (
+      'did:key:z6MkCommitConcurrencyWiring2'
+    )
+    const state = withInventory(createMockInitialState(), {
+      did: spaceDID,
+      name: 'Store Commit Concurrency Wiring Space',
+      uploads: ['bafy-root-store-1'],
+      shards: [],
+      shardsToStore: [
+        {
+          root: 'bafy-root-store-1',
+          cid: 'bafy-shard-store-1',
+          sourceURL: 'https://source.example/store-1',
+          sizeBytes: 256n,
+        },
+      ],
+      skippedUploads: [],
+      totalBytes: 256n,
+      totalSizeToMigrate: 256n,
+    })
+
+    const copy0Context = createStorageContext({ spaceDID, name: 'copy0' })
+    const copy1Context = createStorageContext({ spaceDID, name: 'copy1' })
+    const plan = createPlan({ spaceDID, copy0Context, copy1Context })
+    plan.totals.shards = 1
+    plan.totals.bytes = 256n
+    plan.totals.bytesToMigrate = 256n
+    plan.costs.perSpace[0].bytesToMigrate = 256n
+    plan.costs.summary.totalBytes = 256n
+
+    transitionToApproved(state, plan.costs.perSpace)
+
+    const fetcher = /** @type {typeof fetch} */ (
+      vi.fn(async () => new Response('ok'))
+    )
+
+    for await (const _event of executeStoreMigration({
+      plan,
+      state,
+      synapse: /** @type {API.Synapse} */ ({}),
+      fetcher,
+      commitConcurrency: 2,
+    })) {
+      // drain
+    }
+
+    expect(state.phase).toBe('complete')
+    expect(state.spaces[spaceDID].copies[0].committed.size).toBe(1)
+    expect(state.spaces[spaceDID].copies[1].committed.size).toBe(1)
   })
 })

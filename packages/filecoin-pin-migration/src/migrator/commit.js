@@ -4,6 +4,7 @@ import {
   MAX_COMMIT_EXTRADATA_BYTES,
   MAX_CREATE_DATASET_COMMIT_BATCH_PIECES,
 } from '../constants.js'
+import { runConcurrentTasks } from './concurrent.js'
 import { recordCommit, recordFailedUpload } from '../state.js'
 import { toPieceCID } from '../utils.js'
 
@@ -56,11 +57,21 @@ export function* iterateCommitPieces(entries, include) {
 }
 
 /**
- * Commit pieces sequentially in internal batches.
+ * Commit pieces in two phases.
  *
- * Count mode takes precedence when its internal cap is greater than zero.
- * Otherwise the byte limit is used when configured. With both caps disabled,
- * all pieces are committed in one call.
+ * Phase 1 runs sequentially until a successful commit establishes a
+ * `dataSetId` on the storage context. The first batch typically carries the
+ * dataset-creation payload and must complete before later batches can safely
+ * use add-pieces signing in parallel.
+ *
+ * Phase 2 packs the remaining add-pieces batches lazily through the shared
+ * iterator and commits them concurrently up to `commitConcurrency`. Once the
+ * wave settles, two passes walk the completed results:
+ *   - Pass A persists durable successes, yields one checkpoint for the settled
+ *     success wave, then emits succeeded `migration:commit:settled` events
+ *     before any retry interaction.
+ *   - Pass B handles only the failed batches, driving interactive retry and
+ *     emitting their final settled / batch-failed events.
  *
  * @param {object} args
  * @param {Iterable<API.CommitPiece>} args.commitPieceIterable
@@ -70,6 +81,7 @@ export function* iterateCommitPieces(entries, include) {
  * @param {number} args.copyIndex
  * @param {number} args.maxCommitRetries
  * @param {number} args.commitRetryTimeout
+ * @param {number} args.commitConcurrency
  * @param {AbortSignal | undefined} args.signal
  * @param {Set<string>} [args.activeFailedRoots]
  * @returns {AsyncGenerator<API.MigrationEvent>}
@@ -82,17 +94,19 @@ export async function* commitPieceBatches({
   copyIndex,
   maxCommitRetries,
   commitRetryTimeout,
+  commitConcurrency,
   signal,
   activeFailedRoots,
 }) {
+  const iterator = commitPieceIterable[Symbol.iterator]()
   /** @type {IteratorResult<API.CommitPiece> | undefined} */
   let pending
   let datasetMetadata = context.dataSetId ? undefined : context.dataSetMetadata
-  const iterator = commitPieceIterable[Symbol.iterator]()
   let commitIndex = 1
 
-  while (true) {
-    if (signal?.aborted) break
+  // Phase 1 — sequential until the dataset exists.
+  while (datasetMetadata !== undefined) {
+    if (signal?.aborted) return
 
     const batch = takeNextCommitBatch({
       iterator,
@@ -102,14 +116,14 @@ export async function* commitPieceBatches({
     })
     pending = batch.pending
 
-    if (batch.commitPieces.length === 0) break
+    if (batch.commitPieces.length === 0) return
 
     const result = await commitPreparedBatch({
       context,
       commitPieces: batch.commitPieces,
     })
 
-    yield* handleCommitBatchResult({
+    yield* finalizeCommitBatchResult({
       result,
       context,
       state,
@@ -121,17 +135,113 @@ export async function* commitPieceBatches({
       signal,
     })
 
-    if (activeFailedRoots && result.failedUploads.size > 0) {
-      for (const root of result.failedUploads) {
-        activeFailedRoots.add(root)
-      }
-    }
+    applyActiveFailedRoots(activeFailedRoots, result.failedUploads)
 
-    if (result.dataSetId !== undefined) {
+    if ((result.dataSetId ?? context.dataSetId) !== undefined) {
       datasetMetadata = undefined
     }
 
     commitIndex++
+  }
+
+  // Phase 2 — pack remaining add-pieces batches serially; commit concurrently.
+  const remainingBatches = (function* () {
+    let nextPending = pending
+
+    while (true) {
+      const batch = takeNextCommitBatch({
+        iterator,
+        pending: nextPending,
+        datasetMetadata: undefined,
+        activeFailedRoots,
+      })
+      nextPending = batch.pending
+
+      if (batch.commitPieces.length === 0) {
+        return
+      }
+
+      yield batch.commitPieces
+    }
+  })()
+
+  const { results } = await runConcurrentTasks({
+    items: remainingBatches,
+    concurrency: commitConcurrency,
+    signal,
+    run: (commitPieces) => commitPreparedBatch({ context, commitPieces }),
+  })
+  if (results.length === 0) return
+
+  /** @type {Array<{ commitIndex: number, result: API.BatchResult }>} */
+  const failedCommits = []
+  /** @type {Array<{ commitIndex: number, result: API.BatchResult }>} */
+  const successfulCommits = []
+
+  // Pass A — persist durable successes before any retry interaction.
+  for (const result of results) {
+    const dataSetId = result.dataSetId ?? context.dataSetId
+    if (
+      result.failedUploads.size === 0 &&
+      result.committed.length > 0 &&
+      dataSetId !== undefined
+    ) {
+      for (const entry of result.committed) {
+        recordCommit(state, spaceDID, copyIndex, entry.shardCid, dataSetId)
+      }
+      successfulCommits.push({ commitIndex, result })
+    } else {
+      failedCommits.push({ commitIndex, result })
+    }
+    commitIndex++
+  }
+
+  if (successfulCommits.length > 0) {
+    yield /** @type {API.MigrationEvent} */ ({
+      type: 'state:checkpoint',
+      state,
+    })
+  }
+
+  for (const success of successfulCommits) {
+    yield /** @type {API.MigrationEvent} */ ({
+      type: 'migration:commit:settled',
+      spaceDID,
+      copyIndex,
+      commitIndex: success.commitIndex,
+      pieceCount: getBatchPieceCount(success.result),
+      status: 'succeeded',
+      txHash: success.result.txHash,
+      error: undefined,
+      roots: [],
+    })
+  }
+
+  // Pass B — retry and finalize only the failed batches.
+  for (const failedCommit of failedCommits) {
+    yield* finalizeCommitBatchResult({
+      result: failedCommit.result,
+      context,
+      state,
+      spaceDID,
+      copyIndex,
+      commitIndex: failedCommit.commitIndex,
+      maxCommitRetries,
+      commitRetryTimeout,
+      signal,
+    })
+    applyActiveFailedRoots(activeFailedRoots, failedCommit.result.failedUploads)
+  }
+}
+
+/**
+ * @param {Set<string> | undefined} activeFailedRoots
+ * @param {Set<string>} failedUploads
+ */
+function applyActiveFailedRoots(activeFailedRoots, failedUploads) {
+  if (!activeFailedRoots || failedUploads.size === 0) return
+  for (const root of failedUploads) {
+    activeFailedRoots.add(root)
   }
 }
 
@@ -166,6 +276,10 @@ async function commitPreparedBatch({ context, commitPieces }) {
 }
 
 /**
+ * Finalize a commit batch result. This is used for:
+ * - Phase 1 sequential batches, where the batch is handled immediately
+ * - Phase 2 failed batches after the success wave was already persisted in Pass A
+ *
  * @param {object} args
  * @param {API.BatchResult} args.result
  * @param {API.StorageContext} args.context
@@ -178,7 +292,7 @@ async function commitPreparedBatch({ context, commitPieces }) {
  * @param {AbortSignal | undefined} args.signal
  * @returns {AsyncGenerator<API.MigrationEvent>}
  */
-async function* handleCommitBatchResult({
+async function* finalizeCommitBatchResult({
   result,
   context,
   state,
@@ -234,18 +348,22 @@ async function* handleCommitBatchResult({
     })
   }
 
-  if (result.committed.length > 0 && result.dataSetId !== undefined) {
-    for (const entry of result.committed) {
-      recordCommit(state, spaceDID, copyIndex, entry.shardCid, result.dataSetId)
-    }
+  const dataSetId = result.dataSetId ?? context.dataSetId
+  if (result.committed.length > 0) {
+    if (dataSetId !== undefined) {
+      for (const entry of result.committed) {
+        recordCommit(state, spaceDID, copyIndex, entry.shardCid, dataSetId)
+      }
 
-    yield /** @type {API.MigrationEvent} */ ({
-      type: 'state:checkpoint',
-      state,
-    })
+      yield /** @type {API.MigrationEvent} */ ({
+        type: 'state:checkpoint',
+        state,
+      })
+    }
   }
 }
 
+/**
 /**
  * Interactive commit retry loop. Yields `migration:commit:failed` events so the
  * consumer can call `retry()` or `skip()`, then re-presigns and retries up to

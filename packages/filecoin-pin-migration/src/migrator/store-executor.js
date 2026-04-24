@@ -28,6 +28,7 @@ export async function* executeStoreMigration({
   fetcher: fetcherOpt,
   storeConcurrency: storeConcurrencyOpt,
   pullConcurrency: pullConcurrencyOpt,
+  commitConcurrency: commitConcurrencyOpt,
   signal,
   maxCommitRetries: maxCommitRetriesOpt,
   commitRetryTimeout: commitRetryTimeoutOpt,
@@ -38,6 +39,7 @@ export async function* executeStoreMigration({
     commitRetryTimeout: commitRetryTimeoutOpt,
     pullConcurrency: pullConcurrencyOpt,
     storeConcurrency: storeConcurrencyOpt,
+    commitConcurrency: commitConcurrencyOpt,
     fetcher: fetcherOpt,
     signal,
     fetcherErrorMessage:

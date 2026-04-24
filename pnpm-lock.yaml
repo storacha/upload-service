@@ -90,9 +90,6 @@ catalogs:
     '@typescript-eslint/parser':
       specifier: 8.26.1
       version: 8.26.1
-    '@ucanto/core':
-      specifier: ^10.4.5
-      version: 10.4.5
     '@vitejs/plugin-react':
       specifier: ^4.2.0
       version: 4.3.4
@@ -1214,15 +1211,15 @@ importers:
       '@filoz/synapse-sdk':
         specifier: ^0.40.2
         version: 0.40.3(typescript@5.8.3)(viem@2.47.12(typescript@5.8.3)(zod@4.3.6))
+      '@ipld/dag-cbor':
+        specifier: 'catalog:'
+        version: 9.2.4
       '@storacha/client':
         specifier: workspace:^
         version: link:../w3up-client
       '@storacha/indexing-service-client':
         specifier: ^2.6.5
         version: 2.6.5
-      '@ucanto/core':
-        specifier: 'catalog:'
-        version: 10.4.5
       '@ucanto/interface':
         specifier: ^11.0.1
         version: 11.0.1
@@ -18945,7 +18942,7 @@ snapshots:
   '@ipld/dag-cbor@9.2.4':
     dependencies:
       cborg: 4.2.7
-      multiformats: 13.3.6
+      multiformats: 13.4.2
 
   '@ipld/dag-json@10.2.3':
     dependencies:
@@ -26658,7 +26655,7 @@ snapshots:
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.46.3(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1))(eslint@8.57.1)
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.46.3(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.46.3(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.46.3(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
       eslint-plugin-jsx-a11y: 6.10.2(eslint@8.57.1)
       eslint-plugin-react: 7.37.4(eslint@8.57.1)
       eslint-plugin-react-hooks: 7.0.1(eslint@8.57.1)
@@ -26732,7 +26729,7 @@ snapshots:
       tinyglobby: 0.2.13
       unrs-resolver: 1.7.0
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.46.3(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.46.3(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.46.3(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -26805,7 +26802,7 @@ snapshots:
       - eslint-import-resolver-webpack
       - supports-color
 
-  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.46.3(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1):
+  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.46.3(eslint@8.57.1)(typescript@5.8.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.46.3(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.9

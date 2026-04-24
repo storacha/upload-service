@@ -375,10 +375,15 @@ export interface ExecuteMigrationInput {
   commitRetryTimeout?: number
   /**
    * Number of batches to presign+pull concurrently (default: 4).
-   * Commit batches still run sequentially per copy regardless of this value.
-   * Set to 1 to restore sequential behavior.
+   * Set to 1 to restore sequential pull behavior.
    */
   pullConcurrency?: number
+  /**
+   * Max concurrent Phase 2 (add-pieces) commit batches per copy (default: 4).
+   * Phase 1 (dataset creation) always runs sequentially. Set to 1 to restore
+   * fully sequential commit behavior.
+   */
+  commitConcurrency?: number
 }
 
 export interface ExecuteStoreMigrationInput {
@@ -402,6 +407,11 @@ export interface ExecuteStoreMigrationInput {
   maxCommitRetries?: number
   /** Timeout in ms for consumer to call retry/skip on a commit:failed event */
   commitRetryTimeout?: number
+  /**
+   * Max concurrent Phase 2 (add-pieces) commit batches per copy (default: 4).
+   * Phase 1 (dataset creation) always runs sequentially.
+   */
+  commitConcurrency?: number
 }
 
 /**
