@@ -100,6 +100,53 @@ export const testAccount = {
 }
 
 export const testSpace = {
+  'storacha space migrate calc requires size': test(async (assert, context) => {
+    const { status, error } = await storacha
+      .args(['space', 'migrate', 'calc', '--months', '12'])
+      .env(context.env.alice)
+      .join()
+      .catch()
+
+    assert.equal(status.code, 1)
+    assert.match(error, /missing required option "--size"/i)
+  }),
+
+  'storacha space migrate calc requires months': test(
+    async (assert, context) => {
+      const { status, error } = await storacha
+        .args(['space', 'migrate', 'calc', '--size', '100000'])
+        .env(context.env.alice)
+        .join()
+        .catch()
+
+      assert.equal(status.code, 1)
+      assert.match(error, /missing required option "--months"/i)
+    }
+  ),
+
+  'storacha space migrate calc rejects invalid network': test(
+    async (assert, context) => {
+      const { status, error } = await storacha
+        .args([
+          'space',
+          'migrate',
+          'calc',
+          '--size',
+          '100000',
+          '--months',
+          '12',
+          '--network',
+          'invalid',
+        ])
+        .env(context.env.alice)
+        .join()
+        .catch()
+
+      assert.equal(status.code, 1)
+      assert.match(error, /invalid network/i)
+    }
+  ),
+
   'storacha space migrate requires wallet pk': test(async (assert, context) => {
     const { status, error } = await storacha
       .args(['space', 'migrate'])

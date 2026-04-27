@@ -29,6 +29,7 @@ import {
   reset,
   setupPlan,
   spaceMigrate,
+  spaceMigrateCalc,
 } from './index.js'
 import {
   blobAdd,
@@ -59,6 +60,7 @@ const actions = {
   listSpaces,
   spaceInfo,
   spaceMigrate,
+  spaceMigrateCalc,
   revokeDelegation,
   usageReport,
   blobAdd,
@@ -304,6 +306,23 @@ cli
     'The storage provider to associate with this space.'
   )
   .action(actions.spaceProvision)
+
+cli
+  .command('space migrate calc')
+  .describe('Estimate warm-storage cost for a fixed size and retention period.')
+  .option(
+    '-n, --network <network>',
+    'FOC network: "mainnet" or "calibration". Defaults to "calibration".'
+  )
+  .option('-s, --size <bytes>', 'Total bytes to retain in each copy.')
+  .option('-m, --months <count>', 'Number of months to keep the data stored.')
+  .action((options) => {
+    return actions.spaceMigrateCalc({
+      network: options.network,
+      size: options.size,
+      months: options.months,
+    })
+  })
 
 cli
   .command('space migrate')

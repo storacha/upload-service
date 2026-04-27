@@ -221,6 +221,88 @@ export function printSummary(summary, durationMs) {
 }
 
 /**
+ * @param {object} args
+ * @param {bigint} args.sizeBytes
+ * @param {bigint} args.months
+ * @param {number} args.copies
+ * @param {import('@storacha/filecoin-pin-migration/types').StorageRetentionCostEstimate} args.estimate
+ * @param {string} args.networkName
+ */
+export function renderStorageRetentionCostEstimate({
+  sizeBytes,
+  months,
+  copies,
+  estimate,
+  networkName,
+}) {
+  const rows = [
+    [
+      'Storage size',
+      `${formatBytes(sizeBytes)} (${sizeBytes.toString()} bytes)`,
+    ],
+    ['Copies', String(copies)],
+    ['Months', months.toString()],
+    ['Network', networkName],
+    [
+      'Rate / month / copy',
+      `${formatTokenAmount(estimate.ratePerMonthPerCopy)} USDFC`,
+    ],
+    [
+      'Rate / month total',
+      `${formatTokenAmount(estimate.ratePerMonthTotal)} USDFC`,
+    ],
+    [
+      `Spend over ${months.toString()}m`,
+      `${formatTokenAmount(estimate.storageSpendTotal)} USDFC`,
+    ],
+    [
+      'Rate lockup delta',
+      `${formatTokenAmount(estimate.rateLockupDeltaTotal)} USDFC`,
+    ],
+    ['Sybil fee', `${formatTokenAmount(estimate.sybilFeeTotal)} USDFC`],
+    ...(estimate.cdnFixedLockupTotal > 0n
+      ? [
+          [
+            'CDN fixed lockup',
+            `${formatTokenAmount(estimate.cdnFixedLockupTotal)} USDFC`,
+          ],
+        ]
+      : []),
+    [
+      'Locked in contract',
+      `${formatTokenAmount(estimate.totalLockedInContract)} USDFC`,
+    ],
+    [
+      `Available for ${months.toString()}m`,
+      `${formatTokenAmount(estimate.recommendedAvailableForPeriod)} USDFC`,
+    ],
+  ]
+  const labelWidth = rows.reduce(
+    (max, [label]) => Math.max(max, label.length),
+    0
+  )
+  const lines = rows.map(([label, value]) =>
+    formatKeyValueLine(label, value, labelWidth + 2)
+  )
+
+  return renderBox('Storage Cost Estimate', lines, chalk.cyan)
+}
+
+/**
+ * @param {object} args
+ * @param {import('@storacha/filecoin-pin-migration/types').StorageRetentionCostEstimate} args.estimate
+ */
+export function renderStorageRetentionCostPricingNote({ estimate }) {
+  return chalk.dim(
+    [
+      ` Minimum monthly floor: ${formatTokenAmount(estimate.minimumPricePerMonth)} USDFC.`,
+      ' The floor exists so the SP always earns a minimum regardless of how small the dataset is.',
+      ` Price per TiB / month (no CDN): ${formatTokenAmount(estimate.pricePerTiBPerMonthNoCDN)} USDFC.`,
+    ].join('\n')
+  )
+}
+
+/**
  * @param {string} title
  */
 export function printPhaseTitle(title) {
@@ -349,8 +431,8 @@ export function printResumeStatus(state, plan) {
  * @param {number} event.commitIndex
  * @param {number} event.pieceCount
  * @param {'succeeded' | 'failed'} event.status
- * @param {string | undefined} event.txHash
- * @param {Error | undefined} event.error
+ * @param {string | undefined} [event.txHash]
+ * @param {Error | undefined} [event.error]
  */
 export function printCommitBatchResult({
   copyIndex,
@@ -481,6 +563,15 @@ export function formatDuration(durationMs) {
  */
 function line(label, value) {
   return `${chalk.dim(label.padEnd(16))} ${value}`
+}
+
+/**
+ * @param {string} label
+ * @param {string} value
+ * @param {number} labelWidth
+ */
+function formatKeyValueLine(label, value, labelWidth) {
+  return `${chalk.dim(label.padEnd(labelWidth))} ${value}`
 }
 
 /**

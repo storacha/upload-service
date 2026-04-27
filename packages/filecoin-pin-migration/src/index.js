@@ -7,6 +7,10 @@ export {
 } from './reader/source-url.js'
 export { createMigrationPlan } from './planner/planner.js'
 export { computeMigrationCosts } from './planner/compute-migration-costs.js'
+export {
+  getStorageRetentionCost,
+  calculateStorageRetentionCostFromPricing,
+} from './helper/calculate-storage-retention-cost.js'
 export { ensureFunding } from './migrator/funding.js'
 export { executeMigration } from './migrator/migrator.js'
 export { executeStoreMigration } from './migrator/store-executor.js'

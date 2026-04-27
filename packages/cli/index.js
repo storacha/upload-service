@@ -35,6 +35,7 @@ export * as Coupon from './coupon.js'
 export * as Bridge from './bridge.js'
 export { Account, Space }
 export { spaceMigrate } from './migrate.js'
+export { spaceMigrateCalc } from './migrate.js'
 
 /**
  * @import { MultihashDigest, UnknownLink } from 'multiformats'

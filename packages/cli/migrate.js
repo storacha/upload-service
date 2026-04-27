@@ -14,10 +14,11 @@ import {
   executeStoreMigration,
   createResolver,
   clearFailedUploadsForRetry,
+  getStorageRetentionCost,
   serializeState,
   deserializeState,
 } from '@storacha/filecoin-pin-migration'
-import { parseEther } from 'viem'
+import { createPublicClient, http, parseEther } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { getClient } from './lib.js'
 import {
@@ -29,6 +30,8 @@ import {
   printCommitBatchResult,
   printResumeStatus,
   renderMigrationStatusBlock,
+  renderStorageRetentionCostEstimate,
+  renderStorageRetentionCostPricingNote,
   printSummary,
   formatDuration,
   truncateDID,
@@ -41,6 +44,7 @@ const DEFAULT_SOURCE_STRATEGY = 'roundabout'
 const DEFAULT_STATE_FILE_BASENAME = 'storacha-migration'
 const CLI_SOURCE = 'storacha-cli'
 const MIN_FIL_GAS_BALANCE = parseEther('0.1')
+const DEFAULT_STORAGE_RETENTION_COPIES = 2
 
 /**
  * Migrate the current selected space to Filecoin on Chain.
@@ -183,6 +187,56 @@ export async function spaceMigrate(opts = {}) {
 }
 
 /**
+ * Estimate the cost of retaining a fixed amount of data for a fixed number of
+ * months using the live warm-storage price for the selected network.
+ *
+ * @typedef {object} SpaceMigrateCalcOptions
+ * @property {string} [network]
+ * @property {bigint | number | string} [size]
+ * @property {bigint | number | string} [months]
+ */
+
+/**
+ * @param {SpaceMigrateCalcOptions} opts
+ */
+export async function spaceMigrateCalc(opts = {}) {
+  const config = parseMigrationCalcOptions(opts)
+
+  try {
+    const client = createPublicClient({
+      chain: config.network,
+      transport: http(),
+    })
+
+    const estimate = await getStorageRetentionCost(client, {
+      sizeBytes: config.sizeBytes,
+      months: config.months,
+      copies: DEFAULT_STORAGE_RETENTION_COPIES,
+      withCDN: false,
+      isNewDataSet: true,
+      currentDataSetSize: 0n,
+    })
+
+    console.log('')
+    console.log(
+      renderStorageRetentionCostEstimate({
+        sizeBytes: config.sizeBytes,
+        months: config.months,
+        copies: DEFAULT_STORAGE_RETENTION_COPIES,
+        estimate,
+        networkName: config.network.name,
+      })
+    )
+    console.log(renderStorageRetentionCostPricingNote({ estimate }))
+    console.log('')
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error(`Error: failed to calculate storage cost - ${message}`)
+    process.exit(1)
+  }
+}
+
+/**
  * @param {SpaceMigrateOptions} opts
  */
 function parseMigrationOptions(opts) {
@@ -202,8 +256,18 @@ function parseMigrationOptions(opts) {
 }
 
 /**
+ * @param {SpaceMigrateCalcOptions} opts
+ */
+function parseMigrationCalcOptions(opts) {
+  return {
+    network: parseNetwork(opts.network),
+    sizeBytes: parsePositiveBigInt(opts.size, '--size'),
+    months: parsePositiveBigInt(opts.months, '--months'),
+  }
+}
+
+/**
  * @param {'pull' | 'store' | string | undefined} mode
- * @returns {'pull' | 'store'}
  */
 function parseUploadMode(mode) {
   if (mode == null || mode === '') {
@@ -394,13 +458,14 @@ async function runMigration({
   let frameIndex = 0
   /** @type {NodeJS.Timeout | undefined} */
   let heartbeat
-  /** @type {{
+  /**
+   * @type {{
    * currentSpaceDID?: string
    * currentCopyIndex?: number
    * currentPhase?: import('@storacha/filecoin-pin-migration/types').MigrationExecutionPhase | 'funding'
    * currentItemCount?: number
    * currentBatchCount?: number
-   * }} */
+    }} */
   const liveStatus = {}
 
   /**
@@ -461,6 +526,9 @@ async function runMigration({
     }
   }
 
+  /**
+   * @param {import('@storacha/filecoin-pin-migration/types').MigrationEvent} event
+   */
   const updateLiveStatusFromEvent = (event) => {
     switch (event.type) {
       case 'funding:start':
@@ -685,7 +753,6 @@ function loadStateOrExit(stateFile) {
 
 /**
  * @param {string | undefined} strategy
- * @returns {'roundabout' | 'claims'}
  */
 function parseSourceStrategy(strategy) {
   if (strategy == null || strategy === '') {
@@ -722,6 +789,35 @@ function parsePositiveInteger(value, flag) {
   const parsed = typeof value === 'number' ? value : Number.parseInt(value, 10)
   if (Number.isInteger(parsed) && parsed > 0) {
     return parsed
+  }
+
+  console.error(`Error: "${flag}" must be a positive integer`)
+  process.exit(1)
+}
+
+/**
+ * @param {bigint | number | string | undefined} value
+ * @param {string} flag
+ */
+function parsePositiveBigInt(value, flag) {
+  if (value == null || value === '') {
+    console.error(`Error: missing required option "${flag}"`)
+    process.exit(1)
+  }
+
+  try {
+    const parsed =
+      typeof value === 'bigint'
+        ? value
+        : typeof value === 'number'
+          ? BigInt(value)
+          : BigInt(value)
+
+    if (parsed > 0n) {
+      return parsed
+    }
+  } catch {
+    // Ignore parse failure and fall through to the common validation error.
   }
 
   console.error(`Error: "${flag}" must be a positive integer`)

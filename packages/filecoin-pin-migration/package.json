@@ -75,7 +75,8 @@
       "projectService": {
         "allowDefaultProject": [
           "vitest.config.js",
-          "src/reader/indexer.types.js"
+          "src/reader/indexer.types.js",
+          "src/helper/api.js"
         ]
       }
     },
