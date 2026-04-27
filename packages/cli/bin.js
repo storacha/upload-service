@@ -28,6 +28,8 @@ import {
   createKey,
   reset,
   setupPlan,
+  spaceMigrate,
+  spaceMigrateCalc,
 } from './index.js'
 import {
   blobAdd,
@@ -57,6 +59,8 @@ const actions = {
   addSpace,
   listSpaces,
   spaceInfo,
+  spaceMigrate,
+  spaceMigrateCalc,
   revokeDelegation,
   usageReport,
   blobAdd,
@@ -304,6 +308,84 @@ cli
   .action(actions.spaceProvision)
 
 cli
+  .command('space migrate calc')
+  .describe('Estimate warm-storage cost for a fixed size and retention period.')
+  .option(
+    '-n, --network <network>',
+    'FOC network: "mainnet" or "calibration". Defaults to "calibration".'
+  )
+  .option('-s, --size <bytes>', 'Total bytes to retain in each copy.')
+  .option('-m, --months <count>', 'Number of months to keep the data stored.')
+  .action((options) => {
+    return actions.spaceMigrateCalc({
+      network: options.network,
+      size: options.size,
+      months: options.months,
+    })
+  })
+
+cli
+  .command('space migrate')
+  .describe('Migrate the current space to Filecoin on Chain (FOC).')
+  .option('-w, --wallet-pk <key>', '0x-prefixed EVM wallet private key')
+  .option(
+    '-n, --network <network>',
+    'FOC network: "mainnet" or "calibration". Defaults to "calibration".'
+  )
+  .option(
+    '-f, --state-file <path>',
+    'Path to persist migration state for resume support.'
+  )
+  .option('--resume', 'Resume from an existing state file', false)
+  .option(
+    '-b, --batch-size <count>',
+    'Pieces per pull batch. Defaults to the migration library default.'
+  )
+  .option(
+    '-pc, --pull-concurrency <count>',
+    'Number of pull batches to process concurrently.'
+  )
+  .option(
+    '-um, --upload-mode <mode>',
+    'Upload execution mode: "pull" or "store". Defaults to "pull".'
+  )
+  .option(
+    '-s, --source-strategy <strategy>',
+    'Source URL strategy: "roundabout" or "claims". Defaults to "roundabout".'
+  )
+  .option(
+    '-r, --roundabout-url <url>',
+    'Override the roundabout base URL used with the "roundabout" strategy.'
+  )
+  .option(
+    '--retry',
+    'When resuming, clear persisted failed upload roots for the selected space and retry them.'
+  )
+  .action((options) => {
+    const walletPk = readRawOption(process.argv.slice(2), ['--wallet-pk', '-w'])
+
+    if (!walletPk) {
+      console.error('Error: missing required option "--wallet-pk"')
+      process.exit(1)
+    }
+
+    const parsedOptions = {
+      walletPk,
+      network: options.network,
+      stateFile: options['state-file'],
+      resume: options.resume,
+      retry: options.retry,
+      batchSize: options['batch-size'],
+      pullConcurrency: options['pull-concurrency'],
+      uploadMode: options['upload-mode'],
+      sourceStrategy: options['source-strategy'],
+      roundaboutURL: options['roundabout-url'],
+    }
+
+    return actions.spaceMigrate(parsedOptions)
+  })
+
+cli
   .command('space add <proof>')
   .describe(
     'Import a space from a proof: a CAR encoded UCAN delegating capabilities to this agent. proof is a filesystem path, or a base64 encoded cid string.'
@@ -512,3 +594,23 @@ Run \`$ storacha --help\` for more info.
 })
 
 cli.parse(process.argv)
+
+/**
+ * Sade coerces `0x...` option values into numbers, which breaks private key
+ * handling. Read the raw argv value for options that must remain strings.
+ *
+ * @param {string[]} argv
+ * @param {string[]} names
+ */
+function readRawOption(argv, names) {
+  for (let i = 0; i < argv.length; i++) {
+    const token = argv[i]
+    if (!token) continue
+
+    const [name, inlineValue] = token.split('=', 2)
+    if (!names.includes(name)) continue
+
+    if (inlineValue != null) return inlineValue
+    return argv[i + 1]
+  }
+}

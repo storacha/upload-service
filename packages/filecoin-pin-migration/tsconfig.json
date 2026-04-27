@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "files": [],
+  "references": [
+    {
+      "path": "../w3up-client"
+    },
+    {
+      "path": "../eslint-config-w3up"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ]
+}
