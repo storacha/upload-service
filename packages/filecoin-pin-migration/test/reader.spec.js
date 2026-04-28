@@ -10,6 +10,7 @@ import {
   createMockClient,
   createMockIndexer,
   createMockFetch,
+  createMockFallbackFetch,
   buildShardClaims,
   createMockInitialState,
 } from './helpers.js'
@@ -310,6 +311,114 @@ describe('buildMigrationInventories', () => {
         throw new Error('expected reader:shard:failed event')
       }
       expect(shardFailed.reason).toContain(shardCid.toString())
+    })
+
+    it('repairs missing location URL from carpark and routes missing-piece shards to store', async () => {
+      const rootCid = await createTestCID('root-carpark-store')
+      const shardCid = await createTestCID('shard-carpark-store')
+      const shardB58 = base58btc.encode(shardCid.multihash.bytes)
+      const blobUrl = `https://carpark-prod-0.r2.w3s.link/${shardB58}/${shardB58}.blob`
+
+      const client = createMockClient(
+        [{ results: [{ root: rootCid }] }],
+        new Map([[rootCid.toString(), [shardCid]]])
+      )
+      const indexer = createMockIndexer(
+        new Map([[shardB58, { claims: new Map() }]])
+      )
+      const fetcher = createMockFallbackFetch({
+        headResponses: new Map([[blobUrl, { contentLength: 4096 }]]),
+      })
+
+      const state = createMockInitialState()
+      /** @type {API.MigrationEvent[]} */
+      const events = []
+      for await (const event of buildMigrationInventories({
+        client,
+        resolver: claimsResolver,
+        state,
+        spaceDIDs: [SPACE_DID],
+        options: { indexer, fetcher },
+      })) {
+        events.push(event)
+      }
+      const inventory = state.spacesInventories[SPACE_DID]
+
+      expect(inventory.shards).toHaveLength(0)
+      expect(inventory.shardsToStore).toHaveLength(1)
+      expect(inventory.shardsToStore[0]).toEqual(
+        expect.objectContaining({
+          root: rootCid.toString(),
+          cid: shardCid.toString(),
+          sourceURL: blobUrl,
+          sizeBytes: 4096n,
+        })
+      )
+      expect(inventory.skippedUploads).toHaveLength(0)
+      expect(
+        events.find((e) => e.type === 'reader:shard:failed')
+      ).toBeUndefined()
+    })
+
+    it('repairs missing location URL from carpark and keeps shards with a piece on the source-pull path', async () => {
+      const rootCid = await createTestCID('root-carpark-pull')
+      const shardCid = await createTestCID('shard-carpark-pull')
+      const pieceCid = createPieceCID()
+      const shardB58 = base58btc.encode(shardCid.multihash.bytes)
+      const carUrl = `https://carpark-prod-0.r2.w3s.link/${shardCid.toString()}/${shardCid.toString()}.car`
+
+      const client = createMockClient(
+        [{ results: [{ root: rootCid }] }],
+        new Map([[rootCid.toString(), [shardCid]]])
+      )
+      const indexer = createMockIndexer(
+        new Map([
+          [
+            shardB58,
+            {
+              claims: new Map([
+                [
+                  'equals-claim',
+                  {
+                    type: /** @type {const} */ ('assert/equals'),
+                    content: { multihash: shardCid.multihash },
+                    equals: pieceCid,
+                  },
+                ],
+              ]),
+            },
+          ],
+        ])
+      )
+      const fetcher = createMockFallbackFetch({
+        headResponses: new Map([[carUrl, { contentLength: 4096 }]]),
+      })
+
+      const state = createMockInitialState()
+      const inventory = await collectInventory(
+        buildMigrationInventories({
+          client,
+          resolver: claimsResolver,
+          state,
+          spaceDIDs: [SPACE_DID],
+          options: { indexer, fetcher },
+        }),
+        state,
+        SPACE_DID
+      )
+
+      expect(inventory.shards).toHaveLength(1)
+      expect(inventory.shards[0]).toEqual(
+        expect.objectContaining({
+          root: rootCid.toString(),
+          cid: shardCid.toString(),
+          pieceCID: pieceCid.toString(),
+          sourceURL: carUrl,
+          sizeBytes: 4096n,
+        })
+      )
+      expect(inventory.shardsToStore).toHaveLength(0)
+      expect(inventory.skippedUploads).toHaveLength(0)
     })
 
     it('applies ClaimsResolver — sourceURL is the raw claim URL', async () => {

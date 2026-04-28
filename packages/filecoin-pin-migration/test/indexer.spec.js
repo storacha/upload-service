@@ -6,6 +6,7 @@ import {
   createPieceCID,
   createTestCID,
   createMockFetch,
+  createMockFallbackFetch,
   createMockIndexer,
   buildCIDContactProviderAddr,
   buildEqualsClaimMetadata,
@@ -269,5 +270,100 @@ describe('resolveClaimsIndex', () => {
       buildExpectedCIDContactURL(shardCid, locationHost)
     )
     expect(entry?.locationURL).toContain('/B')
+  })
+
+  it('repairs missing location URL from the public carpark buckets when claims and cid.contact both miss', async () => {
+    const shardCid = await createTestCID('shard-carpark-location')
+    const pieceCid = createPieceCID()
+    const shard = createShardEntry(shardCid)
+    const carUrl = `https://carpark-prod-0.r2.w3s.link/${shard.cidStr}/${shard.cidStr}.car`
+
+    const indexer = createMockIndexer(
+      new Map([
+        [
+          shard.b58,
+          {
+            claims: new Map([
+              [
+                'equals-claim',
+                {
+                  type: /** @type {const} */ ('assert/equals'),
+                  content: { multihash: shardCid.multihash },
+                  equals: pieceCid,
+                },
+              ],
+            ]),
+          },
+        ],
+      ])
+    )
+    const fetcher = createMockFallbackFetch({
+      headResponses: new Map([[carUrl, { contentLength: 8192 }]]),
+    })
+
+    const index = await resolveClaimsIndex({
+      indexer,
+      shards: [shard],
+      fetcher,
+    })
+
+    const entry = index.get(shard.b58)
+    expect(entry).toBeDefined()
+    expect(entry?.locationURL).toBe(carUrl)
+    expect(entry?.piece?.link.toString()).toBe(pieceCid.toString())
+    expect(entry?.size).toBe(8192n)
+  })
+
+  it('uses the carpark location fallback without overwriting an existing size', async () => {
+    const shardCid = await createTestCID('shard-carpark-preserve-size')
+    const pieceCid = createPieceCID()
+    const shard = createShardEntry(shardCid)
+    const carUrl = `https://carpark-prod-1.r2.w3s.link/${shard.b58}/${shard.b58}.blob`
+
+    const indexer = createMockIndexer(
+      new Map([
+        [
+          shard.b58,
+          {
+            claims: new Map([
+              [
+                'equals-claim',
+                {
+                  type: /** @type {const} */ ('assert/equals'),
+                  content: { multihash: shardCid.multihash },
+                  equals: pieceCid,
+                },
+              ],
+            ]),
+          },
+        ],
+      ])
+    )
+    const fetcher = createMockFallbackFetch({
+      cidContactResponses: new Map([
+        [
+          shard.b58,
+          buildIPNIFindResponse([
+            {
+              Metadata: buildLocationCommitmentMetadata({ size: 2048n }),
+              Provider: { Addrs: ['/dns4/example.invalid/tcp/443/https'] },
+            },
+          ]),
+        ],
+      ]),
+      headResponses: new Map([[carUrl, { contentLength: 9999 }]]),
+    })
+
+    const index = await resolveClaimsIndex({
+      indexer,
+      shards: [shard],
+      fetcher,
+    })
+
+    const entry = index.get(shard.b58)
+    expect(entry).toBeDefined()
+    expect(entry?.locationURL).toBe(carUrl)
+    expect(entry?.piece?.link.toString()).toBe(pieceCid.toString())
+    expect(entry?.size).toBe(2048n)
   })
 })

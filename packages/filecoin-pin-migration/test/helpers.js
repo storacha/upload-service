@@ -231,6 +231,48 @@ export function createMockFetch(responses) {
 }
 
 /**
+ * Create a method-aware fetcher for mixed cid.contact JSON lookups and carpark
+ * HEAD probes.
+ *
+ * @param {{
+ *   cidContactResponses?: Map<string, unknown>
+ *   headResponses?: Map<string, { status?: number, contentLength?: number | bigint | string }>
+ * }} [options]
+ * @returns {typeof fetch}
+ */
+export function createMockFallbackFetch(options = {}) {
+  const cidContactResponses = options.cidContactResponses ?? new Map()
+  const headResponses = options.headResponses ?? new Map()
+
+  return /** @type {typeof fetch} */ (
+    async (input, init) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if ((init?.method ?? 'GET').toUpperCase() === 'HEAD') {
+        const match = headResponses.get(url)
+        if (!match) {
+          return createMockResponse({ ok: false, status: 404 })
+        }
+
+        return createMockResponse({
+          ok: (match.status ?? 200) >= 200 && (match.status ?? 200) < 300,
+          status: match.status ?? 200,
+          contentLength: match.contentLength,
+        })
+      }
+
+      const b58 = url.split('/').pop() ?? ''
+      const body =
+        cidContactResponses.get(b58) ?? cidContactResponses.get(`z${b58}`)
+      if (body == null) {
+        return createMockResponse({ ok: false, status: 404, body: {} })
+      }
+
+      return createMockResponse({ ok: true, status: 200, body })
+    }
+  )
+}
+
+/**
  * @param {number} protocol
  * @param {Uint8Array} payload
  */
@@ -240,6 +282,31 @@ function encodeProtocolMetadata(protocol, payload) {
   bytes.set(prefix)
   bytes.set(payload, prefix.length)
   return Buffer.from(bytes).toString('base64')
+}
+
+/**
+ * @param {{
+ *   ok: boolean
+ *   status: number
+ *   body?: unknown
+ *   contentLength?: number | bigint | string
+ * }} options
+ * @returns {Response}
+ */
+function createMockResponse(options) {
+  const contentLength =
+    options.contentLength == null ? null : String(options.contentLength)
+
+  return /** @type {Response} */ ({
+    ok: options.ok,
+    status: options.status,
+    headers: {
+      get(name) {
+        return name.toLowerCase() === 'content-length' ? contentLength : null
+      },
+    },
+    json: async () => options.body ?? {},
+  })
 }
 
 /**

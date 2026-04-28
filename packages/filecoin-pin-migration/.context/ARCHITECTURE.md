@@ -26,7 +26,7 @@ every `state:checkpoint` event.
 
 | Stage    | Responsibility                                                                                                                                                                           | Output                           |
 | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| reader   | Fetch uploads, resolve shards via the indexing service with a built-in cid.contact fallback, apply the source URL resolver inline                                                        | `SpaceInventory[]`               |
+| reader   | Fetch uploads, resolve shards via the indexing service with built-in cid.contact repair and direct Storacha carpark location fallback, apply the source URL resolver inline              | `SpaceInventory[]`               |
 | planner  | Aggregate inventories, create exactly 2 storage contexts per space, compute costs, write provider/dataset bindings into state                                                            | `MigrationPlan`                  |
 | migrator | Fund once, run mixed source-pull/store execution per copy, commit in two phases (sequential dataset creation then bounded-concurrency add-pieces) per copy, emit progress/failure events | `AsyncGenerator<MigrationEvent>` |
 
@@ -88,7 +88,10 @@ On resume:
    IDs per space copy
 4. `createMigrationPlan()` rebuilds exactly 2 contexts per space using those
    bindings
-5. `executeMigration()`:
+5. `transitionToApproved()` validates that the freshly planned provider and
+   dataset bindings still match each persisted copy by `copyIndex`; if any
+   drifted, it throws before mutating state
+6. `executeMigration()`:
    - skips shards already in a copy's `committed`
    - does not re-pull shards already in a copy's `pulled`
    - reuses the copy's `dataSetId` after a successful commit
@@ -153,6 +156,9 @@ Internally, migrator execution is split into two layers:
 - source pull work is batched and runs concurrently per copy
 - store-routed shards are downloaded+stored in batches on copy 0, then pulled in
   batches from copy 0 on copy 1
+- when a store-routed root fails on copy 0, any stored shard mappings for that
+  root remain durable for retry reuse, but that root is withheld from copy 1
+  for the rest of the current run
 - commit is copy-scoped and runs in two phases:
   - Phase 1 is sequential and covers dataset-creation batches. It loops until a
     successful commit returns a `dataSetId`, so failed create-dataset batches

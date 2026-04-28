@@ -5,6 +5,8 @@ import { base58btc } from 'multiformats/bases/base58'
 import { base32upper } from 'multiformats/bases/base32'
 import { CID } from 'multiformats/cid'
 import * as RAW from 'multiformats/codecs/raw'
+import { DEFAULT_CARPARK_CONCURRENCY } from '../constants.js'
+import { findCarparkLocation } from './carpark.js'
 
 /**
  * @import {
@@ -98,6 +100,20 @@ export async function resolveClaimsIndex({ indexer, shards, fetcher }) {
     fetcher,
   })
 
+  const missingLocationB58s = missingB58s.filter((b58) =>
+    isMissingLocationUrl(index.get(b58))
+  )
+  if (missingLocationB58s.length === 0) {
+    return index
+  }
+
+  await applyCarparkFallback({
+    b58s: missingLocationB58s,
+    index,
+    shardsByB58,
+    fetcher,
+  })
+
   return index
 }
 
@@ -153,6 +169,37 @@ async function applyIPNIFallback({ b58s, index, shardsByB58, fetcher }) {
 }
 
 /**
+ * Repair missing location URLs from the known public Storacha carpark buckets.
+ *
+ * @param {object} args
+ * @param {string[]} args.b58s
+ * @param {Map<string, ClaimsEntry>} args.index
+ * @param {Map<string, ShardEntry>} args.shardsByB58
+ * @param {typeof fetch} args.fetcher
+ */
+async function applyCarparkFallback({ b58s, index, shardsByB58, fetcher }) {
+  await pMap(
+    b58s,
+    async (b58) => {
+      const shard = shardsByB58.get(b58)
+      if (!shard) return
+
+      const match = await findCarparkLocation(shard, fetcher)
+      if (!match) return
+
+      const entry = getOrCreateClaimsEntry(index, b58)
+      if (entry.locationURL === null) {
+        entry.locationURL = match.locationURL
+      }
+      if (entry.size === 0n && match.size > 0n) {
+        entry.size = match.size
+      }
+    },
+    { concurrency: DEFAULT_CARPARK_CONCURRENCY }
+  )
+}
+
+/**
  * @param {typeof fetch} fetcher
  * @param {string} b58
  * @returns {Promise<IPNIProviderResult[]>}
@@ -197,7 +244,7 @@ function mergeProviderResult(entry, providerResult, shard) {
     )
     if (!parsed) return
 
-    if (entry.locationURL === null) {
+    if (entry.locationURL === null && parsed.locationURL) {
       entry.locationURL = parsed.locationURL
     }
     if (entry.size === 0n && parsed.size > 0n) {
@@ -221,12 +268,9 @@ function mergeProviderResult(entry, providerResult, shard) {
  * @param {Uint8Array} payload
  * @param {string[]} providerAddrs
  * @param {import('../api.js').MultihashDigest} multihash
- * @returns {{ locationURL: string, size: bigint } | null}
+ * @returns {{ locationURL: string | null, size: bigint } | null}
  */
 function parseLocationCommitment(payload, providerAddrs, multihash) {
-  const locationURL = httpURLFromMultiaddrs(providerAddrs, multihash)
-  if (!locationURL) return null
-
   try {
     const decoded = /** @type {LocationCommitmentMetadata} */ (
       decodeDagCbor(payload)
@@ -234,7 +278,7 @@ function parseLocationCommitment(payload, providerAddrs, multihash) {
     // r = [offset, length?] — compact LocationCommitment range encoding.
     const length = Array.isArray(decoded.r) ? decoded.r[1] : undefined
     return {
-      locationURL,
+      locationURL: httpURLFromMultiaddrs(providerAddrs, multihash),
       size: length == null ? 0n : toBigInt(length),
     }
   } catch {
@@ -379,6 +423,14 @@ function isEqualsClaim(claim) {
   )
 }
 
+
+/**
+ * @param {ClaimsEntry | undefined} entry
+ */
+function isMissingLocationUrl(entry) {
+  return !entry || entry.locationURL === null
+}
+
 /**
  * Only location + piece are required for a complete reader entry. size may
  * still be 0n because extractShard() can fall back to piece.size.
@@ -386,7 +438,7 @@ function isEqualsClaim(claim) {
  * @param {ClaimsEntry | undefined} entry
  */
 function isClaimsEntryIncomplete(entry) {
-  return !entry || entry.locationURL === null || entry.piece === null
+  return isMissingLocationUrl(entry) || entry?.piece === null
 }
 
 /**
