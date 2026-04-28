@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { ResumeBindingDriftError } from '../src/errors.js'
 import { createMigrationPlan } from '../src/planner/planner.js'
 import {
   createMockInventory,
@@ -350,5 +351,80 @@ describe('createMigrationPlan', () => {
     expect(state.spacesInventories[inventory.did].shards[0].sourceURL).toBe(
       originalURL
     )
+  })
+
+  it('throws a typed fatal error before checkpointing when planned bindings drift from persisted state', async () => {
+    const spaceDID = /** @type {API.SpaceDID} */ ('did:key:z6MkBindingDrift1')
+    vi.mocked(computeMigrationCosts).mockResolvedValue(
+      makeCostResult({
+        perSpace: [
+          /** @type {API.PerSpaceCost} */ ({
+            spaceDID,
+            copies: [
+              makePerCopyCost({
+                copyIndex: 0,
+                spaceDID,
+                providerId: 9n,
+                serviceProvider: /** @type {`0x${string}`} */ ('0xdeadbeef'),
+                dataSetId: null,
+              }),
+              makePerCopyCost({
+                copyIndex: 1,
+                spaceDID,
+                providerId: 2n,
+                serviceProvider: /** @type {`0x${string}`} */ ('0xbeefdead'),
+                dataSetId: null,
+              }),
+            ],
+            bytesToMigrate: 0n,
+            currentDataSetSize: 0n,
+            lockupUSDFC: 0n,
+            sybilFee: 0n,
+            rateLockupDelta: 0n,
+            ratePerEpoch: 0n,
+            ratePerMonth: 0n,
+            isResumed: false,
+          }),
+        ],
+      })
+    )
+
+    const state = withInventories(createMockInitialState(), [
+      createMockInventory({ did: spaceDID }),
+    ])
+    state.spaces[spaceDID] = {
+      did: spaceDID,
+      phase: 'migrating',
+      copies: [
+        {
+          copyIndex: 0,
+          providerId: 1n,
+          serviceProvider: /** @type {`0x${string}`} */ ('0x1111'),
+          dataSetId: null,
+          pulled: new Set(),
+          committed: new Set(),
+          failedUploads: new Set(),
+          storedShards: {},
+        },
+        {
+          copyIndex: 1,
+          providerId: 2n,
+          serviceProvider: /** @type {`0x${string}`} */ ('0xbeefdead'),
+          dataSetId: null,
+          pulled: new Set(),
+          committed: new Set(),
+          failedUploads: new Set(),
+          storedShards: {},
+        },
+      ],
+    }
+
+    await expect(
+      collectPlan(createMigrationPlan({ synapse: mockSynapse, state }))
+    ).rejects.toThrow(ResumeBindingDriftError)
+
+    expect(state.phase).toBe('reading')
+    expect(state.spaces[spaceDID].copies[0].providerId).toBe(1n)
+    expect(state.spaces[spaceDID].copies[0].serviceProvider).toBe('0x1111')
   })
 })

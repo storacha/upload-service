@@ -2,7 +2,10 @@ import { describe, it, expect, vi } from 'vitest'
 import { executeMigration } from '../src/migrator/migrator.js'
 import { executeStoreMigration } from '../src/migrator/store-executor.js'
 import { createMockInitialState, createPieceCID } from './helpers.js'
-import { transitionToApproved } from '../src/state.js'
+import {
+  clearFailedUploadsForRetry,
+  transitionToApproved,
+} from '../src/state.js'
 
 /**
  * @import * as API from '../src/api.js'
@@ -341,6 +344,325 @@ describe('executeMigration', () => {
     expect(completionEvent.summary.succeeded).toBe(4)
     expect(completionEvent.summary.failed).toBe(0)
     expect(completionEvent.summary.totalBytes).toBe(384n)
+  })
+
+  it('withholds a failed store root from copy 1 even when success and failure land in separate batches', async () => {
+    const spaceDID = /** @type {API.SpaceDID} */ (
+      'did:key:z6MkStoreIsolationSpace1'
+    )
+    const failedRoot = 'bafy-root-store-failed'
+    const firstShardCID = 'bafy-shard-store-failed-1'
+    const secondShardCID = 'bafy-shard-store-failed-2'
+    const state = withInventory(createMockInitialState(), {
+      did: spaceDID,
+      name: 'Store Isolation Space',
+      uploads: [failedRoot],
+      shards: [],
+      shardsToStore: [
+        {
+          root: failedRoot,
+          cid: firstShardCID,
+          sourceURL: 'https://source.example/store-failed-1',
+          sizeBytes: 256n,
+        },
+        {
+          root: failedRoot,
+          cid: secondShardCID,
+          sourceURL: 'https://source.example/store-failed-2',
+          sizeBytes: 256n,
+        },
+      ],
+      skippedUploads: [],
+      totalBytes: 512n,
+      totalSizeToMigrate: 512n,
+    })
+
+    const copy0Context = createStorageContext({ spaceDID, name: 'copy0' })
+    const copy1Context = createStorageContext({ spaceDID, name: 'copy1' })
+    const plan = createPlan({ spaceDID, copy0Context, copy1Context })
+    plan.totals.uploads = 1
+    plan.totals.shards = 2
+    plan.totals.bytes = 512n
+    plan.totals.bytesToMigrate = 512n
+    plan.costs.perSpace[0].bytesToMigrate = 512n
+    plan.costs.summary.totalBytes = 512n
+
+    transitionToApproved(state, plan.costs.perSpace)
+
+    copy0Context.store.mockImplementationOnce(async () => ({
+      pieceCid: createPieceCID(),
+    }))
+    copy0Context.store.mockImplementationOnce(async () => {
+      throw new Error('store failed')
+    })
+
+    /** @type {API.MigrationEvent[]} */
+    const events = []
+    const fetcher = /** @type {typeof fetch} */ (
+      vi.fn(async () => new Response('ok'))
+    )
+
+    for await (const event of executeMigration({
+      plan,
+      state,
+      synapse: /** @type {API.Synapse} */ ({}),
+      batchSize: 1,
+      fetcher,
+    })) {
+      events.push(event)
+    }
+
+    expect(copy0Context.store).toHaveBeenCalledTimes(2)
+    expect(copy0Context.commit).not.toHaveBeenCalled()
+    expect(copy1Context.pull).not.toHaveBeenCalled()
+    expect(copy1Context.commit).not.toHaveBeenCalled()
+    expect(state.spaces[spaceDID].copies[0].storedShards).toHaveProperty(
+      firstShardCID
+    )
+    expect(state.spaces[spaceDID].copies[0].failedUploads.has(failedRoot)).toBe(
+      true
+    )
+    expect(state.spaces[spaceDID].copies[1].failedUploads.has(failedRoot)).toBe(
+      false
+    )
+    expect(
+      events.some(
+        (event) =>
+          event.type === 'migration:phase:start' &&
+          event.copyIndex === 1 &&
+          event.phase === 'secondary-pull'
+      )
+    ).toBe(false)
+    expect(state.spaces[spaceDID].phase).toBe('failed')
+    expect(state.phase).toBe('incomplete')
+  })
+
+  it('lets clean store roots proceed while withholding failed store roots from copy 1', async () => {
+    const spaceDID = /** @type {API.SpaceDID} */ (
+      'did:key:z6MkStoreIsolationSpace2'
+    )
+    const failedRoot = 'bafy-root-store-failed'
+    const cleanRoot = 'bafy-root-store-clean'
+    const failedShardCID = 'bafy-shard-store-failed-1'
+    const cleanShardCID = 'bafy-shard-store-clean-1'
+    const state = withInventory(createMockInitialState(), {
+      did: spaceDID,
+      name: 'Mixed Store Roots Space',
+      uploads: [failedRoot, cleanRoot],
+      shards: [],
+      shardsToStore: [
+        {
+          root: failedRoot,
+          cid: failedShardCID,
+          sourceURL: 'https://source.example/store-failed-1',
+          sizeBytes: 256n,
+        },
+        {
+          root: failedRoot,
+          cid: 'bafy-shard-store-failed-2',
+          sourceURL: 'https://source.example/store-failed-2',
+          sizeBytes: 256n,
+        },
+        {
+          root: cleanRoot,
+          cid: cleanShardCID,
+          sourceURL: 'https://source.example/store-clean-1',
+          sizeBytes: 256n,
+        },
+      ],
+      skippedUploads: [],
+      totalBytes: 768n,
+      totalSizeToMigrate: 768n,
+    })
+
+    const copy0Context = createStorageContext({ spaceDID, name: 'copy0' })
+    const copy1Context = createStorageContext({ spaceDID, name: 'copy1' })
+    const plan = createPlan({ spaceDID, copy0Context, copy1Context })
+    plan.totals.uploads = 2
+    plan.totals.shards = 3
+    plan.totals.bytes = 768n
+    plan.totals.bytesToMigrate = 768n
+    plan.costs.perSpace[0].bytesToMigrate = 768n
+    plan.costs.summary.totalBytes = 768n
+
+    transitionToApproved(state, plan.costs.perSpace)
+
+    copy0Context.store.mockImplementationOnce(async () => ({
+      pieceCid: createPieceCID(),
+    }))
+    copy0Context.store.mockImplementationOnce(async () => {
+      throw new Error('store failed')
+    })
+    copy0Context.store.mockImplementationOnce(async () => ({
+      pieceCid: createPieceCID(),
+    }))
+
+    const fetcher = /** @type {typeof fetch} */ (
+      vi.fn(async () => new Response('ok'))
+    )
+
+    for await (const _event of executeMigration({
+      plan,
+      state,
+      synapse: /** @type {API.Synapse} */ ({}),
+      batchSize: 1,
+      fetcher,
+    })) {
+      // drain
+    }
+
+    expect(copy0Context.commit).toHaveBeenCalledTimes(1)
+    expect(copy1Context.pull).toHaveBeenCalledTimes(1)
+    expect(copy1Context.commit).toHaveBeenCalledTimes(1)
+
+    const copy0CommittedRoots = copy0Context.commit.mock.calls[0][0].pieces.map(
+      /**
+       * @param {API.CommitPiece} piece
+       */
+      (piece) => piece.pieceMetadata.ipfsRootCID
+    )
+    const copy1CommittedRoots = copy1Context.commit.mock.calls[0][0].pieces.map(
+      /**
+       * @param {API.CommitPiece} piece
+       */
+      (piece) => piece.pieceMetadata.ipfsRootCID
+    )
+
+    expect(copy0CommittedRoots).toEqual([cleanRoot])
+    expect(copy1CommittedRoots).toEqual([cleanRoot])
+    expect(state.spaces[spaceDID].copies[0].failedUploads.has(failedRoot)).toBe(
+      true
+    )
+    expect(state.spaces[spaceDID].copies[0].storedShards).toHaveProperty(
+      failedShardCID
+    )
+    expect(state.spaces[spaceDID].copies[0].storedShards).toHaveProperty(
+      cleanShardCID
+    )
+  })
+
+  it('withholds persisted stored shards from copy 1 until failed uploads are cleared', async () => {
+    const spaceDID = /** @type {API.SpaceDID} */ (
+      'did:key:z6MkStoreIsolationSpace3'
+    )
+    const root = 'bafy-root-store-persisted'
+    const shardCID = 'bafy-shard-store-persisted-1'
+    const storedPieceCID = createPieceCID().toString()
+    const state = withInventory(createMockInitialState(), {
+      did: spaceDID,
+      name: 'Persisted Store Root Space',
+      uploads: [root],
+      shards: [],
+      shardsToStore: [
+        {
+          root,
+          cid: shardCID,
+          sourceURL: 'https://source.example/store-persisted-1',
+          sizeBytes: 256n,
+        },
+      ],
+      skippedUploads: [],
+      totalBytes: 256n,
+      totalSizeToMigrate: 256n,
+    })
+
+    const copy0Context = createStorageContext({ spaceDID, name: 'copy0' })
+    const copy1Context = createStorageContext({ spaceDID, name: 'copy1' })
+    const plan = createPlan({ spaceDID, copy0Context, copy1Context })
+    plan.totals.uploads = 1
+    plan.totals.shards = 1
+    plan.totals.bytes = 256n
+    plan.totals.bytesToMigrate = 256n
+    plan.costs.perSpace[0].bytesToMigrate = 256n
+    plan.costs.summary.totalBytes = 256n
+
+    transitionToApproved(state, plan.costs.perSpace)
+    state.spaces[spaceDID].copies[0].storedShards[shardCID] = storedPieceCID
+    state.spaces[spaceDID].copies[0].failedUploads.add(root)
+
+    const fetcher = /** @type {typeof fetch} */ (
+      vi.fn(async () => new Response('ok'))
+    )
+
+    for await (const _event of executeMigration({
+      plan,
+      state,
+      synapse: /** @type {API.Synapse} */ ({}),
+      fetcher,
+    })) {
+      // drain
+    }
+
+    expect(copy0Context.store).not.toHaveBeenCalled()
+    expect(copy0Context.commit).not.toHaveBeenCalled()
+    expect(copy1Context.pull).not.toHaveBeenCalled()
+    expect(copy1Context.commit).not.toHaveBeenCalled()
+    expect(state.spaces[spaceDID].copies[0].storedShards[shardCID]).toBe(
+      storedPieceCID
+    )
+    expect(state.spaces[spaceDID].copies[0].failedUploads.has(root)).toBe(true)
+  })
+
+  it('reuses persisted stored shards after failed uploads are cleared for retry', async () => {
+    const spaceDID = /** @type {API.SpaceDID} */ (
+      'did:key:z6MkStoreIsolationSpace4'
+    )
+    const root = 'bafy-root-store-retry'
+    const shardCID = 'bafy-shard-store-retry-1'
+    const storedPieceCID = createPieceCID().toString()
+    const state = withInventory(createMockInitialState(), {
+      did: spaceDID,
+      name: 'Retry Reuse Store Root Space',
+      uploads: [root],
+      shards: [],
+      shardsToStore: [
+        {
+          root,
+          cid: shardCID,
+          sourceURL: 'https://source.example/store-retry-1',
+          sizeBytes: 256n,
+        },
+      ],
+      skippedUploads: [],
+      totalBytes: 256n,
+      totalSizeToMigrate: 256n,
+    })
+
+    const copy0Context = createStorageContext({ spaceDID, name: 'copy0' })
+    const copy1Context = createStorageContext({ spaceDID, name: 'copy1' })
+    const plan = createPlan({ spaceDID, copy0Context, copy1Context })
+    plan.totals.uploads = 1
+    plan.totals.shards = 1
+    plan.totals.bytes = 256n
+    plan.totals.bytesToMigrate = 256n
+    plan.costs.perSpace[0].bytesToMigrate = 256n
+    plan.costs.summary.totalBytes = 256n
+
+    transitionToApproved(state, plan.costs.perSpace)
+    state.spaces[spaceDID].copies[0].storedShards[shardCID] = storedPieceCID
+    state.spaces[spaceDID].copies[0].failedUploads.add(root)
+    clearFailedUploadsForRetry(state, spaceDID)
+
+    const fetcher = /** @type {typeof fetch} */ (
+      vi.fn(async () => new Response('ok'))
+    )
+
+    for await (const _event of executeMigration({
+      plan,
+      state,
+      synapse: /** @type {API.Synapse} */ ({}),
+      fetcher,
+    })) {
+      // drain
+    }
+
+    expect(copy0Context.store).not.toHaveBeenCalled()
+    expect(copy0Context.commit).toHaveBeenCalledTimes(1)
+    expect(copy1Context.pull).toHaveBeenCalledTimes(1)
+    expect(copy1Context.commit).toHaveBeenCalledTimes(1)
+    expect(state.spaces[spaceDID].copies[0].committed.has(shardCID)).toBe(true)
+    expect(state.spaces[spaceDID].copies[1].committed.has(shardCID)).toBe(true)
+    expect(state.phase).toBe('complete')
   })
 
   it('stops before copy 1 when copy 0 source pull fully fails for a root', async () => {

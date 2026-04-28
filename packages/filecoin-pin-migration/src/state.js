@@ -1,3 +1,5 @@
+import { ResumeBindingDriftError } from './errors.js'
+
 /**
  * @import * as API from './api.js'
  */
@@ -45,6 +47,56 @@ function createSpaceCopyState({
  */
 function getCopy(space, copyIndex) {
   return space.copies.find((copy) => copy.copyIndex === copyIndex)
+}
+
+/**
+ * @param {bigint | null} dataSetId
+ */
+function formatDataSetId(dataSetId) {
+  return dataSetId == null ? 'null' : dataSetId.toString(10)
+}
+
+/**
+ * Validate that a re-planned copy still targets the persisted provider and
+ * dataset binding for the same copy index.
+ *
+ * Resume/retry must never silently rewrite copy ownership or move a dataset
+ * binding across copies. If the fresh plan disagrees with persisted state,
+ * fail fast before mutating anything.
+ *
+ * @param {API.SpaceDID} spaceDID
+ * @param {API.SpaceCopyState | undefined} existingCopy
+ * @param {API.PerCopyCost} plannedCopy
+ */
+function assertMatchingCopyBinding(spaceDID, existingCopy, plannedCopy) {
+  if (!existingCopy) return
+
+  if (
+    existingCopy.providerId !== plannedCopy.providerId ||
+    existingCopy.serviceProvider !== plannedCopy.serviceProvider
+  ) {
+    throw new ResumeBindingDriftError(
+      `${spaceDID} copy ${
+        plannedCopy.copyIndex
+      }: planned provider binding drifted from persisted state (expected providerId ${existingCopy.providerId.toString(
+        10
+      )} / ${
+        existingCopy.serviceProvider
+      }, got ${plannedCopy.providerId.toString(10)} / ${
+        plannedCopy.serviceProvider
+      })`
+    )
+  }
+
+  if (existingCopy.dataSetId !== plannedCopy.dataSetId) {
+    throw new ResumeBindingDriftError(
+      `${spaceDID} copy ${
+        plannedCopy.copyIndex
+      }: planned dataSetId drifted from persisted state (expected ${formatDataSetId(
+        existingCopy.dataSetId
+      )}, got ${formatDataSetId(plannedCopy.dataSetId)})`
+    )
+  }
 }
 
 // ── Phase resolvers ────────────────────────────────────────────────────────────
@@ -194,6 +246,23 @@ export function checkpointInventoryPage(
  * @param {API.PerSpaceCost[]} perSpaceCost
  */
 export function transitionToApproved(state, perSpaceCost) {
+  for (const cost of perSpaceCost) {
+    const existing = state.spaces[cost.spaceDID]
+    if (!existing) continue
+
+    const existingByIndex = new Map(
+      existing.copies.map((copy) => [copy.copyIndex, copy])
+    )
+
+    for (const plannedCopy of cost.copies) {
+      assertMatchingCopyBinding(
+        cost.spaceDID,
+        existingByIndex.get(plannedCopy.copyIndex),
+        plannedCopy
+      )
+    }
+  }
+
   for (const cost of perSpaceCost) {
     const existing = state.spaces[cost.spaceDID]
     const existingByIndex = new Map(

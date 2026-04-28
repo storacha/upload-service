@@ -15,6 +15,7 @@ import {
   createResolver,
   clearFailedUploadsForRetry,
   getStorageRetentionCost,
+  ResumeBindingDriftError,
   serializeState,
   deserializeState,
 } from '@storacha/filecoin-pin-migration'
@@ -43,7 +44,7 @@ const DEFAULT_BATCH_SIZE = 20
 const DEFAULT_SOURCE_STRATEGY = 'roundabout'
 const DEFAULT_STATE_FILE_BASENAME = 'storacha-migration'
 const CLI_SOURCE = 'storacha-cli'
-const MIN_FIL_GAS_BALANCE = parseEther('0.1')
+const MIN_FIL_GAS_BALANCE = parseEther('0.001')
 const DEFAULT_STORAGE_RETENTION_COPIES = 2
 
 /**
@@ -357,7 +358,11 @@ async function readInventories({
         if (!inventory) break
         spinner.stopAndPersist({
           symbol: chalk.green('✔'),
-          text: ` Completed ${inventory.uploads.length} uploads, ${inventory.shards.length} shards, ${inventory.skippedUploads.length} skipped uploads, ${formatBytes(inventory.totalBytes)}`,
+          text: ` Completed ${inventory.uploads.length} uploads, ${
+            inventory.shards.length
+          } shards, ${
+            inventory.skippedUploads.length
+          } skipped uploads, ${formatBytes(inventory.totalBytes)}`,
         })
         spinner.start(`Reading inventories...`)
         break
@@ -403,20 +408,30 @@ async function planMigration({ synapse, state, stateFile, signal }) {
   /** @type {import('@storacha/filecoin-pin-migration/types').MigrationPlan | undefined} */
   let plan
 
-  for await (const event of createMigrationPlan({ synapse, state })) {
-    switch (event.type) {
-      case 'state:checkpoint':
-        await saveState(stateFile, event.state)
-        break
-      case 'planner:ready':
-        plan = event.plan
-        break
-    }
+  try {
+    for await (const event of createMigrationPlan({ synapse, state })) {
+      switch (event.type) {
+        case 'state:checkpoint':
+          await saveState(stateFile, event.state)
+          break
+        case 'planner:ready':
+          plan = event.plan
+          break
+      }
 
-    if (signal.aborted) {
-      spinner.stop()
-      return { interrupted: true, plan }
+      if (signal.aborted) {
+        spinner.stop()
+        return { interrupted: true, plan }
+      }
     }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    spinner.fail(
+      err instanceof ResumeBindingDriftError
+        ? `Resume binding drift detected: ${message}`
+        : `Failed to create migration plan: ${message}`
+    )
+    throw err
   }
 
   if (!plan) {
@@ -667,7 +682,9 @@ async function runMigration({
         if (event.type === 'migration:space:complete') {
           printPersistentMigrationLine(() => {
             console.log(
-              `${chalk.green('✓')} ${chalk.dim('space')} ${truncateDID(event.spaceDID)}  ${event.phase}`
+              `${chalk.green('✓')} ${chalk.dim('space')} ${truncateDID(
+                event.spaceDID
+              )}  ${event.phase}`
             )
           })
           break
@@ -676,7 +693,13 @@ async function runMigration({
         if (event.type === 'migration:copy:complete') {
           printPersistentMigrationLine(() => {
             console.log(
-              `${event.completed ? chalk.green('✓') : chalk.yellow('!')} ${chalk.dim('copy')} ${event.copyIndex}  ${event.completed ? chalk.green('completed') : chalk.yellow('stopped')}`
+              `${
+                event.completed ? chalk.green('✓') : chalk.yellow('!')
+              } ${chalk.dim('copy')} ${event.copyIndex}  ${
+                event.completed
+                  ? chalk.green('completed')
+                  : chalk.yellow('stopped')
+              }`
             )
           })
           break
@@ -690,7 +713,9 @@ async function runMigration({
           stopHeartbeat()
           console.log(
             chalk.yellow(
-              `Migration interrupted after ${formatDuration(Date.now() - startedAt)}.`
+              `Migration interrupted after ${formatDuration(
+                Date.now() - startedAt
+              )}.`
             )
           )
           return { interrupted: true }
@@ -810,8 +835,8 @@ function parsePositiveBigInt(value, flag) {
       typeof value === 'bigint'
         ? value
         : typeof value === 'number'
-          ? BigInt(value)
-          : BigInt(value)
+        ? BigInt(value)
+        : BigInt(value)
 
     if (parsed > 0n) {
       return parsed
@@ -877,7 +902,9 @@ async function loadPreflight(synapse) {
     }
   } catch (err) {
     spinner.fail(
-      `Failed to load balances: ${err instanceof Error ? err.message : String(err)}`
+      `Failed to load balances: ${
+        err instanceof Error ? err.message : String(err)
+      }`
     )
     throw err
   }

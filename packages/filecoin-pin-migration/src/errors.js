@@ -96,3 +96,12 @@ export class FundingFailedFailure extends Server.Failure {
     return `Funding failed: ${this.message}`
   }
 }
+
+export const ResumeBindingDriftErrorName = /** @type {const} */ (
+  'ResumeBindingDriftError'
+)
+export class ResumeBindingDriftError extends Error {
+  get name() {
+    return ResumeBindingDriftErrorName
+  }
+}

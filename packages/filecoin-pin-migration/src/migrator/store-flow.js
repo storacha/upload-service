@@ -22,8 +22,8 @@ import { recordFailedUpload, recordPull, recordStoredShard } from '../state.js'
  */
 
 /**
- * Store all actionable store-routed shards on the primary copy and return
- * durable commit entries keyed by shard CID.
+ * Store all actionable store-routed shards on the primary copy and return the
+ * same-run eligible commit entries keyed by shard CID.
  *
  * @param {object} args
  * @param {API.SpaceInventory} args.inventory
@@ -109,7 +109,19 @@ export async function* storeShardsOnPrimaryCopy({
   }
   if (!completed) return
 
-  return entriesByShardCid
+  if (activeFailedRoots.size === 0) {
+    return entriesByShardCid
+  }
+
+  const eligibleEntriesByShardCid = new Map()
+  for (const entry of entriesByShardCid.values()) {
+    if (activeFailedRoots.has(entry.root)) continue
+    eligibleEntriesByShardCid.set(entry.shardCid, entry)
+  }
+
+  // Durable state keeps all stored shards for retry reuse; the returned map
+  // omits roots that failed in this run so copy 1 does not pull/commit them.
+  return eligibleEntriesByShardCid
 }
 
 /**
