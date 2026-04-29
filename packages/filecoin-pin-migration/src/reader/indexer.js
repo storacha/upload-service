@@ -423,7 +423,6 @@ function isEqualsClaim(claim) {
   )
 }
 
-
 /**
  * @param {ClaimsEntry | undefined} entry
  */

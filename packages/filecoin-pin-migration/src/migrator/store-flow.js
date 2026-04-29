@@ -52,7 +52,8 @@ export async function* storeShardsOnPrimaryCopy({
   if (copyState.copyIndex !== PRIMARY_COPY_INDEX) return
 
   const entriesByShardCid = new Map()
-
+  /** @type {API.StoreShard[]} */
+  const actionableShards = []
   for (const shard of inventory.shardsToStore) {
     const storedPieceCID = copyState.storedShards[shard.cid]
     if (storedPieceCID) {
@@ -62,12 +63,7 @@ export async function* storeShardsOnPrimaryCopy({
         root: shard.root,
       })
     }
-  }
 
-  /** @type {API.StoreShard[]} */
-  const actionableShards = []
-  for (const shard of inventory.shardsToStore) {
-    const storedPieceCID = copyState.storedShards[shard.cid]
     if (copyState.committed.has(shard.cid)) continue
     if (storedPieceCID) continue
     if (activeFailedRoots.has(shard.root)) continue
@@ -351,7 +347,20 @@ async function storeShard({ shard, context, fetcher, signal }) {
     const result = await pRetry(
       async () => {
         const body = await fetchShardBody({ shard, fetcher, signal })
-        return await context.store(body, { signal })
+        try {
+          return await context.store(body.stream, { signal })
+        } catch (error) {
+          try {
+            await body.cancel(error)
+          } catch {
+            // Best-effort cleanup; preserve the original store error.
+          }
+          throw withStoreErrorContext(error, {
+            shard,
+            expectedBytes: body.expectedBytes,
+            observedBytes: body.getObservedBytes(),
+          })
+        }
       },
       {
         retries: DEFAULT_STORE_OPERATION_RETRIES,
@@ -372,7 +381,11 @@ async function storeShard({ shard, context, fetcher, signal }) {
       error: {
         shardCid: shard.cid,
         root: shard.root,
-        error: error instanceof Error ? error : new Error(String(error)),
+        error: withStoreErrorContext(error, {
+          shard,
+          expectedBytes: null,
+          observedBytes: 0n,
+        }),
       },
     }
   }
@@ -387,18 +400,26 @@ async function storeShard({ shard, context, fetcher, signal }) {
 async function fetchShardBody({ shard, fetcher, signal }) {
   return await pRetry(
     async () => {
-      const response = await fetcher(shard.sourceURL, { signal })
-      if (!response.ok) {
-        throw createRetryableError(
-          `Download failed with status ${response.status}`,
-          isRetryableHttpStatus(response.status),
-          response.status
-        )
+      try {
+        const response = await fetcher(shard.sourceURL, { signal })
+        if (!response.ok) {
+          throw createRetryableError(
+            `Download failed with status ${response.status}`,
+            isRetryableHttpStatus(response.status),
+            response.status
+          )
+        }
+        if (!response.body) {
+          throw createRetryableError('Download response body is missing', false)
+        }
+        return createCountedShardBody(response)
+      } catch (error) {
+        throw withStoreErrorContext(error, {
+          shard,
+          expectedBytes: null,
+          observedBytes: 0n,
+        })
       }
-      if (!response.body) {
-        throw createRetryableError('Download response body is missing', false)
-      }
-      return response.body
     },
     {
       retries: DEFAULT_STORE_FETCH_RETRIES,
@@ -406,6 +427,123 @@ async function fetchShardBody({ shard, fetcher, signal }) {
       shouldRetry: shouldRetryFetchError,
     }
   )
+}
+
+/**
+ * @param {Response} response
+ */
+function createCountedShardBody(response) {
+  const body = /** @type {ReadableStream<Uint8Array>} */ (response.body)
+  const reader = body.getReader()
+  const expectedBytes = parseContentLength(response)
+  let observedBytes = 0n
+
+  return {
+    stream: new ReadableStream(
+      {
+        async pull(controller) {
+          const { done, value } = await reader.read()
+          if (done) {
+            controller.close()
+            return
+          }
+
+          observedBytes += BigInt(value.byteLength)
+          controller.enqueue(value)
+        },
+        async cancel(/** @type {unknown} */ reason) {
+          await reader.cancel(reason)
+        },
+      },
+      { highWaterMark: 0 }
+    ),
+    expectedBytes,
+    getObservedBytes() {
+      return observedBytes
+    },
+    async cancel(/** @type {unknown} */ reason) {
+      await reader.cancel(reason)
+    },
+  }
+}
+
+/**
+ * @param {Response} response
+ * @returns {bigint | null}
+ */
+function parseContentLength(response) {
+  const value = response.headers.get('content-length')
+  if (!value) return null
+
+  try {
+    return BigInt(value)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * @param {unknown} error
+ * @param {object} context
+ * @param {API.StoreShard} context.shard
+ * @param {bigint | null} context.expectedBytes
+ * @param {bigint} context.observedBytes
+ * @returns {Error}
+ */
+function withStoreErrorContext(error, { shard, expectedBytes, observedBytes }) {
+  if (hasStoreErrorContext(error)) {
+    return /** @type {Error} */ (error)
+  }
+
+  const baseError = error instanceof Error ? error : new Error(String(error))
+  /** @type {API.StoreDiagnosticError} */
+  const contextualError = new Error(
+    `${baseError.message} (shardCid=${shard.cid}, root=${
+      shard.root
+    }, sourceURL=${shard.sourceURL}, expectedBytes=${formatExpectedBytes(
+      expectedBytes
+    )}, observedBytes=${observedBytes})`
+  )
+  contextualError.name = baseError.name
+  contextualError.cause = baseError
+  contextualError.shardCid = shard.cid
+  contextualError.root = shard.root
+  contextualError.sourceURL = shard.sourceURL
+  contextualError.expectedBytes = expectedBytes
+  contextualError.observedBytes = observedBytes
+
+  if ('retryable' in baseError && typeof baseError.retryable === 'boolean') {
+    contextualError.retryable = baseError.retryable
+  }
+  if ('status' in baseError && typeof baseError.status === 'number') {
+    contextualError.status = baseError.status
+  }
+
+  return contextualError
+}
+
+/**
+ * @param {unknown} error
+ * @returns {boolean}
+ */
+function hasStoreErrorContext(error) {
+  return Boolean(
+    error &&
+      typeof error === 'object' &&
+      'shardCid' in error &&
+      typeof error.shardCid === 'string' &&
+      'sourceURL' in error &&
+      typeof error.sourceURL === 'string' &&
+      'observedBytes' in error &&
+      typeof error.observedBytes === 'bigint'
+  )
+}
+
+/**
+ * @param {bigint | null} expectedBytes
+ */
+function formatExpectedBytes(expectedBytes) {
+  return expectedBytes == null ? 'unknown' : String(expectedBytes)
 }
 
 /**

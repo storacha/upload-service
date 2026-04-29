@@ -178,6 +178,30 @@ function createAbortError() {
   return error
 }
 
+/**
+ * @param {ReadableStream<Uint8Array>} stream
+ */
+async function readStreamBytes(stream) {
+  const reader = stream.getReader()
+  let total = 0n
+  let done = false
+
+  while (!done) {
+    const readResult = await reader.read()
+    done = readResult.done
+    if (done) break
+
+    const value = readResult.value
+    if (!value) {
+      throw new Error('expected readable stream chunk')
+    }
+
+    total += BigInt(value.byteLength)
+  }
+
+  return total
+}
+
 describe('executeMigration', () => {
   it('migrates normal shards via source pull and shardsToStore via store+pull in one commit phase per copy', async () => {
     const spaceDID = /** @type {API.SpaceDID} */ (
@@ -344,6 +368,151 @@ describe('executeMigration', () => {
     expect(completionEvent.summary.succeeded).toBe(4)
     expect(completionEvent.summary.failed).toBe(0)
     expect(completionEvent.summary.totalBytes).toBe(384n)
+  })
+
+  it('streams shard bytes into context.store()', async () => {
+    const spaceDID = /** @type {API.SpaceDID} */ (
+      'did:key:z6MkStoreByteStreamSpace'
+    )
+    const state = withInventory(createMockInitialState(), {
+      did: spaceDID,
+      name: 'Store Byte Stream Space',
+      uploads: ['bafy-root-store-bytes'],
+      shards: [],
+      shardsToStore: [
+        {
+          root: 'bafy-root-store-bytes',
+          cid: 'bafy-shard-store-bytes',
+          sourceURL: 'https://source.example/store-bytes',
+          sizeBytes: 4n,
+        },
+      ],
+      skippedUploads: [],
+      totalBytes: 4n,
+      totalSizeToMigrate: 4n,
+    })
+
+    const copy0Context = createStorageContext({ spaceDID, name: 'copy0' })
+    const copy1Context = createStorageContext({ spaceDID, name: 'copy1' })
+    const plan = createPlan({ spaceDID, copy0Context, copy1Context })
+    plan.totals.uploads = 1
+    plan.totals.shards = 1
+    plan.totals.bytes = 4n
+    plan.totals.bytesToMigrate = 4n
+    plan.costs.perSpace[0].bytesToMigrate = 4n
+    plan.costs.summary.totalBytes = 4n
+
+    transitionToApproved(state, plan.costs.perSpace)
+
+    let storedBytes = 0n
+    copy0Context.store.mockImplementationOnce(async (body) => {
+      storedBytes = await readStreamBytes(
+        /** @type {ReadableStream<Uint8Array>} */ (body)
+      )
+      return { pieceCid: createPieceCID() }
+    })
+
+    const fetcher = /** @type {typeof fetch} */ (
+      vi.fn(
+        async () =>
+          new Response(new Uint8Array([1, 2, 3, 4]), {
+            headers: { 'content-length': '4' },
+          })
+      )
+    )
+
+    for await (const _event of executeMigration({
+      plan,
+      state,
+      synapse: /** @type {API.Synapse} */ ({}),
+      fetcher,
+    })) {
+      // drain
+    }
+
+    expect(storedBytes).toBe(4n)
+  })
+
+  it('adds shard and byte context to store failure events', async () => {
+    const spaceDID = /** @type {API.SpaceDID} */ (
+      'did:key:z6MkStoreFailureContextSpace'
+    )
+    const shardCID = 'bafy-shard-store-error'
+    const sourceURL = 'https://source.example/store-error'
+    const state = withInventory(createMockInitialState(), {
+      did: spaceDID,
+      name: 'Store Failure Context Space',
+      uploads: ['bafy-root-store-error'],
+      shards: [],
+      shardsToStore: [
+        {
+          root: 'bafy-root-store-error',
+          cid: shardCID,
+          sourceURL,
+          sizeBytes: 4n,
+        },
+      ],
+      skippedUploads: [],
+      totalBytes: 4n,
+      totalSizeToMigrate: 4n,
+    })
+
+    const copy0Context = createStorageContext({ spaceDID, name: 'copy0' })
+    const copy1Context = createStorageContext({ spaceDID, name: 'copy1' })
+    const plan = createPlan({ spaceDID, copy0Context, copy1Context })
+    plan.totals.uploads = 1
+    plan.totals.shards = 1
+    plan.totals.bytes = 4n
+    plan.totals.bytesToMigrate = 4n
+    plan.costs.perSpace[0].bytesToMigrate = 4n
+    plan.costs.summary.totalBytes = 4n
+
+    transitionToApproved(state, plan.costs.perSpace)
+
+    copy0Context.store.mockImplementationOnce(async () => {
+      throw new Error('store failed')
+    })
+
+    /** @type {API.MigrationEvent[]} */
+    const events = []
+    const fetcher = /** @type {typeof fetch} */ (
+      vi.fn(
+        async () =>
+          new Response(new Uint8Array([1, 2, 3, 4]), {
+            headers: { 'content-length': '4' },
+          })
+      )
+    )
+
+    for await (const event of executeMigration({
+      plan,
+      state,
+      synapse: /** @type {API.Synapse} */ ({}),
+      fetcher,
+    })) {
+      events.push(event)
+    }
+
+    const failedEvent = events.find(
+      (event) =>
+        event.type === 'migration:batch:failed' && event.stage === 'store'
+    )
+    if (!failedEvent || failedEvent.type !== 'migration:batch:failed') {
+      throw new Error('expected store migration:batch:failed event')
+    }
+
+    expect(failedEvent.error.message).toContain('store failed')
+    expect(failedEvent.error.message).toContain(`shardCid=${shardCID}`)
+    expect(failedEvent.error.message).toContain(`sourceURL=${sourceURL}`)
+    expect(failedEvent.error.message).toContain('expectedBytes=4')
+    expect(failedEvent.error.message).toContain('observedBytes=0')
+    const err = /** @type {API.StoreDiagnosticError} */ (
+      /** @type {unknown} */ (failedEvent.error)
+    )
+    expect(err.shardCid).toBe(shardCID)
+    expect(err.sourceURL).toBe(sourceURL)
+    expect(err.expectedBytes).toBe(4n)
+    expect(err.observedBytes).toBe(0n)
   })
 
   it('withholds a failed store root from copy 1 even when success and failure land in separate batches', async () => {

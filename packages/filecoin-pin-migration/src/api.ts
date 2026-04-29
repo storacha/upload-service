@@ -629,6 +629,21 @@ export interface BatchResult {
 }
 
 /**
+ * Optional store-path diagnostics attached to a failed store error when the
+ * shard download stream could be correlated with expected and observed bytes.
+ */
+export interface StoreDiagnosticError extends Error {
+  cause?: unknown
+  retryable?: boolean
+  status?: number
+  shardCid?: string
+  root?: string
+  sourceURL?: string
+  expectedBytes?: bigint | null
+  observedBytes?: bigint
+}
+
+/**
  * Result of presign+pull for a single batch.
  */
 export interface PullResult<T = ResolvedShard> {

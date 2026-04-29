@@ -835,8 +835,8 @@ function parsePositiveBigInt(value, flag) {
       typeof value === 'bigint'
         ? value
         : typeof value === 'number'
-        ? BigInt(value)
-        : BigInt(value)
+          ? BigInt(value)
+          : BigInt(value)
 
     if (parsed > 0n) {
       return parsed
