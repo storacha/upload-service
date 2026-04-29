@@ -731,7 +731,13 @@ async function runMigration({
       case 'migration:complete':
         stopHeartbeat()
         clearStatusBlock()
-        printSummary(event.summary, Date.now() - startedAt, synapse.chain.id)
+        printSummary(
+          event.summary,
+          Date.now() - startedAt,
+          synapse.chain.id,
+          state,
+          plan
+        )
         break
     }
   }

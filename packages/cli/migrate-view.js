@@ -181,8 +181,10 @@ export function printPlan(plan, userWalletBalance, userDeposit) {
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationSummary} summary
  * @param {number} [durationMs]
  * @param {number} [chainId]
+ * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} [state]
+ * @param {import('@storacha/filecoin-pin-migration/types').MigrationPlan} [plan]
  */
-export function printSummary(summary, durationMs, chainId) {
+export function printSummary(summary, durationMs, chainId, state, plan) {
   const hasSucceeded = summary.succeeded > 0
   const hasFailed = summary.failed > 0
 
@@ -200,13 +202,20 @@ export function printSummary(summary, durationMs, chainId) {
         ? chalk.yellow
         : chalk.red
 
+  const copyLines =
+    state && plan
+      ? buildCopySummaryLines(state, plan)
+      : [
+          line('Succeeded', String(summary.succeeded)),
+          line('Failed', String(summary.failed)),
+        ]
+
   console.log('')
   console.log(
     renderBox(
       title,
       [
-        line('Succeeded', String(summary.succeeded)),
-        line('Failed', String(summary.failed)),
+        ...copyLines,
         line('Skipped uploads', String(summary.skippedUploads)),
         line('Total bytes', formatBytes(summary.totalBytes)),
         ...(typeof durationMs === 'number'
@@ -224,6 +233,26 @@ export function printSummary(summary, durationMs, chainId) {
   if (summary.dataSetIds.length > 0 && chainId != null) {
     printDataSetLinks(summary.dataSetIds, chainId)
   }
+}
+
+/**
+ * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
+ * @param {import('@storacha/filecoin-pin-migration/types').MigrationPlan} plan
+ */
+function buildCopySummaryLines(state, plan) {
+  const { copies, totalPerCopy, totalFailedUploads } = summarizeProgress(
+    state,
+    plan
+  )
+  const copyLines = copies
+    .sort((a, b) => a.copyIndex - b.copyIndex)
+    .map((c) =>
+      line(
+        `Copy ${c.copyIndex}`,
+        `staged ${c.staged}/${totalPerCopy}  committed ${c.committed}/${totalPerCopy}  failed ${c.failedUploads}`
+      )
+    )
+  return [...copyLines, line('Total failed', String(totalFailedUploads))]
 }
 
 /**

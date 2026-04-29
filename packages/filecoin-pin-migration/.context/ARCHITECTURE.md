@@ -156,6 +156,10 @@ Internally, migrator execution is split into two layers:
 - source pull work is batched and runs concurrently per copy
 - store-routed shards are downloaded+stored in batches on copy 0, then pulled in
   batches from copy 0 on copy 1
+- store retries treat one attempt as one full `fetch + store()` cycle, so every
+  retry recreates the source stream from the reader-resolved `sourceURL`
+- secondary/source pull retries presign once, then retry only `context.pull()`
+  with the same `extraData`
 - when a store-routed root fails on copy 0, any stored shard mappings for that
   root remain durable for retry reuse, but that root is withheld from copy 1
   for the rest of the current run
@@ -207,11 +211,15 @@ earlier failed batch that is still waiting on retry/skip.
 
 ### Error Model
 
-| Stage   | Failure class          | Scope                            | Retry             |
-| ------- | ---------------------- | -------------------------------- | ----------------- |
-| Presign | `PresignFailedFailure` | Whole pull batch for a copy      | None              |
-| Pull    | `PullFailedFailure`    | Per upload root within the batch | `p-retry`         |
-| Commit  | `CommitFailedFailure`  | One commit batch for one copy    | Interactive retry |
+| Stage   | Failure class          | Scope                            | Retry                 |
+| ------- | ---------------------- | -------------------------------- | --------------------- |
+| Presign | `PresignFailedFailure` | Whole pull batch for a copy      | None                  |
+| Pull    | `PullFailedFailure`    | Per upload root within the batch | `context.pull()` only |
+| Commit  | `CommitFailedFailure`  | One commit batch for one copy    | Interactive retry     |
+
+Operational pull and store failures now carry retry diagnostics on their final
+error objects, including attempt count and elapsed time. Upload-quality pull
+failures keep the existing per-root event semantics.
 
 ---
 

@@ -1,6 +1,4 @@
-import pRetry from 'p-retry'
 import {
-  DEFAULT_STORE_FETCH_RETRIES,
   DEFAULT_STORE_OPERATION_RETRIES,
   PRIMARY_COPY_INDEX,
   SECONDARY_COPY_INDEX,
@@ -9,13 +7,14 @@ import { runConcurrentTasks } from './concurrent.js'
 import { applyPullResults } from './pull-results.js'
 import { presignAndPullBatch } from './pull.js'
 import {
-  createRetryableError,
+  copyOptionalErrorFlags,
+  createRetryableOperationError,
   isRetryableHttpStatus,
-  shouldRetryFetchError,
-  shouldRetryStoreOperationError,
+  shouldRetryTransientOperationError,
 } from './retry-policy.js'
-import { batches } from '../utils.js'
+import { batches, isAbortError } from '../utils.js'
 import { recordFailedUpload, recordPull, recordStoredShard } from '../state.js'
+import { extractRetryDiagnostics, runRetried } from './retried-operation.js'
 
 /**
  * @import * as API from '../api.js'
@@ -343,31 +342,56 @@ async function* processStoreBatch({
  * @param {AbortSignal | undefined} args.signal
  */
 async function storeShard({ shard, context, fetcher, signal }) {
+  /** @type {'fetch' | 'store'} */
+  let failureStep = 'fetch'
+  /** @type {bigint | null} */
+  let expectedBytes = null
+  let observedBytes = 0n
+
   try {
-    const result = await pRetry(
-      async () => {
-        const body = await fetchShardBody({ shard, fetcher, signal })
+    const result = await runRetried({
+      retries: DEFAULT_STORE_OPERATION_RETRIES,
+      signal,
+      shouldRetry: shouldRetryTransientOperationError,
+      attempt: async () => {
+        failureStep = 'fetch'
+        expectedBytes = null
+        observedBytes = 0n
+
+        const response = await fetcher(shard.sourceURL, { signal })
+        if (!response.ok) {
+          throw createRetryableOperationError(
+            `Download failed with status ${response.status}`,
+            isRetryableHttpStatus(response.status),
+            response.status
+          )
+        }
+        if (!response.body) {
+          throw createRetryableOperationError(
+            'Download response body is missing',
+            false
+          )
+        }
+
+        const body = createCountedShardBody(response)
+        expectedBytes = body.expectedBytes
+        failureStep = 'store'
+
         try {
-          return await context.store(body.stream, { signal })
+          const stored = await context.store(body.stream, { signal })
+          observedBytes = body.getObservedBytes()
+          return stored
         } catch (error) {
+          observedBytes = body.getObservedBytes()
           try {
             await body.cancel(error)
           } catch {
             // Best-effort cleanup; preserve the original store error.
           }
-          throw withStoreErrorContext(error, {
-            shard,
-            expectedBytes: body.expectedBytes,
-            observedBytes: body.getObservedBytes(),
-          })
+          throw error
         }
       },
-      {
-        retries: DEFAULT_STORE_OPERATION_RETRIES,
-        signal,
-        shouldRetry: shouldRetryStoreOperationError,
-      }
-    )
+    })
 
     return {
       ok: {
@@ -377,56 +401,29 @@ async function storeShard({ shard, context, fetcher, signal }) {
       },
     }
   } catch (error) {
+    if (signal?.aborted || isAbortError(error)) {
+      throw error
+    }
+
+    const { baseError, attempts, retriesConfigured, elapsedMs } =
+      extractRetryDiagnostics(error, DEFAULT_STORE_OPERATION_RETRIES)
+
     return {
       error: {
         shardCid: shard.cid,
         root: shard.root,
-        error: withStoreErrorContext(error, {
+        error: withStoreErrorContext(baseError, {
           shard,
-          expectedBytes: null,
-          observedBytes: 0n,
+          expectedBytes,
+          observedBytes,
+          failureStep,
+          attempts,
+          retriesConfigured,
+          elapsedMs,
         }),
       },
     }
   }
-}
-
-/**
- * @param {object} args
- * @param {API.StoreShard} args.shard
- * @param {typeof fetch} args.fetcher
- * @param {AbortSignal | undefined} args.signal
- */
-async function fetchShardBody({ shard, fetcher, signal }) {
-  return await pRetry(
-    async () => {
-      try {
-        const response = await fetcher(shard.sourceURL, { signal })
-        if (!response.ok) {
-          throw createRetryableError(
-            `Download failed with status ${response.status}`,
-            isRetryableHttpStatus(response.status),
-            response.status
-          )
-        }
-        if (!response.body) {
-          throw createRetryableError('Download response body is missing', false)
-        }
-        return createCountedShardBody(response)
-      } catch (error) {
-        throw withStoreErrorContext(error, {
-          shard,
-          expectedBytes: null,
-          observedBytes: 0n,
-        })
-      }
-    },
-    {
-      retries: DEFAULT_STORE_FETCH_RETRIES,
-      signal,
-      shouldRetry: shouldRetryFetchError,
-    }
-  )
 }
 
 /**
@@ -436,7 +433,7 @@ function createCountedShardBody(response) {
   const body = /** @type {ReadableStream<Uint8Array>} */ (response.body)
   const reader = body.getReader()
   const expectedBytes = parseContentLength(response)
-  let observedBytes = 0n
+  let observedBytes = 0
 
   return {
     stream: new ReadableStream(
@@ -448,7 +445,7 @@ function createCountedShardBody(response) {
             return
           }
 
-          observedBytes += BigInt(value.byteLength)
+          observedBytes += value.byteLength
           controller.enqueue(value)
         },
         async cancel(/** @type {unknown} */ reason) {
@@ -459,7 +456,7 @@ function createCountedShardBody(response) {
     ),
     expectedBytes,
     getObservedBytes() {
-      return observedBytes
+      return BigInt(observedBytes)
     },
     async cancel(/** @type {unknown} */ reason) {
       await reader.cancel(reason)
@@ -488,21 +485,40 @@ function parseContentLength(response) {
  * @param {API.StoreShard} context.shard
  * @param {bigint | null} context.expectedBytes
  * @param {bigint} context.observedBytes
- * @returns {Error}
+ * @param {'fetch' | 'store'} context.failureStep
+ * @param {number} context.attempts
+ * @param {number} context.retriesConfigured
+ * @param {number} context.elapsedMs
+ * @returns {API.StoreDiagnosticError}
  */
-function withStoreErrorContext(error, { shard, expectedBytes, observedBytes }) {
+function withStoreErrorContext(
+  error,
+  {
+    shard,
+    expectedBytes,
+    observedBytes,
+    failureStep,
+    attempts,
+    retriesConfigured,
+    elapsedMs,
+  }
+) {
   if (hasStoreErrorContext(error)) {
-    return /** @type {Error} */ (error)
+    return /** @type {API.StoreDiagnosticError} */ (error)
   }
 
   const baseError = error instanceof Error ? error : new Error(String(error))
   /** @type {API.StoreDiagnosticError} */
-  const contextualError = new Error(
-    `${baseError.message} (shardCid=${shard.cid}, root=${
-      shard.root
-    }, sourceURL=${shard.sourceURL}, expectedBytes=${formatExpectedBytes(
-      expectedBytes
-    )}, observedBytes=${observedBytes})`
+  const contextualError = /** @type {API.StoreDiagnosticError} */ (
+    /** @type {unknown} */ (
+      new Error(
+        `${baseError.message} (shardCid=${shard.cid}, root=${
+          shard.root
+        }, sourceURL=${shard.sourceURL}, expectedBytes=${formatExpectedBytes(
+          expectedBytes
+        )}, observedBytes=${observedBytes}, failureStep=${failureStep}, attempts=${attempts}, retriesConfigured=${retriesConfigured}, elapsedMs=${elapsedMs})`
+      )
+    )
   )
   contextualError.name = baseError.name
   contextualError.cause = baseError
@@ -511,13 +527,11 @@ function withStoreErrorContext(error, { shard, expectedBytes, observedBytes }) {
   contextualError.sourceURL = shard.sourceURL
   contextualError.expectedBytes = expectedBytes
   contextualError.observedBytes = observedBytes
-
-  if ('retryable' in baseError && typeof baseError.retryable === 'boolean') {
-    contextualError.retryable = baseError.retryable
-  }
-  if ('status' in baseError && typeof baseError.status === 'number') {
-    contextualError.status = baseError.status
-  }
+  contextualError.failureStep = failureStep
+  contextualError.attempts = attempts
+  contextualError.retriesConfigured = retriesConfigured
+  contextualError.elapsedMs = elapsedMs
+  copyOptionalErrorFlags(contextualError, baseError)
 
   return contextualError
 }

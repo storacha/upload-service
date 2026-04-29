@@ -628,19 +628,44 @@ export interface BatchResult {
   commitPieces?: CommitPiece[]
 }
 
+/** Shared retry metadata attached to exhausted operational failures. */
+export interface RetryDiagnostics {
+  /** Number of attempts that actually ran. 1 when retriesConfigured is 0. */
+  attempts: number
+  /** Retry budget passed into the retried operation helper. */
+  retriesConfigured: number
+  /** Wall-clock time spent across all attempts. */
+  elapsedMs: number
+}
+
 /**
  * Optional store-path diagnostics attached to a failed store error when the
  * shard download stream could be correlated with expected and observed bytes.
  */
-export interface StoreDiagnosticError extends Error {
+export interface StoreDiagnosticError extends Error, RetryDiagnostics {
   cause?: unknown
   retryable?: boolean
   status?: number
-  shardCid?: string
-  root?: string
-  sourceURL?: string
-  expectedBytes?: bigint | null
-  observedBytes?: bigint
+  shardCid: string
+  root: string
+  sourceURL: string
+  expectedBytes: bigint | null
+  observedBytes: bigint
+  failureStep: 'fetch' | 'store'
+}
+
+/** Diagnostics attached to exhausted operational pull failures. */
+export interface PullDiagnosticError extends Error, RetryDiagnostics {
+  cause?: unknown
+  retryable?: boolean
+  status?: number
+  phase: MigrationExecutionPhase
+  failureStep: 'pull'
+  pieceCount: number
+  rootCount: number
+  rootsSample: string[]
+  pieceCIDsSample: string[]
+  sourceURLsSample: string[]
 }
 
 /**

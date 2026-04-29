@@ -1,6 +1,6 @@
 import { isAbortError } from '../utils.js'
 
-export class RetryableStoreError extends Error {
+export class RetryableOperationError extends Error {
   /**
    * @param {string} message
    * @param {boolean} retryable
@@ -8,7 +8,7 @@ export class RetryableStoreError extends Error {
    */
   constructor(message, retryable, status) {
     super(message)
-    this.name = 'RetryableStoreError'
+    this.name = 'RetryableOperationError'
     /** @type {boolean} */
     this.retryable = retryable
     /** @type {number | undefined} */
@@ -21,14 +21,14 @@ export class RetryableStoreError extends Error {
  * @param {boolean} retryable
  * @param {number} [status]
  */
-export function createRetryableError(message, retryable, status) {
-  return new RetryableStoreError(message, retryable, status)
+export function createRetryableOperationError(message, retryable, status) {
+  return new RetryableOperationError(message, retryable, status)
 }
 
 /**
  * @param {unknown} error
  */
-export function shouldRetryFetchError(error) {
+export function shouldRetryTransientOperationError(error) {
   if (isAbortError(error)) return false
 
   const retryable = getRetryableFlag(error)
@@ -37,24 +37,26 @@ export function shouldRetryFetchError(error) {
   const status = getErrorStatus(error)
   if (status != null) return isRetryableHttpStatus(status)
 
-  return true
+  const message = getErrorMessage(error).toLowerCase()
+  return /timeout|timed out|econnreset|econnrefused|socket hang up|connection reset|temporary|temporarily|network|unavailable|429|500|502|503|504|too many requests|fetch failed|stream/i.test(
+    message
+  )
 }
 
 /**
- * @param {unknown} error
+ * @param {{ retryable?: boolean, status?: number }} target
+ * @param {unknown} source
  */
-export function shouldRetryStoreOperationError(error) {
-  if (!shouldRetryFetchError(error)) return false
+export function copyOptionalErrorFlags(target, source) {
+  const retryable = getRetryableFlag(source)
+  if (retryable != null) {
+    target.retryable = retryable
+  }
 
-  const status = getErrorStatus(error)
-  if (status != null) return isRetryableHttpStatus(status)
-
-  const message = getErrorMessage(error).toLowerCase()
-  return (
-    /timeout|timed out|econnreset|econnrefused|socket hang up|connection reset|temporary|temporarily|network|unavailable|429|500|502|503|504|too many requests|fetch failed|stream/i.test(
-      message
-    ) || getRetryableFlag(error) === true
-  )
+  const status = getErrorStatus(source)
+  if (status != null) {
+    target.status = status
+  }
 }
 
 /**

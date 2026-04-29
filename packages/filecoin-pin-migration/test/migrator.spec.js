@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { executeMigration } from '../src/migrator/migrator.js'
 import { executeStoreMigration } from '../src/migrator/store-executor.js'
 import { createMockInitialState, createPieceCID } from './helpers.js'
+import { DEFAULT_STORE_OPERATION_RETRIES } from '../src/constants.js'
 import {
   clearFailedUploadsForRetry,
   transitionToApproved,
@@ -433,7 +434,73 @@ describe('executeMigration', () => {
     expect(storedBytes).toBe(4n)
   })
 
-  it('adds shard and byte context to store failure events', async () => {
+  it('retries transient fetch failures before a later store attempt succeeds', async () => {
+    const spaceDID = /** @type {API.SpaceDID} */ (
+      'did:key:z6MkStoreFetchRetrySuccessSpace'
+    )
+    const state = withInventory(createMockInitialState(), {
+      did: spaceDID,
+      name: 'Store Fetch Retry Success Space',
+      uploads: ['bafy-root-store-retry'],
+      shards: [],
+      shardsToStore: [
+        {
+          root: 'bafy-root-store-retry',
+          cid: 'bafy-shard-store-retry',
+          sourceURL: 'https://source.example/store-retry',
+          sizeBytes: 4n,
+        },
+      ],
+      skippedUploads: [],
+      totalBytes: 4n,
+      totalSizeToMigrate: 4n,
+    })
+
+    const copy0Context = createStorageContext({ spaceDID, name: 'copy0' })
+    const copy1Context = createStorageContext({ spaceDID, name: 'copy1' })
+    const plan = createPlan({ spaceDID, copy0Context, copy1Context })
+    plan.totals.uploads = 1
+    plan.totals.shards = 1
+    plan.totals.bytes = 4n
+    plan.totals.bytesToMigrate = 4n
+    plan.costs.perSpace[0].bytesToMigrate = 4n
+    plan.costs.summary.totalBytes = 4n
+
+    transitionToApproved(state, plan.costs.perSpace)
+
+    let fetchCalls = 0
+    const fetcher = /** @type {typeof fetch} */ (
+      vi.fn(async () => {
+        fetchCalls += 1
+        if (fetchCalls < 3) {
+          return new Response('temporary', { status: 503 })
+        }
+
+        return new Response(new Uint8Array([1, 2, 3, 4]), {
+          headers: { 'content-length': '4' },
+        })
+      })
+    )
+
+    /** @type {API.MigrationEvent[]} */
+    const events = []
+    for await (const event of executeMigration({
+      plan,
+      state,
+      synapse: /** @type {API.Synapse} */ ({}),
+      fetcher,
+    })) {
+      events.push(event)
+    }
+
+    expect(fetchCalls).toBe(3)
+    expect(copy0Context.store).toHaveBeenCalledTimes(1)
+    expect(
+      events.some((event) => event.type === 'migration:batch:failed')
+    ).toBe(false)
+  })
+
+  it('adds shard, byte, and retry context to exhausted store failure events', async () => {
     const spaceDID = /** @type {API.SpaceDID} */ (
       'did:key:z6MkStoreFailureContextSpace'
     )
@@ -469,8 +536,8 @@ describe('executeMigration', () => {
 
     transitionToApproved(state, plan.costs.perSpace)
 
-    copy0Context.store.mockImplementationOnce(async () => {
-      throw new Error('store failed')
+    copy0Context.store.mockImplementation(async () => {
+      throw Object.assign(new Error('store failed'), { retryable: true })
     })
 
     /** @type {API.MigrationEvent[]} */
@@ -506,6 +573,8 @@ describe('executeMigration', () => {
     expect(failedEvent.error.message).toContain(`sourceURL=${sourceURL}`)
     expect(failedEvent.error.message).toContain('expectedBytes=4')
     expect(failedEvent.error.message).toContain('observedBytes=0')
+    expect(failedEvent.error.message).toContain('failureStep=store')
+    expect(failedEvent.error.message).toContain('attempts=5')
     const err = /** @type {API.StoreDiagnosticError} */ (
       /** @type {unknown} */ (failedEvent.error)
     )
@@ -513,6 +582,104 @@ describe('executeMigration', () => {
     expect(err.sourceURL).toBe(sourceURL)
     expect(err.expectedBytes).toBe(4n)
     expect(err.observedBytes).toBe(0n)
+    expect(err.failureStep).toBe('store')
+    expect(err.attempts).toBe(DEFAULT_STORE_OPERATION_RETRIES + 1)
+    expect(err.retriesConfigured).toBe(DEFAULT_STORE_OPERATION_RETRIES)
+    expect(err.elapsedMs).toBeGreaterThanOrEqual(0)
+    expect(copy0Context.store).toHaveBeenCalledTimes(
+      DEFAULT_STORE_OPERATION_RETRIES + 1
+    )
+  })
+
+  it('marks fetch-stage store failures as retryable or immediate based on HTTP status', async () => {
+    const cases = [
+      {
+        label: 'retries 503 responses',
+        status: 503,
+        expectedAttempts: DEFAULT_STORE_OPERATION_RETRIES + 1,
+      },
+      {
+        label: 'does not retry 404 responses',
+        status: 404,
+        expectedAttempts: 1,
+      },
+    ]
+
+    for (const testCase of cases) {
+      const spaceDID = /** @type {API.SpaceDID} */ (
+        `did:key:z6MkStoreFetchStatusSpace${testCase.status}`
+      )
+      const state = withInventory(createMockInitialState(), {
+        did: spaceDID,
+        name: 'Store Fetch Status Space',
+        uploads: ['bafy-root-store-status'],
+        shards: [],
+        shardsToStore: [
+          {
+            root: 'bafy-root-store-status',
+            cid: 'bafy-shard-store-status',
+            sourceURL: 'https://source.example/store-status',
+            sizeBytes: 4n,
+          },
+        ],
+        skippedUploads: [],
+        totalBytes: 4n,
+        totalSizeToMigrate: 4n,
+      })
+
+      const copy0Context = createStorageContext({ spaceDID, name: 'copy0' })
+      const copy1Context = createStorageContext({ spaceDID, name: 'copy1' })
+      const plan = createPlan({ spaceDID, copy0Context, copy1Context })
+      plan.totals.uploads = 1
+      plan.totals.shards = 1
+      plan.totals.bytes = 4n
+      plan.totals.bytesToMigrate = 4n
+      plan.costs.perSpace[0].bytesToMigrate = 4n
+      plan.costs.summary.totalBytes = 4n
+
+      transitionToApproved(state, plan.costs.perSpace)
+
+      let fetchCalls = 0
+      const fetcher = /** @type {typeof fetch} */ (
+        vi.fn(async () => {
+          fetchCalls += 1
+          return new Response('missing', { status: testCase.status })
+        })
+      )
+
+      /** @type {API.MigrationEvent[]} */
+      const events = []
+      for await (const event of executeMigration({
+        plan,
+        state,
+        synapse: /** @type {API.Synapse} */ ({}),
+        fetcher,
+      })) {
+        events.push(event)
+      }
+
+      const failedEvent = events.find(
+        (event) =>
+          event.type === 'migration:batch:failed' && event.stage === 'store'
+      )
+      if (!failedEvent || failedEvent.type !== 'migration:batch:failed') {
+        throw new Error(`expected store failure event for ${testCase.label}`)
+      }
+
+      const err = /** @type {API.StoreDiagnosticError} */ (
+        /** @type {unknown} */ (failedEvent.error)
+      )
+      expect(fetchCalls, testCase.label).toBe(testCase.expectedAttempts)
+      expect(copy0Context.store, testCase.label).not.toHaveBeenCalled()
+      expect(err.failureStep, testCase.label).toBe('fetch')
+      expect(err.status, testCase.label).toBe(testCase.status)
+      expect(err.attempts, testCase.label).toBe(testCase.expectedAttempts)
+      expect(err.retriesConfigured, testCase.label).toBe(
+        DEFAULT_STORE_OPERATION_RETRIES
+      )
+      expect(err.expectedBytes, testCase.label).toBeNull()
+      expect(err.observedBytes, testCase.label).toBe(0n)
+    }
   })
 
   it('withholds a failed store root from copy 1 even when success and failure land in separate batches', async () => {
@@ -558,11 +725,14 @@ describe('executeMigration', () => {
 
     transitionToApproved(state, plan.costs.perSpace)
 
-    copy0Context.store.mockImplementationOnce(async () => ({
-      pieceCid: createPieceCID(),
-    }))
-    copy0Context.store.mockImplementationOnce(async () => {
-      throw new Error('store failed')
+    let storeCalls = 0
+    copy0Context.store.mockImplementation(async () => {
+      storeCalls += 1
+      if (storeCalls === 1) {
+        return { pieceCid: createPieceCID() }
+      }
+
+      throw Object.assign(new Error('store failed'), { retryable: true })
     })
 
     /** @type {API.MigrationEvent[]} */
@@ -581,7 +751,9 @@ describe('executeMigration', () => {
       events.push(event)
     }
 
-    expect(copy0Context.store).toHaveBeenCalledTimes(2)
+    expect(copy0Context.store).toHaveBeenCalledTimes(
+      DEFAULT_STORE_OPERATION_RETRIES + 2
+    )
     expect(copy0Context.commit).not.toHaveBeenCalled()
     expect(copy1Context.pull).not.toHaveBeenCalled()
     expect(copy1Context.commit).not.toHaveBeenCalled()
@@ -656,15 +828,18 @@ describe('executeMigration', () => {
 
     transitionToApproved(state, plan.costs.perSpace)
 
-    copy0Context.store.mockImplementationOnce(async () => ({
-      pieceCid: createPieceCID(),
-    }))
-    copy0Context.store.mockImplementationOnce(async () => {
-      throw new Error('store failed')
+    let storeCalls = 0
+    copy0Context.store.mockImplementation(async () => {
+      storeCalls += 1
+      if (
+        storeCalls === 1 ||
+        storeCalls === DEFAULT_STORE_OPERATION_RETRIES + 3
+      ) {
+        return { pieceCid: createPieceCID() }
+      }
+
+      throw Object.assign(new Error('store failed'), { retryable: true })
     })
-    copy0Context.store.mockImplementationOnce(async () => ({
-      pieceCid: createPieceCID(),
-    }))
 
     const fetcher = /** @type {typeof fetch} */ (
       vi.fn(async () => new Response('ok'))
