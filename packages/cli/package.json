@@ -86,6 +86,7 @@
     "pretty-tree": "catalog:",
     "s-ago": "catalog:",
     "sade": "catalog:",
+    "terminal-link": "^5.0.0",
     "update-notifier": "catalog:",
     "viem": "catalog:"
   },

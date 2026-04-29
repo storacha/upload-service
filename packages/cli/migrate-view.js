@@ -1,6 +1,7 @@
 // @ts-expect-error no typings
 import tree from 'pretty-tree'
 import chalk from 'chalk'
+import terminalLink from 'terminal-link'
 import { formatEther } from 'viem'
 import { filesize } from './lib.js'
 
@@ -179,8 +180,9 @@ export function printPlan(plan, userWalletBalance, userDeposit) {
 /**
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationSummary} summary
  * @param {number} [durationMs]
+ * @param {number} [chainId]
  */
-export function printSummary(summary, durationMs) {
+export function printSummary(summary, durationMs, chainId) {
   const hasSucceeded = summary.succeeded > 0
   const hasFailed = summary.failed > 0
 
@@ -218,6 +220,24 @@ export function printSummary(summary, durationMs) {
       color
     )
   )
+
+  if (summary.dataSetIds.length > 0 && chainId != null) {
+    printDataSetLinks(summary.dataSetIds, chainId)
+  }
+}
+
+/**
+ * @param {bigint[]} dataSetIds
+ * @param {number} chainId
+ */
+function printDataSetLinks(dataSetIds, chainId) {
+  const network = chainId === 314 ? 'mainnet' : 'calibration'
+  console.log('')
+  console.log(chalk.dim('Dataset links:'))
+  for (const id of dataSetIds) {
+    const url = `https://pdp.vxb.ai/${network}/dataset/${id}`
+    console.log(`  ${terminalLink(url, url)}`)
+  }
 }
 
 /**
@@ -256,10 +276,9 @@ export function renderStorageRetentionCostEstimate({
       `${formatTokenAmount(estimate.storageSpendTotal)} USDFC`,
     ],
     [
-      'Rate lockup delta',
-      `${formatTokenAmount(estimate.rateLockupDeltaTotal)} USDFC`,
+      'Dataset creation fee',
+      `${formatTokenAmount(estimate.sybilFeeTotal)} USDFC`,
     ],
-    ['Sybil fee', `${formatTokenAmount(estimate.sybilFeeTotal)} USDFC`],
     ...(estimate.cdnFixedLockupTotal > 0n
       ? [
           [
@@ -269,11 +288,11 @@ export function renderStorageRetentionCostEstimate({
         ]
       : []),
     [
-      'Locked in contract',
+      'Collateral (refundable)',
       `${formatTokenAmount(estimate.totalLockedInContract)} USDFC`,
     ],
     [
-      `Available for ${months.toString()}m`,
+      `Total deposit needed ${months.toString()}m`,
       `${formatTokenAmount(estimate.recommendedAvailableForPeriod)} USDFC`,
     ],
   ]

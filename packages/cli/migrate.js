@@ -61,6 +61,7 @@ const DEFAULT_STORAGE_RETENTION_COPIES = 2
  * @property {'pull' | 'store'} [uploadMode]
  * @property {string} [sourceStrategy]
  * @property {string} [roundaboutURL]
+ * @property {boolean} [debug]
  */
 
 /**
@@ -175,6 +176,7 @@ export async function spaceMigrate(opts = {}) {
       batchSize: config.batchSize,
       pullConcurrency: config.pullConcurrency,
       uploadMode: config.uploadMode,
+      debug: config.debug,
       signal: ac.signal,
     })
     if (migrationResult.interrupted) return
@@ -253,6 +255,7 @@ function parseMigrationOptions(opts) {
     resume: opts.resume ?? false,
     retry: opts.retry ?? false,
     roundaboutURL: opts.roundaboutURL,
+    debug: opts.debug ?? false,
   }
 }
 
@@ -452,6 +455,7 @@ async function planMigration({ synapse, state, stateFile, signal }) {
  * @param {number} args.batchSize
  * @param {number | undefined} args.pullConcurrency
  * @param {'pull' | 'store'} args.uploadMode
+ * @param {boolean} args.debug
  * @param {AbortSignal} args.signal
  */
 async function runMigration({
@@ -462,6 +466,7 @@ async function runMigration({
   batchSize,
   pullConcurrency,
   uploadMode,
+  debug,
   signal,
 }) {
   printPhaseTitle('Migrating')
@@ -658,9 +663,11 @@ async function runMigration({
         break
       }
       case 'migration:commit:settled':
-        printPersistentMigrationLine(() => {
-          printCommitBatchResult(event)
-        })
+        if (debug || event.status !== 'succeeded') {
+          printPersistentMigrationLine(() => {
+            printCommitBatchResult(event)
+          })
+        }
         break
       case 'migration:batch:failed':
         printPersistentMigrationLine(() => {
@@ -724,7 +731,7 @@ async function runMigration({
       case 'migration:complete':
         stopHeartbeat()
         clearStatusBlock()
-        printSummary(event.summary, Date.now() - startedAt)
+        printSummary(event.summary, Date.now() - startedAt, synapse.chain.id)
         break
     }
   }

@@ -361,6 +361,11 @@ cli
     '--retry',
     'When resuming, clear persisted failed upload roots for the selected space and retry them.'
   )
+  .option(
+    '--debug',
+    'Show verbose output including successful commit logs.',
+    false
+  )
   .action((options) => {
     const walletPk = readRawOption(process.argv.slice(2), ['--wallet-pk', '-w'])
 
@@ -380,6 +385,7 @@ cli
       uploadMode: options['upload-mode'],
       sourceStrategy: options['source-strategy'],
       roundaboutURL: options['roundabout-url'],
+      debug: options.debug,
     }
 
     return actions.spaceMigrate(parsedOptions)
