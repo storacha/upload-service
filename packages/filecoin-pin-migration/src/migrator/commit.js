@@ -144,39 +144,127 @@ export async function* commitPieceBatches({
     commitIndex++
   }
 
-  // Phase 2 — pack remaining add-pieces batches serially; commit concurrently.
-  const remainingBatches = (function* () {
-    let nextPending = pending
+  // Phase 2 — pack and settle concurrent waves without buffering the whole
+  // remainder of the copy before persisting known-good work.
+  const phase2Concurrency = Math.max(1, commitConcurrency)
 
-    while (true) {
-      const batch = takeNextCommitBatch({
-        iterator,
-        pending: nextPending,
-        datasetMetadata: undefined,
+  while (true) {
+    const wave = takeNextCommitWave({
+      iterator,
+      pending,
+      size: phase2Concurrency,
+      activeFailedRoots,
+    })
+    pending = wave.pending
+
+    if (wave.commitBatches.length === 0) return
+
+    const { aborted, results } = await runConcurrentTasks({
+      items: wave.commitBatches,
+      concurrency: phase2Concurrency,
+      signal,
+      run: (commitPieces) => commitPreparedBatch({ context, commitPieces }),
+    })
+
+    if (results.length > 0) {
+      commitIndex = yield* finalizeConcurrentCommitWave({
+        results,
+        context,
+        state,
+        spaceDID,
+        copyIndex,
+        commitIndexStart: commitIndex,
+        maxCommitRetries,
+        commitRetryTimeout,
+        signal,
         activeFailedRoots,
       })
-      nextPending = batch.pending
-
-      if (batch.commitPieces.length === 0) {
-        return
-      }
-
-      yield batch.commitPieces
     }
-  })()
 
-  const { results } = await runConcurrentTasks({
-    items: remainingBatches,
-    concurrency: commitConcurrency,
-    signal,
-    run: (commitPieces) => commitPreparedBatch({ context, commitPieces }),
-  })
-  if (results.length === 0) return
+    if (aborted) return
+  }
+}
 
+/**
+ * @param {Set<string> | undefined} activeFailedRoots
+ * @param {Set<string>} failedUploads
+ */
+function applyActiveFailedRoots(activeFailedRoots, failedUploads) {
+  if (!activeFailedRoots || failedUploads.size === 0) return
+  for (const root of failedUploads) {
+    activeFailedRoots.add(root)
+  }
+}
+
+/**
+ * @param {object} args
+ * @param {Iterator<API.CommitPiece>} args.iterator
+ * @param {IteratorResult<API.CommitPiece> | undefined} args.pending
+ * @param {number} args.size
+ * @param {Set<string> | undefined} args.activeFailedRoots
+ * @returns {{ commitBatches: API.CommitPiece[][], pending: IteratorResult<API.CommitPiece> | undefined }}
+ */
+function takeNextCommitWave({ iterator, pending, size, activeFailedRoots }) {
+  /** @type {API.CommitPiece[][]} */
+  const commitBatches = []
+  let nextPending = pending
+
+  while (commitBatches.length < size) {
+    const batch = takeNextCommitBatch({
+      iterator,
+      pending: nextPending,
+      datasetMetadata: undefined,
+      activeFailedRoots,
+    })
+    nextPending = batch.pending
+
+    if (batch.commitPieces.length === 0) {
+      return { commitBatches, pending: nextPending }
+    }
+
+    commitBatches.push(batch.commitPieces)
+  }
+
+  return { commitBatches, pending: nextPending }
+}
+
+/**
+ * Finalize one settled Phase 2 wave.
+ *
+ * Pass A persists all durable successes from the wave and emits a single
+ * checkpoint before any retry interaction. Pass B then retries/finalizes only
+ * the failed batches from that same settled wave.
+ *
+ * @param {object} args
+ * @param {API.BatchResult[]} args.results
+ * @param {API.StorageContext} args.context
+ * @param {API.MigrationState} args.state
+ * @param {API.SpaceDID} args.spaceDID
+ * @param {number} args.copyIndex
+ * @param {number} args.commitIndexStart
+ * @param {number} args.maxCommitRetries
+ * @param {number} args.commitRetryTimeout
+ * @param {AbortSignal | undefined} args.signal
+ * @param {Set<string> | undefined} args.activeFailedRoots
+ * @returns {AsyncGenerator<API.MigrationEvent, number, void>}
+ */
+async function* finalizeConcurrentCommitWave({
+  results,
+  context,
+  state,
+  spaceDID,
+  copyIndex,
+  commitIndexStart,
+  maxCommitRetries,
+  commitRetryTimeout,
+  signal,
+  activeFailedRoots,
+}) {
   /** @type {Array<{ commitIndex: number, result: API.BatchResult }>} */
   const failedCommits = []
   /** @type {Array<{ commitIndex: number, result: API.BatchResult }>} */
   const successfulCommits = []
+  let commitIndex = commitIndexStart
 
   // Pass A — persist durable successes before any retry interaction.
   for (const result of results) {
@@ -232,17 +320,8 @@ export async function* commitPieceBatches({
     })
     applyActiveFailedRoots(activeFailedRoots, failedCommit.result.failedUploads)
   }
-}
 
-/**
- * @param {Set<string> | undefined} activeFailedRoots
- * @param {Set<string>} failedUploads
- */
-function applyActiveFailedRoots(activeFailedRoots, failedUploads) {
-  if (!activeFailedRoots || failedUploads.size === 0) return
-  for (const root of failedUploads) {
-    activeFailedRoots.add(root)
-  }
+  return commitIndex
 }
 
 /**

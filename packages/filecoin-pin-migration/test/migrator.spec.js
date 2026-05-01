@@ -179,6 +179,28 @@ function createAbortError() {
   return error
 }
 
+function createDeferred() {
+  /** @type {(value?: unknown) => void} */
+  let resolve = () => {}
+  /** @type {(reason?: unknown) => void} */
+  let reject = () => {}
+  const promise = new Promise((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise
+    reject = rejectPromise
+  })
+
+  return { promise, resolve, reject }
+}
+
+/**
+ * @param {number} ms
+ */
+function createTimeout(ms) {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve('timeout'), ms)
+  })
+}
+
 /**
  * @param {ReadableStream<Uint8Array>} stream
  */
@@ -432,6 +454,213 @@ describe('executeMigration', () => {
     }
 
     expect(storedBytes).toBe(4n)
+  })
+
+  it('mutates stored-shard progress before a slower sibling settles but checkpoints once per batch', async () => {
+    const spaceDID = /** @type {API.SpaceDID} */ (
+      'did:key:z6MkStoreCheckpointStreamingSpace'
+    )
+    const firstShardCID = 'bafy-shard-store-fast-success'
+    const secondShardCID = 'bafy-shard-store-slow-success'
+    const state = withInventory(createMockInitialState(), {
+      did: spaceDID,
+      name: 'Store Streaming Checkpoint Space',
+      uploads: ['bafy-root-store-fast', 'bafy-root-store-slow'],
+      shards: [],
+      shardsToStore: [
+        {
+          root: 'bafy-root-store-fast',
+          cid: firstShardCID,
+          sourceURL: 'https://source.example/store-fast-success',
+          sizeBytes: 128n,
+        },
+        {
+          root: 'bafy-root-store-slow',
+          cid: secondShardCID,
+          sourceURL: 'https://source.example/store-slow-success',
+          sizeBytes: 128n,
+        },
+      ],
+      skippedUploads: [],
+      totalBytes: 256n,
+      totalSizeToMigrate: 256n,
+    })
+
+    const copy0Context = createStorageContext({ spaceDID, name: 'copy0' })
+    const copy1Context = createStorageContext({ spaceDID, name: 'copy1' })
+    const plan = createPlan({ spaceDID, copy0Context, copy1Context })
+
+    transitionToApproved(state, plan.costs.perSpace)
+
+    const slowStoreStarted = createDeferred()
+    const slowStoreRelease = createDeferred()
+
+    copy0Context.store.mockImplementationOnce(async () => ({
+      pieceCid: createPieceCID(),
+    }))
+    copy0Context.store.mockImplementationOnce(async () => {
+      slowStoreStarted.resolve()
+      await slowStoreRelease.promise
+      return { pieceCid: createPieceCID() }
+    })
+
+    const fetcher = /** @type {typeof fetch} */ (
+      vi.fn(async () => new Response('ok'))
+    )
+    const iterator = executeMigration({
+      plan,
+      state,
+      synapse: /** @type {API.Synapse} */ ({}),
+      batchSize: 2,
+      storeConcurrency: 2,
+      fetcher,
+    })[Symbol.asyncIterator]()
+
+    let waitingForStorePhase = true
+    while (waitingForStorePhase) {
+      const next = await iterator.next()
+      if (next.done) {
+        throw new Error('expected store phase to start before migration ended')
+      }
+      if (
+        next.value.type === 'migration:phase:start' &&
+        next.value.phase === 'store'
+      ) {
+        waitingForStorePhase = false
+      }
+    }
+
+    const firstResult = iterator.next()
+    await slowStoreStarted.promise
+
+    const earlyEvent = await Promise.race([firstResult, createTimeout(100)])
+    expect(earlyEvent).toBe('timeout')
+    if (earlyEvent === 'timeout' || earlyEvent.done) {
+      // expected: progress mutates in memory, but checkpoint waits for batch end
+    } else {
+      throw new Error('expected no early store checkpoint event')
+    }
+    expect(state.spaces[spaceDID].copies[0].storedShards).toHaveProperty(
+      firstShardCID
+    )
+    expect(state.spaces[spaceDID].copies[0].storedShards).not.toHaveProperty(
+      secondShardCID
+    )
+
+    slowStoreRelease.resolve()
+
+    const settledCheckpoint = await firstResult
+    expect(settledCheckpoint.done).toBe(false)
+    if (settledCheckpoint.done) {
+      throw new Error('expected store batch checkpoint event')
+    }
+    expect(settledCheckpoint.value.type).toBe('state:checkpoint')
+    expect(state.spaces[spaceDID].copies[0].storedShards).toHaveProperty(
+      secondShardCID
+    )
+
+    while (!(await iterator.next()).done) {
+      // drain
+    }
+  })
+
+  it('emits store failures before a slower sibling settles', async () => {
+    const spaceDID = /** @type {API.SpaceDID} */ (
+      'did:key:z6MkStoreFailureStreamingSpace'
+    )
+    const failedRoot = 'bafy-root-store-fast-failure'
+    const state = withInventory(createMockInitialState(), {
+      did: spaceDID,
+      name: 'Store Streaming Failure Space',
+      uploads: [failedRoot, 'bafy-root-store-slow'],
+      shards: [],
+      shardsToStore: [
+        {
+          root: failedRoot,
+          cid: 'bafy-shard-store-fast-failure',
+          sourceURL: 'https://source.example/store-fast-failure',
+          sizeBytes: 128n,
+        },
+        {
+          root: 'bafy-root-store-slow',
+          cid: 'bafy-shard-store-slow',
+          sourceURL: 'https://source.example/store-slow',
+          sizeBytes: 128n,
+        },
+      ],
+      skippedUploads: [],
+      totalBytes: 256n,
+      totalSizeToMigrate: 256n,
+    })
+
+    const copy0Context = createStorageContext({ spaceDID, name: 'copy0' })
+    const copy1Context = createStorageContext({ spaceDID, name: 'copy1' })
+    const plan = createPlan({ spaceDID, copy0Context, copy1Context })
+
+    transitionToApproved(state, plan.costs.perSpace)
+
+    const slowStoreStarted = createDeferred()
+    const slowStoreRelease = createDeferred()
+
+    copy0Context.store.mockImplementationOnce(async () => {
+      throw new Error('store failed fast')
+    })
+    copy0Context.store.mockImplementationOnce(async () => {
+      slowStoreStarted.resolve()
+      await slowStoreRelease.promise
+      return { pieceCid: createPieceCID() }
+    })
+
+    const fetcher = /** @type {typeof fetch} */ (
+      vi.fn(async () => new Response('ok'))
+    )
+    const iterator = executeMigration({
+      plan,
+      state,
+      synapse: /** @type {API.Synapse} */ ({}),
+      batchSize: 2,
+      storeConcurrency: 2,
+      fetcher,
+    })[Symbol.asyncIterator]()
+
+    let waitingForStorePhase = true
+    while (waitingForStorePhase) {
+      const next = await iterator.next()
+      if (next.done) {
+        throw new Error('expected store phase to start before migration ended')
+      }
+      if (
+        next.value.type === 'migration:phase:start' &&
+        next.value.phase === 'store'
+      ) {
+        waitingForStorePhase = false
+      }
+    }
+
+    const firstResult = iterator.next()
+    await slowStoreStarted.promise
+
+    const earlyEvent = await Promise.race([firstResult, createTimeout(100)])
+    expect(earlyEvent).not.toBe('timeout')
+    if (earlyEvent === 'timeout' || earlyEvent.done) {
+      throw new Error('expected early store failure event')
+    }
+
+    expect(earlyEvent.value.type).toBe('migration:batch:failed')
+    if (earlyEvent.value.type !== 'migration:batch:failed') {
+      throw new Error('expected migration:batch:failed')
+    }
+    expect(earlyEvent.value.stage).toBe('store')
+    expect(earlyEvent.value.roots).toEqual([failedRoot])
+    expect(state.spaces[spaceDID].copies[0].failedUploads.has(failedRoot)).toBe(
+      true
+    )
+
+    slowStoreRelease.resolve()
+
+    while (!(await iterator.next()).done) {
+      // drain
+    }
   })
 
   it('retries transient fetch failures before a later store attempt succeeds', async () => {

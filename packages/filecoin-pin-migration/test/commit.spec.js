@@ -352,10 +352,14 @@ function createTwoPhaseState() {
   return state
 }
 
-function createTwoPhaseContext() {
+/**
+ * @param {{ dataSetId?: bigint | null }} [options]
+ */
+function createTwoPhaseContext(options = {}) {
+  const dataSetId = options.dataSetId ?? null
   return /** @type {API.StorageContext & { presignForCommit: ReturnType<typeof vi.fn>, commit: ReturnType<typeof vi.fn> }} */ (
     /** @type {unknown} */ ({
-      dataSetId: null,
+      dataSetId,
       dataSetMetadata: {
         source: 'storacha-migration',
         withIPFSIndexing: '',
@@ -367,7 +371,7 @@ function createTwoPhaseContext() {
          * @param {{ pieces: API.CommitPiece[] }} args
          */
         async ({ pieces }) => ({
-          dataSetId: 100n,
+          dataSetId: dataSetId ?? 100n,
           txHash: '0xtxdefault',
           pieces,
         })
@@ -415,7 +419,7 @@ describe('commitPieceBatches two-phase flow', () => {
       /** @type {Array<API.MigrationEvent & { type: 'migration:commit:settled' }>} */ (
         events.filter((e) => e.type === 'migration:commit:settled')
       )
-    expect(settled.map((e) => e.commitIndex)).toEqual([1, 2, 3])
+    expect(settled).toHaveLength(3)
     expect(settled.every((e) => e.status === 'succeeded')).toBe(true)
   })
 
@@ -478,6 +482,94 @@ describe('commitPieceBatches two-phase flow', () => {
     expect(state.spaces[TWO_PHASE_SPACE_DID].copies[0].committed.size).toBe(4)
   })
 
+  it('checkpoints a settled Phase 2 wave before later waves start', async () => {
+    const state = createTwoPhaseState()
+    const context = createTwoPhaseContext({ dataSetId: 100n })
+    const pieces = [0, 1, 2, 3, 4].map(makeTwoPhasePiece)
+    const controller = new AbortController()
+
+    /** @type {() => void} */
+    let releaseSlow = () => {}
+    const slowRelease = new Promise((resolve) => {
+      releaseSlow = () => resolve(undefined)
+    })
+    let slowStarted = false
+
+    context.commit.mockImplementation(
+      /**
+       * @param {{ pieces: API.CommitPiece[] }} args
+       */
+      async ({ pieces: batchPieces }) => {
+        const shardCid = batchPieces[0].shardCid
+        if (shardCid === 'shard_0' || shardCid === 'shard_1') {
+          return {
+            dataSetId: 100n,
+            txHash: `0x${shardCid}`,
+            pieces: batchPieces,
+          }
+        }
+
+        slowStarted = true
+        await new Promise((resolve, reject) => {
+          function onAbort() {
+            controller.signal.removeEventListener('abort', onAbort)
+            reject(createTwoPhaseAbortError())
+          }
+
+          controller.signal.addEventListener('abort', onAbort, { once: true })
+          void slowRelease.then(() => {
+            controller.signal.removeEventListener('abort', onAbort)
+            resolve(undefined)
+          })
+        })
+
+        return {
+          dataSetId: 100n,
+          txHash: `0x${shardCid}`,
+          pieces: batchPieces,
+        }
+      }
+    )
+
+    const iterator = commitPieceBatches({
+      commitPieceIterable: pieces,
+      context,
+      state,
+      spaceDID: TWO_PHASE_SPACE_DID,
+      copyIndex: TWO_PHASE_COPY_INDEX,
+      maxCommitRetries: 0,
+      commitRetryTimeout: 0,
+      commitConcurrency: 2,
+      signal: controller.signal,
+    })
+    const firstEventPromise = iterator.next()
+    const firstEvent = await Promise.race([
+      firstEventPromise,
+      new Promise((resolve) => setTimeout(() => resolve('timeout'), 50)),
+    ])
+
+    controller.abort()
+    releaseSlow()
+    await firstEventPromise.catch(() => undefined)
+    await iterator.return(undefined)
+
+    expect(firstEvent).not.toBe('timeout')
+    if (firstEvent === 'timeout') {
+      throw new Error(
+        'expected Phase 2 to checkpoint the first settled wave before later waves start'
+      )
+    }
+
+    expect(firstEvent.done).toBe(false)
+    if (firstEvent.done) {
+      throw new Error(
+        'expected a state:checkpoint event from the first Phase 2 wave'
+      )
+    }
+    expect(firstEvent.value.type).toBe('state:checkpoint')
+    expect(slowStarted).toBe(false)
+  })
+
   it('persists successful Phase 2 batches before any retry prompt', async () => {
     const state = createTwoPhaseState()
     const context = createTwoPhaseContext()
@@ -524,7 +616,7 @@ describe('commitPieceBatches two-phase flow', () => {
     expect(committedAtFailure?.has('shard_2')).toBe(false)
   })
 
-  it('emits Phase 2 settled events in commit-index order after a retry win', async () => {
+  it('emits settled events for every Phase 2 batch after a retry win', async () => {
     const state = createTwoPhaseState()
     const context = createTwoPhaseContext()
     const pieces = [0, 1, 2].map(makeTwoPhasePiece)
@@ -570,7 +662,7 @@ describe('commitPieceBatches two-phase flow', () => {
       /** @type {Array<API.MigrationEvent & { type: 'migration:commit:settled' }>} */ (
         events.filter((e) => e.type === 'migration:commit:settled')
       )
-    expect(settled.map((e) => e.commitIndex)).toEqual([1, 2, 3])
+    expect(settled).toHaveLength(3)
     expect(settled.every((e) => e.status === 'succeeded')).toBe(true)
   })
 

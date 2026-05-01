@@ -156,6 +156,12 @@ Internally, migrator execution is split into two layers:
 - source pull work is batched and runs concurrently per copy
 - store-routed shards are downloaded+stored in batches on copy 0, then pulled in
   batches from copy 0 on copy 1
+- pull/store concurrent waves apply settled results incrementally in completion
+  order
+- pull results checkpoint as each completed pull batch settles
+- store results mutate in-memory state and surface failed-root events as each
+  settled shard arrives, but durable `state:checkpoint` emission remains
+  coalesced to one event per store batch
 - store retries treat one attempt as one full `fetch + store()` cycle, so every
   retry recreates the source stream from the reader-resolved `sourceURL`
 - secondary/source pull retries presign once, then retry only `context.pull()`
@@ -205,9 +211,8 @@ two passes:
 The guarantee is now durability first and early success visibility: successful
 Phase 2 commits are persisted before any retry interaction for failures in the
 same wave, and their succeeded `migration:commit:settled` events are emitted
-before the failed batches enter retry handling. This means `commitIndex`
-remains an identifier, but successful settled events may appear ahead of an
-earlier failed batch that is still waiting on retry/skip.
+before the failed batches enter retry handling. `commitIndex` remains an
+identifier only; callers should not treat it as a stable ordering contract.
 
 ### Error Model
 

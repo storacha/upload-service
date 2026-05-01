@@ -3,7 +3,7 @@ import {
   PRIMARY_COPY_INDEX,
   SECONDARY_COPY_INDEX,
 } from '../constants.js'
-import { runConcurrentTasks } from './concurrent.js'
+import { drainConcurrentStream, streamConcurrentTasks } from './concurrent.js'
 import { applyPullResults } from './pull-results.js'
 import { presignAndPullBatch } from './pull.js'
 import {
@@ -186,7 +186,7 @@ export async function* pullStoredShardsOnSecondaryCopy({
   }
 
   if (entriesToPull.length > 0 && !signal?.aborted) {
-    const { results: pullResults, aborted } = await runConcurrentTasks({
+    const stream = streamConcurrentTasks({
       items: batches(entriesToPull, batchSize),
       concurrency: pullConcurrency,
       signal,
@@ -199,18 +199,19 @@ export async function* pullStoredShardsOnSecondaryCopy({
           signal,
         }),
     })
-
-    yield* applyPullResults({
-      pullResults,
-      state,
-      spaceDID,
-      copyIndex,
-      activeFailedRoots,
-      onPulledCandidate: (entry) => {
-        pulledEntriesByShardCid.set(entry.shardCid, entry)
-        return recordPull(state, spaceDID, copyIndex, entry.shardCid)
-      },
-    })
+    const { aborted } = yield* drainConcurrentStream(stream, (pullResult) =>
+      applyPullResults({
+        pullResults: [pullResult],
+        state,
+        spaceDID,
+        copyIndex,
+        activeFailedRoots,
+        onPulledCandidate: (entry) => {
+          pulledEntriesByShardCid.set(entry.shardCid, entry)
+          return recordPull(state, spaceDID, copyIndex, entry.shardCid)
+        },
+      })
+    )
 
     if (aborted) {
       yield {
@@ -274,18 +275,17 @@ async function* processStoreBatch({
 }) {
   if (signal?.aborted || batch.length === 0) return
 
-  let stateChanged = false
-  const failedUploads = new Set()
-  /** @type {Error | undefined} */
-  let firstError
-  const { results: storeResults, aborted } = await runConcurrentTasks({
+  const emittedRoots = new Set()
+  let batchStateChanged = false
+  const stream = streamConcurrentTasks({
     items: batch,
     concurrency: storeConcurrency,
     signal,
     run: (shard) => storeShard({ shard, context, fetcher, signal }),
   })
+  const { aborted } = yield* drainConcurrentStream(stream, function* (result) {
+    let stateChanged = false
 
-  for (const result of storeResults) {
     if (result.ok) {
       entriesByShardCid.set(result.ok.shardCid, result.ok)
       stateChanged =
@@ -296,9 +296,9 @@ async function* processStoreBatch({
           result.ok.pieceCID
         ) || stateChanged
     } else {
+      const isFirstRootFailure = !emittedRoots.has(result.error.root)
       activeFailedRoots.add(result.error.root)
-      failedUploads.add(result.error.root)
-      firstError ??= result.error.error
+      emittedRoots.add(result.error.root)
       stateChanged =
         recordFailedUpload(
           state,
@@ -306,25 +306,23 @@ async function* processStoreBatch({
           copyState.copyIndex,
           result.error.root
         ) || stateChanged
+
+      if (isFirstRootFailure) {
+        yield /** @type {API.MigrationEvent} */ ({
+          type: 'migration:batch:failed',
+          spaceDID,
+          copyIndex: copyState.copyIndex,
+          stage: 'store',
+          error: result.error.error,
+          roots: [result.error.root],
+        })
+      }
     }
-  }
 
-  if (failedUploads.size > 0) {
-    yield /** @type {API.MigrationEvent} */ ({
-      type: 'migration:batch:failed',
-      spaceDID,
-      copyIndex: copyState.copyIndex,
-      stage: 'store',
-      error:
-        firstError ??
-        new Error(
-          `${failedUploads.size} upload(s) had shards that failed to store`
-        ),
-      roots: [...failedUploads],
-    })
-  }
+    batchStateChanged = batchStateChanged || stateChanged
+  })
 
-  if (stateChanged) {
+  if (batchStateChanged) {
     yield /** @type {API.MigrationEvent} */ ({
       type: 'state:checkpoint',
       state,
@@ -508,6 +506,7 @@ function withStoreErrorContext(
   }
 
   const baseError = error instanceof Error ? error : new Error(String(error))
+
   /** @type {API.StoreDiagnosticError} */
   const contextualError = /** @type {API.StoreDiagnosticError} */ (
     /** @type {unknown} */ (

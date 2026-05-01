@@ -1,5 +1,5 @@
 import { commitPieceBatches, iterateCommitPieces } from './commit.js'
-import { runConcurrentTasks } from './concurrent.js'
+import { drainConcurrentStream, streamConcurrentTasks } from './concurrent.js'
 import { applyPullResults } from './pull-results.js'
 import { presignAndPullBatch } from './pull.js'
 import {
@@ -406,7 +406,7 @@ async function* pullSourceShardsForCopy({
   })
 
   if (shardsToPull.length > 0 && !signal?.aborted) {
-    const { results: pullResults, aborted } = await runConcurrentTasks({
+    const stream = streamConcurrentTasks({
       items: batches(shardsToPull, batchSize),
       concurrency: pullConcurrency,
       signal,
@@ -418,16 +418,17 @@ async function* pullSourceShardsForCopy({
           signal,
         }),
     })
-
-    yield* applyPullResults({
-      pullResults,
-      state,
-      spaceDID,
-      copyIndex,
-      activeFailedRoots,
-      onPulledCandidate: (shard) =>
-        recordPull(state, spaceDID, copyIndex, shard.cid),
-    })
+    const { aborted } = yield* drainConcurrentStream(stream, (pullResult) =>
+      applyPullResults({
+        pullResults: [pullResult],
+        state,
+        spaceDID,
+        copyIndex,
+        activeFailedRoots,
+        onPulledCandidate: (shard) =>
+          recordPull(state, spaceDID, copyIndex, shard.cid),
+      })
+    )
 
     if (aborted) {
       yield emitPhaseComplete(spaceDID, copyIndex, SOURCE_PULL_PHASE, false)

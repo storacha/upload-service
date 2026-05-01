@@ -638,8 +638,14 @@ async function runMigration({
       case 'migration:commit:failed': {
         statusUpdatesPaused = true
         clearStatusBlock()
+        console.error(
+          chalk.red(
+            `Commit ${event.commitIndex} failed for copy ${event.copyIndex} with ${event.pieceCount} piece(s): ${event.error.message}`
+          )
+        )
+        console.log()
         const shouldRetry = await confirm({
-          message: `Commit ${event.commitIndex} failed for copy ${event.copyIndex} with ${event.pieceCount} piece(s). Retry attempt ${event.attempt}?`,
+          message: `Retry commit ${event.commitIndex} for copy ${event.copyIndex}? Attempt ${event.attempt}.`,
           default: true,
         }).catch(() => false)
 
@@ -665,11 +671,17 @@ async function runMigration({
       case 'migration:commit:settled':
         if (debug || event.status !== 'succeeded') {
           printPersistentMigrationLine(() => {
-            printCommitBatchResult(event)
+            printCommitBatchResult({
+              ...event,
+              error: event.status === 'failed' ? undefined : event.error,
+            })
           })
         }
         break
       case 'migration:batch:failed':
+        if (event.stage === 'commit') {
+          break
+        }
         printPersistentMigrationLine(() => {
           console.warn(
             chalk.yellow(
