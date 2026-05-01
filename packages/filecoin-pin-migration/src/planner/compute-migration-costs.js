@@ -18,6 +18,7 @@ import {
   LOCKUP_PERIOD,
 } from '@filoz/synapse-core/utils'
 import { getBlockNumber } from 'viem/actions'
+import { DEFAULT_ENABLE_CDN } from '../constants.js'
 
 /**
  * @import * as API from '../api.js'
@@ -62,6 +63,7 @@ async function createCopyContext(
 ) {
   /** @type {import('@filoz/synapse-sdk').StorageServiceOptions} */
   const options = {
+    withCDN: DEFAULT_ENABLE_CDN,
     metadata: {
       ...DATASET_METADATA_BASE,
       'space-did': space.did,
@@ -264,11 +266,13 @@ export async function computeMigrationCosts(spaces, synapse, opts = {}) {
         providerId: context.provider.id,
         serviceProvider: context.serviceProvider,
         dataSetId: context.dataSetId ?? null,
+        withCDN: context.withCDN,
         isResumed: !isNewDataSet,
         bytesToMigrate,
         currentDataSetSize,
         lockupUSDFC: lockup.total,
         sybilFee: lockup.sybilFee,
+        cdnFixedLockup: lockup.cdnFixedLockup,
         rateLockupDelta: lockup.rateLockupDelta,
         ratePerEpoch: rate.ratePerEpoch,
         ratePerMonth: rate.ratePerMonth,
@@ -290,6 +294,10 @@ export async function computeMigrationCosts(spaces, synapse, opts = {}) {
       ),
       lockupUSDFC: copyCosts.reduce((sum, copy) => sum + copy.lockupUSDFC, 0n),
       sybilFee: copyCosts.reduce((sum, copy) => sum + copy.sybilFee, 0n),
+      cdnFixedLockup: copyCosts.reduce(
+        (sum, copy) => sum + copy.cdnFixedLockup,
+        0n
+      ),
       rateLockupDelta: copyCosts.reduce(
         (sum, copy) => sum + copy.rateLockupDelta,
         0n

@@ -107,6 +107,7 @@ export interface PerCopyCost {
   serviceProvider: `0x${string}`
   /** bigint | null — null until first commit; passed as dataSetIds on resume. */
   dataSetId: bigint | null
+  withCDN: boolean
   isResumed: boolean
   bytesToMigrate: bigint
   currentDataSetSize: bigint
@@ -114,6 +115,8 @@ export interface PerCopyCost {
   lockupUSDFC: bigint
   /** 0n on resumed datasets. */
   sybilFee: bigint
+  /** 0n unless CDN is enabled on a fresh dataset. */
+  cdnFixedLockup: bigint
   rateLockupDelta: bigint
   /**
    * POST-migration ongoing rate, NOT the delta. Display copy must say
@@ -137,6 +140,7 @@ export interface PerSpaceCost {
   currentDataSetSize: bigint
   lockupUSDFC: bigint
   sybilFee: bigint
+  cdnFixedLockup: bigint
   rateLockupDelta: bigint
   ratePerEpoch: bigint
   ratePerMonth: bigint

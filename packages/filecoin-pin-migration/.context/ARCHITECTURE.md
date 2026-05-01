@@ -106,10 +106,17 @@ Context creation rules:
 
 - copy `0` is created first
 - copy `1` is created second with `excludeProviderIds: [copy0.provider.id]`
+- contexts are created with CDN enabled by default
 - if the caller provides `providerIds`, the first ID is used for copy `0` and
   the second ID is used for copy `1`
 - on resume, pinned provider/dataset bindings win for each copy
 - if both copies resolve to the same provider, planning fails fast
+
+Cost rules:
+
+- monthly storage rate always uses the base warm-storage price
+- CDN affects only the fixed lockup for fresh datasets
+- CDN egress is variable and excluded from upfront plan/retention estimates
 
 `PerSpaceCost` is copy-based:
 

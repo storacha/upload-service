@@ -4,6 +4,7 @@ import {
   getServicePrice,
 } from '@filoz/synapse-core/warm-storage'
 import { LOCKUP_PERIOD } from '@filoz/synapse-core/utils'
+import { DEFAULT_ENABLE_CDN } from '../constants.js'
 
 /**
  * @import * as API from './api.js'
@@ -80,6 +81,7 @@ export function calculateStorageRetentionCostFromPricing(pricing, input) {
     totalLockedInContract + storageSpendTotal
 
   return {
+    withCDN,
     pricePerTiBPerMonthNoCDN: pricing.pricePerTiBPerMonthNoCDN,
     minimumPricePerMonth: pricing.minimumPricePerMonth,
     epochsPerMonth: pricing.epochsPerMonth,
@@ -109,7 +111,7 @@ function normalizeStorageRetentionCostInput(input) {
     sizeBytes,
     months,
     copies,
-    withCDN = false,
+    withCDN = DEFAULT_ENABLE_CDN,
     isNewDataSet = true,
     currentDataSetSize = 0n,
   } = input

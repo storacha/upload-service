@@ -14,6 +14,7 @@ export interface StorageRetentionCostPricing {
 }
 
 export interface StorageRetentionCostEstimate {
+  withCDN: boolean
   pricePerTiBPerMonthNoCDN: bigint
   minimumPricePerMonth: bigint
   epochsPerMonth: bigint

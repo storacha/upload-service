@@ -215,7 +215,7 @@ export async function spaceMigrateCalc(opts = {}) {
       sizeBytes: config.sizeBytes,
       months: config.months,
       copies: DEFAULT_STORAGE_RETENTION_COPIES,
-      withCDN: false,
+      withCDN: true,
       isNewDataSet: true,
       currentDataSetSize: 0n,
     })

@@ -97,6 +97,19 @@ describe('storage retention cost helper', () => {
     )
   })
 
+  it('enables CDN by default without changing the storage rate input', () => {
+    const estimate = calculateStorageRetentionCostFromPricing(pricing, {
+      sizeBytes: 5_000_000_000_000n,
+      months: 12n,
+      copies: 2,
+    })
+
+    expect(estimate.withCDN).toBe(true)
+    expect(estimate.pricePerTiBPerMonthNoCDN).toBe(
+      pricing.pricePerTiBPerMonthNoCDN
+    )
+  })
+
   it('uses live pricing once in the async wrapper', async () => {
     vi.mocked(getServicePrice).mockResolvedValue(pricing)
     const client = createPublicClient({

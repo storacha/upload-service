@@ -130,6 +130,9 @@ export function printPlan(plan, userWalletBalance, userDeposit) {
     )
   )
 
+  console.log('')
+  console.log(renderPlanCostBreakdown(plan))
+
   console.log(chalk.cyan.bold('\nPlanned copies'))
   console.log(renderPlanTree(plan))
 
@@ -308,14 +311,10 @@ export function renderStorageRetentionCostEstimate({
       'Dataset creation fee',
       `${formatTokenAmount(estimate.sybilFeeTotal)} USDFC`,
     ],
-    ...(estimate.cdnFixedLockupTotal > 0n
-      ? [
-          [
-            'CDN fixed lockup',
-            `${formatTokenAmount(estimate.cdnFixedLockupTotal)} USDFC`,
-          ],
-        ]
-      : []),
+    [
+      'CDN fixed lockup',
+      `${formatTokenAmount(estimate.cdnFixedLockupTotal)} USDFC`,
+    ],
     [
       'Collateral (refundable)',
       `${formatTokenAmount(estimate.totalLockedInContract)} USDFC`,
@@ -345,7 +344,8 @@ export function renderStorageRetentionCostPricingNote({ estimate }) {
     [
       ` Minimum monthly floor: ${formatTokenAmount(estimate.minimumPricePerMonth)} USDFC.`,
       ' The floor exists so the SP always earns a minimum regardless of how small the dataset is.',
-      ` Price per TiB / month (no CDN): ${formatTokenAmount(estimate.pricePerTiBPerMonthNoCDN)} USDFC.`,
+      ` Base storage price per TiB / month: ${formatTokenAmount(estimate.pricePerTiBPerMonthNoCDN)} USDFC.`,
+      ' CDN does not change the monthly storage rate, it only adds a fixed lockup on new datasets.',
     ].join('\n')
   )
 }
@@ -668,6 +668,37 @@ function renderPlanTree(plan) {
       })),
     })),
   })
+}
+
+/**
+ * @param {import('@storacha/filecoin-pin-migration/types').MigrationPlan} plan
+ */
+function renderPlanCostBreakdown(plan) {
+  const sybilFee = plan.costs.perSpace.reduce(
+    (sum, space) => sum + space.sybilFee,
+    0n
+  )
+  const cdnFixedLockup = plan.costs.perSpace.reduce(
+    (sum, space) => sum + space.cdnFixedLockup,
+    0n
+  )
+
+  return renderBox(
+    'Cost Breakdown',
+    [
+      line(
+        'Total lockup',
+        `${formatTokenAmount(plan.costs.summary.totalLockupUSDFC)} USDFC`
+      ),
+      line('Dataset fee', `${formatTokenAmount(sybilFee)} USDFC`),
+      line('CDN fixed lockup', `${formatTokenAmount(cdnFixedLockup)} USDFC`),
+      line(
+        'Rate / month',
+        `${formatTokenAmount(plan.costs.summary.totalRatePerMonth)} USDFC`
+      ),
+    ],
+    chalk.blue
+  )
 }
 
 /**
