@@ -14,11 +14,11 @@ import {
   executeStoreMigration,
   createResolver,
   clearFailedUploadsForRetry,
-  getStorageRetentionCost,
   ResumeBindingDriftError,
   serializeState,
   deserializeState,
 } from '@storacha/filecoin-pin-migration'
+import { getStorageRetentionCost } from '@storacha/filecoin-pin-migration/helpers'
 import { createPublicClient, http, parseEther } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { getClient } from './lib.js'

@@ -19,6 +19,14 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./helpers": {
+      "types": "./dist/helper/index.d.ts",
+      "import": "./dist/helper/index.js"
+    },
+    "./helper/types": {
+      "types": "./dist/helper/api.d.ts",
+      "import": "./dist/helper/api.js"
+    },
     "./types": {
       "types": "./dist/api.d.ts",
       "import": "./dist/api.js"

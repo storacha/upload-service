@@ -9,11 +9,6 @@ import { PieceView } from '@web3-storage/data-segment'
 export type { PieceLink, PieceView } from '@web3-storage/data-segment'
 export type { MultihashDigest, UnknownLink }
 export type { Synapse, StorageContext, PieceCID }
-export type {
-  StorageRetentionCostInput,
-  StorageRetentionCostPricing,
-  StorageRetentionCostEstimate,
-} from './helper/api.js'
 
 export type SpaceDID = DID<'key'>
 

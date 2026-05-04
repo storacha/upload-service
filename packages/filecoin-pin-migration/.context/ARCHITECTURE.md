@@ -20,6 +20,10 @@ Reader → Planner → Migrator
 The library owns no UX or persistence. Callers persist `MigrationState` on
 every `state:checkpoint` event.
 
+Helper utilities live outside the main pipeline. They are headless audit /
+estimation functions that can inspect or reconcile migration-related data
+without participating in reader, planner, or migrator execution.
+
 ---
 
 ## Responsibilities by Stage

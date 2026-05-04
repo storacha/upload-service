@@ -277,7 +277,7 @@ function printDataSetLinks(dataSetIds, chainId) {
  * @param {bigint} args.sizeBytes
  * @param {bigint} args.months
  * @param {number} args.copies
- * @param {import('@storacha/filecoin-pin-migration/types').StorageRetentionCostEstimate} args.estimate
+ * @param {import('@storacha/filecoin-pin-migration/helper/types').StorageRetentionCostEstimate} args.estimate
  * @param {string} args.networkName
  */
 export function renderStorageRetentionCostEstimate({
@@ -337,7 +337,7 @@ export function renderStorageRetentionCostEstimate({
 
 /**
  * @param {object} args
- * @param {import('@storacha/filecoin-pin-migration/types').StorageRetentionCostEstimate} args.estimate
+ * @param {import('@storacha/filecoin-pin-migration/helper/types').StorageRetentionCostEstimate} args.estimate
  */
 export function renderStorageRetentionCostPricingNote({ estimate }) {
   return chalk.dim(
