@@ -25,7 +25,7 @@ import { DEFAULT_ENABLE_CDN } from '../constants.js'
  */
 
 const DATASET_METADATA_BASE = Object.freeze({
-  source: 'storacha-migration',
+  source: 'filecoin-pin',
   withIPFSIndexing: '',
 })
 const REQUIRED_COPIES = 2
