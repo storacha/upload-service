@@ -1,3 +1,17 @@
+## 2.2.0 (2026-05-05)
+
+### 🚀 Features
+
+- introduce @storacha/filecoin-pin-migration, a migration library for moving Storacha upload data into Filecoin on Chain and add the new CLI space migrate command ([9c0039e1](https://github.com/storacha/upload-service/commit/9c0039e1))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-pin-migration to 0.1.1-0
+
+### ❤️ Thank You
+
+- bravonatalie
+
 ## 2.1.3 (2026-03-24)
 
 ### 🧱 Updated Dependencies
