@@ -53,6 +53,7 @@
     "typescript": "catalog:"
   },
   "dependencies": {
+    "@filoz/synapse-sdk": "^0.40.2",
     "@inquirer/core": "catalog:",
     "@inquirer/prompts": "catalog:",
     "@ipld/car": "catalog:",
@@ -68,6 +69,7 @@
     "@storacha/access": "workspace:^",
     "@storacha/client": "workspace:^",
     "@storacha/did-mailto": "workspace:^",
+    "@storacha/filecoin-pin-migration": "workspace:^",
     "@ucanto/client": "catalog:",
     "@ucanto/core": "catalog:",
     "@ucanto/transport": "catalog:",
@@ -84,7 +86,9 @@
     "pretty-tree": "catalog:",
     "s-ago": "catalog:",
     "sade": "catalog:",
-    "update-notifier": "catalog:"
+    "terminal-link": "^5.0.0",
+    "update-notifier": "catalog:",
+    "viem": "catalog:"
   },
   "eslintConfig": {
     "extends": [

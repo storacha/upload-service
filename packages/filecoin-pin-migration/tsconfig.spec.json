@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["test/**/*"],
+  "compilerOptions": { "rootDir": ".", "noUnusedLocals": false },
+  "references": [{ "path": "./tsconfig.lib.json" }]
+}

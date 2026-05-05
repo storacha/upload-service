@@ -30,6 +30,11 @@ import { Account } from '@storacha/client/account'
  * @typedef {import('@storacha/capabilities/types').FilecoinInfoSuccess} FilecoinInfoSuccess
  */
 
+/**
+ * Read the CLI package metadata for version reporting and update checks.
+ *
+ * @returns {{ name: string, version: string } & Record<string, unknown>}
+ */
 export function getPkg() {
   // @ts-ignore JSON.parse works with Buffer in Node.js
   return JSON.parse(fs.readFileSync(new URL('./package.json', import.meta.url)))
