@@ -385,6 +385,15 @@ describe('executeMigration', () => {
       )
     ).toBe(true)
 
+    const finalCheckpointEvent = events.at(-2)
+    expect(finalCheckpointEvent?.type).toBe('state:checkpoint')
+    if (finalCheckpointEvent?.type !== 'state:checkpoint') {
+      throw new Error(
+        'expected final state:checkpoint before migration:complete'
+      )
+    }
+    expect(finalCheckpointEvent.state.phase).toBe('complete')
+
     const completionEvent = events.at(-1)
     expect(completionEvent?.type).toBe('migration:complete')
     if (completionEvent?.type !== 'migration:complete') {

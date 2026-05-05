@@ -14,7 +14,8 @@ import { finalizeMigration } from '../state.js'
  *   2. transition to `migrating`
  *   3. iterate planned spaces
  *   4. finalize the migration
- *   5. emit `migration:complete`
+ *   5. emit a final state checkpoint with the terminal top-level phase
+ *   6. emit `migration:complete`
  *
  * Entrypoints customize only:
  *   - how a source inventory is adapted for execution
@@ -83,6 +84,7 @@ export async function* runMigration({
   if (signal?.aborted) return
 
   finalizeMigration(state)
+  yield { type: 'state:checkpoint', state }
 
   yield {
     type: 'migration:complete',

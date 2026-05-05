@@ -447,8 +447,9 @@ export interface ExecuteStoreMigrationInput {
  *
  * State persistence:
  *   state:checkpoint — emitted after each reader page, after planner writes SP
- *   bindings, and after migrator progress for each copy; consumer persists to
- *   disk on this event
+ *   bindings, after migrator progress for each copy, and once more after the
+ *   top-level migration phase is finalized; consumer persists to disk on this
+ *   event
  *
  * Terminal:
  *   migration:complete — once, after all spaces are processed
