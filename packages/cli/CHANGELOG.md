@@ -1,3 +1,17 @@
+## 2.3.0 (2026-05-06)
+
+### 🚀 Features
+
+- release CLI space migrate command ([df958d62](https://github.com/storacha/upload-service/commit/df958d62))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-pin-migration to 0.1.1
+
+### ❤️ Thank You
+
+- bravonatalie
+
 ## 2.2.0 (2026-05-05)
 
 ### 🚀 Features
