@@ -1,3 +1,13 @@
+## 0.1.1 (2026-05-06)
+
+### 🩹 Fixes
+
+- release CLI space migrate command ([df958d62](https://github.com/storacha/upload-service/commit/df958d62))
+
+### ❤️ Thank You
+
+- bravonatalie
+
 ## 0.1.1-0 (2026-05-05)
 
 ### 🩹 Fixes
