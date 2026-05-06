@@ -104,7 +104,7 @@ describe('computeMigrationCosts', () => {
     const createContext = vi
       .fn()
       .mockImplementationOnce(async (options) => ({
-        provider: { id: 2n },
+        provider: { id: 2n, pdp: { serviceURL: 'https://sp-2.example' } },
         serviceProvider: /** @type {`0x${string}`} */ (
           '0x0000000000000000000000000000000000000002'
         ),
@@ -112,7 +112,7 @@ describe('computeMigrationCosts', () => {
         withCDN: options.withCDN,
       }))
       .mockImplementationOnce(async (options) => ({
-        provider: { id: 4n },
+        provider: { id: 4n, pdp: { serviceURL: 'https://sp-4.example' } },
         serviceProvider: /** @type {`0x${string}`} */ (
           '0x0000000000000000000000000000000000000004'
         ),

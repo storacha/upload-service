@@ -11,6 +11,7 @@ import { ResumeBindingDriftError } from './errors.js'
  * @param {number} input.copyIndex
  * @param {bigint} input.providerId
  * @param {`0x${string}`} input.serviceProvider
+ * @param {string | null} [input.providerURL]
  * @param {bigint | null} input.dataSetId
  * @param {Set<string>} [input.pulled]
  * @param {Set<string>} [input.committed]
@@ -22,6 +23,7 @@ function createSpaceCopyState({
   copyIndex,
   providerId,
   serviceProvider,
+  providerURL = null,
   dataSetId,
   pulled = new Set(),
   committed = new Set(),
@@ -32,6 +34,7 @@ function createSpaceCopyState({
     copyIndex,
     providerId,
     serviceProvider,
+    providerURL,
     dataSetId,
     pulled,
     committed,
@@ -274,6 +277,10 @@ export function transitionToApproved(state, perSpaceCost) {
         copyIndex: plannedCopy.copyIndex,
         providerId: plannedCopy.providerId,
         serviceProvider: plannedCopy.serviceProvider,
+        providerURL:
+          extractProviderURL(plannedCopy.context) ??
+          existingCopy?.providerURL ??
+          null,
         dataSetId: existingCopy?.dataSetId ?? plannedCopy.dataSetId,
         pulled: existingCopy?.pulled ?? new Set(),
         committed: existingCopy?.committed ?? new Set(),
@@ -552,6 +559,7 @@ export function serializeState(state) {
         copyIndex: copy.copyIndex,
         providerId: copy.providerId.toString(10),
         serviceProvider: copy.serviceProvider,
+        providerURL: copy.providerURL,
         dataSetId: copy.dataSetId != null ? copy.dataSetId.toString(10) : null,
         pulled: [...copy.pulled],
         committed: [...copy.committed],
@@ -717,6 +725,8 @@ export function deserializeState(obj) {
           `space "${did}" copy ${copyPosition}`
         ),
         serviceProvider: /** @type {`0x${string}`} */ (rawCopy.serviceProvider),
+        providerURL:
+          typeof rawCopy.providerURL === 'string' ? rawCopy.providerURL : null,
         dataSetId:
           rawCopy.dataSetId != null
             ? parseBigIntField(
@@ -824,4 +834,15 @@ export function deserializeState(obj) {
     spacesInventories,
     readerProgressCursors,
   }
+}
+
+/**
+ * @param {API.StorageContext} context
+ * @returns {string | null}
+ */
+function extractProviderURL(context) {
+  return (
+    /** @type {{ provider?: { pdp?: { serviceURL?: string } } }} */ (context)
+      .provider?.pdp?.serviceURL ?? null
+  )
 }

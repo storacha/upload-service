@@ -24,6 +24,11 @@ Helper utilities live outside the main pipeline. They are headless audit /
 estimation functions that can inspect or reconcile migration-related data
 without participating in reader, planner, or migrator execution.
 
+On `resume` / `retry`, a caller may optionally run a staged-shard validation
+preflight before migration starts. This is also helper-driven logic outside the
+pipeline: it probes persisted `pulled` / `storedShards` entries against the
+provider PDP endpoint and can prune stale entries from state before execution.
+
 ---
 
 ## Responsibilities by Stage
@@ -71,6 +76,7 @@ interface SpaceCopyState {
   copyIndex: number
   providerId: bigint
   serviceProvider: `0x${string}`
+  providerURL: string | null
   dataSetId: bigint | null
   pulled: Set<string>
   committed: Set<string>
@@ -99,6 +105,15 @@ On resume:
    - skips shards already in a copy's `committed`
    - does not re-pull shards already in a copy's `pulled`
    - reuses the copy's `dataSetId` after a successful commit
+
+If a caller chooses to validate staged state before resume/retry execution:
+
+- the validation must run after reader/planner data is available and before
+  migrator execution starts
+- only definitive provider absence (`not_found`) should auto-prune staged
+  entries; transient provider/API failures should be reported but preserved
+- any corrected state should be checkpointed before the user confirms or aborts
+  the run
 
 ---
 

@@ -18,7 +18,10 @@ import {
   serializeState,
   deserializeState,
 } from '@storacha/filecoin-pin-migration'
-import { getStorageRetentionCost } from '@storacha/filecoin-pin-migration/helpers'
+import {
+  getStorageRetentionCost,
+  pruneStagedShards,
+} from '@storacha/filecoin-pin-migration/helpers'
 import { createPublicClient, http, parseEther } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { getClient } from './lib.js'
@@ -30,6 +33,7 @@ import {
   printReaderShardFailed,
   printCommitBatchResult,
   printResumeStatus,
+  printStagedShardCleanup,
   renderMigrationStatusBlock,
   renderStorageRetentionCostEstimate,
   renderStorageRetentionCostPricingNote,
@@ -149,6 +153,19 @@ export async function spaceMigrate(opts = {}) {
     })
     if (planResult.interrupted || !planResult.plan) return
     const { plan } = planResult
+
+    if (config.resume || config.retry) {
+      const cleanupResult = await pruneStagedShards({
+        state,
+        spaceDIDs: [context.spaceDID],
+      })
+
+      if (cleanupResult.stateCorrected) {
+        await saveState(context.stateFile, state)
+      }
+
+      printStagedShardCleanup(cleanupResult)
+    }
 
     printPlan(plan, userWalletInfo.walletUSDFC, userWalletInfo.depositedUSDFC)
 

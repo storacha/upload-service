@@ -239,6 +239,8 @@ export interface SpaceCopyState {
   providerId: bigint
   /** Display/audit only. */
   serviceProvider: `0x${string}`
+  /** Provider PDP service URL used to validate staged shards on resume/debug. */
+  providerURL: string | null
   /** null until first commit; then passed as dataSetIds on resume. */
   dataSetId: bigint | null
   /**
