@@ -474,6 +474,49 @@ export function printResumeStatus(state, plan) {
 }
 
 /**
+ * @param {import('@storacha/filecoin-pin-migration/helper/types').PruneStagedShardsResult} result
+ */
+export function printStagedShardCleanup(result) {
+  if (result.spaces.length === 0) return
+
+  /** @type {string[]} */
+  const lines = []
+
+  for (const space of result.spaces) {
+    for (const copy of space.copies) {
+      const prefix = `${truncateDID(space.spaceDID)} copy ${copy.copyIndex}`
+
+      if (copy.removedStagedShardCount > 0) {
+        lines.push(
+          `${prefix}: removed ${copy.removedStagedShardCount} stale staged shard(s)`
+        )
+      }
+
+      if (copy.unverifiedStagedShardCount > 0) {
+        lines.push(
+          `${prefix}: ${copy.unverifiedStagedShardCount} staged shard(s) could not be verified`
+        )
+      }
+
+      if (copy.skippedReason === 'missing-provider-url') {
+        lines.push(`${prefix}: skipped SP check (missing provider URL)`)
+      }
+    }
+  }
+
+  if (lines.length === 0) return
+
+  console.log(
+    renderBox(
+      'Resume Cleanup',
+      lines,
+      result.stateCorrected ? chalk.yellow : chalk.cyan
+    )
+  )
+  console.log('')
+}
+
+/**
  * @param {object} event
  * @param {number} event.copyIndex
  * @param {number} event.commitIndex

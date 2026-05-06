@@ -1,4 +1,9 @@
 import { fetchDataSetPieces } from './fetch-dataset-pieces.js'
+import {
+  buildShardMappings,
+  checkPiecesOnSP,
+  buildStatusBreakdown,
+} from './sp-piece-status.js'
 
 /**
  * @import * as API from './api.js'
@@ -12,15 +17,6 @@ const PULLED_STATUSES = new Set([
   'announced',
   'retrieved',
 ])
-
-/**
- * @typedef {object} ProviderPieceStatusResult
- * @property {string} shardCid
- * @property {string | null} pieceCID
- * @property {string} status
- * @property {number | null} httpStatus
- * @property {string} [error]
- */
 
 /**
  * Reconcile persisted migration state against on-chain committed pieces and
@@ -59,68 +55,64 @@ export async function reconcileMigrationState({
 
     /** @type {API.ReconcileMigrationStateCopyReport[]} */
     const copies = []
+    let correctedAnyForSpace = false
 
     for (const copy of spaceState.copies) {
       const stagedShardCIDs = new Set([
         ...copy.pulled,
         ...Object.keys(copy.storedShards),
       ])
-      const copyHasPersistedState =
-        copy.committed.size > 0 || stagedShardCIDs.size > 0
-
-      if (copy.dataSetId == null) {
-        if (copyHasPersistedState) {
-          copies.push({
-            copyIndex: copy.copyIndex,
-            providerId: copy.providerId,
-            dataSetId: null,
-            skippedReason: 'missing-data-set-id',
-            changes: createEmptyChanges(),
-            warnings: createEmptyWarnings(),
-          })
-          hasDiscrepancies = true
-        }
-        continue
-      }
-
-      const { pieces, providerURL } = await fetchDataSetPieces(
-        client,
-        copy.dataSetId
-      )
+      const dataSetId = copy.dataSetId
+      const hasCommittedStateFromChain = dataSetId != null
+      const { pieces, providerURL: fetchedProviderURL } =
+        hasCommittedStateFromChain
+          ? await fetchDataSetPieces(client, dataSetId)
+          : { pieces: [], providerURL: null }
+      const providerURL = fetchedProviderURL ?? copy.providerURL ?? null
       const onChainPieceSet = new Set(pieces.map((piece) => piece.pieceCID))
 
-      /** @type {Set<string>} */
-      const trulyCommittedShardCIDs = new Set()
+      /** @type {Set<string> | null} */
+      const trulyCommittedShardCIDs = hasCommittedStateFromChain
+        ? new Set()
+        : null
       /** @type {string[]} */
       const committedPiecesNotFoundInInventory = []
 
-      for (const pieceCID of onChainPieceSet) {
-        const shardCID = mappings.pieceCIDToShardCID.get(pieceCID)
-        if (shardCID) {
-          trulyCommittedShardCIDs.add(shardCID)
-        } else {
-          committedPiecesNotFoundInInventory.push(pieceCID)
+      if (trulyCommittedShardCIDs) {
+        for (const pieceCID of onChainPieceSet) {
+          const shardCID = mappings.pieceCIDToShardCID.get(pieceCID)
+          if (shardCID) {
+            trulyCommittedShardCIDs.add(shardCID)
+          } else {
+            committedPiecesNotFoundInInventory.push(pieceCID)
+          }
         }
       }
 
       /** @type {API.ReconcileMigrationStateChanges} */
       const changes = {
-        committedAdded: [...trulyCommittedShardCIDs].filter(
-          (cid) => !copy.committed.has(cid)
-        ),
-        committedRemoved: [...copy.committed].filter(
-          (cid) => !trulyCommittedShardCIDs.has(cid)
-        ),
+        committedAdded: trulyCommittedShardCIDs
+          ? [...trulyCommittedShardCIDs].filter(
+              (cid) => !copy.committed.has(cid)
+            )
+          : [],
+        committedRemoved: trulyCommittedShardCIDs
+          ? [...copy.committed].filter(
+              (cid) => !trulyCommittedShardCIDs.has(cid)
+            )
+          : [],
         pulledRemovedBecauseCommitted: [],
         removedStagedShardCIDs: [],
       }
 
-      for (const shardCID of trulyCommittedShardCIDs) {
-        if (copy.pulled.has(shardCID)) {
-          changes.pulledRemovedBecauseCommitted.push(shardCID)
+      if (trulyCommittedShardCIDs) {
+        for (const shardCID of trulyCommittedShardCIDs) {
+          if (copy.pulled.has(shardCID)) {
+            changes.pulledRemovedBecauseCommitted.push(shardCID)
+          }
+          stagedShardCIDs.delete(shardCID)
+          copy.pulled.delete(shardCID)
         }
-        stagedShardCIDs.delete(shardCID)
-        copy.pulled.delete(shardCID)
       }
 
       /** @type {string[]} */
@@ -141,9 +133,13 @@ export async function reconcileMigrationState({
       /** @type {API.ReconcileMigrationStateCopyReport['skippedReason']} */
       let skippedReason
 
+      if (copy.dataSetId == null && copy.committed.size > 0) {
+        skippedReason = 'missing-data-set-id'
+      }
+
       if (verifiableStagedShardCIDs.length > 0) {
         if (!providerURL) {
-          skippedReason = 'missing-provider-url'
+          skippedReason ??= 'missing-provider-url'
           unverifiedStagedShardCIDs.push(...verifiableStagedShardCIDs)
         } else {
           const spResults = await checkPiecesOnSP({
@@ -157,13 +153,23 @@ export async function reconcileMigrationState({
           spCheck = {
             statusBreakdown: buildStatusBreakdown(spResults),
           }
-          changes.removedStagedShardCIDs = spResults
-            .filter((result) => !PULLED_STATUSES.has(result.status))
-            .map((result) => result.shardCid)
+
+          for (const result of spResults) {
+            if (result.status === 'not_found') {
+              changes.removedStagedShardCIDs.push(result.shardCid)
+              continue
+            }
+
+            if (!PULLED_STATUSES.has(result.status)) {
+              unverifiedStagedShardCIDs.push(result.shardCid)
+            }
+          }
         }
       }
 
-      copy.committed = trulyCommittedShardCIDs
+      if (trulyCommittedShardCIDs) {
+        copy.committed = trulyCommittedShardCIDs
+      }
       for (const shardCID of changes.removedStagedShardCIDs) {
         copy.pulled.delete(shardCID)
         delete copy.storedShards[shardCID]
@@ -194,7 +200,12 @@ export async function reconcileMigrationState({
         changes.removedStagedShardCIDs.length > 0
       ) {
         stateCorrected = true
+        correctedAnyForSpace = true
       }
+    }
+
+    if (correctedAnyForSpace) {
+      normalizeReconciledSpacePhase(spaceState, inventory)
     }
 
     if (
@@ -221,155 +232,6 @@ export async function reconcileMigrationState({
 }
 
 /**
- * @param {object} args
- * @param {string[]} args.shardCIDs
- * @param {Map<string, string>} args.shardCIDToPieceCID
- * @param {string} args.providerURL
- * @param {number} args.concurrency
- * @param {typeof fetch} args.fetcher
- * @returns {Promise<ProviderPieceStatusResult[]>}
- */
-async function checkPiecesOnSP({
-  shardCIDs,
-  shardCIDToPieceCID,
-  providerURL,
-  concurrency,
-  fetcher,
-}) {
-  /** @type {ProviderPieceStatusResult[]} */
-  const results = []
-
-  for (let i = 0; i < shardCIDs.length; i += concurrency) {
-    const batch = shardCIDs.slice(i, i + concurrency)
-    const batchResults = await Promise.all(
-      batch.map(async (shardCid) => {
-        const pieceCID = shardCIDToPieceCID.get(shardCid) ?? null
-        if (!pieceCID) {
-          return {
-            shardCid,
-            pieceCID,
-            status: 'no_piece_cid',
-            httpStatus: null,
-          }
-        }
-
-        try {
-          const response = await fetcher(
-            `${providerURL}/pdp/piece/${pieceCID}/status`
-          )
-          if (response.status === 404) {
-            return {
-              shardCid,
-              pieceCID,
-              status: 'not_found',
-              httpStatus: 404,
-            }
-          }
-          if (!response.ok) {
-            return {
-              shardCid,
-              pieceCID,
-              status: 'http_error',
-              httpStatus: response.status,
-            }
-          }
-
-          const body = /** @type {{ status?: string }} */ (
-            await response.json()
-          )
-          return {
-            shardCid,
-            pieceCID,
-            status: body.status ?? 'unknown',
-            httpStatus: response.status,
-          }
-        } catch (error) {
-          return {
-            shardCid,
-            pieceCID,
-            status: 'fetch_error',
-            httpStatus: null,
-            error: error instanceof Error ? error.message : String(error),
-          }
-        }
-      })
-    )
-
-    results.push(...batchResults)
-  }
-
-  return results
-}
-
-/**
- * @param {RootAPI.SpaceState} spaceState
- * @param {RootAPI.SpaceInventory} inventory
- */
-function buildShardMappings(spaceState, inventory) {
-  const pieceCIDToShardCID = new Map()
-  const shardCIDToPieceCID = new Map()
-  const allShardCIDs = new Set()
-
-  for (const shard of inventory.shards) {
-    allShardCIDs.add(shard.cid)
-    pieceCIDToShardCID.set(shard.pieceCID, shard.cid)
-    shardCIDToPieceCID.set(shard.cid, shard.pieceCID)
-  }
-
-  for (const shard of inventory.shardsToStore) {
-    allShardCIDs.add(shard.cid)
-  }
-
-  const primaryCopy = spaceState.copies.find((copy) => copy.copyIndex === 0)
-
-  if (primaryCopy) {
-    for (const [shardCID, pieceCID] of Object.entries(
-      primaryCopy.storedShards
-    )) {
-      pieceCIDToShardCID.set(pieceCID, shardCID)
-      shardCIDToPieceCID.set(shardCID, pieceCID)
-    }
-  }
-
-  /** @type {string[]} */
-  const inventoryShardsMissingPieceCID = []
-
-  for (const shardCID of allShardCIDs) {
-    if (!shardCIDToPieceCID.has(shardCID)) {
-      inventoryShardsMissingPieceCID.push(shardCID)
-    }
-  }
-
-  return {
-    pieceCIDToShardCID,
-    shardCIDToPieceCID,
-    inventoryShardsMissingPieceCID,
-  }
-}
-
-/**
- * @returns {API.ReconcileMigrationStateChanges}
- */
-function createEmptyChanges() {
-  return {
-    committedAdded: [],
-    committedRemoved: [],
-    pulledRemovedBecauseCommitted: [],
-    removedStagedShardCIDs: [],
-  }
-}
-
-/**
- * @returns {API.ReconcileMigrationStateWarnings}
- */
-function createEmptyWarnings() {
-  return {
-    committedPiecesNotFoundInInventory: [],
-    unverifiedStagedShardCIDs: [],
-  }
-}
-
-/**
  * @param {API.ReconcileMigrationStateChanges} changes
  * @param {API.ReconcileMigrationStateWarnings} warnings
  */
@@ -385,16 +247,28 @@ function hasCopyReportData(changes, warnings) {
 }
 
 /**
- * @param {ProviderPieceStatusResult[]} spResults
- * @returns {Record<string, number>}
+ * @param {RootAPI.SpaceState} space
+ * @param {RootAPI.SpaceInventory} inventory
  */
-function buildStatusBreakdown(spResults) {
-  /** @type {Record<string, number>} */
-  const statusBreakdown = {}
+function normalizeReconciledSpacePhase(space, inventory) {
+  const totalShards = inventory.shards.length + inventory.shardsToStore.length
+  const hasCommitted = space.copies.some((copy) => copy.committed.size > 0)
+  const hasStaged = space.copies.some(
+    (copy) => copy.pulled.size > 0 || Object.keys(copy.storedShards).length > 0
+  )
+  const allComplete = space.copies.every(
+    (copy) => copy.committed.size === totalShards
+  )
 
-  for (const result of spResults) {
-    statusBreakdown[result.status] = (statusBreakdown[result.status] ?? 0) + 1
+  if (!hasCommitted && !hasStaged) {
+    space.phase = 'pending'
+    return
   }
 
-  return statusBreakdown
+  if (hasStaged) {
+    space.phase = 'migrating'
+    return
+  }
+
+  space.phase = allComplete ? 'complete' : 'incomplete'
 }

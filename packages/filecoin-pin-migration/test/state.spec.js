@@ -193,6 +193,7 @@ function createCopyState({ copyIndex, failedUploads, committed, dataSetId }) {
     serviceProvider: /** @type {`0x${string}`} */ (
       `0x${String(copyIndex + 1).padStart(40, '0')}`
     ),
+    providerURL: null,
     dataSetId: dataSetId ?? null,
     pulled: new Set(),
     committed: new Set(committed ?? []),

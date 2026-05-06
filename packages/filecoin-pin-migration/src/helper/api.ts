@@ -62,6 +62,29 @@ export interface ListCommittedUploadsResult {
   piecesMissingRoot: string[]
 }
 
+export interface PruneStagedShardsCopyReport {
+  copyIndex: number
+  providerId: bigint
+  dataSetId: bigint | null
+  stagedShardCount: number
+  removedStagedShardCount: number
+  removedStagedShardCIDs: string[]
+  unverifiedStagedShardCount: number
+  unverifiedStagedShardCIDs: string[]
+  skippedReason?: 'missing-provider-url'
+  statusBreakdown?: Record<string, number>
+}
+
+export interface PruneStagedShardsSpaceReport {
+  spaceDID: SpaceDID
+  copies: PruneStagedShardsCopyReport[]
+}
+
+export interface PruneStagedShardsResult {
+  stateCorrected: boolean
+  spaces: PruneStagedShardsSpaceReport[]
+}
+
 export interface ReconcileMigrationStateChanges {
   committedAdded: string[]
   committedRemoved: string[]

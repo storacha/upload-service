@@ -210,6 +210,7 @@ function createCopyState(copyIndex) {
     serviceProvider: /** @type {`0x${string}`} */ (
       `0x${String(copyIndex + 1).padStart(40, '0')}`
     ),
+    providerURL: null,
     dataSetId: null,
     pulled: new Set(),
     committed: new Set(),
@@ -331,6 +332,7 @@ function createTwoPhaseState() {
         copyIndex: TWO_PHASE_COPY_INDEX,
         providerId: 10n,
         serviceProvider: /** @type {`0x${string}`} */ ('0x1000'),
+        providerURL: null,
         dataSetId: null,
         pulled: new Set(),
         committed: new Set(),
