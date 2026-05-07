@@ -1,3 +1,13 @@
+## 2.4.0 (2026-05-07)
+
+### 🚀 Features
+
+- remove unused space migrate options ([ca334418](https://github.com/storacha/upload-service/commit/ca334418))
+
+### ❤️ Thank You
+
+- bravonatalie
+
 ## 2.3.0 (2026-05-06)
 
 ### 🚀 Features
