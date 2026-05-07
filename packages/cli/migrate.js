@@ -11,7 +11,6 @@ import {
   buildMigrationInventories,
   createMigrationPlan,
   executeMigration,
-  executeStoreMigration,
   createResolver,
   clearFailedUploadsForRetry,
   ResumeBindingDriftError,
@@ -44,7 +43,6 @@ import {
 
 const LIVE_STATUS_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
 
-const DEFAULT_BATCH_SIZE = 20
 const DEFAULT_SOURCE_STRATEGY = 'roundabout'
 const DEFAULT_STATE_FILE_BASENAME = 'storacha-migration'
 const CLI_SOURCE = 'storacha-cli'
@@ -60,11 +58,6 @@ const DEFAULT_STORAGE_RETENTION_COPIES = 2
  * @property {string} [stateFile]
  * @property {boolean} [resume]
  * @property {boolean} [retry]
- * @property {number|string} [batchSize]
- * @property {number|string} [pullConcurrency]
- * @property {'pull' | 'store'} [uploadMode]
- * @property {string} [sourceStrategy]
- * @property {string} [roundaboutURL]
  * @property {boolean} [debug]
  */
 
@@ -78,8 +71,7 @@ export async function spaceMigrate(opts = {}) {
   const account = createWalletAccount(opts.walletPk)
 
   const resolver = createResolver({
-    strategy: config.sourceStrategy,
-    roundaboutURL: config.roundaboutURL,
+    strategy: DEFAULT_SOURCE_STRATEGY,
   })
 
   const context = await resolveMigrationContext(opts.stateFile)
@@ -122,7 +114,6 @@ export async function spaceMigrate(opts = {}) {
       chainName: synapse.chain.name,
       stateFile: context.stateFile,
       resume: config.resume,
-      uploadMode: config.uploadMode,
       preflight: userWalletInfo,
       minFilGasBalance: MIN_FIL_GAS_BALANCE,
     })
@@ -190,9 +181,6 @@ export async function spaceMigrate(opts = {}) {
       state,
       stateFile: context.stateFile,
       synapse,
-      batchSize: config.batchSize,
-      pullConcurrency: config.pullConcurrency,
-      uploadMode: config.uploadMode,
       debug: config.debug,
       signal: ac.signal,
     })
@@ -262,16 +250,8 @@ export async function spaceMigrateCalc(opts = {}) {
 function parseMigrationOptions(opts) {
   return {
     network: parseNetwork(opts.network),
-    batchSize: parseBatchSize(opts.batchSize),
-    uploadMode: parseUploadMode(opts.uploadMode),
-    sourceStrategy: parseSourceStrategy(opts.sourceStrategy),
-    pullConcurrency: parsePositiveInteger(
-      opts.pullConcurrency,
-      '--pull-concurrency'
-    ),
     resume: opts.resume ?? false,
     retry: opts.retry ?? false,
-    roundaboutURL: opts.roundaboutURL,
     debug: opts.debug ?? false,
   }
 }
@@ -285,24 +265,6 @@ function parseMigrationCalcOptions(opts) {
     sizeBytes: parsePositiveBigInt(opts.size, '--size'),
     months: parsePositiveBigInt(opts.months, '--months'),
   }
-}
-
-/**
- * @param {'pull' | 'store' | string | undefined} mode
- */
-function parseUploadMode(mode) {
-  if (mode == null || mode === '') {
-    return 'pull'
-  }
-
-  if (mode === 'pull' || mode === 'store') {
-    return mode
-  }
-
-  console.error(
-    `Error: invalid upload mode "${mode}". Expected "pull" or "store".`
-  )
-  process.exit(1)
 }
 
 /**
@@ -469,9 +431,6 @@ async function planMigration({ synapse, state, stateFile, signal }) {
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} args.state
  * @param {string} args.stateFile
  * @param {import('@filoz/synapse-sdk').Synapse} args.synapse
- * @param {number} args.batchSize
- * @param {number | undefined} args.pullConcurrency
- * @param {'pull' | 'store'} args.uploadMode
  * @param {boolean} args.debug
  * @param {AbortSignal} args.signal
  */
@@ -480,9 +439,6 @@ async function runMigration({
   state,
   stateFile,
   synapse,
-  batchSize,
-  pullConcurrency,
-  uploadMode,
   debug,
   signal,
 }) {
@@ -529,7 +485,6 @@ async function runMigration({
     const block = renderMigrationStatusBlock({
       state,
       plan,
-      uploadMode,
       startedAt,
       activityFrame: LIVE_STATUS_FRAMES[frameIndex],
       currentSpaceDID: liveStatus.currentSpaceDID,
@@ -613,24 +568,12 @@ async function runMigration({
   renderStatusBlock()
   startHeartbeat()
 
-  const migrationEvents =
-    uploadMode === 'store'
-      ? executeStoreMigration({
-          plan,
-          state,
-          synapse,
-          batchSize,
-          pullConcurrency,
-          signal,
-        })
-      : executeMigration({
-          plan,
-          state,
-          synapse,
-          batchSize,
-          pullConcurrency,
-          signal,
-        })
+  const migrationEvents = executeMigration({
+    plan,
+    state,
+    synapse,
+    signal,
+  })
 
   for await (const event of migrationEvents) {
     switch (event.type) {
@@ -821,47 +764,6 @@ function loadStateOrExit(stateFile) {
 /**
  * @param {string | undefined} strategy
  */
-function parseSourceStrategy(strategy) {
-  if (strategy == null || strategy === '') {
-    return DEFAULT_SOURCE_STRATEGY
-  }
-
-  if (strategy === 'roundabout' || strategy === 'claims') {
-    return strategy
-  }
-
-  console.error(
-    `Error: invalid source strategy "${strategy}". Expected "roundabout" or "claims".`
-  )
-  process.exit(1)
-}
-
-/**
- * @param {number | string | undefined} batchSize
- */
-function parseBatchSize(batchSize) {
-  const value = parsePositiveInteger(batchSize, '--batch-size')
-  return value ?? DEFAULT_BATCH_SIZE
-}
-
-/**
- * @param {number | string | undefined} value
- * @param {string} flag
- */
-function parsePositiveInteger(value, flag) {
-  if (value == null || value === '') {
-    return undefined
-  }
-
-  const parsed = typeof value === 'number' ? value : Number.parseInt(value, 10)
-  if (Number.isInteger(parsed) && parsed > 0) {
-    return parsed
-  }
-
-  console.error(`Error: "${flag}" must be a positive integer`)
-  process.exit(1)
-}
-
 /**
  * @param {bigint | number | string | undefined} value
  * @param {string} flag

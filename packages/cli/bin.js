@@ -338,26 +338,6 @@ cli
   )
   .option('--resume', 'Resume from an existing state file', false)
   .option(
-    '-b, --batch-size <count>',
-    'Pieces per pull batch. Defaults to the migration library default.'
-  )
-  .option(
-    '-pc, --pull-concurrency <count>',
-    'Number of pull batches to process concurrently.'
-  )
-  .option(
-    '-um, --upload-mode <mode>',
-    'Upload execution mode: "pull" or "store". Defaults to "pull".'
-  )
-  .option(
-    '-s, --source-strategy <strategy>',
-    'Source URL strategy: "roundabout" or "claims". Defaults to "roundabout".'
-  )
-  .option(
-    '-r, --roundabout-url <url>',
-    'Override the roundabout base URL used with the "roundabout" strategy.'
-  )
-  .option(
     '--retry',
     'When resuming, clear persisted failed upload roots for the selected space and retry them.'
   )
@@ -380,11 +360,6 @@ cli
       stateFile: options['state-file'],
       resume: options.resume,
       retry: options.retry,
-      batchSize: options['batch-size'],
-      pullConcurrency: options['pull-concurrency'],
-      uploadMode: options['upload-mode'],
-      sourceStrategy: options['source-strategy'],
-      roundaboutURL: options['roundabout-url'],
       debug: options.debug,
     }
 

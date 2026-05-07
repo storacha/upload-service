@@ -1,7 +1,7 @@
 # Architecture — `@storacha/filecoin-pin-migration`
 
 **Domain:** Storacha-to-FOC migration library  
-**Last updated:** 2026-04-19
+**Last updated:** 2026-05-07
 
 ---
 
@@ -88,6 +88,10 @@ interface SpaceCopyState {
 State uses `Set<string>` at runtime for O(1) membership checks and cheap
 iteration. Serialization converts these sets to arrays.
 
+`providerURL` is persisted alongside the copy binding so helper-driven staged
+validation and debugging can still probe provider PDP state even before a copy
+has an on-chain dataset id.
+
 ### Resume Contract
 
 On resume:
@@ -106,10 +110,19 @@ On resume:
    - does not re-pull shards already in a copy's `pulled`
    - reuses the copy's `dataSetId` after a successful commit
 
+On retry:
+
+- `clearFailedUploadsForRetry()` clears persisted `failedUploads` for both
+  copies of the selected space
+- `committed`, `pulled`, `storedShards`, and provider/dataset bindings are
+  preserved
+- `space.phase` is reset to `pending` or `migrating` depending on whether any
+  durable progress remains
+
 If a caller chooses to validate staged state before resume/retry execution:
 
-- the validation must run after reader/planner data is available and before
-  migrator execution starts
+- the validation must run after inventories are available and before migrator
+  execution starts
 - only definitive provider absence (`not_found`) should auto-prune staged
   entries; transient provider/API failures should be reported but preserved
 - any corrected state should be checkpointed before the user confirms or aborts
@@ -136,6 +149,8 @@ Cost rules:
 - monthly storage rate always uses the base warm-storage price
 - CDN affects only the fixed lockup for fresh datasets
 - CDN egress is variable and excluded from upfront plan/retention estimates
+- `MigrationPlan.fundingAmount` applies a 5% safety buffer over
+  `costs.totalDepositNeeded`
 
 `PerSpaceCost` is copy-based:
 
@@ -148,6 +163,7 @@ interface PerSpaceCost {
   currentDataSetSize: bigint
   lockupUSDFC: bigint
   sybilFee: bigint
+  cdnFixedLockup: bigint
   rateLockupDelta: bigint
   ratePerEpoch: bigint
   ratePerMonth: bigint
@@ -251,6 +267,48 @@ identifier only; callers should not treat it as a stable ordering contract.
 Operational pull and store failures now carry retry diagnostics on their final
 error objects, including attempt count and elapsed time. Upload-quality pull
 failures keep the existing per-root event semantics.
+
+---
+
+## Helper Utilities
+
+Helper utilities are exported outside the main pipeline under `./helpers`.
+
+### Cost helpers
+
+- `getStorageRetentionCost()` fetches live pricing and estimates retention cost
+- `calculateStorageRetentionCostFromPricing()` performs the same calculation
+  from already-fetched pricing inputs
+
+These helpers are read-only and do not interact with `MigrationState`.
+
+### Dataset inspection helpers
+
+- `fetchDataSetPieces()` fetches all active pieces for a dataset and returns the
+  provider PDP URL when available
+- `listCommittedUploads()` groups committed dataset pieces by `ipfsRootCID`
+
+These helpers are read-only and operate against chain state plus dataset
+metadata.
+
+### State validation helpers
+
+- `pruneStagedShards()` probes persisted `pulled` / `storedShards` against the
+  provider PDP endpoint and removes only entries the provider definitively no
+  longer acknowledges (`not_found`)
+- `reconcileMigrationState()` compares persisted state against committed
+  dataset pieces and provider PDP staged state, and can correct committed and
+  staged drift in place
+
+Helper contracts:
+
+- both helpers mutate `MigrationState` in place
+- `pruneStagedShards()` requires inventories plus persisted copy state; it does
+  not require planner contexts
+- `reconcileMigrationState()` can still validate staged shards for staged-only
+  copies via persisted `providerURL` even when `dataSetId` is `null`
+- both helpers may normalize `space.phase` after correcting staged or committed
+  state
 
 ---
 

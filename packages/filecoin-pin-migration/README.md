@@ -1,132 +1,31 @@
 # `@storacha/filecoin-pin-migration`
 
-Headless library for migrating Storacha content to Filecoin on Chain (FOC) without re-uploading data.
+Headless library for migrating Storacha content to Filecoin on Chain (FOC).
 
-Filecoin storage providers pull your data directly from Storacha's storage via the Curio pull API. Your data never moves through your machine.
+For most users, the recommended entrypoint is the Storacha CLI:
+
+```bash
+storacha space migrate
+```
+
+Use this library directly only when you need custom orchestration, persistence,
+approval UX, or debugging/integration hooks around the migration flow.
 
 ---
 
-## How it works
+## What This Package Provides
 
-Migration runs in three sequential phases:
-
-```
-Reader → Planner → Migrator
-```
-
-All three phases are `AsyncGenerator`s that yield `MigrationEvent` objects. A single `MigrationState` is created upfront and threaded through all stages — consumers persist it on every `state:checkpoint` event to enable crash recovery.
-
-### 1. Reader — inventory
-
-Walks every space on the Storacha client, paginates all uploads, and per page batch-queries the indexing service once to resolve all shards in that page:
-
-- `pieceCID` — required by the Filecoin storage provider
-- `sourceURL` — the URL the SP will pull from (resolved by the chosen strategy)
-- `sizeBytes` — derived from the `assert/location` claim range length when present, otherwise from the piece claim
-
-The result is a `SpaceInventory` per space: a flat list of every resolved shard (each carrying its upload root), the list of successful upload root CIDs, and the list of skipped upload root CIDs. Inventories are written into `state.spacesInventories` as each page completes.
-
-### 2. Planner — cost calculation and approval
-
-Takes space inventories, creates exactly 2 `StorageContext`s per space, and computes the single USDFC deposit needed across all spaces. Each copy binds a payer, a distinct provider, and its own on-chain dataset via the Synapse SDK. The planner writes both copy bindings to state and yields a `planner:ready` event carrying a `MigrationPlan` the consumer can display for user approval before any on-chain action.
-
-The plan carries:
-
-- Per-space upload/shard/byte totals
-- Per-space storage cost breakdown (lockup, rate, sybil fee)
-- Account-level deposit needed and approval requirements
-- `fundingAmount` — the deposit plus a 10% safety buffer, surfaced in `plan.warnings` before the user approves
-- A `ready` flag — false if a deposit or FWSS approval is required
-
-### 3. Migrator — execution
-
-Executes the approved plan as an `AsyncGenerator`. Yields `MigrationEvent` objects the consumer handles at its own pace: persisting state to disk, displaying progress, logging failures.
-
-Shards from all uploads in a space are still processed cross-upload from the flat inventory, but the migrator now has 2 execution paths:
-
-- `inventory.shards` stay on the normal source-pull flow for both copies
-- `inventory.shardsToStore` are downloaded and `store()`d on copy 0, then pulled from copy 0 on copy 1
-
-Per space the order is:
-
-1. **Copy 0 store** — `shardsToStore` are downloaded and stored client-side
-2. **Copy 0 source pull** — normal `shards` are presigned and pulled from `sourceURL`
-3. **Copy 0 commit** — stored entries and pulled entries are committed together in sequential internal commit batches
-4. **Copy 1 source pull** — normal `shards` are presigned and pulled from `sourceURL`
-5. **Copy 1 stored-piece pull** — stored piece CIDs are pulled from copy 0
-6. **Copy 1 commit** — both buckets are committed together in sequential internal commit batches
-
-Commit batching is internal to the library:
-
-- `count` mode is used when an internal max-pieces cap is configured
-- otherwise `extraData` mode is used while the encoded Synapse `extraData` limit is active
-- if both internal limits are disabled, commit falls back to one single call
-
-In `extraData` mode the first commit batch can be smaller than later ones, because it may include dataset-creation metadata (`CreateDataSetAndAddPieces`) before the copy has a dataset id. Once the first commit succeeds, later batches use the cheaper add-pieces-only payload.
-
-State is checkpointed after pulled progress is recorded and after each successful commit batch. Pulled-but-not-yet-committed shards are persisted per copy so resume can skip re-pulling them.
-
-`executeStoreMigration()` remains available as a standalone store-focused executor.
-It prepares a per-space execution view where all actionable shards are routed into
-`shardsToStore`, then delegates to the same shared `migrateSpace()` logic used by
-the default `executeMigration()`.
-
----
-
-## Architecture
-
-```
-┌────────────────────────────────────────────────────────────┐
-│                     @storacha/client                       │
-│  spaces() / upload.list() / upload.shard.list()            │
-└────────────────────┬───────────────────────────────────────┘
-                     │ paginate uploads + shards
-                     ▼
-┌────────────────────────────────────────────────────────────┐
-│           buildMigrationInventories()                      │
-│  + IndexingServiceReader (queryClaims)                     │
-│  + SourceURLResolver (ClaimsResolver | RoundaboutResolver) │
-│                                                            │
-│  → state.spacesInventories  (uploads, shards, final URLs)  │
-└────────────────────┬───────────────────────────────────────┘
-                     │ state.spacesInventories
-                     ▼
-┌────────────────────────────────────────────────────────────┐
-│                createMigrationPlan()                       │
-│  + Synapse SDK (2 contexts per space, chain reads)         │
-│                                                            │
-│  → planner:ready  (costs, totals, ready flag)              │
-└────────────────────┬───────────────────────────────────────┘
-                     │ plan + state (SP bindings written)
-                     ▼
-┌────────────────────────────────────────────────────────────┐
-│              executeMigration()  [AsyncGenerator]          │
-│  source pull + store flow → sequential commit batches      │
-│  checkpoints → MigrationState  (serializable, resumable)   │
-│                                                            │
-│  yields: funding:start/complete/failed                     │
-│          migration:batch:failed                            │
-│          migration:commit:failed                           │
-│          state:checkpoint                                  │
-│          migration:complete                                │
-└────────────────────────────────────────────────────────────┘
-```
-
-The library always enforces 2 copies per space on 2 distinct providers. A successful migration therefore produces 2 dataset IDs per space.
-
-`executeStoreMigration()` is a wrapper over the same shared per-space migrator.
-It only changes the execution view by routing `inventory.shards` into
-`inventory.shardsToStore` for that run.
-
----
-
-## Prerequisites
-
-- A funded USDFC wallet — required for storage payment lockup
-- FIL for gas — required for on-chain transactions
-- An authenticated `@storacha/client` instance with access to the spaces to migrate
-- An initialized `@filoz/synapse-sdk` `Synapse` instance
-- Access to an indexing service (for resolving shard claims)
+- a resumable three-stage migration pipeline:
+  - reader
+  - planner
+  - migrator
+- exactly 2 copies per space on 2 distinct providers
+- serializable `MigrationState` for checkpointing and resume
+- helper utilities for:
+  - storage retention cost estimation
+  - committed dataset inspection
+  - staged-shard validation
+  - state reconciliation/debugging
 
 ---
 
@@ -135,6 +34,230 @@ It only changes the execution view by routing `inventory.shards` into
 ```bash
 npm install @storacha/filecoin-pin-migration
 ```
+
+---
+
+## Recommended Usage
+
+If you just want to migrate a Storacha space, use the CLI command:
+
+```bash
+storacha space migrate
+```
+
+The CLI already handles:
+
+- wallet/account preflight
+- state-file persistence
+- resume and retry flows
+- plan display and approval
+- staged-shard cleanup before resume/retry
+- progress rendering and failure reporting
+
+This library is better suited to:
+
+- custom applications embedding the migration flow
+- alternate persistence layers
+- custom approval/funding UX
+- debugging and audit tooling
+
+---
+
+## Migration Model
+
+The library uses a strict three-stage pipeline:
+
+```text
+Reader -> Planner -> Migrator
+```
+
+### 1. Reader
+
+`buildMigrationInventories()` walks one or more spaces, paginates uploads,
+lists shards, resolves claims, and builds immutable `SpaceInventory` snapshots.
+
+Reader output includes:
+
+- upload roots that resolved successfully
+- skipped upload roots
+- `shards` for normal source-pull migration
+- `shardsToStore` for shards that must go through the store flow
+- total byte counts used by planning
+
+The reader checkpoints progress into `state.spacesInventories` after each page.
+
+### 2. Planner
+
+`createMigrationPlan()` reads the inventories from state, creates exactly 2
+storage contexts per space, computes costs, and writes the selected
+provider/dataset bindings into `MigrationState`.
+
+The planner produces a `MigrationPlan` containing:
+
+- per-space totals
+- per-copy and per-space cost breakdowns
+- warnings
+- readiness/funding information
+- `fundingAmount`, which includes a 5% safety buffer over the required deposit
+
+### 3. Migrator
+
+`executeMigration()` funds once, then executes one space at a time.
+
+Within a space:
+
+- `inventory.shards` stay on the normal source-pull path for both copies
+- `inventory.shardsToStore` are stored on copy 0, then pulled from copy 0 on
+  copy 1
+- commits run in two phases:
+  - Phase 1: sequential until the dataset exists
+  - Phase 2: bounded-concurrency add-pieces batches
+
+The migrator yields `MigrationEvent`s for:
+
+- state checkpoints
+- phase/copy/space progress
+- batch failures
+- commit retry decisions
+- final migration summary
+
+---
+
+## Data Path
+
+Most shards are migrated without passing through the caller machine:
+
+- source-routed shards are pulled directly by the storage provider from the
+  reader-resolved `sourceURL`
+
+Some shards may require the store flow:
+
+- `shardsToStore` are fetched and stored client-side on copy 0
+- copy 1 then pulls those stored pieces from copy 0
+
+So the library supports both:
+
+- direct provider pulls
+- mixed direct-pull + store-assisted migration
+
+---
+
+## State, Checkpoints, and Resume
+
+The library mutates a single `MigrationState` in place. Callers are expected to
+persist it on every `state:checkpoint` event.
+
+Typical lifecycle:
+
+1. create or load state
+2. run reader and persist checkpoints
+3. run planner and persist the approved bindings
+4. optionally validate staged state before resume/retry
+5. run migrator and persist every checkpoint
+
+Resume is driven entirely by persisted state:
+
+- committed shard CIDs are not re-committed
+- pulled shard CIDs are not re-pulled
+- stored shard mappings are reused
+- provider and dataset bindings are pinned per copy
+
+The core state helpers are:
+
+- `createInitialState()`
+- `serializeState()`
+- `deserializeState()`
+- `clearFailedUploadsForRetry()`
+
+---
+
+## Core Exports
+
+Main pipeline:
+
+```js
+import {
+  createInitialState,
+  buildMigrationInventories,
+  createMigrationPlan,
+  executeMigration,
+  serializeState,
+  deserializeState,
+} from '@storacha/filecoin-pin-migration'
+```
+
+Additional advanced exports:
+
+- `computeMigrationCosts()` for lower-level planning/cost usage
+- `ensureFunding()` for explicit funding orchestration
+- `executeStoreMigration()` for the standalone all-store execution path
+- `RoundaboutResolver`, `ClaimsResolver`, and `createResolver()` for custom
+  reader integration
+
+---
+
+## Helper Exports
+
+Helper utilities are exported separately:
+
+```js
+import {
+  getStorageRetentionCost,
+  calculateStorageRetentionCostFromPricing,
+  fetchDataSetPieces,
+  listCommittedUploads,
+  pruneStagedShards,
+  reconcileMigrationState,
+} from '@storacha/filecoin-pin-migration/helpers'
+```
+
+### Cost helpers
+
+- `getStorageRetentionCost()` fetches live pricing and estimates storage
+  retention cost
+- `calculateStorageRetentionCostFromPricing()` calculates the same from
+  already-fetched pricing inputs
+
+### Dataset inspection
+
+- `fetchDataSetPieces()` fetches the active pieces for a dataset together with
+  the provider PDP URL
+- `listCommittedUploads()` groups committed dataset pieces by upload root
+
+### Resume / debugging helpers
+
+- `pruneStagedShards()` validates persisted staged shards (`pulled` /
+  `storedShards`) against the provider PDP endpoint and removes only entries the
+  provider definitively no longer has
+- `reconcileMigrationState()` compares persisted state against committed dataset
+  contents and staged provider state to identify/correct drift
+
+These helpers are useful for:
+
+- debugging persisted `migration.json` files
+- validating resume state before continuing
+- building custom audit tooling
+
+---
+
+## Minimal Integration Shape
+
+At a high level, custom consumers should:
+
+1. create or deserialize `MigrationState`
+2. run `buildMigrationInventories()` and persist every `state:checkpoint`
+3. run `createMigrationPlan()` and persist the approved bindings checkpoint
+4. optionally run helper-based staged-state validation
+5. run `executeMigration()` and persist every `state:checkpoint`
+
+The library is intentionally headless:
+
+- it does not own file persistence
+- it does not own approval UX
+- it does not own terminal/log rendering
+
+That is why the CLI is the recommended default for end users, while this
+package is the lower-level integration surface.
 
 ---
 

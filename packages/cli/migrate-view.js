@@ -13,7 +13,6 @@ import { filesize } from './lib.js'
  * @param {string} args.chainName
  * @param {string} args.stateFile
  * @param {boolean} args.resume
- * @param {'pull' | 'store'} args.uploadMode
  * @param {{ walletUSDFC: bigint, walletFIL: bigint, depositedUSDFC: bigint }} args.preflight
  * @param {bigint} args.minFilGasBalance
  */
@@ -24,7 +23,6 @@ export function printPreflight({
   chainName,
   stateFile,
   resume,
-  uploadMode,
   preflight,
   minFilGasBalance,
 }) {
@@ -38,7 +36,6 @@ export function printPreflight({
         line('Chain', chainName),
         line('Chain ID', String(chainId)),
         line('Mode', resume ? 'resume' : 'fresh'),
-        line('Upload mode', uploadMode),
       ],
       chalk.cyan
     )
@@ -377,7 +374,6 @@ export function renderNotice(title, lines, color) {
  * @param {object} args
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} args.state
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationPlan} args.plan
- * @param {'pull' | 'store'} args.uploadMode
  * @param {number} args.startedAt
  * @param {string} args.activityFrame
  * @param {string | undefined} args.currentSpaceDID
@@ -389,7 +385,6 @@ export function renderNotice(title, lines, color) {
 export function renderMigrationStatusBlock({
   state,
   plan,
-  uploadMode,
   startedAt,
   activityFrame,
   currentSpaceDID,
@@ -409,8 +404,7 @@ export function renderMigrationStatusBlock({
     .sort((a, b) => a.copyIndex - b.copyIndex)
     .map((c) => {
       const base = `staged ${c.staged}/${totalPerCopy}  committed ${c.committed}/${totalPerCopy}  failed ${c.failedUploads}`
-      const value = uploadMode === 'store' ? `${base}` : base
-      return line(`Copy ${c.copyIndex}`, value)
+      return line(`Copy ${c.copyIndex}`, base)
     })
 
   return renderBox(
