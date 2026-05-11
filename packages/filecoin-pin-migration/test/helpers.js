@@ -6,6 +6,7 @@ import { base32upper } from 'multiformats/bases/base32'
 import { Piece, MIN_PAYLOAD_SIZE } from '@web3-storage/data-segment'
 import { encode as encodeDagCbor } from '@ipld/dag-cbor'
 import { CID } from 'multiformats/cid'
+import { STATE_VERSION } from '../src/state.js'
 
 /**
  * @import * as API from '../src/api.js'
@@ -385,6 +386,7 @@ export function createMockInventory(opts = {}) {
  */
 export function createMockInitialState() {
   return /** @type {API.MigrationState} */ ({
+    version: STATE_VERSION,
     phase: 'reading',
     spaces: {},
     spacesInventories: {},

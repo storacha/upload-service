@@ -155,7 +155,7 @@ export const testSpace = {
       .catch()
 
     assert.equal(status.code, 1)
-    assert.match(error, /missing required option "--wallet-pk"/i)
+    assert.match(error, /missing required option "--private-key"/i)
   }),
 
   'storacha space migrate requires current space': test(
@@ -164,7 +164,7 @@ export const testSpace = {
         .args([
           'space',
           'migrate',
-          '--wallet-pk',
+          '--private-key',
           '0x1111111111111111111111111111111111111111111111111111111111111111',
         ])
         .env(context.env.alice)

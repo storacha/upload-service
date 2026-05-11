@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { confirm } from '@inquirer/prompts'
+import { confirm, select } from '@inquirer/prompts'
 import ansiEscapes from 'ansi-escapes'
 import chalk from 'chalk'
 import ora from 'ora'
@@ -50,6 +50,10 @@ const MIN_FIL_GAS_BALANCE = parseEther('0.001')
 const DEFAULT_STORAGE_RETENTION_COPIES = 2
 
 /**
+ * @typedef {'fresh' | 'resume' | 'retry'} MigrationStartMode
+ */
+
+/**
  * Migrate the current selected space to Filecoin on Chain.
  *
  * @typedef {object} SpaceMigrateOptions
@@ -82,10 +86,16 @@ export async function spaceMigrate(opts = {}) {
     source: CLI_SOURCE,
   })
 
-  const state =
-    config.resume || config.retry
-      ? loadStateOrExit(context.stateFile)
-      : createInitialState()
+  const startState = await resolveStartState({
+    stateFile: context.stateFile,
+    resume: config.resume,
+    retry: config.retry,
+  })
+  if (!startState) return
+
+  config.resume = startState.mode === 'resume'
+  config.retry = startState.mode === 'retry'
+  const state = startState.state
 
   if (config.retry) {
     const retriedUploads = clearFailedUploadsForRetry(state, context.spaceDID)
@@ -113,7 +123,7 @@ export async function spaceMigrate(opts = {}) {
       chainId: synapse.chain.id,
       chainName: synapse.chain.name,
       stateFile: context.stateFile,
-      resume: config.resume,
+      mode: startState.mode,
       preflight: userWalletInfo,
       minFilGasBalance: MIN_FIL_GAS_BALANCE,
     })
@@ -290,6 +300,163 @@ async function resolveMigrationContext(stateFile) {
 }
 
 /**
+ * @param {object} args
+ * @param {string} args.stateFile
+ * @param {boolean} args.resume
+ * @param {boolean} args.retry
+ * @returns {Promise<{ mode: MigrationStartMode, state: import('@storacha/filecoin-pin-migration/types').MigrationState } | null>}
+ */
+async function resolveStartState({ stateFile, resume, retry }) {
+  if (resume) {
+    return { mode: 'resume', state: loadStateOrExit(stateFile) }
+  }
+
+  if (retry) {
+    return { mode: 'retry', state: loadStateOrExit(stateFile) }
+  }
+
+  const existingState = tryLoadState(stateFile)
+  if (!existingState.exists) {
+    return { mode: 'fresh', state: createInitialState() }
+  }
+
+  if (existingState.error) {
+    console.warn(
+      chalk.yellow(
+        `Existing state file found at ${stateFile}, but it could not be loaded: ${existingState.error.message}`
+      )
+    )
+
+    if (
+      !(await confirmFreshOverwrite({
+        cancelMessage:
+          'Migration cancelled. Keep the current file or restart with a compatible state file.',
+      }))
+    ) {
+      return null
+    }
+
+    return { mode: 'fresh', state: createInitialState() }
+  }
+
+  printExistingStateSummary(stateFile, existingState.state)
+
+  if (existingState.state.phase === 'complete') {
+    return null
+  }
+
+  const action = await promptForExistingStateAction(existingState.state)
+
+  if (action === 'cancel') {
+    console.log(
+      chalk.dim(
+        'Migration cancelled. Re-run with --resume or --retry to use the existing state file.'
+      )
+    )
+    return null
+  }
+
+  if (action === 'resume') {
+    return { mode: 'resume', state: existingState.state }
+  }
+
+  if (action === 'retry') {
+    return { mode: 'retry', state: existingState.state }
+  }
+
+  if (
+    !(await confirmFreshOverwrite({
+      cancelMessage:
+        'Migration cancelled. Re-run with --resume or --retry to use the existing state file.',
+    }))
+  ) {
+    return null
+  }
+
+  return { mode: 'fresh', state: createInitialState() }
+}
+
+/**
+ * @param {string} stateFile
+ * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
+ */
+function printExistingStateSummary(stateFile, state) {
+  console.log(chalk.dim(`State file: ${stateFile}`))
+  console.log('')
+
+  printResumeStatus(state, {
+    title:
+      state.phase === 'complete'
+        ? 'Existing Migration State (Completed)'
+        : 'Existing Migration State',
+    showWhenEmpty: true,
+  })
+}
+
+/**
+ * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
+ * @returns {Promise<'resume' | 'retry' | 'fresh' | 'cancel'>}
+ */
+async function promptForExistingStateAction(state) {
+  const recommendedAction = getRecommendedExistingStateAction(state)
+  const hasFailedUploads = countFailedUploads(state) > 0
+  const choices = [
+    {
+      name:
+        recommendedAction === 'resume'
+          ? 'Resume existing migration (Recommended)'
+          : 'Resume existing migration',
+      value: 'resume',
+    },
+  ]
+
+  if (hasFailedUploads) {
+    choices.push({
+      name:
+        recommendedAction === 'retry'
+          ? 'Retry failed uploads (Recommended)'
+          : 'Retry failed uploads',
+      value: 'retry',
+    })
+  }
+
+  choices.push({
+    name: 'Start fresh and overwrite state file',
+    value: 'fresh',
+  })
+  choices.push({
+    name: 'Cancel',
+    value: 'cancel',
+  })
+
+  return await select({
+    message:
+      'An existing migration state file was found. What do you want to do?',
+    choices,
+  }).catch(() => 'cancel')
+}
+
+/**
+ * @param {object} [options]
+ * @param {string} [options.cancelMessage]
+ */
+async function confirmFreshOverwrite({
+  cancelMessage = 'Migration cancelled.',
+} = {}) {
+  const overwrite = await confirm({
+    message: 'Start fresh and overwrite the current state file?',
+    default: false,
+  }).catch(() => false)
+
+  if (overwrite) {
+    return true
+  }
+
+  console.log(chalk.dim(cancelMessage))
+  return false
+}
+
+/**
  * @param {string | undefined} walletPk
  */
 function createWalletAccount(walletPk) {
@@ -443,7 +610,7 @@ async function runMigration({
   signal,
 }) {
   printPhaseTitle('Migrating')
-  printResumeStatus(state, plan)
+  printResumeStatus(state)
   const startedAt = Date.now()
   const canRedraw = process.stdout.isTTY === true
   let statusBlockPrinted = 0
@@ -762,6 +929,49 @@ function loadStateOrExit(stateFile) {
 }
 
 /**
+ * @param {string} stateFile
+ * @returns {{ exists: false } | { exists: true, state: import('@storacha/filecoin-pin-migration/types').MigrationState, error?: undefined } | { exists: true, error: Error, state?: undefined }}
+ */
+function tryLoadState(stateFile) {
+  if (!fs.existsSync(stateFile)) {
+    return { exists: false }
+  }
+
+  try {
+    const raw = fs.readFileSync(stateFile, 'utf8')
+    return { exists: true, state: deserializeState(JSON.parse(raw)) }
+  } catch (err) {
+    return {
+      exists: true,
+      error: err instanceof Error ? err : new Error(String(err)),
+    }
+  }
+}
+
+/**
+ * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
+ */
+function countFailedUploads(state) {
+  let totalFailedUploads = 0
+
+  for (const space of Object.values(state.spaces)) {
+    for (const copy of space.copies) {
+      totalFailedUploads += copy.failedUploads.size
+    }
+  }
+
+  return totalFailedUploads
+}
+
+/**
+ * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
+ * @returns {'resume' | 'retry'}
+ */
+function getRecommendedExistingStateAction(state) {
+  return countFailedUploads(state) > 0 ? 'retry' : 'resume'
+}
+
+/**
  * @param {string | undefined} strategy
  */
 /**
@@ -808,12 +1018,12 @@ function defaultStateFileForSpace(spaceDID) {
  * @param {string | undefined} network
  */
 function parseNetwork(network) {
-  if (network == null || network === '' || network === 'calibration') {
-    return calibration
+  if (network == null || network === '' || network === 'mainnet') {
+    return mainnet
   }
 
-  if (network === 'mainnet') {
-    return mainnet
+  if (network === 'calibration') {
+    return calibration
   }
 
   console.error(

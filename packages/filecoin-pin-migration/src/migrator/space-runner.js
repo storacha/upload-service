@@ -1,4 +1,4 @@
-import { commitPieceBatches, iterateCommitPieces } from './commit.js'
+import { commitPieceBatches } from './commit.js'
 import { drainConcurrentStream, streamConcurrentTasks } from './concurrent.js'
 import { applyPullResults } from './pull-results.js'
 import { presignAndPullBatch } from './pull.js'
@@ -6,7 +6,14 @@ import {
   pullStoredShardsOnSecondaryCopy,
   storeShardsOnPrimaryCopy,
 } from './store-flow.js'
-import { recordPull, finalizeSpace } from '../state.js'
+import {
+  expandShardRoots,
+  getActionableRootsForRun,
+  hasAnyCommittedRootForShard,
+  isShardFullyCommitted,
+  recordPull,
+  finalizeSpace,
+} from '../state.js'
 import { batches, toPieceCID } from '../utils.js'
 import { PRIMARY_COPY_INDEX } from '../constants.js'
 
@@ -86,20 +93,21 @@ export async function* migrateSpace({
   const copy0FailedRoots = new Set(copy0State.failedUploads)
   const copy1FailedRoots = new Set(copy1State.failedUploads)
 
-  /** @type {Map<string, API.ResolvedShard>} */
-  const sourceShardsByCid = new Map()
-  for (const shard of inventory.shards) {
-    sourceShardsByCid.set(shard.cid, shard)
-  }
+  const {
+    representativeResolvedShardByCid,
+    representativeStoreShardByCid,
+    multiRootShards,
+  } = buildSpaceShardExecutionContext(inventory)
 
   const copy0StoreEntries = yield* runCopy0({
-    inventory,
-    sourceShardsByCid,
+    representativeResolvedShardByCid,
+    representativeStoreShardByCid,
     copyState: copy0State,
     copyCost: copy0Cost,
     state,
     config,
     activeFailedRoots: copy0FailedRoots,
+    multiRootShards,
   })
 
   if (!copy0StoreEntries.completed || signal?.aborted) {
@@ -110,8 +118,7 @@ export async function* migrateSpace({
   }
 
   const copy1Completed = yield* runCopy1({
-    inventory,
-    sourceShardsByCid,
+    representativeResolvedShardByCid,
     copyState: copy1State,
     copyCost: copy1Cost,
     sourceContext: copy0Cost.context,
@@ -119,6 +126,7 @@ export async function* migrateSpace({
     state,
     config,
     activeFailedRoots: copy1FailedRoots,
+    multiRootShards,
   })
 
   if (!copy1Completed.completed || signal?.aborted) {
@@ -138,23 +146,25 @@ export async function* migrateSpace({
  * - commit both buckets
  *
  * @param {object} args
- * @param {API.SpaceInventory} args.inventory
- * @param {Map<string, API.ResolvedShard>} args.sourceShardsByCid
+ * @param {Map<string, API.ResolvedShard>} args.representativeResolvedShardByCid
+ * @param {Map<string, API.StoreShard>} args.representativeStoreShardByCid
  * @param {API.SpaceCopyState} args.copyState
  * @param {API.PerCopyCost} args.copyCost
  * @param {API.MigrationState} args.state
  * @param {MigrationExecutionConfig} args.config
  * @param {Set<string>} args.activeFailedRoots
+ * @param {Map<string, string[]>} args.multiRootShards
  * @returns {AsyncGenerator<API.MigrationEvent, { completed: true, storeEntries: Map<string, API.CommitEntry> } | { completed: false }, void>}
  */
 async function* runCopy0({
-  inventory,
-  sourceShardsByCid,
+  representativeResolvedShardByCid,
+  representativeStoreShardByCid,
   copyState,
   copyCost,
   state,
   config,
   activeFailedRoots,
+  multiRootShards,
 }) {
   const {
     fetcher,
@@ -175,9 +185,9 @@ async function* runCopy0({
     copyIndex,
   }
 
-  if (inventory.shardsToStore.length > 0) {
+  if (representativeStoreShardByCid.size > 0) {
     const entriesByShardCid = yield* storeShardsOnPrimaryCopy({
-      inventory,
+      representativeStoreShardByCid,
       copyState,
       copyCost,
       state,
@@ -186,6 +196,7 @@ async function* runCopy0({
       storeConcurrency,
       activeFailedRoots,
       signal,
+      multiRootShards,
     })
 
     if (!entriesByShardCid) {
@@ -196,13 +207,13 @@ async function* runCopy0({
   }
 
   const sourcePullCompleted = yield* pullSourceShardsForCopy({
-    inventory,
-    sourceShardsByCid,
+    representativeResolvedShardByCid,
     copyState,
     copyCost,
     state,
     config,
     activeFailedRoots,
+    multiRootShards,
   })
 
   if (
@@ -220,9 +231,10 @@ async function* runCopy0({
   yield* commitPieceBatches({
     commitPieceIterable: iterateCopyCommitPieces({
       copyState,
-      sourceShardsByCid,
+      representativeResolvedShardByCid,
       storeEntries: storeEntries.values(),
       activeFailedRoots,
+      multiRootShards,
     }),
     context: copyCost.context,
     state,
@@ -233,6 +245,8 @@ async function* runCopy0({
     commitConcurrency,
     signal,
     activeFailedRoots,
+    getShardRoots: (shardCid, root) =>
+      expandShardRoots(shardCid, root, multiRootShards),
   })
 
   const completed = !signal?.aborted
@@ -253,8 +267,7 @@ async function* runCopy0({
  * - commit both buckets
  *
  * @param {object} args
- * @param {API.SpaceInventory} args.inventory
- * @param {Map<string, API.ResolvedShard>} args.sourceShardsByCid
+ * @param {Map<string, API.ResolvedShard>} args.representativeResolvedShardByCid
  * @param {API.SpaceCopyState} args.copyState
  * @param {API.PerCopyCost} args.copyCost
  * @param {API.StorageContext} args.sourceContext
@@ -262,11 +275,11 @@ async function* runCopy0({
  * @param {API.MigrationState} args.state
  * @param {MigrationExecutionConfig} args.config
  * @param {Set<string>} args.activeFailedRoots
+ * @param {Map<string, string[]>} args.multiRootShards
  * @returns {AsyncGenerator<API.MigrationEvent, PhaseResult, void>}
  */
 async function* runCopy1({
-  inventory,
-  sourceShardsByCid,
+  representativeResolvedShardByCid,
   copyState,
   copyCost,
   sourceContext,
@@ -274,6 +287,7 @@ async function* runCopy1({
   state,
   config,
   activeFailedRoots,
+  multiRootShards,
 }) {
   const {
     batchSize,
@@ -291,13 +305,13 @@ async function* runCopy1({
     copyIndex,
   }
   const sourcePullCompleted = yield* pullSourceShardsForCopy({
-    inventory,
-    sourceShardsByCid,
+    representativeResolvedShardByCid,
     copyState,
     copyCost,
     state,
     config,
     activeFailedRoots,
+    multiRootShards,
   })
 
   if (
@@ -325,6 +339,7 @@ async function* runCopy1({
       pullConcurrency,
       activeFailedRoots,
       signal,
+      multiRootShards,
     })
 
     if (!entriesByShardCid) {
@@ -338,9 +353,10 @@ async function* runCopy1({
   yield* commitPieceBatches({
     commitPieceIterable: iterateCopyCommitPieces({
       copyState,
-      sourceShardsByCid,
+      representativeResolvedShardByCid,
       storeEntries: storeEntries.values(),
       activeFailedRoots,
+      multiRootShards,
     }),
     context: copyCost.context,
     state,
@@ -351,6 +367,8 @@ async function* runCopy1({
     commitConcurrency,
     signal,
     activeFailedRoots,
+    getShardRoots: (shardCid, root) =>
+      expandShardRoots(shardCid, root, multiRootShards),
   })
 
   const completed = !signal?.aborted
@@ -368,34 +386,45 @@ async function* runCopy1({
  * Pull the normal source-routed shards for a single copy.
  *
  * @param {object} args
- * @param {API.SpaceInventory} args.inventory
- * @param {Map<string, API.ResolvedShard>} args.sourceShardsByCid
+ * @param {Map<string, API.ResolvedShard>} args.representativeResolvedShardByCid
  * @param {API.SpaceCopyState} args.copyState
  * @param {API.PerCopyCost} args.copyCost
  * @param {API.MigrationState} args.state
  * @param {MigrationExecutionConfig} args.config
  * @param {Set<string>} args.activeFailedRoots
+ * @param {Map<string, string[]>} args.multiRootShards
  * @returns {AsyncGenerator<API.MigrationEvent, PhaseResult, void>}
  */
 async function* pullSourceShardsForCopy({
-  inventory,
-  sourceShardsByCid,
+  representativeResolvedShardByCid,
   copyState,
   copyCost,
   state,
   config,
   activeFailedRoots,
+  multiRootShards,
 }) {
   const { batchSize, pullConcurrency, signal } = config
   const { context, copyIndex, spaceDID } = copyCost
   /** @type {API.ResolvedShard[]} */
   const shardsToPull = []
 
-  for (const shard of inventory.shards) {
-    if (copyState.committed.has(shard.cid) || copyState.pulled.has(shard.cid)) {
+  for (const shard of representativeResolvedShardByCid.values()) {
+    const shardRoots = expandShardRoots(shard.cid, shard.root, multiRootShards)
+    if (
+      copyState.pulled.has(shard.cid) ||
+      isShardFullyCommitted(copyState, shard.cid, shardRoots)
+    ) {
       continue
     }
-    if (activeFailedRoots.has(shard.root)) continue
+
+    const pendingShardRoots = getActionableRootsForRun(
+      copyState,
+      shard.cid,
+      shardRoots,
+      activeFailedRoots
+    )
+    if (pendingShardRoots.length === 0) continue
     shardsToPull.push(shard)
   }
 
@@ -425,8 +454,19 @@ async function* pullSourceShardsForCopy({
         spaceDID,
         copyIndex,
         activeFailedRoots,
+        getFailureRoots: (shard) =>
+          expandShardRoots(shard.cid, shard.root, multiRootShards),
         onPulledCandidate: (shard) =>
-          recordPull(state, spaceDID, copyIndex, shard.cid),
+          recordPull(state, {
+            spaceDID,
+            copyIndex,
+            shardCid: shard.cid,
+            shardRoots: expandShardRoots(
+              shard.cid,
+              shard.root,
+              multiRootShards
+            ),
+          }),
       })
     )
 
@@ -441,14 +481,15 @@ async function* pullSourceShardsForCopy({
     return PHASE_INCOMPLETE
   }
 
-  if (sourceShardsByCid.size === 0) {
+  if (representativeResolvedShardByCid.size === 0) {
     yield emitPhaseComplete(spaceDID, copyIndex, SOURCE_PULL_PHASE, true)
     return PHASE_COMPLETE
   }
 
   const completed = hasPreparedOrCommittedSourceWork({
     copyState,
-    sourceShardsByCid,
+    representativeResolvedShardByCid,
+    multiRootShards,
   })
   yield emitPhaseComplete(spaceDID, copyIndex, SOURCE_PULL_PHASE, completed)
   return completed ? PHASE_COMPLETE : PHASE_INCOMPLETE
@@ -497,55 +538,107 @@ async function* finalizeSpaceExecution(state, spaceDID) {
 /**
  * @param {object} args
  * @param {API.SpaceCopyState} args.copyState
- * @param {Map<string, API.ResolvedShard>} args.sourceShardsByCid
+ * @param {Map<string, API.ResolvedShard>} args.representativeResolvedShardByCid
  * @param {Iterable<API.CommitEntry>} args.storeEntries
  * @param {Set<string>} args.activeFailedRoots
+ * @param {Map<string, string[]>} args.multiRootShards
  * @returns {Generator<API.CommitPiece>}
  */
 function* iterateCopyCommitPieces({
   copyState,
-  sourceShardsByCid,
+  representativeResolvedShardByCid,
   storeEntries,
   activeFailedRoots,
+  multiRootShards,
 }) {
   yield* iterateSourceCommitPieces({
     copyState,
-    sourceShardsByCid,
+    representativeResolvedShardByCid,
     activeFailedRoots,
+    multiRootShards,
   })
 
-  yield* iterateCommitPieces(
-    storeEntries,
-    (entry) =>
-      !copyState.committed.has(entry.shardCid) &&
-      !activeFailedRoots.has(entry.root)
-  )
+  for (const entry of storeEntries) {
+    yield* iterateRootExpandedCommitPieces({
+      copyState,
+      shardCid: entry.shardCid,
+      representativeRoot: entry.root,
+      pieceCid: toPieceCID(entry.pieceCID),
+      activeFailedRoots,
+      multiRootShards,
+    })
+  }
 }
 
 /**
  * @param {object} args
  * @param {API.SpaceCopyState} args.copyState
- * @param {Map<string, API.ResolvedShard>} args.sourceShardsByCid
+ * @param {Map<string, API.ResolvedShard>} args.representativeResolvedShardByCid
  * @param {Set<string>} args.activeFailedRoots
+ * @param {Map<string, string[]>} args.multiRootShards
  * @returns {Generator<API.CommitPiece>}
  */
 function* iterateSourceCommitPieces({
   copyState,
-  sourceShardsByCid,
+  representativeResolvedShardByCid,
   activeFailedRoots,
+  multiRootShards,
 }) {
   for (const cid of copyState.pulled) {
-    if (copyState.committed.has(cid)) continue
-
-    const shard = sourceShardsByCid.get(cid)
+    const shard = representativeResolvedShardByCid.get(cid)
     // copyState.pulled can also contain store-path shard CIDs for this copy.
     if (!shard) continue
-    if (activeFailedRoots.has(shard.root)) continue
-
-    yield {
-      pieceCid: toPieceCID(shard.pieceCID),
-      pieceMetadata: { ipfsRootCID: shard.root },
+    yield* iterateRootExpandedCommitPieces({
+      copyState,
       shardCid: shard.cid,
+      representativeRoot: shard.root,
+      pieceCid: toPieceCID(shard.pieceCID),
+      activeFailedRoots,
+      multiRootShards,
+    })
+  }
+}
+
+/**
+ * Expand one prepared shard/piece into one commit piece per actionable root.
+ *
+ * Source-path and store-path preparation differ, but once a piece is ready to
+ * commit the root-aware expansion rule is identical.
+ *
+ * @param {object} args
+ * @param {API.SpaceCopyState} args.copyState
+ * @param {string} args.shardCid
+ * @param {string} args.representativeRoot
+ * @param {API.PieceCID} args.pieceCid
+ * @param {Set<string>} args.activeFailedRoots
+ * @param {Map<string, string[]>} args.multiRootShards
+ * @returns {Generator<API.CommitPiece>}
+ */
+function* iterateRootExpandedCommitPieces({
+  copyState,
+  shardCid,
+  representativeRoot,
+  pieceCid,
+  activeFailedRoots,
+  multiRootShards,
+}) {
+  const shardRoots = expandShardRoots(
+    shardCid,
+    representativeRoot,
+    multiRootShards
+  )
+  const actionableRoots = getActionableRootsForRun(
+    copyState,
+    shardCid,
+    shardRoots,
+    activeFailedRoots
+  )
+
+  for (const root of actionableRoots) {
+    yield {
+      pieceCid,
+      pieceMetadata: { ipfsRootCID: root },
+      shardCid,
     }
   }
 }
@@ -568,11 +661,20 @@ function hasPreparedOrCommittedCopyWork({ copyState, storeEntries }) {
 /**
  * @param {object} args
  * @param {API.SpaceCopyState} args.copyState
- * @param {Map<string, API.ResolvedShard>} args.sourceShardsByCid
+ * @param {Map<string, API.ResolvedShard>} args.representativeResolvedShardByCid
+ * @param {Map<string, string[]>} args.multiRootShards
  */
-function hasPreparedOrCommittedSourceWork({ copyState, sourceShardsByCid }) {
-  for (const shard of sourceShardsByCid.values()) {
-    if (copyState.pulled.has(shard.cid) || copyState.committed.has(shard.cid)) {
+function hasPreparedOrCommittedSourceWork({
+  copyState,
+  representativeResolvedShardByCid,
+  multiRootShards,
+}) {
+  for (const shard of representativeResolvedShardByCid.values()) {
+    const shardRoots = expandShardRoots(shard.cid, shard.root, multiRootShards)
+    if (
+      copyState.pulled.has(shard.cid) ||
+      hasAnyCommittedRootForShard(copyState, shard.cid, shardRoots)
+    ) {
       return true
     }
   }
@@ -599,6 +701,61 @@ function resolveSpaceCopyPairs({ space, perSpaceCost }) {
       : [perSpaceCost.copies[1], perSpaceCost.copies[0]]
 
   return { copy0State, copy1State, copy0Cost, copy1Cost }
+}
+
+/**
+ * Build the per-space execution context in one pass over `shards` and one pass
+ * over `shardsToStore`, instead of rebuilding duplicate-root tracking
+ * separately.
+ *
+ * @param {API.SpaceInventory} inventory
+ */
+function buildSpaceShardExecutionContext(inventory) {
+  /** @type {Map<string, API.ResolvedShard>} */
+  const representativeResolvedShardByCid = new Map()
+  /** @type {Map<string, API.StoreShard>} */
+  const representativeStoreShardByCid = new Map()
+  /** @type {Map<string, Set<string>>} */
+  const rootsByShardCid = new Map()
+
+  for (const shard of inventory.shards) {
+    if (!representativeResolvedShardByCid.has(shard.cid)) {
+      representativeResolvedShardByCid.set(shard.cid, shard)
+    }
+
+    let roots = rootsByShardCid.get(shard.cid)
+    if (!roots) {
+      roots = new Set()
+      rootsByShardCid.set(shard.cid, roots)
+    }
+    roots.add(shard.root)
+  }
+
+  for (const shard of inventory.shardsToStore) {
+    if (!representativeStoreShardByCid.has(shard.cid)) {
+      representativeStoreShardByCid.set(shard.cid, shard)
+    }
+
+    let roots = rootsByShardCid.get(shard.cid)
+    if (!roots) {
+      roots = new Set()
+      rootsByShardCid.set(shard.cid, roots)
+    }
+    roots.add(shard.root)
+  }
+
+  /** @type {Map<string, string[]>} */
+  const multiRootShards = new Map()
+  for (const [shardCid, roots] of rootsByShardCid) {
+    if (roots.size <= 1) continue
+    multiRootShards.set(shardCid, [...roots])
+  }
+
+  return {
+    representativeResolvedShardByCid,
+    representativeStoreShardByCid,
+    multiRootShards,
+  }
 }
 
 /**

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { pruneStagedShards } from '../src/helper/prune-staged-shards.js'
+import { commitKey, STATE_VERSION } from '../src/state.js'
 
 /**
  * @import * as API from '../src/api.js'
@@ -13,7 +14,7 @@ describe('pruneStagedShards', () => {
   it('skips copies with no staged shards', async () => {
     const state = createState({
       phase: 'complete',
-      copy0Committed: ['bafy-shard-1'],
+      copy0Committed: [commitKey('bafy-shard-1', 'bafy-root-1')],
     })
 
     const result = await pruneStagedShards({
@@ -114,6 +115,7 @@ describe('pruneStagedShards', () => {
  */
 function createState(input = {}) {
   return /** @type {API.MigrationState} */ ({
+    version: STATE_VERSION,
     phase: 'migrating',
     spaces: {
       [SPACE_DID]: {

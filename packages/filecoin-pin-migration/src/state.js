@@ -1,8 +1,210 @@
-import { ResumeBindingDriftError } from './errors.js'
+import {
+  IncompatibleStateVersionError,
+  ResumeBindingDriftError,
+} from './errors.js'
 
 /**
  * @import * as API from './api.js'
  */
+
+export const STATE_VERSION = 2
+
+/**
+ * @param {string} shardCid
+ * @param {string} root
+ */
+export function commitKey(shardCid, root) {
+  return `${shardCid}#${root}`
+}
+
+/**
+ * @param {string} key
+ * @returns {{ shardCid: string, root: string }}
+ */
+export function parseCommitKey(key) {
+  const separatorIndex = key.indexOf('#')
+  if (separatorIndex <= 0 || separatorIndex === key.length - 1) {
+    throw new TypeError(`Invalid commit key: ${key}`)
+  }
+
+  return {
+    shardCid: key.slice(0, separatorIndex),
+    root: key.slice(separatorIndex + 1),
+  }
+}
+
+/**
+ * Build the inventory-derived root view used by staged cleanup and
+ * reconciliation. This is intentionally separate from migrator execution
+ * context because helpers work from persisted state, not live execution state.
+ *
+ * @param {API.SpaceInventory} inventory
+ * @returns {API.InventoryCommitView}
+ */
+export function buildInventoryCommitView(inventory) {
+  /** @type {Map<string, string>} */
+  const representativeRootByShardCid = new Map()
+  /** @type {Map<string, Set<string>>} */
+  const rootsByShardCid = new Map()
+
+  for (const shard of inventory.shards) {
+    if (!representativeRootByShardCid.has(shard.cid)) {
+      representativeRootByShardCid.set(shard.cid, shard.root)
+    }
+
+    let roots = rootsByShardCid.get(shard.cid)
+    if (!roots) {
+      roots = new Set()
+      rootsByShardCid.set(shard.cid, roots)
+    }
+    roots.add(shard.root)
+  }
+
+  for (const shard of inventory.shardsToStore) {
+    if (!representativeRootByShardCid.has(shard.cid)) {
+      representativeRootByShardCid.set(shard.cid, shard.root)
+    }
+
+    let roots = rootsByShardCid.get(shard.cid)
+    if (!roots) {
+      roots = new Set()
+      rootsByShardCid.set(shard.cid, roots)
+    }
+    roots.add(shard.root)
+  }
+
+  /** @type {Map<string, string[]>} */
+  const multiRootShards = new Map()
+  for (const [shardCid, roots] of rootsByShardCid.entries()) {
+    if (roots.size <= 1) continue
+    multiRootShards.set(shardCid, [...roots])
+  }
+
+  return {
+    representativeRootByShardCid,
+    multiRootShards,
+  }
+}
+
+/**
+ * Build a sparse shardCid -> roots map containing only duplicate-root shards.
+ *
+ * @param {API.SpaceInventory} inventory
+ * @returns {Map<string, string[]>}
+ */
+export function buildMultiRootShards(inventory) {
+  return buildInventoryCommitView(inventory).multiRootShards
+}
+
+/**
+ * @param {string} shardCid
+ * @param {string} representativeRoot
+ * @param {Map<string, string[]>} multiRootShards
+ * @returns {string[]}
+ */
+export function expandShardRoots(
+  shardCid,
+  representativeRoot,
+  multiRootShards
+) {
+  const roots = multiRootShards.get(shardCid)
+  if (!roots) return [representativeRoot]
+  if (roots.includes(representativeRoot)) return roots
+  throw new Error(
+    `expandShardRoots: representative root ${representativeRoot} missing from multiRootShards for shard ${shardCid}`
+  )
+}
+
+/**
+ * @param {API.SpaceCopyState} copyState
+ * @param {string} shardCid
+ * @param {string} root
+ */
+export function isCommittedForRoot(copyState, shardCid, root) {
+  return copyState.committed.has(commitKey(shardCid, root))
+}
+
+/**
+ * @param {API.SpaceCopyState} copyState
+ * @param {string} shardCid
+ * @param {string[]} shardRoots
+ */
+export function hasAnyCommittedRootForShard(copyState, shardCid, shardRoots) {
+  return shardRoots.some((root) =>
+    isCommittedForRoot(copyState, shardCid, root)
+  )
+}
+
+/**
+ * @param {API.SpaceCopyState} copyState
+ * @param {string} shardCid
+ * @param {string[]} shardRoots
+ */
+export function isShardFullyCommitted(copyState, shardCid, shardRoots) {
+  return shardRoots.every((root) =>
+    isCommittedForRoot(copyState, shardCid, root)
+  )
+}
+
+/**
+ * @param {API.SpaceCopyState} copyState
+ * @param {string} shardCid
+ * @param {string[]} shardRoots
+ * @param {Set<string>} activeFailedRoots
+ */
+export function getActionableRootsForRun(
+  copyState,
+  shardCid,
+  shardRoots,
+  activeFailedRoots
+) {
+  return shardRoots.filter(
+    (root) =>
+      !activeFailedRoots.has(root) &&
+      !isCommittedForRoot(copyState, shardCid, root)
+  )
+}
+
+/**
+ * Compute the shard CIDs that are fully committed across all their roots for
+ * one copy within one inventory.
+ *
+ * @param {API.SpaceCopyState} copyState
+ * @param {API.SpaceInventory | API.InventoryCommitView} inventory
+ */
+export function getFullyCommittedShardCIDs(copyState, inventory) {
+  const inventoryCommitView = isInventoryCommitView(inventory)
+    ? inventory
+    : buildInventoryCommitView(inventory)
+
+  const fullyCommittedShardCIDs = new Set()
+  for (const [
+    shardCid,
+    representativeRoot,
+  ] of inventoryCommitView.representativeRootByShardCid) {
+    const shardRoots = expandShardRoots(
+      shardCid,
+      representativeRoot,
+      inventoryCommitView.multiRootShards
+    )
+    if (isShardFullyCommitted(copyState, shardCid, shardRoots)) {
+      fullyCommittedShardCIDs.add(shardCid)
+    }
+  }
+
+  return fullyCommittedShardCIDs
+}
+
+/**
+ * @param {API.SpaceInventory | API.InventoryCommitView} inventory
+ * @returns {inventory is API.InventoryCommitView}
+ */
+function isInventoryCommitView(inventory) {
+  return (
+    'representativeRootByShardCid' in inventory &&
+    'multiRootShards' in inventory
+  )
+}
 
 /**
  * Build a copy state entry.
@@ -153,6 +355,7 @@ function resolveMigrationPhase(state) {
  */
 export function createInitialState() {
   return /** @type {API.MigrationState} */ ({
+    version: STATE_VERSION,
     phase: 'reading',
     spaces: {},
     spacesInventories: {},
@@ -311,17 +514,23 @@ export function transitionToFunded(state) {
  * Checkpoint 3: a shard was successfully pulled and is ready to commit.
  *
  * @param {API.MigrationState} state - Mutated in place
- * @param {API.SpaceDID} spaceDID
- * @param {number} copyIndex
- * @param {string} shardCid
+ * @param {{
+ *   spaceDID: API.SpaceDID
+ *   copyIndex: number
+ *   shardCid: string
+ *   shardRoots: string[]
+ * }} input
  * @returns {boolean} true when state changed
  */
-export function recordPull(state, spaceDID, copyIndex, shardCid) {
+export function recordPull(
+  state,
+  { spaceDID, copyIndex, shardCid, shardRoots }
+) {
   const space = state.spaces[spaceDID]
   if (!space) return false
 
   const copy = getCopy(space, copyIndex)
-  if (!copy || copy.committed.has(shardCid)) {
+  if (!copy || isShardFullyCommitted(copy, shardCid, shardRoots)) {
     return false
   }
 
@@ -423,20 +632,29 @@ export function recordStoredShard(state, spaceDID, shardCid, pieceCID) {
  * Sets the shard CID in the committed set for a specific copy.
  *
  * @param {API.MigrationState} state - Mutated in place
- * @param {API.SpaceDID} spaceDID
- * @param {number} copyIndex
- * @param {string} shardCid
- * @param {bigint} dataSetId
+ * @param {{
+ *   spaceDID: API.SpaceDID
+ *   copyIndex: number
+ *   shardCid: string
+ *   root: string
+ *   dataSetId: bigint
+ *   shardRoots: string[]
+ * }} input
  */
-export function recordCommit(state, spaceDID, copyIndex, shardCid, dataSetId) {
+export function recordCommit(
+  state,
+  { spaceDID, copyIndex, shardCid, root, dataSetId, shardRoots }
+) {
   const space = state.spaces[spaceDID]
   if (!space) return
 
   const copy = getCopy(space, copyIndex)
   if (!copy) return
 
-  copy.committed.add(shardCid)
-  copy.pulled.delete(shardCid)
+  copy.committed.add(commitKey(shardCid, root))
+  if (isShardFullyCommitted(copy, shardCid, shardRoots)) {
+    copy.pulled.delete(shardCid)
+  }
   if (space.phase === 'pending') {
     space.phase = 'migrating'
   }
@@ -597,6 +815,7 @@ export function serializeState(state) {
   }
 
   return {
+    version: state.version,
     phase: state.phase,
     spaces,
     spacesInventories,
@@ -687,6 +906,13 @@ export function deserializeState(obj) {
     throw new TypeError('deserializeState: expected an object')
   }
   const raw = /** @type {Record<string, unknown>} */ (obj)
+  if (raw.version !== STATE_VERSION) {
+    throw new IncompatibleStateVersionError(
+      `deserializeState: expected state version ${STATE_VERSION}, got ${JSON.stringify(
+        raw.version
+      )}`
+    )
+  }
   if (
     typeof raw.phase !== 'string' ||
     typeof raw.spaces !== 'object' ||
@@ -829,6 +1055,7 @@ export function deserializeState(obj) {
       : undefined
 
   return {
+    version: STATE_VERSION,
     phase: /** @type {API.MigrationPhase} */ (raw.phase),
     spaces,
     spacesInventories,

@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import { ResumeBindingDriftError } from '../src/errors.js'
 import {
+  buildInventoryCommitView,
   clearFailedUploadsForRetry,
+  commitKey,
+  deserializeState,
+  getFullyCommittedShardCIDs,
+  STATE_VERSION,
   transitionToApproved,
 } from '../src/state.js'
 
@@ -33,7 +38,7 @@ describe('clearFailedUploadsForRetry', () => {
     const state = createState({
       phase: 'incomplete',
       copy0FailedUploads: ['bafy-root-a'],
-      copy0Committed: ['bafy-shard-1'],
+      copy0Committed: [commitKey('bafy-shard-1', 'bafy-root-1')],
     })
 
     const clearedCount = clearFailedUploadsForRetry(state, SPACE_DID)
@@ -48,7 +53,7 @@ describe('transitionToApproved', () => {
     const state = createState({
       phase: 'migrating',
       copy0FailedUploads: ['bafy-root-a'],
-      copy0Committed: ['bafy-shard-1'],
+      copy0Committed: [commitKey('bafy-shard-1', 'bafy-root-1')],
       copy0DataSetId: 101n,
     })
 
@@ -74,7 +79,9 @@ describe('transitionToApproved', () => {
 
     expect(state.phase).toBe('approved')
     expect(
-      state.spaces[SPACE_DID].copies[0].committed.has('bafy-shard-1')
+      state.spaces[SPACE_DID].copies[0].committed.has(
+        commitKey('bafy-shard-1', 'bafy-root-1')
+      )
     ).toBe(true)
     expect(
       state.spaces[SPACE_DID].copies[0].failedUploads.has('bafy-root-a')
@@ -144,6 +151,78 @@ describe('transitionToApproved', () => {
   })
 })
 
+describe('deserializeState', () => {
+  it('rejects unversioned state files', () => {
+    expect(() =>
+      deserializeState({
+        phase: 'reading',
+        spaces: {},
+        spacesInventories: {},
+      })
+    ).toThrow(/expected state version/)
+  })
+
+  it('rejects unknown state versions', () => {
+    expect(() =>
+      deserializeState({
+        version: STATE_VERSION + 1,
+        phase: 'reading',
+        spaces: {},
+        spacesInventories: {},
+      })
+    ).toThrow(/expected state version/)
+  })
+})
+
+describe('buildInventoryCommitView', () => {
+  it('supports fully committed checks without rescanning the inventory shape', () => {
+    const state = createState({
+      copy0Committed: [
+        commitKey('bafy-shard-shared', 'bafy-root-a'),
+        commitKey('bafy-shard-shared', 'bafy-root-b'),
+      ],
+    })
+    const inventory = {
+      did: SPACE_DID,
+      uploads: ['bafy-root-a', 'bafy-root-b'],
+      shards: [
+        {
+          root: 'bafy-root-a',
+          cid: 'bafy-shard-shared',
+          pieceCID: 'bafkz-piece-shared',
+          sourceURL: 'https://source.example/shard-a',
+          sizeBytes: 1n,
+        },
+        {
+          root: 'bafy-root-b',
+          cid: 'bafy-shard-shared',
+          pieceCID: 'bafkz-piece-shared',
+          sourceURL: 'https://source.example/shard-b',
+          sizeBytes: 1n,
+        },
+      ],
+      shardsToStore: [],
+      skippedUploads: [],
+      totalBytes: 2n,
+      totalSizeToMigrate: 2n,
+    }
+
+    const inventoryCommitView = buildInventoryCommitView(inventory)
+    const fullyCommittedShardCIDs = getFullyCommittedShardCIDs(
+      state.spaces[SPACE_DID].copies[0],
+      inventoryCommitView
+    )
+
+    expect(
+      inventoryCommitView.representativeRootByShardCid.get('bafy-shard-shared')
+    ).toBe('bafy-root-a')
+    expect(
+      inventoryCommitView.multiRootShards.get('bafy-shard-shared')
+    ).toEqual(['bafy-root-a', 'bafy-root-b'])
+    expect([...fullyCommittedShardCIDs]).toEqual(['bafy-shard-shared'])
+  })
+})
+
 /**
  * @param {object} [input]
  * @param {API.SpacePhase} [input.phase]
@@ -154,6 +233,7 @@ describe('transitionToApproved', () => {
  */
 function createState(input = {}) {
   return /** @type {API.MigrationState} */ ({
+    version: STATE_VERSION,
     phase: 'migrating',
     spaces: {
       [SPACE_DID]: {

@@ -3,6 +3,7 @@ import {
   iterateCommitPieces,
   commitPieceBatches,
 } from '../src/migrator/commit.js'
+import { commitKey, STATE_VERSION } from '../src/state.js'
 import { createMockInitialState, createPieceCID } from './helpers.js'
 
 /**
@@ -12,6 +13,12 @@ import { createMockInitialState, createPieceCID } from './helpers.js'
 const SPACE_DID = /** @type {API.SpaceDID} */ (
   'did:key:z6MkCommitBatchingSpaceTest'
 )
+
+/**
+ * @param {string} _shardCid
+ * @param {string} root
+ */
+const singleRoots = (_shardCid, root) => [root]
 
 describe('commit batching', () => {
   it('splits commit work into multiple batches and checkpoints each successful batch', async () => {
@@ -32,6 +39,7 @@ describe('commit batching', () => {
       commitConcurrency: 4,
       signal: undefined,
       activeFailedRoots: new Set(),
+      getShardRoots: singleRoots,
     })) {
       events.push(event)
     }
@@ -90,6 +98,7 @@ describe('commit batching', () => {
       commitConcurrency: 4,
       signal: controller.signal,
       activeFailedRoots: new Set(),
+      getShardRoots: singleRoots,
     })) {
       /* drain */
     }
@@ -123,6 +132,7 @@ describe('commit batching', () => {
       commitConcurrency: 4,
       signal: undefined,
       activeFailedRoots: new Set(),
+      getShardRoots: singleRoots,
     })) {
       events.push(event)
     }
@@ -163,6 +173,7 @@ async function collectCommitRun(entries, run) {
     commitConcurrency: 4,
     signal: undefined,
     activeFailedRoots: new Set(),
+    getShardRoots: singleRoots,
   })) {
     /* drain */
   }
@@ -186,6 +197,7 @@ function createCommitEntries(count) {
 
 function createMockCommitState() {
   return /** @type {API.MigrationState} */ ({
+    version: STATE_VERSION,
     phase: 'migrating',
     spaces: {
       [SPACE_DID]: {
@@ -406,6 +418,7 @@ describe('commitPieceBatches two-phase flow', () => {
       commitRetryTimeout: 0,
       commitConcurrency: 4,
       signal: undefined,
+      getShardRoots: singleRoots,
     })) {
       events.push(event)
     }
@@ -475,6 +488,7 @@ describe('commitPieceBatches two-phase flow', () => {
       commitRetryTimeout: 0,
       commitConcurrency: 3,
       signal: undefined,
+      getShardRoots: singleRoots,
     })) {
       // drain
     }
@@ -543,6 +557,7 @@ describe('commitPieceBatches two-phase flow', () => {
       commitRetryTimeout: 0,
       commitConcurrency: 2,
       signal: controller.signal,
+      getShardRoots: singleRoots,
     })
     const firstEventPromise = iterator.next()
     const firstEvent = await Promise.race([
@@ -602,6 +617,7 @@ describe('commitPieceBatches two-phase flow', () => {
       commitRetryTimeout: 0,
       commitConcurrency: 3,
       signal: undefined,
+      getShardRoots: singleRoots,
     })) {
       if (event.type === 'migration:commit:failed') {
         committedAtFailure = new Set(
@@ -612,10 +628,18 @@ describe('commitPieceBatches two-phase flow', () => {
     }
 
     expect(committedAtFailure).not.toBeNull()
-    expect(committedAtFailure?.has('shard_0')).toBe(true)
-    expect(committedAtFailure?.has('shard_1')).toBe(true)
-    expect(committedAtFailure?.has('shard_3')).toBe(true)
-    expect(committedAtFailure?.has('shard_2')).toBe(false)
+    expect(
+      committedAtFailure?.has(commitKey('shard_0', makeTwoPhaseRoot(0)))
+    ).toBe(true)
+    expect(
+      committedAtFailure?.has(commitKey('shard_1', makeTwoPhaseRoot(1)))
+    ).toBe(true)
+    expect(
+      committedAtFailure?.has(commitKey('shard_3', makeTwoPhaseRoot(3)))
+    ).toBe(true)
+    expect(
+      committedAtFailure?.has(commitKey('shard_2', makeTwoPhaseRoot(2)))
+    ).toBe(false)
   })
 
   it('emits settled events for every Phase 2 batch after a retry win', async () => {
@@ -651,6 +675,7 @@ describe('commitPieceBatches two-phase flow', () => {
       commitRetryTimeout: 1_000,
       commitConcurrency: 2,
       signal: undefined,
+      getShardRoots: singleRoots,
     })) {
       events.push(event)
       if (event.type === 'migration:commit:failed') event.retry()
@@ -697,15 +722,22 @@ describe('commitPieceBatches two-phase flow', () => {
       commitRetryTimeout: 0,
       commitConcurrency: 2,
       signal: undefined,
+      getShardRoots: singleRoots,
     })) {
       events.push(event)
     }
 
     const copy = state.spaces[TWO_PHASE_SPACE_DID].copies[0]
     expect(copy.committed.size).toBe(2)
-    expect(copy.committed.has('shard_0')).toBe(true)
-    expect(copy.committed.has('shard_1')).toBe(true)
-    expect(copy.committed.has('shard_2')).toBe(false)
+    expect(copy.committed.has(commitKey('shard_0', makeTwoPhaseRoot(0)))).toBe(
+      true
+    )
+    expect(copy.committed.has(commitKey('shard_1', makeTwoPhaseRoot(1)))).toBe(
+      true
+    )
+    expect(copy.committed.has(commitKey('shard_2', makeTwoPhaseRoot(2)))).toBe(
+      false
+    )
     expect(copy.failedUploads.has(failingRoot)).toBe(true)
 
     const failedSettled = events.find(
@@ -776,6 +808,7 @@ describe('commitPieceBatches two-phase flow', () => {
         commitRetryTimeout: 0,
         commitConcurrency: 3,
         signal: controller.signal,
+        getShardRoots: singleRoots,
       })) {
         events.push(event)
       }
@@ -788,10 +821,18 @@ describe('commitPieceBatches two-phase flow', () => {
 
     const copy = state.spaces[TWO_PHASE_SPACE_DID].copies[0]
     expect(copy.committed.size).toBe(3)
-    expect(copy.committed.has('shard_0')).toBe(true)
-    expect(copy.committed.has('shard_1')).toBe(true)
-    expect(copy.committed.has('shard_2')).toBe(true)
-    expect(copy.committed.has('shard_3')).toBe(false)
+    expect(copy.committed.has(commitKey('shard_0', makeTwoPhaseRoot(0)))).toBe(
+      true
+    )
+    expect(copy.committed.has(commitKey('shard_1', makeTwoPhaseRoot(1)))).toBe(
+      true
+    )
+    expect(copy.committed.has(commitKey('shard_2', makeTwoPhaseRoot(2)))).toBe(
+      true
+    )
+    expect(copy.committed.has(commitKey('shard_3', makeTwoPhaseRoot(3)))).toBe(
+      false
+    )
   })
 
   it('commits the same set of shards when commitConcurrency is 1', async () => {
@@ -809,6 +850,7 @@ describe('commitPieceBatches two-phase flow', () => {
       commitRetryTimeout: 0,
       commitConcurrency: 1,
       signal: undefined,
+      getShardRoots: singleRoots,
     })) {
       // drain
     }
@@ -838,14 +880,21 @@ describe('commitPieceBatches two-phase flow', () => {
       commitConcurrency: 4,
       signal: undefined,
       activeFailedRoots,
+      getShardRoots: singleRoots,
     })) {
       // drain
     }
 
     expect(context.commit).toHaveBeenCalledTimes(2)
     const copy = state.spaces[TWO_PHASE_SPACE_DID].copies[0]
-    expect(copy.committed.has('shard_0')).toBe(true)
-    expect(copy.committed.has('shard_1')).toBe(false)
-    expect(copy.committed.has('shard_2')).toBe(true)
+    expect(copy.committed.has(commitKey('shard_0', makeTwoPhaseRoot(0)))).toBe(
+      true
+    )
+    expect(copy.committed.has(commitKey('shard_1', makeTwoPhaseRoot(1)))).toBe(
+      false
+    )
+    expect(copy.committed.has(commitKey('shard_2', makeTwoPhaseRoot(2)))).toBe(
+      true
+    )
   })
 })

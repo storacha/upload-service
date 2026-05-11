@@ -41,6 +41,7 @@ export async function presignAndPullBatch({
     context,
     presignPayload: payload.presignPayload,
     allRoots: payload.allRoots,
+    entries: batch,
     phase,
     signal,
   })
@@ -96,21 +97,24 @@ function buildPullPayload(batch, getPieceCID, getRoot) {
 }
 
 /**
+ * @template T
  * @param {object} args
  * @param {import('../api.js').StorageContext} args.context
  * @param {Array<{ pieceCid: import('../api.js').PieceCID; pieceMetadata: { ipfsRootCID: string } }>} args.presignPayload
  * @param {Set<string>} args.allRoots
+ * @param {T[]} args.entries
  * @param {import('../api.js').MigrationExecutionPhase} args.phase
  * @param {AbortSignal | undefined} args.signal
  * @returns {Promise<
  *   | { extraData: Awaited<ReturnType<import('../api.js').StorageContext['presignForCommit']>>, failure?: undefined }
- *   | { failure: import('../api.js').PullResult<never>, extraData?: undefined }
+ *   | { failure: import('../api.js').PullResult<T>, extraData?: undefined }
  * >}
  */
 async function runPresign({
   context,
   presignPayload,
   allRoots,
+  entries,
   phase,
   signal,
 }) {
@@ -126,6 +130,7 @@ async function runPresign({
     return {
       failure: toPullOperationalFailure(
         allRoots,
+        entries,
         phase,
         new PresignFailedFailure(
           error instanceof Error ? error.message : String(error)
@@ -186,6 +191,7 @@ async function runPullWithRetries({
     return {
       failure: toPullOperationalFailure(
         payload.allRoots,
+        [...payload.pieceToEntry.values()],
         phase,
         createPullDiagnosticError({
           error,
@@ -211,6 +217,8 @@ async function runPullWithRetries({
 function reconcilePullResult({ pullResult, pieceToEntry, getRoot, phase }) {
   /** @type {T[]} */
   const pulledCandidates = []
+  /** @type {T[]} */
+  const failedEntries = []
   const failedUploadsInBatch = new Set()
 
   for (const piece of pullResult.pieces) {
@@ -220,6 +228,7 @@ function reconcilePullResult({ pullResult, pieceToEntry, getRoot, phase }) {
     if (piece.status === 'complete') {
       pulledCandidates.push(entry)
     } else {
+      failedEntries.push(entry)
       failedUploadsInBatch.add(getRoot(entry))
     }
   }
@@ -233,6 +242,7 @@ function reconcilePullResult({ pullResult, pieceToEntry, getRoot, phase }) {
 
   const baseResult = {
     pulledCandidates: pulledCandidatesFiltered,
+    failedEntries,
     failedUploads: failedUploadsInBatch,
   }
 
@@ -260,14 +270,17 @@ function reconcilePullResult({ pullResult, pieceToEntry, getRoot, phase }) {
 }
 
 /**
+ * @template T
  * @param {Set<string>} allRoots
+ * @param {T[]} failedEntries
  * @param {import('../api.js').MigrationExecutionPhase} phase
  * @param {Error} error
- * @returns {import('../api.js').PullResult<never>}
+ * @returns {import('../api.js').PullResult<T>}
  */
-function toPullOperationalFailure(allRoots, phase, error) {
+function toPullOperationalFailure(allRoots, failedEntries, phase, error) {
   return {
     pulledCandidates: [],
+    failedEntries,
     failedUploads: allRoots,
     failureKind: 'operational',
     stage: phase,

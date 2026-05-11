@@ -28,7 +28,7 @@ import { finalizeMigration } from '../state.js'
  * @param {API.Synapse} args.synapse
  * @param {AbortSignal | undefined} args.signal
  * @param {bigint} args.totalBytes
- * @param {(inventory: API.SpaceInventory) => Iterable<{ cid: string }>} args.getActionableShards
+ * @param {(inventory: API.SpaceInventory) => Iterable<{ cid: string, root: string }>} args.getActionableShards
  * @param {(args: {
  *   sourceInventory: API.SpaceInventory
  *   perSpaceCost: API.PerSpaceCost

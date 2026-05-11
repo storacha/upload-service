@@ -93,7 +93,10 @@ export interface ReconcileMigrationStateChanges {
 }
 
 export interface ReconcileMigrationStateWarnings {
-  committedPiecesNotFoundInInventory: string[]
+  /** Committed dataset pieces keyed as `${pieceCID}#${ipfsRootCID}`. */
+  committedPieceRootsNotFoundInInventory: string[]
+  /** Committed dataset pieces that exist on-chain but are missing `ipfsRootCID`. */
+  unverifiedCommittedPieces: string[]
   unverifiedStagedShardCIDs: string[]
 }
 
