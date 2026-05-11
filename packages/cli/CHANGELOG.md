@@ -1,3 +1,17 @@
+## 2.4.1 (2026-05-11)
+
+### 🩹 Fixes
+
+- add abort support to the reader phase ([f3d75d31](https://github.com/storacha/upload-service/commit/f3d75d31))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-pin-migration to 1.0.1
+
+### ❤️ Thank You
+
+- bravonatalie
+
 ## 2.4.0 (2026-05-11)
 
 ### 🚀 Features
