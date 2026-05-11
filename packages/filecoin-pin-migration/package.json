@@ -1,6 +1,6 @@
 {
   "name": "@storacha/filecoin-pin-migration",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Migration library from Storacha to Filecoin on Chain (FOC)",
   "publishConfig": {
     "access": "public"

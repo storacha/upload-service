@@ -1,3 +1,13 @@
+## 1.0.1 (2026-05-11)
+
+### 🩹 Fixes
+
+- add abort support to the reader phase ([f3d75d31](https://github.com/storacha/upload-service/commit/f3d75d31))
+
+### ❤️ Thank You
+
+- bravonatalie
+
 # 1.0.0 (2026-05-11)
 
 ### ⚠️  Breaking Changes
