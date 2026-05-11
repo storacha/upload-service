@@ -325,6 +325,8 @@ interface BuildInventoriesBaseInput {
   resolver: SourceURLResolver
   /** Mutated in place; used for resume and checkpointing */
   state: MigrationState
+  /** AbortSignal for cooperative cancellation during reader I/O. */
+  signal?: AbortSignal
   options?: {
     /** Override the default indexing service URL */
     serviceURL?: URL

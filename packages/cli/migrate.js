@@ -497,6 +497,7 @@ async function readInventories({
     resolver,
     state,
     spaceDIDs: /** @type {`did:key:${string}`[]} */ (spaceDIDs),
+    signal,
   })) {
     switch (event.type) {
       case 'reader:space:start':
@@ -534,6 +535,11 @@ async function readInventories({
       spinner.stop()
       return { interrupted: true }
     }
+  }
+
+  if (signal.aborted) {
+    spinner.stop()
+    return { interrupted: true }
   }
 
   spinner.succeed('Inventories ready')

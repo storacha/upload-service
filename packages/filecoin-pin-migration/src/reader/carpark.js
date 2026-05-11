@@ -1,3 +1,5 @@
+import { isAbortError } from '../errors.js'
+
 const CARPARK_HOSTS = [
   'carpark-prod-0.r2.w3s.link',
   'carpark-prod-1.r2.w3s.link',
@@ -56,7 +58,8 @@ function createCarparkCandidateURLs(shard) {
 async function headObject(fetcher, url) {
   try {
     return await fetcher(url, { method: 'HEAD' })
-  } catch {
+  } catch (error) {
+    if (isAbortError(error)) throw error
     return null
   }
 }
