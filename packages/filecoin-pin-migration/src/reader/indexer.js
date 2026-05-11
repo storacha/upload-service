@@ -6,6 +6,7 @@ import { base32upper } from 'multiformats/bases/base32'
 import { CID } from 'multiformats/cid'
 import * as RAW from 'multiformats/codecs/raw'
 import { DEFAULT_CARPARK_CONCURRENCY } from '../constants.js'
+import { isAbortError, throwIfAborted } from '../errors.js'
 import { findCarparkLocation } from './carpark.js'
 
 /**
@@ -40,12 +41,14 @@ const EQUALS_CLAIM_PROTOCOL = 0x3e0001
  * @param {IndexingServiceReader} args.indexer
  * @param {ShardEntry[]} args.shards
  * @param {typeof fetch | undefined} args.fetcher
+ * @param {AbortSignal | undefined} [args.signal]
  * @returns {Promise<Map<string, ClaimsEntry>>}
  */
-export async function resolveClaimsIndex({ indexer, shards, fetcher }) {
+export async function resolveClaimsIndex({ indexer, shards, fetcher, signal }) {
   /** @type {Map<string, ClaimsEntry>} */
   const index = new Map()
   if (shards.length === 0) return index
+  throwIfAborted(signal)
 
   const requestedShardB58s = new Set()
   /** @type {string[]} */
@@ -70,6 +73,7 @@ export async function resolveClaimsIndex({ indexer, shards, fetcher }) {
       hashes,
       kind: 'standard',
     })
+    throwIfAborted(signal)
 
     if (claimsResult.ok) {
       primarySucceeded = true
@@ -79,7 +83,8 @@ export async function resolveClaimsIndex({ indexer, shards, fetcher }) {
         claimsResult.ok.claims.values()
       )
     }
-  } catch {
+  } catch (error) {
+    if (isAbortError(error, signal)) throw error
     // Best-effort fallback below.
   }
 
@@ -98,6 +103,7 @@ export async function resolveClaimsIndex({ indexer, shards, fetcher }) {
     index,
     shardsByB58,
     fetcher,
+    signal,
   })
 
   const missingLocationB58s = missingB58s.filter((b58) =>
@@ -112,6 +118,7 @@ export async function resolveClaimsIndex({ indexer, shards, fetcher }) {
     index,
     shardsByB58,
     fetcher,
+    signal,
   })
 
   return index
@@ -145,15 +152,26 @@ function applyPrimaryClaims(index, requestedShardB58s, claims) {
  * @param {Map<string, ClaimsEntry>} args.index
  * @param {Map<string, ShardEntry>} args.shardsByB58
  * @param {typeof fetch} args.fetcher
+ * @param {AbortSignal | undefined} [args.signal]
  */
-async function applyIPNIFallback({ b58s, index, shardsByB58, fetcher }) {
+async function applyIPNIFallback({
+  b58s,
+  index,
+  shardsByB58,
+  fetcher,
+  signal,
+}) {
   await pMap(
     b58s,
     async (b58) => {
       const shard = shardsByB58.get(b58)
       if (!shard) return
 
-      const providerResults = await fetchIPNIProviderResults(fetcher, b58)
+      const providerResults = await fetchIPNIProviderResults(
+        fetcher,
+        b58,
+        signal
+      )
       if (providerResults.length === 0) return
 
       const entry = getOrCreateClaimsEntry(index, b58)
@@ -164,7 +182,7 @@ async function applyIPNIFallback({ b58s, index, shardsByB58, fetcher }) {
         }
       }
     },
-    { concurrency: DEFAULT_IPNI_CONCURRENCY }
+    { concurrency: DEFAULT_IPNI_CONCURRENCY, signal }
   )
 }
 
@@ -176,8 +194,15 @@ async function applyIPNIFallback({ b58s, index, shardsByB58, fetcher }) {
  * @param {Map<string, ClaimsEntry>} args.index
  * @param {Map<string, ShardEntry>} args.shardsByB58
  * @param {typeof fetch} args.fetcher
+ * @param {AbortSignal | undefined} [args.signal]
  */
-async function applyCarparkFallback({ b58s, index, shardsByB58, fetcher }) {
+async function applyCarparkFallback({
+  b58s,
+  index,
+  shardsByB58,
+  fetcher,
+  signal,
+}) {
   await pMap(
     b58s,
     async (b58) => {
@@ -195,16 +220,17 @@ async function applyCarparkFallback({ b58s, index, shardsByB58, fetcher }) {
         entry.size = match.size
       }
     },
-    { concurrency: DEFAULT_CARPARK_CONCURRENCY }
+    { concurrency: DEFAULT_CARPARK_CONCURRENCY, signal }
   )
 }
 
 /**
  * @param {typeof fetch} fetcher
  * @param {string} b58
+ * @param {AbortSignal | undefined} [signal]
  * @returns {Promise<IPNIProviderResult[]>}
  */
-async function fetchIPNIProviderResults(fetcher, b58) {
+async function fetchIPNIProviderResults(fetcher, b58, signal) {
   try {
     const value = b58.charAt(0) === 'z' ? b58.substring(1) : b58
     const response = await fetcher(`${CID_CONTACT_URL}/multihash/${value}`, {
@@ -214,7 +240,8 @@ async function fetchIPNIProviderResults(fetcher, b58) {
 
     const body = /** @type {IPNIFindResponse} */ (await response.json())
     return body.MultihashResults?.[0]?.ProviderResults ?? []
-  } catch {
+  } catch (error) {
+    if (isAbortError(error, signal)) throw error
     return []
   }
 }

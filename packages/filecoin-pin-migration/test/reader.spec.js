@@ -41,6 +41,10 @@ async function collectInventory(gen, state, spaceDID) {
   return state.spacesInventories[spaceDID]
 }
 
+function createAbortError() {
+  return new DOMException('The operation was aborted.', 'AbortError')
+}
+
 describe('buildMigrationInventories', () => {
   describe('single space — basic inventory', () => {
     it('resolves shards and builds flat inventory with root on each shard', async () => {
@@ -976,6 +980,145 @@ describe('buildMigrationInventories', () => {
         expect.arrayContaining([rootA.toString(), rootB.toString()])
       )
       // Cursor should be cleared after completion
+      expect(state.readerProgressCursors).toBeUndefined()
+    })
+  })
+
+  describe('abort support', () => {
+    it('stops after the last checkpointed page and leaves state resumable', async () => {
+      const rootA = await createTestCID('root-abort-page-a')
+      const rootB = await createTestCID('root-abort-page-b')
+      const shardA = await createTestCID('shard-abort-page-a')
+      const shardB = await createTestCID('shard-abort-page-b')
+      const pieceCid = createPieceCID()
+      const shardAB58 = base58btc.encode(shardA.multihash.bytes)
+      const shardBB58 = base58btc.encode(shardB.multihash.bytes)
+
+      const client = createMockClient(
+        [
+          { results: [{ root: rootA }], cursor: '1' },
+          { results: [{ root: rootB }] },
+        ],
+        new Map([
+          [rootA.toString(), [shardA]],
+          [rootB.toString(), [shardB]],
+        ])
+      )
+      const indexer = createMockIndexer(
+        new Map([
+          [
+            shardAB58,
+            {
+              claims: buildShardClaims(shardA, {
+                locationURLs: ['https://r2.example/abort-a'],
+                pieceCid,
+              }),
+            },
+          ],
+          [
+            shardBB58,
+            {
+              claims: buildShardClaims(shardB, {
+                locationURLs: ['https://r2.example/abort-b'],
+                pieceCid,
+              }),
+            },
+          ],
+        ])
+      )
+
+      const ac = new AbortController()
+      const state = createMockInitialState()
+      /** @type {API.MigrationEvent[]} */
+      const events = []
+
+      for await (const event of buildMigrationInventories({
+        client,
+        resolver: claimsResolver,
+        state,
+        spaceDIDs: [SPACE_DID],
+        signal: ac.signal,
+        options: { indexer },
+      })) {
+        events.push(event)
+        if (event.type === 'state:checkpoint') {
+          ac.abort()
+        }
+      }
+
+      expect(events.map((event) => event.type)).toEqual([
+        'reader:space:start',
+        'state:checkpoint',
+      ])
+      expect(state.phase).toBe('reading')
+      expect(state.readerProgressCursors).toEqual({ [SPACE_DID]: '1' })
+      expect(state.spacesInventories[SPACE_DID]?.uploads).toEqual([
+        rootA.toString(),
+      ])
+      expect(state.spacesInventories[SPACE_DID]?.shards).toHaveLength(1)
+    })
+
+    it('returns cleanly when a reader request is aborted in flight', async () => {
+      const client = /** @type {import('@storacha/client').Client} */ (
+        /** @type {unknown} */ ({
+          spaces() {
+            return []
+          },
+          async setCurrentSpace(/** @type {API.SpaceDID} */ _did) {},
+          capability: {
+            upload: {
+              async list(
+                /** @type {{ signal?: AbortSignal } | undefined} */ options
+              ) {
+                return await new Promise((_resolve, reject) => {
+                  if (options?.signal?.aborted) {
+                    reject(createAbortError())
+                    return
+                  }
+                  options?.signal?.addEventListener(
+                    'abort',
+                    () => reject(createAbortError()),
+                    { once: true }
+                  )
+                })
+              },
+              shard: {
+                async list(
+                  /** @type {API.UnknownLink} */ _root,
+                  /** @type {unknown} */ _options
+                ) {
+                  return { results: [] }
+                },
+              },
+            },
+          },
+        })
+      )
+
+      const ac = new AbortController()
+      const state = createMockInitialState()
+      /** @type {API.MigrationEvent[]} */
+      const events = []
+
+      const run = (async () => {
+        for await (const event of buildMigrationInventories({
+          client,
+          resolver: claimsResolver,
+          state,
+          spaceDIDs: [SPACE_DID],
+          signal: ac.signal,
+          options: { indexer: createMockIndexer(new Map()) },
+        })) {
+          events.push(event)
+        }
+      })()
+
+      ac.abort()
+      await run
+
+      expect(events.map((event) => event.type)).toEqual(['reader:space:start'])
+      expect(state.phase).toBe('reading')
+      expect(state.spacesInventories[SPACE_DID]).toBeUndefined()
       expect(state.readerProgressCursors).toBeUndefined()
     })
   })

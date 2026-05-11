@@ -114,3 +114,26 @@ export class ResumeBindingDriftError extends Error {
     return ResumeBindingDriftErrorName
   }
 }
+
+/**
+ * Abort is cooperative control flow, not a migration failure.
+ *
+ * @param {unknown} error
+ * @param {AbortSignal | undefined} [signal]
+ * @returns {boolean}
+ */
+export function isAbortError(error, signal) {
+  return (
+    signal?.aborted === true ||
+    (error instanceof DOMException && error.name === 'AbortError') ||
+    (error instanceof Error && error.name === 'AbortError')
+  )
+}
+
+/**
+ * @param {AbortSignal | undefined} signal
+ */
+export function throwIfAborted(signal) {
+  if (!signal?.aborted) return
+  throw new DOMException('The operation was aborted.', 'AbortError')
+}

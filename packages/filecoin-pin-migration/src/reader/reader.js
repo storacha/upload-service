@@ -5,6 +5,7 @@ import {
   DEFAULT_SHARD_LIST_CONCURRENCY,
   DEFAULT_STOP_ON_ERROR,
 } from '../constants.js'
+import { isAbortError, throwIfAborted } from '../errors.js'
 import { checkpointInventoryPage } from '../state.js'
 import { resolveClaimsIndex } from './indexer.js'
 
@@ -54,13 +55,21 @@ export async function* buildMigrationInventories({
   state,
   spaceDIDs,
   uploadRootsBySpace,
+  signal,
   options,
 }) {
-  const indexer =
-    options?.indexer ?? new IndexingClient({ serviceURL: options?.serviceURL })
   const stopOnError = options?.stopOnError ?? DEFAULT_STOP_ON_ERROR
   const shardListConcurrency = DEFAULT_SHARD_LIST_CONCURRENCY
-  const fetcher = options?.fetcher ?? globalThis.fetch
+  const fetcher = createSignalAwareFetch(
+    options?.fetcher ?? globalThis.fetch,
+    signal
+  )
+  const indexer =
+    options?.indexer ??
+    new IndexingClient({
+      serviceURL: options?.serviceURL,
+      fetch: fetcher,
+    })
   if (spaceDIDs && uploadRootsBySpace) {
     throw new TypeError(
       'buildMigrationInventories: pass either "spaceDIDs" or "uploadRootsBySpace", not both'
@@ -74,6 +83,7 @@ export async function* buildMigrationInventories({
   )
 
   for (const did of dids) {
+    if (signal?.aborted) return
     const spaceDID = /** @type {SpaceDID} */ (did)
     // Space already fully read — skip
     if (
@@ -83,19 +93,26 @@ export async function* buildMigrationInventories({
       continue
     }
 
-    yield* buildSpaceInventory({
-      client,
-      indexer,
-      resolver,
-      spaceDID,
-      state,
-      selectedUploadRoots: uploadRootsBySpace?.[spaceDID],
-      stopOnError,
-      shardListConcurrency,
-      fetcher,
-    })
+    try {
+      yield* buildSpaceInventory({
+        client,
+        indexer,
+        resolver,
+        spaceDID,
+        state,
+        selectedUploadRoots: uploadRootsBySpace?.[spaceDID],
+        stopOnError,
+        shardListConcurrency,
+        fetcher,
+        signal,
+      })
+    } catch (error) {
+      if (isAbortError(error, signal)) return
+      throw error
+    }
   }
 
+  if (signal?.aborted) return
   state.phase = 'planning'
   yield { type: 'reader:complete' }
   yield { type: 'state:checkpoint', state }
@@ -122,6 +139,7 @@ export async function* buildMigrationInventories({
  * @param {boolean} args.stopOnError
  * @param {number} args.shardListConcurrency
  * @param {typeof fetch | undefined} args.fetcher
+ * @param {AbortSignal | undefined} args.signal
  * @returns {AsyncGenerator<MigrationEvent>}
  */
 async function* buildSpaceInventory({
@@ -134,10 +152,13 @@ async function* buildSpaceInventory({
   stopOnError,
   shardListConcurrency,
   fetcher,
+  signal,
 }) {
   yield { type: 'reader:space:start', spaceDID }
 
+  throwIfAborted(signal)
   await client.setCurrentSpace(spaceDID)
+  throwIfAborted(signal)
   const spaceName = client.currentSpace?.()?.name || undefined
 
   let cursor = state.readerProgressCursors?.[spaceDID]
@@ -145,10 +166,13 @@ async function* buildSpaceInventory({
     selectedUploadRoots != null ? new Set(selectedUploadRoots) : undefined
 
   do {
+    throwIfAborted(signal)
     const page = await client.capability.upload.list({
       cursor,
       size: 100,
+      signal,
     })
+    throwIfAborted(signal)
     const uploadsInPage = selectedRoots
       ? page.results.filter((upload) =>
           selectedRoots.has(upload.root.toString())
@@ -160,11 +184,12 @@ async function* buildSpaceInventory({
       uploadsInPage,
       async (upload) => {
         const root = upload.root.toString()
-        const shards = await listShardsFromStore(client, upload.root)
+        const shards = await listShardsFromStore(client, upload.root, signal)
         return { root, shards }
       },
-      { concurrency: shardListConcurrency }
+      { concurrency: shardListConcurrency, signal }
     )
+    throwIfAborted(signal)
 
     // Phase 2: query the primary indexer, then repair missing claims from IPNI.
     const allShards = uploadsWithShards.flatMap((u) => u.shards)
@@ -172,7 +197,9 @@ async function* buildSpaceInventory({
       indexer,
       shards: allShards,
       fetcher,
+      signal,
     })
+    throwIfAborted(signal)
 
     // Phase 3: extract per-shard results from the claims index (pure, no I/O)
     /** @type {ResolvedShard[]} */
@@ -262,14 +289,18 @@ async function* buildSpaceInventory({
  *
  * @param {import('@storacha/client').Client} client
  * @param {UnknownLink} root
+ * @param {AbortSignal | undefined} signal
  * @returns {Promise<ShardEntry[]>}
  */
-async function listShardsFromStore(client, root) {
+async function listShardsFromStore(client, root, signal) {
   /** @type {ShardEntry[]} */
   const shards = []
   let cursor
   do {
-    const page = await client.capability.upload.shard.list(root, { cursor })
+    const page = await client.capability.upload.shard.list(root, {
+      cursor,
+      signal,
+    })
     for (const link of page.results) {
       const b58 = base58btc.encode(link.multihash.bytes)
       shards.push({ cidStr: link.toString(), multihash: link.multihash, b58 })
@@ -329,4 +360,21 @@ function extractShard(claimsIndex, shard, root, resolver) {
   resolved.sourceURL = resolver.resolve(resolved)
 
   return { ok: resolved }
+}
+
+/**
+ * @param {typeof fetch | undefined} fetcher
+ * @param {AbortSignal | undefined} signal
+ * @returns {typeof fetch | undefined}
+ */
+function createSignalAwareFetch(fetcher, signal) {
+  if (typeof fetcher !== 'function' || !signal) return fetcher
+
+  return /** @type {typeof fetch} */ (
+    (input, init = {}) =>
+      fetcher(input, {
+        ...init,
+        signal: init.signal ?? signal,
+      })
+  )
 }
