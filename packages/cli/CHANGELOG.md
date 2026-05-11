@@ -1,3 +1,18 @@
+## 2.4.0 (2026-05-11)
+
+### 🚀 Features
+
+- remove unused space migrate options ([ca334418](https://github.com/storacha/upload-service/commit/ca334418))
+- Release v2 migration state support, root-aware committed tracking for shared shards, and safer CLI resume/state file detection with mainnet as the default FOC  network. ([3a3d25b8](https://github.com/storacha/upload-service/commit/3a3d25b8))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/filecoin-pin-migration to 1.0.0
+
+### ❤️ Thank You
+
+- bravonatalie
+
 ## 2.3.0 (2026-05-06)
 
 ### 🚀 Features

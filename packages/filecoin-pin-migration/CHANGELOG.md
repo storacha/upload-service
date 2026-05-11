@@ -1,3 +1,13 @@
+# 1.0.0 (2026-05-11)
+
+### ⚠️  Breaking Changes
+
+- Release v2 migration state support, root-aware committed tracking for shared shards, and safer CLI resume/state file detection with mainnet as the default FOC  network. ([3a3d25b8](https://github.com/storacha/upload-service/commit/3a3d25b8))
+
+### ❤️ Thank You
+
+- bravonatalie
+
 ## 0.1.1 (2026-05-06)
 
 ### 🩹 Fixes
