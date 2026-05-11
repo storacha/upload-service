@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fetchDataSetPieces } from '../src/helper/fetch-dataset-pieces.js'
 import { reconcileMigrationState } from '../src/helper/reconcile-migration-state.js'
+import { commitKey, STATE_VERSION } from '../src/state.js'
 
 /**
  * @import * as API from '../src/api.js'
@@ -47,7 +48,8 @@ describe('reconcileMigrationState', () => {
               removedStagedShardCIDs: [],
             },
             warnings: {
-              committedPiecesNotFoundInInventory: [],
+              committedPieceRootsNotFoundInInventory: [],
+              unverifiedCommittedPieces: [],
               unverifiedStagedShardCIDs: [],
             },
           },
@@ -55,7 +57,7 @@ describe('reconcileMigrationState', () => {
       },
     ])
     expect([...state.spaces[SPACE_DID].copies[0].committed]).toEqual([
-      'bafy-shard-1',
+      commitKey('bafy-shard-1', 'bafy-root-1'),
     ])
   })
 
@@ -66,6 +68,7 @@ describe('reconcileMigrationState', () => {
       pieces: [
         {
           pieceCID: 'bafkz-piece-1',
+          ipfsRootCID: 'bafy-root-1',
         },
       ],
     })
@@ -77,7 +80,10 @@ describe('reconcileMigrationState', () => {
         createShard('bafy-root-1', 'bafy-shard-2', 'bafkz-piece-2'),
       ],
       copy0DataSetId: 123n,
-      copy0Committed: ['bafy-shard-1', 'bafy-shard-2'],
+      copy0Committed: [
+        commitKey('bafy-shard-1', 'bafy-root-1'),
+        commitKey('bafy-shard-2', 'bafy-root-1'),
+      ],
     })
 
     const result = await reconcileMigrationState({
@@ -89,8 +95,128 @@ describe('reconcileMigrationState', () => {
     expect(result.stateCorrected).toBe(true)
     expect(state.spaces[SPACE_DID].phase).toBe('incomplete')
     expect([...state.spaces[SPACE_DID].copies[0].committed]).toEqual([
-      'bafy-shard-1',
+      commitKey('bafy-shard-1', 'bafy-root-1'),
     ])
+  })
+
+  it('rebuilds committed state for the same piece committed under multiple roots', async () => {
+    vi.mocked(fetchDataSetPieces).mockResolvedValue({
+      dataSetId: 123n,
+      providerURL: null,
+      pieces: [
+        {
+          pieceCID: 'bafkz-piece-shared',
+          ipfsRootCID: 'bafy-root-a',
+        },
+        {
+          pieceCID: 'bafkz-piece-shared',
+          ipfsRootCID: 'bafy-root-b',
+        },
+      ],
+    })
+
+    const state = createState({
+      phase: 'incomplete',
+      shards: [
+        createShard('bafy-root-a', 'bafy-shard-shared', 'bafkz-piece-shared'),
+        createShard('bafy-root-b', 'bafy-shard-shared', 'bafkz-piece-shared'),
+      ],
+      copy0DataSetId: 123n,
+      copy0Committed: [],
+    })
+
+    const result = await reconcileMigrationState({
+      state,
+      client: /** @type {any} */ ({}),
+      spaceDIDs: [SPACE_DID],
+    })
+
+    expect(result.stateCorrected).toBe(true)
+    expect([...state.spaces[SPACE_DID].copies[0].committed].sort()).toEqual(
+      [
+        commitKey('bafy-shard-shared', 'bafy-root-a'),
+        commitKey('bafy-shard-shared', 'bafy-root-b'),
+      ].sort()
+    )
+  })
+
+  it('reports committed pieces with missing root metadata as unverified', async () => {
+    vi.mocked(fetchDataSetPieces).mockResolvedValue({
+      dataSetId: 123n,
+      providerURL: null,
+      pieces: [
+        {
+          pieceCID: 'bafkz-piece-1',
+        },
+      ],
+    })
+
+    const state = createState({
+      phase: 'incomplete',
+      copy0DataSetId: 123n,
+      copy0Committed: [commitKey('bafy-shard-1', 'bafy-root-1')],
+    })
+
+    const result = await reconcileMigrationState({
+      state,
+      client: /** @type {any} */ ({}),
+      spaceDIDs: [SPACE_DID],
+    })
+
+    expect(result.stateCorrected).toBe(false)
+    expect(
+      result.spaces[0]?.copies[0]?.warnings.unverifiedCommittedPieces
+    ).toEqual(['bafkz-piece-1'])
+    expect([...state.spaces[SPACE_DID].copies[0].committed]).toEqual([
+      commitKey('bafy-shard-1', 'bafy-root-1'),
+    ])
+  })
+
+  it('applies verified committed additions but suppresses removals when a dataset also contains unverified committed pieces', async () => {
+    vi.mocked(fetchDataSetPieces).mockResolvedValue({
+      dataSetId: 123n,
+      providerURL: null,
+      pieces: [
+        {
+          pieceCID: 'bafkz-piece-1',
+          ipfsRootCID: 'bafy-root-1',
+        },
+        {
+          pieceCID: 'bafkz-piece-foreign',
+        },
+      ],
+    })
+
+    const state = createState({
+      phase: 'incomplete',
+      shards: [
+        createShard('bafy-root-1', 'bafy-shard-1', 'bafkz-piece-1'),
+        createShard('bafy-root-2', 'bafy-shard-2', 'bafkz-piece-2'),
+      ],
+      copy0DataSetId: 123n,
+      copy0Committed: [commitKey('bafy-shard-2', 'bafy-root-2')],
+    })
+
+    const result = await reconcileMigrationState({
+      state,
+      client: /** @type {any} */ ({}),
+      spaceDIDs: [SPACE_DID],
+    })
+
+    expect(result.stateCorrected).toBe(true)
+    expect(result.spaces[0]?.copies[0]?.changes.committedAdded).toEqual([
+      commitKey('bafy-shard-1', 'bafy-root-1'),
+    ])
+    expect(result.spaces[0]?.copies[0]?.changes.committedRemoved).toEqual([])
+    expect(
+      result.spaces[0]?.copies[0]?.warnings.unverifiedCommittedPieces
+    ).toEqual(['bafkz-piece-foreign'])
+    expect([...state.spaces[SPACE_DID].copies[0].committed].sort()).toEqual(
+      [
+        commitKey('bafy-shard-1', 'bafy-root-1'),
+        commitKey('bafy-shard-2', 'bafy-root-2'),
+      ].sort()
+    )
   })
 })
 
@@ -104,6 +230,7 @@ describe('reconcileMigrationState', () => {
  */
 function createState(input = {}) {
   return /** @type {API.MigrationState} */ ({
+    version: STATE_VERSION,
     phase: 'migrating',
     spaces: {
       [SPACE_DID]: {
@@ -113,7 +240,9 @@ function createState(input = {}) {
           createCopyState({
             copyIndex: 0,
             dataSetId: input.copy0DataSetId,
-            committed: input.copy0Committed ?? ['bafy-shard-1'],
+            committed: input.copy0Committed ?? [
+              commitKey('bafy-shard-1', 'bafy-root-1'),
+            ],
           }),
           createCopyState({
             copyIndex: 1,

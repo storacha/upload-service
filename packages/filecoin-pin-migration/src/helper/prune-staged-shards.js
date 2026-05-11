@@ -3,6 +3,10 @@ import {
   checkPiecesOnSP,
   buildStatusBreakdown,
 } from './sp-piece-status.js'
+import {
+  buildInventoryCommitView,
+  getFullyCommittedShardCIDs,
+} from '../state.js'
 
 /**
  * @import * as API from './api.js'
@@ -48,15 +52,20 @@ export async function pruneStagedShards({
     const inventory = state.spacesInventories[spaceDID]
     const spaceState = state.spaces[spaceDID]
     if (!inventory || !spaceState) continue
+    const inventoryCommitView = buildInventoryCommitView(inventory)
     /** @type {Array<{ copy: RootAPI.SpaceCopyState, stagedShardCIDs: Set<string> }>} */
     const stagedCopies = []
 
     for (const copy of spaceState.copies) {
+      const fullyCommittedShardCIDs = getFullyCommittedShardCIDs(
+        copy,
+        inventoryCommitView
+      )
       const stagedShardCIDs = new Set([
         ...copy.pulled,
         ...Object.keys(copy.storedShards),
       ])
-      for (const shardCID of copy.committed) {
+      for (const shardCID of fullyCommittedShardCIDs) {
         stagedShardCIDs.delete(shardCID)
       }
 

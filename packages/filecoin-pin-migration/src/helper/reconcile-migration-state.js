@@ -4,6 +4,11 @@ import {
   checkPiecesOnSP,
   buildStatusBreakdown,
 } from './sp-piece-status.js'
+import {
+  buildInventoryCommitView,
+  commitKey,
+  getFullyCommittedShardCIDs,
+} from '../state.js'
 
 /**
  * @import * as API from './api.js'
@@ -51,6 +56,7 @@ export async function reconcileMigrationState({
     const spaceState = state.spaces[spaceDID]
     if (!inventory || !spaceState) continue
 
+    const inventoryCommitView = buildInventoryCommitView(inventory)
     const mappings = buildShardMappings(spaceState, inventory)
 
     /** @type {API.ReconcileMigrationStateCopyReport[]} */
@@ -58,10 +64,6 @@ export async function reconcileMigrationState({
     let correctedAnyForSpace = false
 
     for (const copy of spaceState.copies) {
-      const stagedShardCIDs = new Set([
-        ...copy.pulled,
-        ...Object.keys(copy.storedShards),
-      ])
       const dataSetId = copy.dataSetId
       const hasCommittedStateFromChain = dataSetId != null
       const { pieces, providerURL: fetchedProviderURL } =
@@ -69,126 +71,50 @@ export async function reconcileMigrationState({
           ? await fetchDataSetPieces(client, dataSetId)
           : { pieces: [], providerURL: null }
       const providerURL = fetchedProviderURL ?? copy.providerURL ?? null
-      const onChainPieceSet = new Set(pieces.map((piece) => piece.pieceCID))
+      const committedReconciliation = reconcileCommittedCopyState({
+        copy,
+        pieces,
+        hasCommittedStateFromChain,
+        mappings,
+      })
+      const stagedReconciliation = await reconcileStagedCopyState({
+        copy,
+        inventoryCommitView,
+        mappings,
+        providerURL,
+        providerStatusConcurrency,
+        fetcher,
+        committedKeysForStagedCleanup:
+          committedReconciliation.committedKeysForStagedCleanup,
+      })
 
-      /** @type {Set<string> | null} */
-      const trulyCommittedShardCIDs = hasCommittedStateFromChain
-        ? new Set()
-        : null
-      /** @type {string[]} */
-      const committedPiecesNotFoundInInventory = []
+      applyCopyReconciliation({
+        copy,
+        committedReconciliation,
+        stagedReconciliation,
+      })
 
-      if (trulyCommittedShardCIDs) {
-        for (const pieceCID of onChainPieceSet) {
-          const shardCID = mappings.pieceCIDToShardCID.get(pieceCID)
-          if (shardCID) {
-            trulyCommittedShardCIDs.add(shardCID)
-          } else {
-            committedPiecesNotFoundInInventory.push(pieceCID)
-          }
-        }
-      }
-
-      /** @type {API.ReconcileMigrationStateChanges} */
       const changes = {
-        committedAdded: trulyCommittedShardCIDs
-          ? [...trulyCommittedShardCIDs].filter(
-              (cid) => !copy.committed.has(cid)
-            )
-          : [],
-        committedRemoved: trulyCommittedShardCIDs
-          ? [...copy.committed].filter(
-              (cid) => !trulyCommittedShardCIDs.has(cid)
-            )
-          : [],
-        pulledRemovedBecauseCommitted: [],
-        removedStagedShardCIDs: [],
+        ...committedReconciliation.changes,
+        ...stagedReconciliation.changes,
       }
-
-      if (trulyCommittedShardCIDs) {
-        for (const shardCID of trulyCommittedShardCIDs) {
-          if (copy.pulled.has(shardCID)) {
-            changes.pulledRemovedBecauseCommitted.push(shardCID)
-          }
-          stagedShardCIDs.delete(shardCID)
-          copy.pulled.delete(shardCID)
-        }
-      }
-
-      /** @type {string[]} */
-      const verifiableStagedShardCIDs = []
-      /** @type {string[]} */
-      const unverifiedStagedShardCIDs = []
-
-      for (const shardCID of stagedShardCIDs) {
-        if (mappings.shardCIDToPieceCID.has(shardCID)) {
-          verifiableStagedShardCIDs.push(shardCID)
-        } else {
-          unverifiedStagedShardCIDs.push(shardCID)
-        }
-      }
-
-      /** @type {API.ReconcileMigrationStateSPCheck | undefined} */
-      let spCheck
-      /** @type {API.ReconcileMigrationStateCopyReport['skippedReason']} */
-      let skippedReason
-
-      if (copy.dataSetId == null && copy.committed.size > 0) {
-        skippedReason = 'missing-data-set-id'
-      }
-
-      if (verifiableStagedShardCIDs.length > 0) {
-        if (!providerURL) {
-          skippedReason ??= 'missing-provider-url'
-          unverifiedStagedShardCIDs.push(...verifiableStagedShardCIDs)
-        } else {
-          const spResults = await checkPiecesOnSP({
-            shardCIDs: verifiableStagedShardCIDs,
-            shardCIDToPieceCID: mappings.shardCIDToPieceCID,
-            providerURL,
-            concurrency: providerStatusConcurrency,
-            fetcher,
-          })
-
-          spCheck = {
-            statusBreakdown: buildStatusBreakdown(spResults),
-          }
-
-          for (const result of spResults) {
-            if (result.status === 'not_found') {
-              changes.removedStagedShardCIDs.push(result.shardCid)
-              continue
-            }
-
-            if (!PULLED_STATUSES.has(result.status)) {
-              unverifiedStagedShardCIDs.push(result.shardCid)
-            }
-          }
-        }
-      }
-
-      if (trulyCommittedShardCIDs) {
-        copy.committed = trulyCommittedShardCIDs
-      }
-      for (const shardCID of changes.removedStagedShardCIDs) {
-        copy.pulled.delete(shardCID)
-        delete copy.storedShards[shardCID]
-      }
-
       const warnings = {
-        committedPiecesNotFoundInInventory,
-        unverifiedStagedShardCIDs,
+        ...committedReconciliation.warnings,
+        ...stagedReconciliation.warnings,
       }
 
-      if (hasCopyReportData(changes, warnings) || skippedReason != null) {
+      if (
+        hasCopyReportData(changes, warnings) ||
+        stagedReconciliation.skippedReason != null
+      ) {
         copies.push({
           copyIndex: copy.copyIndex,
           providerId: copy.providerId,
           dataSetId: copy.dataSetId,
-          skippedReason,
+          skippedReason: stagedReconciliation.skippedReason,
           changes,
           warnings,
-          spCheck,
+          spCheck: stagedReconciliation.spCheck,
         })
         hasDiscrepancies = true
       }
@@ -232,6 +158,232 @@ export async function reconcileMigrationState({
 }
 
 /**
+ * @param {object} args
+ * @param {RootAPI.SpaceCopyState} args.copy
+ * @param {API.CommittedDataSetPiece[]} args.pieces
+ * @param {boolean} args.hasCommittedStateFromChain
+ * @param {ReturnType<typeof buildShardMappings>} args.mappings
+ */
+function reconcileCommittedCopyState({
+  copy,
+  pieces,
+  hasCommittedStateFromChain,
+  mappings,
+}) {
+  /** @type {Set<string>} */
+  const verifiedCommittedCommitKeys = new Set()
+  /** @type {string[]} */
+  const committedPieceRootsNotFoundInInventory = []
+  /** @type {string[]} */
+  const unverifiedCommittedPieces = []
+
+  if (hasCommittedStateFromChain) {
+    for (const piece of pieces) {
+      if (!piece.ipfsRootCID) {
+        unverifiedCommittedPieces.push(piece.pieceCID)
+        continue
+      }
+
+      const matches =
+        mappings.pieceCIDToShardEntries.get(piece.pieceCID)?.filter(
+          /**
+           * @param {{ shardCid: string, root: string }} entry
+           */
+          (entry) => entry.root === piece.ipfsRootCID
+        ) ?? []
+
+      if (matches.length > 0) {
+        for (const match of matches) {
+          verifiedCommittedCommitKeys.add(commitKey(match.shardCid, match.root))
+        }
+      } else {
+        committedPieceRootsNotFoundInInventory.push(
+          `${piece.pieceCID}#${piece.ipfsRootCID}`
+        )
+      }
+    }
+  }
+
+  const shouldSuppressCommittedRemovals =
+    hasCommittedStateFromChain && unverifiedCommittedPieces.length > 0
+  const reconciledCommittedCommitKeys = hasCommittedStateFromChain
+    ? shouldSuppressCommittedRemovals
+      ? new Set([...copy.committed, ...verifiedCommittedCommitKeys])
+      : verifiedCommittedCommitKeys
+    : null
+
+  return {
+    reconciledCommittedCommitKeys,
+    committedKeysForStagedCleanup: hasCommittedStateFromChain
+      ? verifiedCommittedCommitKeys
+      : null,
+    shouldSuppressCommittedRemovals,
+    changes: {
+      committedAdded: hasCommittedStateFromChain
+        ? [...verifiedCommittedCommitKeys].filter(
+            (key) => !copy.committed.has(key)
+          )
+        : [],
+      committedRemoved:
+        reconciledCommittedCommitKeys && !shouldSuppressCommittedRemovals
+          ? [...copy.committed].filter(
+              (key) => !reconciledCommittedCommitKeys.has(key)
+            )
+          : [],
+    },
+    warnings: {
+      committedPieceRootsNotFoundInInventory,
+      unverifiedCommittedPieces,
+    },
+  }
+}
+
+/**
+ * @param {object} args
+ * @param {RootAPI.SpaceCopyState} args.copy
+ * @param {RootAPI.InventoryCommitView} args.inventoryCommitView
+ * @param {ReturnType<typeof buildShardMappings>} args.mappings
+ * @param {string | null} args.providerURL
+ * @param {number} args.providerStatusConcurrency
+ * @param {typeof fetch} args.fetcher
+ * @param {Set<string> | null} args.committedKeysForStagedCleanup
+ */
+async function reconcileStagedCopyState({
+  copy,
+  inventoryCommitView,
+  mappings,
+  providerURL,
+  providerStatusConcurrency,
+  fetcher,
+  committedKeysForStagedCleanup,
+}) {
+  const stagedShardCIDs = new Set([
+    ...copy.pulled,
+    ...Object.keys(copy.storedShards),
+  ])
+  /** @type {API.ReconcileMigrationStateSPCheck | undefined} */
+  let spCheck
+  /** @type {API.ReconcileMigrationStateCopyReport['skippedReason']} */
+  let skippedReason
+
+  /** @type {API.ReconcileMigrationStateChanges['pulledRemovedBecauseCommitted']} */
+  const pulledRemovedBecauseCommitted = []
+  /** @type {API.ReconcileMigrationStateChanges['removedStagedShardCIDs']} */
+  const removedStagedShardCIDs = []
+  /** @type {string[]} */
+  const unverifiedStagedShardCIDs = []
+
+  if (copy.dataSetId == null && copy.committed.size > 0) {
+    skippedReason = 'missing-data-set-id'
+  }
+
+  if (committedKeysForStagedCleanup) {
+    const reconciledCopy = {
+      ...copy,
+      // Under suppression we still trust verified committed truth enough to
+      // clean staged data, but we do not trust the preserved existing
+      // committed entries enough to drive staged cleanup.
+      committed: committedKeysForStagedCleanup,
+    }
+    const fullyCommittedShardCIDs = getFullyCommittedShardCIDs(
+      reconciledCopy,
+      inventoryCommitView
+    )
+
+    for (const shardCID of fullyCommittedShardCIDs) {
+      if (copy.pulled.has(shardCID)) {
+        pulledRemovedBecauseCommitted.push(shardCID)
+      }
+      stagedShardCIDs.delete(shardCID)
+    }
+  }
+
+  /** @type {string[]} */
+  const verifiableStagedShardCIDs = []
+  for (const shardCID of stagedShardCIDs) {
+    if (mappings.shardCIDToPieceCID.has(shardCID)) {
+      verifiableStagedShardCIDs.push(shardCID)
+    } else {
+      unverifiedStagedShardCIDs.push(shardCID)
+    }
+  }
+
+  if (verifiableStagedShardCIDs.length > 0) {
+    if (!providerURL) {
+      skippedReason ??= 'missing-provider-url'
+      unverifiedStagedShardCIDs.push(...verifiableStagedShardCIDs)
+    } else {
+      const spResults = await checkPiecesOnSP({
+        shardCIDs: verifiableStagedShardCIDs,
+        shardCIDToPieceCID: mappings.shardCIDToPieceCID,
+        providerURL,
+        concurrency: providerStatusConcurrency,
+        fetcher,
+      })
+
+      spCheck = {
+        statusBreakdown: buildStatusBreakdown(spResults),
+      }
+
+      for (const result of spResults) {
+        if (result.status === 'not_found') {
+          removedStagedShardCIDs.push(result.shardCid)
+          continue
+        }
+
+        if (!PULLED_STATUSES.has(result.status)) {
+          unverifiedStagedShardCIDs.push(result.shardCid)
+        }
+      }
+    }
+  }
+
+  return {
+    skippedReason,
+    spCheck,
+    changes: {
+      pulledRemovedBecauseCommitted,
+      removedStagedShardCIDs,
+    },
+    warnings: {
+      unverifiedStagedShardCIDs,
+    },
+  }
+}
+
+/**
+ * @param {object} args
+ * @param {RootAPI.SpaceCopyState} args.copy
+ * @param {ReturnType<typeof reconcileCommittedCopyState>} args.committedReconciliation
+ * @param {Awaited<ReturnType<typeof reconcileStagedCopyState>>} args.stagedReconciliation
+ */
+function applyCopyReconciliation({
+  copy,
+  committedReconciliation,
+  stagedReconciliation,
+}) {
+  if (committedReconciliation.reconciledCommittedCommitKeys) {
+    if (committedReconciliation.shouldSuppressCommittedRemovals) {
+      for (const key of committedReconciliation.changes.committedAdded) {
+        copy.committed.add(key)
+      }
+    } else {
+      copy.committed = committedReconciliation.reconciledCommittedCommitKeys
+    }
+  }
+
+  for (const shardCID of stagedReconciliation.changes
+    .pulledRemovedBecauseCommitted) {
+    copy.pulled.delete(shardCID)
+  }
+
+  for (const shardCID of stagedReconciliation.changes.removedStagedShardCIDs) {
+    copy.pulled.delete(shardCID)
+    delete copy.storedShards[shardCID]
+  }
+}
+
+/**
  * @param {API.ReconcileMigrationStateChanges} changes
  * @param {API.ReconcileMigrationStateWarnings} warnings
  */
@@ -241,7 +393,8 @@ function hasCopyReportData(changes, warnings) {
     changes.committedRemoved.length > 0 ||
     changes.pulledRemovedBecauseCommitted.length > 0 ||
     changes.removedStagedShardCIDs.length > 0 ||
-    warnings.committedPiecesNotFoundInInventory.length > 0 ||
+    warnings.committedPieceRootsNotFoundInInventory.length > 0 ||
+    warnings.unverifiedCommittedPieces.length > 0 ||
     warnings.unverifiedStagedShardCIDs.length > 0
   )
 }

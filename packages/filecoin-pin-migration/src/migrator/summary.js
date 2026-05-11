@@ -1,3 +1,5 @@
+import { commitKey } from '../state.js'
+
 /**
  * Derive one space's migration summary contribution scoped to the inventories
  * and shard bucket used by the current executor run.
@@ -6,7 +8,7 @@
  * @param {import('../api.js').MigrationState} args.state
  * @param {import('../api.js').SpaceDID} args.spaceDID
  * @param {import('../api.js').SpaceInventory} args.inventory
- * @param {(inventory: import('../api.js').SpaceInventory) => Iterable<{ cid: string }>} args.getActionableShards
+ * @param {(inventory: import('../api.js').SpaceInventory) => Iterable<{ cid: string, root: string }>} args.getActionableShards
  */
 export function summarizeSpaceMigration({
   state,
@@ -24,21 +26,21 @@ export function summarizeSpaceMigration({
     }
   }
 
-  const actionableShardCIDs = new Set()
+  const actionableCommitKeys = new Set()
   for (const shard of getActionableShards(inventory)) {
-    actionableShardCIDs.add(shard.cid)
+    actionableCommitKeys.add(commitKey(shard.cid, shard.root))
   }
 
   let succeeded = 0
   for (const copy of space.copies) {
-    for (const shardCid of copy.committed) {
-      if (actionableShardCIDs.has(shardCid)) succeeded += 1
+    for (const key of copy.committed) {
+      if (actionableCommitKeys.has(key)) succeeded += 1
     }
   }
 
   return {
     succeeded,
-    failed: actionableShardCIDs.size * space.copies.length - succeeded,
+    failed: actionableCommitKeys.size * space.copies.length - succeeded,
     skippedUploads: inventory.skippedUploads.length,
     dataSetIds: space.copies
       .map((copy) => copy.dataSetId)

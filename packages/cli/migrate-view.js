@@ -12,7 +12,7 @@ import { filesize } from './lib.js'
  * @param {number} args.chainId
  * @param {string} args.chainName
  * @param {string} args.stateFile
- * @param {boolean} args.resume
+ * @param {'fresh' | 'resume' | 'retry'} args.mode
  * @param {{ walletUSDFC: bigint, walletFIL: bigint, depositedUSDFC: bigint }} args.preflight
  * @param {bigint} args.minFilGasBalance
  */
@@ -22,7 +22,7 @@ export function printPreflight({
   chainId,
   chainName,
   stateFile,
-  resume,
+  mode,
   preflight,
   minFilGasBalance,
 }) {
@@ -35,7 +35,7 @@ export function printPreflight({
         line('Wallet', walletAddress),
         line('Chain', chainName),
         line('Chain ID', String(chainId)),
-        line('Mode', resume ? 'resume' : 'fresh'),
+        line('Mode', mode),
       ],
       chalk.cyan
     )
@@ -119,7 +119,6 @@ export function printPlan(plan, userWalletBalance, userDeposit) {
         ),
         line('Uploads', String(plan.totals.uploads)),
         line('Shards', String(plan.totals.shards)),
-        line('Source bytes', formatBytes(plan.totals.bytes)),
         line('Bytes to migrate', formatBytes(plan.totals.bytesToMigrate)),
         line('Ready', plan.ready ? chalk.green('yes') : chalk.yellow('no')),
       ],
@@ -204,7 +203,7 @@ export function printSummary(summary, durationMs, chainId, state, plan) {
 
   const copyLines =
     state && plan
-      ? buildCopySummaryLines(state, plan)
+      ? buildCopySummaryLines(state)
       : [
           line('Succeeded', String(summary.succeeded)),
           line('Failed', String(summary.failed)),
@@ -237,19 +236,23 @@ export function printSummary(summary, durationMs, chainId, state, plan) {
 
 /**
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
- * @param {import('@storacha/filecoin-pin-migration/types').MigrationPlan} plan
  */
-function buildCopySummaryLines(state, plan) {
-  const { copies, totalPerCopy, totalFailedUploads } = summarizeProgress(
-    state,
-    plan
-  )
+function buildCopySummaryLines(state) {
+  const {
+    copies,
+    totalPreparedShards,
+    totalCommittedPairs,
+    totalFailedUploads,
+  } = summarizeProgress(state)
   const copyLines = copies
     .sort((a, b) => a.copyIndex - b.copyIndex)
     .map((c) =>
       line(
         `Copy ${c.copyIndex}`,
-        `staged ${c.staged}/${totalPerCopy}  committed ${c.committed}/${totalPerCopy}  failed ${c.failedUploads}`
+        formatCopyProgressLine(c, {
+          totalPreparedShards,
+          totalCommittedPairs,
+        })
       )
     )
   return [...copyLines, line('Total failed', String(totalFailedUploads))]
@@ -373,7 +376,6 @@ export function renderNotice(title, lines, color) {
  *
  * @param {object} args
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} args.state
- * @param {import('@storacha/filecoin-pin-migration/types').MigrationPlan} args.plan
  * @param {number} args.startedAt
  * @param {string} args.activityFrame
  * @param {string | undefined} args.currentSpaceDID
@@ -384,7 +386,6 @@ export function renderNotice(title, lines, color) {
  */
 export function renderMigrationStatusBlock({
   state,
-  plan,
   startedAt,
   activityFrame,
   currentSpaceDID,
@@ -393,17 +394,22 @@ export function renderMigrationStatusBlock({
   currentItemCount,
   currentBatchCount,
 }) {
-  const { copies, totalPerCopy, totalFailedUploads } = summarizeProgress(
-    state,
-    plan
-  )
+  const {
+    copies,
+    totalPreparedShards,
+    totalCommittedPairs,
+    totalFailedUploads,
+  } = summarizeProgress(state)
   const currentStage = formatCurrentStage(currentPhase)
   const currentDetail = formatCurrentDetail(currentPhase)
 
   const copyLines = copies
     .sort((a, b) => a.copyIndex - b.copyIndex)
     .map((c) => {
-      const base = `staged ${c.staged}/${totalPerCopy}  committed ${c.committed}/${totalPerCopy}  failed ${c.failedUploads}`
+      const base = formatCopyProgressLine(c, {
+        totalPreparedShards,
+        totalCommittedPairs,
+      })
       return line(`Copy ${c.copyIndex}`, base)
     })
 
@@ -431,35 +437,55 @@ export function renderMigrationStatusBlock({
 }
 
 /**
- * Print a status box showing per-copy progress before resuming execution.
- * No-ops when no progress exists yet.
+ * Print a status box showing progress from the persisted migration state.
  *
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
- * @param {import('@storacha/filecoin-pin-migration/types').MigrationPlan} plan
+ * @param {object} [options]
+ * @param {string} [options.title]
+ * @param {boolean} [options.showWhenEmpty]
  */
-export function printResumeStatus(state, plan) {
-  const { copies, totalPerCopy, totalFailedUploads } = summarizeProgress(
-    state,
-    plan
-  )
+export function printResumeStatus(
+  state,
+  { title = 'Resuming From', showWhenEmpty = false } = {}
+) {
+  const {
+    copies,
+    totalCommittedPairs,
+    totalPreparedShards,
+    totalFailedUploads,
+    inventoryPartial,
+    inventoryCount,
+  } = summarizeProgress(state)
 
-  const hasProgress = copies.some((c) => c.committed > 0 || c.staged > 0)
-  if (!hasProgress) return
+  const hasProgress = copies.some(
+    (c) => c.committedPairs > 0 || c.preparedShards > 0
+  )
+  if (!showWhenEmpty && !hasProgress) return
 
   console.log(
     renderBox(
-      'Resuming From',
+      title,
       [
-        line('Total shards', String(totalPerCopy)),
+        line('Migration phase', state.phase),
+        line(
+          'Inventory',
+          inventoryPartial
+            ? `partial (${inventoryCount} space${inventoryCount === 1 ? '' : 's'})`
+            : `${inventoryCount} space${inventoryCount === 1 ? '' : 's'}`
+        ),
+        line('Total shards', String(totalPreparedShards)),
         ...copies
           .sort((a, b) => a.copyIndex - b.copyIndex)
           .map((c) =>
             line(
               `Copy ${c.copyIndex}`,
-              `staged ${c.staged}/${totalPerCopy}  committed ${c.committed}/${totalPerCopy}  failed uploads ${c.failedUploads}`
+              `prepared ${c.preparedShards}/${totalPreparedShards}  committed ${c.committedPairs}/${totalCommittedPairs}  failed uploads ${c.failedUploads}`
             )
           ),
         line('Total failed', String(totalFailedUploads)),
+        ...(inventoryPartial
+          ? ['Reader phase is incomplete; inventory totals may be partial.']
+          : []),
       ],
       chalk.cyan
     )
@@ -833,24 +859,45 @@ function formatPhaseWork(itemCount, batchCount) {
 }
 
 /**
- * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
- * @param {import('@storacha/filecoin-pin-migration/types').MigrationPlan} plan
+ * @param {{ copyIndex: number, committedPairs: number, preparedShards: number, failedUploads: number }} copy
+ * @param {{ totalPreparedShards: number, totalCommittedPairs: number }} totals
  */
-function summarizeProgress(state, plan) {
-  /** @type {Array<{ copyIndex: number, committed: number, staged: number, failedUploads: number }>} */
+function formatCopyProgressLine(copy, totals) {
+  return `prepared ${copy.preparedShards}/${totals.totalPreparedShards}  committed ${copy.committedPairs}/${totals.totalCommittedPairs}  failed ${copy.failedUploads}`
+}
+
+/**
+ * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
+ */
+function summarizeProgress(state) {
+  /** @type {Array<{ copyIndex: number, committedPairs: number, preparedShards: number, failedUploads: number }>} */
   const copies = []
+  let totalCommittedPairs = 0
+  const uniqueShardCIDs = new Set()
+
+  for (const inventory of Object.values(state.spacesInventories)) {
+    totalCommittedPairs +=
+      inventory.shards.length + inventory.shardsToStore.length
+
+    for (const shard of inventory.shards) {
+      uniqueShardCIDs.add(shard.cid)
+    }
+
+    for (const shard of inventory.shardsToStore) {
+      uniqueShardCIDs.add(shard.cid)
+    }
+  }
 
   for (const space of Object.values(state.spaces)) {
     for (const copy of space.copies) {
-      const staged = new Set([
-        ...copy.committed,
+      const preparedShards = new Set([
         ...copy.pulled,
         ...Object.keys(copy.storedShards),
       ]).size
       copies.push({
         copyIndex: copy.copyIndex,
-        committed: copy.committed.size,
-        staged,
+        committedPairs: copy.committed.size,
+        preparedShards,
         failedUploads: copy.failedUploads.size,
       })
     }
@@ -860,8 +907,11 @@ function summarizeProgress(state, plan) {
 
   return {
     copies,
-    totalPerCopy: plan.totals.shards,
+    totalPreparedShards: uniqueShardCIDs.size,
+    totalCommittedPairs,
     totalFailedUploads,
+    inventoryPartial: state.phase === 'reading',
+    inventoryCount: Object.keys(state.spacesInventories).length,
   }
 }
 

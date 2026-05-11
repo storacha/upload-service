@@ -1,7 +1,7 @@
 # Architecture — `@storacha/filecoin-pin-migration`
 
 **Domain:** Storacha-to-FOC migration library  
-**Last updated:** 2026-05-07
+**Last updated:** 2026-05-08
 
 ---
 
@@ -60,6 +60,7 @@ provider PDP endpoint and can prune stale entries from state before execution.
 
 ```ts
 interface MigrationState {
+  version: number
   phase: MigrationPhase
   spaces: Record<SpaceDID, SpaceState>
   spacesInventories: Record<SpaceDID, SpaceInventory>
@@ -88,6 +89,21 @@ interface SpaceCopyState {
 State uses `Set<string>` at runtime for O(1) membership checks and cheap
 iteration. Serialization converts these sets to arrays.
 
+State is versioned. `deserializeState()` rejects missing or unknown schema
+versions; callers must restart without `--resume` when the persisted format no
+longer matches the library.
+
+Per-copy progress semantics:
+
+- `pulled` is shard-keyed and means the piece bytes are already prepared for
+  commit
+- `storedShards` is shard-keyed and maps one durable piece CID per stored shard
+- `committed` is keyed by `shardCid#rootCid`, not just shard CID
+- `failedUploads` remains root-keyed
+
+This means the same shard/piece may be pulled or stored once, but committed
+once per shard-root pair when one shard belongs to multiple upload roots.
+
 `providerURL` is persisted alongside the copy binding so helper-driven staged
 validation and debugging can still probe provider PDP state even before a copy
 has an on-chain dataset id.
@@ -106,7 +122,7 @@ On resume:
    dataset bindings still match each persisted copy by `copyIndex`; if any
    drifted, it throws before mutating state
 6. `executeMigration()`:
-   - skips shards already in a copy's `committed`
+   - skips data movement for shards already fully committed across all roots
    - does not re-pull shards already in a copy's `pulled`
    - reuses the copy's `dataSetId` after a successful commit
 
@@ -186,6 +202,15 @@ The migrator executes one space at a time. Within each space:
 - `executeStoreMigration()` is a thin wrapper that prepares an all-store inventory
   view, then delegates to the same shared `migrateSpace()` executor
 
+Within one space, migrator builds a sparse duplicate-root view:
+
+- one representative shard entry per `shardCid` is used for actual pull/store
+  byte movement
+- a sparse `multiRootShards` map tracks only shard CIDs that belong to more
+  than one upload root
+- commit generation expands those representative shards back into one commit
+  piece per pending shard-root pair
+
 Internally, migrator execution is split into two layers:
 
 - `runMigration()` owns the outer lifecycle: funding, phase transition, space loop,
@@ -198,6 +223,10 @@ Internally, migrator execution is split into two layers:
 - source pull work is batched and runs concurrently per copy
 - store-routed shards are downloaded+stored in batches on copy 0, then pulled in
   batches from copy 0 on copy 1
+- pull/store data movement is deduped by `shardCid`; duplicate-root shards do
+  not move bytes more than once per copy
+- commit progress is root-aware: a prepared shard stays in `pulled` until all
+  of its roots are committed for that copy
 - pull/store concurrent waves apply settled results incrementally in completion
   order
 - pull results checkpoint as each completed pull batch settles
@@ -232,6 +261,9 @@ Internally, migrator execution is split into two layers:
   `activeFailedRoots` at pre-pack time only, so failures inside a concurrent
   wave do not retroactively drop pieces that were already packed into sibling
   batches.
+- `activeFailedRoots` is transient per run / per copy. It is initialized from
+  persisted `failedUploads` on normal resume, and starts empty after
+  `clearFailedUploadsForRetry()` is used for a retry run.
 - `retryCommitInteractively` is used only for a failing commit batch
 
 ### Phase 2 persistence ordering
@@ -307,6 +339,11 @@ Helper contracts:
   not require planner contexts
 - `reconcileMigrationState()` can still validate staged shards for staged-only
   copies via persisted `providerURL` even when `dataSetId` is `null`
+- committed-side reconciliation is keyed by `(pieceCID, ipfsRootCID)` and
+  rebuilds `copy.committed` as `shardCid#rootCid` pairs
+- if a committed dataset piece exists on-chain but is missing `ipfsRootCID`,
+  reconciliation reports it as an unverified committed piece and does not
+  silently add or remove committed shard-root pairs for that copy
 - both helpers may normalize `space.phase` after correcting staged or committed
   state
 

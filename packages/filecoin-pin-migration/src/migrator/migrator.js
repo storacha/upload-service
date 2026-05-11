@@ -78,7 +78,7 @@ export async function* executeMigration({
 
 /**
  * @param {API.SpaceInventory} inventory
- * @returns {Generator<{ cid: string }>}
+ * @returns {Generator<{ cid: string, root: string }>}
  */
 function* iterateInventoryActionableShards(inventory) {
   yield* inventory.shards

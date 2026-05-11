@@ -13,7 +13,14 @@ import {
   shouldRetryTransientOperationError,
 } from './retry-policy.js'
 import { batches, isAbortError } from '../utils.js'
-import { recordFailedUpload, recordPull, recordStoredShard } from '../state.js'
+import {
+  expandShardRoots,
+  getActionableRootsForRun,
+  hasAnyCommittedRootForShard,
+  recordFailedUpload,
+  recordPull,
+  recordStoredShard,
+} from '../state.js'
 import { extractRetryDiagnostics, runRetried } from './retried-operation.js'
 
 /**
@@ -25,7 +32,7 @@ import { extractRetryDiagnostics, runRetried } from './retried-operation.js'
  * same-run eligible commit entries keyed by shard CID.
  *
  * @param {object} args
- * @param {API.SpaceInventory} args.inventory
+ * @param {Map<string, API.StoreShard>} args.representativeStoreShardByCid
  * @param {API.SpaceCopyState} args.copyState
  * @param {API.PerCopyCost} args.copyCost
  * @param {API.MigrationState} args.state
@@ -34,10 +41,11 @@ import { extractRetryDiagnostics, runRetried } from './retried-operation.js'
  * @param {number} args.storeConcurrency
  * @param {Set<string>} args.activeFailedRoots
  * @param {AbortSignal | undefined} args.signal
+ * @param {Map<string, string[]>} args.multiRootShards
  * @returns {AsyncGenerator<API.MigrationEvent, Map<string, API.CommitEntry> | undefined, void>}
  */
 export async function* storeShardsOnPrimaryCopy({
-  inventory,
+  representativeStoreShardByCid,
   copyState,
   copyCost,
   state,
@@ -46,6 +54,7 @@ export async function* storeShardsOnPrimaryCopy({
   storeConcurrency,
   activeFailedRoots,
   signal,
+  multiRootShards,
 }) {
   const { context, spaceDID } = copyCost
   if (copyState.copyIndex !== PRIMARY_COPY_INDEX) return
@@ -53,19 +62,34 @@ export async function* storeShardsOnPrimaryCopy({
   const entriesByShardCid = new Map()
   /** @type {API.StoreShard[]} */
   const actionableShards = []
-  for (const shard of inventory.shardsToStore) {
-    const storedPieceCID = copyState.storedShards[shard.cid]
-    if (storedPieceCID) {
+  for (const shard of representativeStoreShardByCid.values()) {
+    const storedShardPieceCID = copyState.storedShards[shard.cid]
+
+    if (storedShardPieceCID) {
       entriesByShardCid.set(shard.cid, {
         shardCid: shard.cid,
-        pieceCID: storedPieceCID,
+        pieceCID: storedShardPieceCID,
         root: shard.root,
       })
+      continue
     }
 
-    if (copyState.committed.has(shard.cid)) continue
-    if (storedPieceCID) continue
-    if (activeFailedRoots.has(shard.root)) continue
+    const shardRoots = expandShardRoots(shard.cid, shard.root, multiRootShards)
+    const isShardInFOC = hasAnyCommittedRootForShard(
+      copyState,
+      shard.cid,
+      shardRoots
+    )
+    if (isShardInFOC) continue
+
+    const pendingShardRoots = getActionableRootsForRun(
+      copyState,
+      shard.cid,
+      shardRoots,
+      activeFailedRoots
+    )
+    if (pendingShardRoots.length === 0) continue
+
     actionableShards.push(shard)
   }
 
@@ -91,6 +115,7 @@ export async function* storeShardsOnPrimaryCopy({
       activeFailedRoots,
       storeConcurrency,
       signal,
+      multiRootShards,
     })
   }
 
@@ -133,6 +158,7 @@ export async function* storeShardsOnPrimaryCopy({
  * @param {number} args.pullConcurrency
  * @param {Set<string>} args.activeFailedRoots
  * @param {AbortSignal | undefined} args.signal
+ * @param {Map<string, string[]>} args.multiRootShards
  * @returns {AsyncGenerator<API.MigrationEvent, Map<string, API.CommitEntry> | undefined, void>}
  */
 export async function* pullStoredShardsOnSecondaryCopy({
@@ -145,6 +171,7 @@ export async function* pullStoredShardsOnSecondaryCopy({
   pullConcurrency,
   activeFailedRoots,
   signal,
+  multiRootShards,
 }) {
   if (copyState.copyIndex !== SECONDARY_COPY_INDEX) return
 
@@ -165,9 +192,25 @@ export async function* pullStoredShardsOnSecondaryCopy({
   } else {
     entriesToPull = []
     for (const entry of entriesByShardCid.values()) {
-      if (copyState.committed.has(entry.shardCid)) continue
-      if (activeFailedRoots.has(entry.root)) continue
-      if (copyState.pulled.has(entry.shardCid)) {
+      const shardRoots = expandShardRoots(
+        entry.shardCid,
+        entry.root,
+        multiRootShards
+      )
+      if (
+        getActionableRootsForRun(
+          copyState,
+          entry.shardCid,
+          shardRoots,
+          activeFailedRoots
+        ).length === 0
+      ) {
+        continue
+      }
+      if (
+        hasAnyCommittedRootForShard(copyState, entry.shardCid, shardRoots) ||
+        copyState.pulled.has(entry.shardCid)
+      ) {
         pulledEntriesByShardCid.set(entry.shardCid, entry)
         continue
       }
@@ -206,9 +249,20 @@ export async function* pullStoredShardsOnSecondaryCopy({
         spaceDID,
         copyIndex,
         activeFailedRoots,
+        getFailureRoots: (entry) =>
+          expandShardRoots(entry.shardCid, entry.root, multiRootShards),
         onPulledCandidate: (entry) => {
           pulledEntriesByShardCid.set(entry.shardCid, entry)
-          return recordPull(state, spaceDID, copyIndex, entry.shardCid)
+          return recordPull(state, {
+            spaceDID,
+            copyIndex,
+            shardCid: entry.shardCid,
+            shardRoots: expandShardRoots(
+              entry.shardCid,
+              entry.root,
+              multiRootShards
+            ),
+          })
         },
       })
     )
@@ -259,6 +313,7 @@ export async function* pullStoredShardsOnSecondaryCopy({
  * @param {Set<string>} args.activeFailedRoots
  * @param {number} args.storeConcurrency
  * @param {AbortSignal | undefined} args.signal
+ * @param {Map<string, string[]>} args.multiRootShards
  * @returns {AsyncGenerator<API.MigrationEvent>}
  */
 async function* processStoreBatch({
@@ -272,6 +327,7 @@ async function* processStoreBatch({
   activeFailedRoots,
   storeConcurrency,
   signal,
+  multiRootShards,
 }) {
   if (signal?.aborted || batch.length === 0) return
 
@@ -296,25 +352,33 @@ async function* processStoreBatch({
           result.ok.pieceCID
         ) || stateChanged
     } else {
-      const isFirstRootFailure = !emittedRoots.has(result.error.root)
-      activeFailedRoots.add(result.error.root)
-      emittedRoots.add(result.error.root)
-      stateChanged =
-        recordFailedUpload(
-          state,
-          spaceDID,
-          copyState.copyIndex,
-          result.error.root
-        ) || stateChanged
+      const failureRoots = expandShardRoots(
+        result.error.shardCid,
+        result.error.root,
+        multiRootShards
+      )
+      /** @type {string[]} */
+      const emittedFailureRoots = []
+      for (const root of failureRoots) {
+        const isFirstRootFailure = !emittedRoots.has(root)
+        activeFailedRoots.add(root)
+        emittedRoots.add(root)
+        stateChanged =
+          recordFailedUpload(state, spaceDID, copyState.copyIndex, root) ||
+          stateChanged
+        if (isFirstRootFailure) {
+          emittedFailureRoots.push(root)
+        }
+      }
 
-      if (isFirstRootFailure) {
+      if (emittedFailureRoots.length > 0) {
         yield /** @type {API.MigrationEvent} */ ({
           type: 'migration:batch:failed',
           spaceDID,
           copyIndex: copyState.copyIndex,
           stage: 'store',
           error: result.error.error,
-          roots: [result.error.root],
+          roots: emittedFailureRoots,
         })
       }
     }

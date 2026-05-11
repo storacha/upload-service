@@ -43,17 +43,24 @@ export function buildShardCIDToPieceIndex(spaceState, inventory) {
  * @param {RootAPI.SpaceInventory} inventory
  */
 export function buildShardMappings(spaceState, inventory) {
-  const pieceCIDToShardCID = new Map()
+  const pieceCIDToShardEntries = new Map()
   const shardCIDToPieceCID = buildShardCIDToPieceIndex(spaceState, inventory)
   const allShardCIDs = new Set()
+  /** @type {Map<string, Array<{ shardCid: string, root: string }>>} */
+  const storeRootsByShardCID = new Map()
 
   for (const shard of inventory.shards) {
     allShardCIDs.add(shard.cid)
-    pieceCIDToShardCID.set(shard.pieceCID, shard.cid)
+    const entries = pieceCIDToShardEntries.get(shard.pieceCID) ?? []
+    entries.push({ shardCid: shard.cid, root: shard.root })
+    pieceCIDToShardEntries.set(shard.pieceCID, entries)
   }
 
   for (const shard of inventory.shardsToStore) {
     allShardCIDs.add(shard.cid)
+    const entries = storeRootsByShardCID.get(shard.cid) ?? []
+    entries.push({ shardCid: shard.cid, root: shard.root })
+    storeRootsByShardCID.set(shard.cid, entries)
   }
 
   const primaryCopy = spaceState.copies.find((copy) => copy.copyIndex === 0)
@@ -62,7 +69,12 @@ export function buildShardMappings(spaceState, inventory) {
     for (const [shardCID, pieceCID] of Object.entries(
       primaryCopy.storedShards
     )) {
-      pieceCIDToShardCID.set(pieceCID, shardCID)
+      const roots = storeRootsByShardCID.get(shardCID) ?? []
+      if (roots.length > 0) {
+        const entries = pieceCIDToShardEntries.get(pieceCID) ?? []
+        entries.push(...roots)
+        pieceCIDToShardEntries.set(pieceCID, entries)
+      }
     }
   }
 
@@ -76,7 +88,7 @@ export function buildShardMappings(spaceState, inventory) {
   }
 
   return {
-    pieceCIDToShardCID,
+    pieceCIDToShardEntries,
     shardCIDToPieceCID,
     inventoryShardsMissingPieceCID,
   }

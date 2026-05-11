@@ -84,6 +84,7 @@ export function* iterateCommitPieces(entries, include) {
  * @param {number} args.commitConcurrency
  * @param {AbortSignal | undefined} args.signal
  * @param {Set<string>} [args.activeFailedRoots]
+ * @param {(shardCid: string, root: string) => string[]} args.getShardRoots
  * @returns {AsyncGenerator<API.MigrationEvent>}
  */
 export async function* commitPieceBatches({
@@ -97,6 +98,7 @@ export async function* commitPieceBatches({
   commitConcurrency,
   signal,
   activeFailedRoots,
+  getShardRoots,
 }) {
   const iterator = commitPieceIterable[Symbol.iterator]()
   /** @type {IteratorResult<API.CommitPiece> | undefined} */
@@ -133,6 +135,7 @@ export async function* commitPieceBatches({
       maxCommitRetries,
       commitRetryTimeout,
       signal,
+      getShardRoots,
     })
 
     applyActiveFailedRoots(activeFailedRoots, result.failedUploads)
@@ -178,6 +181,7 @@ export async function* commitPieceBatches({
         commitRetryTimeout,
         signal,
         activeFailedRoots,
+        getShardRoots,
       })
     }
 
@@ -246,6 +250,7 @@ function takeNextCommitWave({ iterator, pending, size, activeFailedRoots }) {
  * @param {number} args.commitRetryTimeout
  * @param {AbortSignal | undefined} args.signal
  * @param {Set<string> | undefined} args.activeFailedRoots
+ * @param {(shardCid: string, root: string) => string[]} args.getShardRoots
  * @returns {AsyncGenerator<API.MigrationEvent, number, void>}
  */
 async function* finalizeConcurrentCommitWave({
@@ -259,6 +264,7 @@ async function* finalizeConcurrentCommitWave({
   commitRetryTimeout,
   signal,
   activeFailedRoots,
+  getShardRoots,
 }) {
   /** @type {Array<{ commitIndex: number, result: API.BatchResult }>} */
   const failedCommits = []
@@ -275,7 +281,14 @@ async function* finalizeConcurrentCommitWave({
       dataSetId !== undefined
     ) {
       for (const entry of result.committed) {
-        recordCommit(state, spaceDID, copyIndex, entry.shardCid, dataSetId)
+        recordCommit(state, {
+          spaceDID,
+          copyIndex,
+          shardCid: entry.shardCid,
+          root: entry.root,
+          dataSetId,
+          shardRoots: getShardRoots(entry.shardCid, entry.root),
+        })
       }
       successfulCommits.push({ commitIndex, result })
     } else {
@@ -317,6 +330,7 @@ async function* finalizeConcurrentCommitWave({
       maxCommitRetries,
       commitRetryTimeout,
       signal,
+      getShardRoots,
     })
     applyActiveFailedRoots(activeFailedRoots, failedCommit.result.failedUploads)
   }
@@ -369,6 +383,7 @@ async function commitPreparedBatch({ context, commitPieces }) {
  * @param {number} args.maxCommitRetries
  * @param {number} args.commitRetryTimeout
  * @param {AbortSignal | undefined} args.signal
+ * @param {(shardCid: string, root: string) => string[]} args.getShardRoots
  * @returns {AsyncGenerator<API.MigrationEvent>}
  */
 async function* finalizeCommitBatchResult({
@@ -381,6 +396,7 @@ async function* finalizeCommitBatchResult({
   maxCommitRetries,
   commitRetryTimeout,
   signal,
+  getShardRoots,
 }) {
   if (
     !signal?.aborted &&
@@ -431,7 +447,14 @@ async function* finalizeCommitBatchResult({
   if (result.committed.length > 0) {
     if (dataSetId !== undefined) {
       for (const entry of result.committed) {
-        recordCommit(state, spaceDID, copyIndex, entry.shardCid, dataSetId)
+        recordCommit(state, {
+          spaceDID,
+          copyIndex,
+          shardCid: entry.shardCid,
+          root: entry.root,
+          dataSetId,
+          shardRoots: getShardRoots(entry.shardCid, entry.root),
+        })
       }
 
       yield /** @type {API.MigrationEvent} */ ({

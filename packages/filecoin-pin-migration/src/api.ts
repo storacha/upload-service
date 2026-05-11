@@ -59,6 +59,15 @@ export interface SpaceInventory {
 }
 
 /**
+ * Precomputed inventory view used by helper/state logic that needs shard-root
+ * expansion without rescanning the full inventory repeatedly.
+ */
+export interface InventoryCommitView {
+  representativeRootByShardCid: Map<string, string>
+  multiRootShards: Map<string, string[]>
+}
+
+/**
  * Pre-flight migration plan. Presented to the user for approval before execution.
  *
  * Carries the live `MigrationCostResult` (with live StorageContext handles in
@@ -248,11 +257,15 @@ export interface SpaceCopyState {
    * This set can contain both source-pull and store-path shard CIDs.
    */
   pulled: Set<string>
-  /** Shard CIDs that have been committed on-chain. */
+  /** Committed shard-root pairs encoded as `${shardCid}#${rootCid}`. */
   committed: Set<string>
   /** Upload root CIDs that had at least one shard failure during migration. */
   failedUploads: Set<string>
-  /** Stored shard piece CIDs persisted after copy 0 store() succeeds. */
+  /**
+   * Stored shard piece CIDs persisted after copy 0 store() succeeds.
+   * These remain available after full commit so retries/debug helpers can
+   * still reuse or inspect the durable stored piece mapping.
+   */
   storedShards: Record<string, string>
 }
 
@@ -276,6 +289,8 @@ export interface SpaceState {
  * in-progress spaces have a matching entry in readerProgressCursors.
  */
 export interface MigrationState {
+  /** Persisted state schema version. */
+  version: number
   phase: MigrationPhase
   spaces: Record<SpaceDID, SpaceState>
   /** Reader output keyed by space DID. Completed + in-progress spaces. */
@@ -288,9 +303,9 @@ export interface MigrationState {
  * Summary returned when migration:complete is emitted.
  */
 export interface MigrationSummary {
-  /** Count of shards successfully committed across all spaces. */
+  /** Count of shard-root pairs successfully committed across all spaces. */
   succeeded: number
-  /** Count of shards that were not committed (failures). */
+  /** Count of shard-root pairs that were not committed (failures). */
   failed: number
   /** Count of uploads excluded at inventory time (one or more shards unresolvable). */
   skippedUploads: number
@@ -676,6 +691,8 @@ export interface PullDiagnosticError extends Error, RetryDiagnostics {
 export interface PullResult<T = ResolvedShard> {
   /** Entries that pulled successfully before cross-batch failed-root reconciliation */
   pulledCandidates: T[]
+  /** Representative entries whose piece pull/presign failed for this batch. */
+  failedEntries: T[]
   /** Upload root CIDs that had failures during presign or pull */
   failedUploads: Set<string>
   /** Distinguishes upload-quality failures from operational failures */

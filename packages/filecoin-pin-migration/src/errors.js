@@ -97,6 +97,15 @@ export class FundingFailedFailure extends Server.Failure {
   }
 }
 
+export const IncompatibleStateVersionErrorName = /** @type {const} */ (
+  'IncompatibleStateVersionError'
+)
+export class IncompatibleStateVersionError extends Error {
+  get name() {
+    return IncompatibleStateVersionErrorName
+  }
+}
+
 export const ResumeBindingDriftErrorName = /** @type {const} */ (
   'ResumeBindingDriftError'
 )

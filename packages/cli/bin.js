@@ -312,7 +312,7 @@ cli
   .describe('Estimate warm-storage cost for a fixed size and retention period.')
   .option(
     '-n, --network <network>',
-    'FOC network: "mainnet" or "calibration". Defaults to "calibration".'
+    'FOC network: "mainnet" or "calibration". Defaults to "mainnet".'
   )
   .option('-s, --size <bytes>', 'Total bytes to retain in each copy.')
   .option('-m, --months <count>', 'Number of months to keep the data stored.')
@@ -327,10 +327,10 @@ cli
 cli
   .command('space migrate')
   .describe('Migrate the current space to Filecoin on Chain (FOC).')
-  .option('-w, --wallet-pk <key>', '0x-prefixed EVM wallet private key')
+  .option('-w, --private-key <key>', '0x-prefixed EVM wallet private key')
   .option(
     '-n, --network <network>',
-    'FOC network: "mainnet" or "calibration". Defaults to "calibration".'
+    'FOC network: "mainnet" or "calibration". Defaults to "mainnet".'
   )
   .option(
     '-f, --state-file <path>',
@@ -347,10 +347,13 @@ cli
     false
   )
   .action((options) => {
-    const walletPk = readRawOption(process.argv.slice(2), ['--wallet-pk', '-w'])
+    const walletPk = readRawOption(process.argv.slice(2), [
+      '--private-key',
+      '-w',
+    ])
 
     if (!walletPk) {
-      console.error('Error: missing required option "--wallet-pk"')
+      console.error('Error: missing required option "--private-key"')
       process.exit(1)
     }
 

@@ -5,6 +5,7 @@ import { createMockInitialState, createPieceCID } from './helpers.js'
 import { DEFAULT_STORE_OPERATION_RETRIES } from '../src/constants.js'
 import {
   clearFailedUploadsForRetry,
+  commitKey,
   transitionToApproved,
 } from '../src/state.js'
 
@@ -19,6 +20,15 @@ import {
 function withInventory(state, inventory) {
   state.spacesInventories[inventory.did] = inventory
   return state
+}
+
+/**
+ * Force duplicate-root commit entries to split across add-pieces batches.
+ *
+ * @param {string} label
+ */
+function createOversizedRoot(label) {
+  return `bafy-root-${label}-${label.repeat(3800)}`
 }
 
 /**
@@ -120,6 +130,7 @@ function createPlan({ spaceDID, copy0Context, copy1Context }) {
  * @param {object} input
  * @param {API.SpaceDID} input.spaceDID
  * @param {string} input.name
+ * @param {bigint | null} [input.dataSetId]
  * @returns {API.StorageContext & {
  *   presignForCommit: ReturnType<typeof vi.fn>
  *   pull: ReturnType<typeof vi.fn>
@@ -128,7 +139,7 @@ function createPlan({ spaceDID, copy0Context, copy1Context }) {
  *   getPieceUrl: ReturnType<typeof vi.fn>
  * }}
  */
-function createStorageContext({ spaceDID, name }) {
+function createStorageContext({ spaceDID, name, dataSetId = null }) {
   let commitCalls = 0
   const context = /**
                    * @type {API.StorageContext & {
@@ -139,7 +150,7 @@ function createStorageContext({ spaceDID, name }) {
                    *   getPieceUrl: ReturnType<typeof vi.fn>
                     }} */ (
     /** @type {unknown} */ ({
-      dataSetId: null,
+      dataSetId,
       dataSetMetadata: {
         source: 'storacha-migration',
         withIPFSIndexing: '',
@@ -1245,8 +1256,613 @@ describe('executeMigration', () => {
     expect(copy0Context.commit).toHaveBeenCalledTimes(1)
     expect(copy1Context.pull).toHaveBeenCalledTimes(1)
     expect(copy1Context.commit).toHaveBeenCalledTimes(1)
-    expect(state.spaces[spaceDID].copies[0].committed.has(shardCID)).toBe(true)
-    expect(state.spaces[spaceDID].copies[1].committed.has(shardCID)).toBe(true)
+    expect(
+      state.spaces[spaceDID].copies[0].committed.has(commitKey(shardCID, root))
+    ).toBe(true)
+    expect(
+      state.spaces[spaceDID].copies[1].committed.has(commitKey(shardCID, root))
+    ).toBe(true)
+    expect(state.phase).toBe('complete')
+  })
+
+  it('pulls one source shard per copy but commits it once per root when roots share the same shard CID', async () => {
+    const spaceDID = /** @type {API.SpaceDID} */ (
+      'did:key:z6MkDuplicateRootSourceSpace1'
+    )
+    const sharedShardCID = 'bafy-shard-source-shared'
+    const sharedPieceCID = createPieceCID().toString()
+    const rootA = 'bafy-root-source-a'
+    const rootB = 'bafy-root-source-b'
+    const state = withInventory(createMockInitialState(), {
+      did: spaceDID,
+      name: 'Duplicate Root Source Space',
+      uploads: [rootA, rootB],
+      shards: [
+        {
+          root: rootA,
+          cid: sharedShardCID,
+          pieceCID: sharedPieceCID,
+          sourceURL: 'https://source.example/source-shared-a',
+          sizeBytes: 128n,
+        },
+        {
+          root: rootB,
+          cid: sharedShardCID,
+          pieceCID: sharedPieceCID,
+          sourceURL: 'https://source.example/source-shared-b',
+          sizeBytes: 128n,
+        },
+      ],
+      shardsToStore: [],
+      skippedUploads: [],
+      totalBytes: 256n,
+      totalSizeToMigrate: 256n,
+    })
+
+    const copy0Context = createStorageContext({ spaceDID, name: 'copy0' })
+    const copy1Context = createStorageContext({ spaceDID, name: 'copy1' })
+    const plan = createPlan({ spaceDID, copy0Context, copy1Context })
+    plan.totals.uploads = 2
+    plan.totals.shards = 2
+    plan.totals.bytes = 256n
+    plan.totals.bytesToMigrate = 256n
+    plan.costs.perSpace[0].bytesToMigrate = 256n
+    plan.costs.summary.totalBytes = 256n
+
+    transitionToApproved(state, plan.costs.perSpace)
+
+    for await (const _event of executeMigration({
+      plan,
+      state,
+      synapse: /** @type {API.Synapse} */ ({}),
+    })) {
+      // drain
+    }
+
+    expect(copy0Context.pull).toHaveBeenCalledTimes(1)
+    expect(copy1Context.pull).toHaveBeenCalledTimes(1)
+    expect(copy0Context.commit).toHaveBeenCalledTimes(1)
+    expect(copy1Context.commit).toHaveBeenCalledTimes(1)
+
+    const copy0CommittedRoots = copy0Context.commit.mock.calls[0][0].pieces.map(
+      /**
+       * @param {API.CommitPiece} piece
+       */
+      (piece) => piece.pieceMetadata.ipfsRootCID
+    )
+    const copy1CommittedRoots = copy1Context.commit.mock.calls[0][0].pieces.map(
+      /**
+       * @param {API.CommitPiece} piece
+       */
+      (piece) => piece.pieceMetadata.ipfsRootCID
+    )
+
+    expect(copy0CommittedRoots.sort()).toEqual([rootA, rootB].sort())
+    expect(copy1CommittedRoots.sort()).toEqual([rootA, rootB].sort())
+
+    expect([...state.spaces[spaceDID].copies[0].committed].sort()).toEqual(
+      [
+        commitKey(sharedShardCID, rootA),
+        commitKey(sharedShardCID, rootB),
+      ].sort()
+    )
+    expect([...state.spaces[spaceDID].copies[1].committed].sort()).toEqual(
+      [
+        commitKey(sharedShardCID, rootA),
+        commitKey(sharedShardCID, rootB),
+      ].sort()
+    )
+    expect(state.phase).toBe('complete')
+  })
+
+  it('expands failed source-pull roots for a multi-root shard from one representative failure', async () => {
+    const spaceDID = /** @type {API.SpaceDID} */ (
+      'did:key:z6MkDuplicateRootSourceFailureSpace1'
+    )
+    const sharedShardCID = 'bafy-shard-source-shared-failure'
+    const sharedPieceCID = createPieceCID().toString()
+    const rootA = 'bafy-root-source-failure-a'
+    const rootB = 'bafy-root-source-failure-b'
+    const state = withInventory(createMockInitialState(), {
+      did: spaceDID,
+      name: 'Duplicate Root Source Failure Space',
+      uploads: [rootA, rootB],
+      shards: [
+        {
+          root: rootA,
+          cid: sharedShardCID,
+          pieceCID: sharedPieceCID,
+          sourceURL: 'https://source.example/source-failure-a',
+          sizeBytes: 128n,
+        },
+        {
+          root: rootB,
+          cid: sharedShardCID,
+          pieceCID: sharedPieceCID,
+          sourceURL: 'https://source.example/source-failure-b',
+          sizeBytes: 128n,
+        },
+      ],
+      shardsToStore: [],
+      skippedUploads: [],
+      totalBytes: 256n,
+      totalSizeToMigrate: 256n,
+    })
+
+    const copy0Context = createStorageContext({ spaceDID, name: 'copy0' })
+    const copy1Context = createStorageContext({ spaceDID, name: 'copy1' })
+    copy0Context.pull.mockImplementationOnce(
+      /**
+       * @param {{ pieces: API.PieceCID[] }} input
+       */
+      async ({ pieces }) => ({
+        pieces: pieces.map(
+          /**
+           * @param {API.PieceCID} pieceCid
+           */
+          (pieceCid) => ({
+            pieceCid,
+            status: 'failed',
+          })
+        ),
+      })
+    )
+
+    const plan = createPlan({ spaceDID, copy0Context, copy1Context })
+    plan.totals.uploads = 2
+    plan.totals.shards = 2
+    plan.totals.bytes = 256n
+    plan.totals.bytesToMigrate = 256n
+    plan.costs.perSpace[0].bytesToMigrate = 256n
+    plan.costs.summary.totalBytes = 256n
+
+    transitionToApproved(state, plan.costs.perSpace)
+
+    /** @type {API.MigrationEvent[]} */
+    const events = []
+    for await (const event of executeMigration({
+      plan,
+      state,
+      synapse: /** @type {API.Synapse} */ ({}),
+      batchSize: 1,
+      pullConcurrency: 1,
+    })) {
+      events.push(event)
+    }
+
+    expect(copy0Context.pull).toHaveBeenCalledTimes(1)
+    expect(copy1Context.pull).not.toHaveBeenCalled()
+    expect(copy0Context.commit).not.toHaveBeenCalled()
+    expect(copy1Context.commit).not.toHaveBeenCalled()
+    expect([...state.spaces[spaceDID].copies[0].failedUploads].sort()).toEqual(
+      [rootA, rootB].sort()
+    )
+    expect(state.spaces[spaceDID].copies[1].failedUploads.size).toBe(0)
+
+    const failedEvent = events.find(
+      (event) =>
+        event.type === 'migration:batch:failed' &&
+        event.copyIndex === 0 &&
+        event.stage === 'source-pull'
+    )
+    expect(failedEvent).toBeDefined()
+    if (!failedEvent || failedEvent.type !== 'migration:batch:failed') {
+      throw new Error('expected source-pull migration:batch:failed event')
+    }
+    expect([...failedEvent.roots].sort()).toEqual([rootA, rootB].sort())
+    expect(state.spaces[spaceDID].phase).toBe('failed')
+    expect(state.phase).toBe('incomplete')
+  })
+
+  it('stores and secondary-pulls one shard but commits both roots when store entries share the same shard CID', async () => {
+    const spaceDID = /** @type {API.SpaceDID} */ (
+      'did:key:z6MkDuplicateRootStoreSpace1'
+    )
+    const sharedShardCID = 'bafy-shard-store-shared'
+    const rootA = 'bafy-root-store-a'
+    const rootB = 'bafy-root-store-b'
+    const state = withInventory(createMockInitialState(), {
+      did: spaceDID,
+      name: 'Duplicate Root Store Space',
+      uploads: [rootA, rootB],
+      shards: [],
+      shardsToStore: [
+        {
+          root: rootA,
+          cid: sharedShardCID,
+          sourceURL: 'https://source.example/store-shared-a',
+          sizeBytes: 128n,
+        },
+        {
+          root: rootB,
+          cid: sharedShardCID,
+          sourceURL: 'https://source.example/store-shared-b',
+          sizeBytes: 128n,
+        },
+      ],
+      skippedUploads: [],
+      totalBytes: 256n,
+      totalSizeToMigrate: 256n,
+    })
+
+    const copy0Context = createStorageContext({ spaceDID, name: 'copy0' })
+    const copy1Context = createStorageContext({ spaceDID, name: 'copy1' })
+    const plan = createPlan({ spaceDID, copy0Context, copy1Context })
+    plan.totals.uploads = 2
+    plan.totals.shards = 2
+    plan.totals.bytes = 256n
+    plan.totals.bytesToMigrate = 256n
+    plan.costs.perSpace[0].bytesToMigrate = 256n
+    plan.costs.summary.totalBytes = 256n
+
+    const fetcher = /** @type {typeof fetch} */ (
+      vi.fn(async () => new Response('ok'))
+    )
+
+    transitionToApproved(state, plan.costs.perSpace)
+
+    for await (const _event of executeMigration({
+      plan,
+      state,
+      synapse: /** @type {API.Synapse} */ ({}),
+      fetcher,
+    })) {
+      // drain
+    }
+
+    expect(fetcher).toHaveBeenCalledTimes(1)
+    expect(copy0Context.store).toHaveBeenCalledTimes(1)
+    expect(copy1Context.pull).toHaveBeenCalledTimes(1)
+    expect(copy0Context.commit).toHaveBeenCalledTimes(1)
+    expect(copy1Context.commit).toHaveBeenCalledTimes(1)
+
+    const copy0CommittedRoots = copy0Context.commit.mock.calls[0][0].pieces.map(
+      /**
+       * @param {API.CommitPiece} piece
+       */
+      (piece) => piece.pieceMetadata.ipfsRootCID
+    )
+    const copy1CommittedRoots = copy1Context.commit.mock.calls[0][0].pieces.map(
+      /**
+       * @param {API.CommitPiece} piece
+       */
+      (piece) => piece.pieceMetadata.ipfsRootCID
+    )
+
+    expect(copy0CommittedRoots.sort()).toEqual([rootA, rootB].sort())
+    expect(copy1CommittedRoots.sort()).toEqual([rootA, rootB].sort())
+    expect(state.spaces[spaceDID].copies[0].storedShards).toHaveProperty(
+      sharedShardCID
+    )
+    expect([...state.spaces[spaceDID].copies[0].committed].sort()).toEqual(
+      [
+        commitKey(sharedShardCID, rootA),
+        commitKey(sharedShardCID, rootB),
+      ].sort()
+    )
+    expect([...state.spaces[spaceDID].copies[1].committed].sort()).toEqual(
+      [
+        commitKey(sharedShardCID, rootA),
+        commitKey(sharedShardCID, rootB),
+      ].sort()
+    )
+    expect(state.phase).toBe('complete')
+  })
+
+  it('keeps a duplicate-root store shard staged when one root commit fails in the current run', async () => {
+    const spaceDID = /** @type {API.SpaceDID} */ (
+      'did:key:z6MkDuplicateRootStoreFailureSpace1'
+    )
+    const sharedShardCID = 'bafy-shard-store-shared-failure'
+    const rootA = createOversizedRoot('store-failure-a')
+    const rootB = createOversizedRoot('store-failure-b')
+    const state = withInventory(createMockInitialState(), {
+      did: spaceDID,
+      name: 'Duplicate Root Store Failure Space',
+      uploads: [rootA, rootB],
+      shards: [],
+      shardsToStore: [
+        {
+          root: rootA,
+          cid: sharedShardCID,
+          sourceURL: 'https://source.example/store-failure-a',
+          sizeBytes: 128n,
+        },
+        {
+          root: rootB,
+          cid: sharedShardCID,
+          sourceURL: 'https://source.example/store-failure-b',
+          sizeBytes: 128n,
+        },
+      ],
+      skippedUploads: [],
+      totalBytes: 256n,
+      totalSizeToMigrate: 256n,
+    })
+
+    const copy0Context = createStorageContext({ spaceDID, name: 'copy0' })
+    const copy1Context = createStorageContext({ spaceDID, name: 'copy1' })
+    let copy0DataSetId = 100n
+    copy0Context.commit.mockImplementation(
+      /**
+       * @param {{ pieces: API.CommitPiece[] }} args
+       */
+      async ({ pieces }) => {
+        const root = pieces[0]?.pieceMetadata.ipfsRootCID
+        if (root === rootB) {
+          throw new Error('duplicate-root commit failed')
+        }
+        return { dataSetId: copy0DataSetId++, pieces }
+      }
+    )
+
+    const plan = createPlan({ spaceDID, copy0Context, copy1Context })
+    plan.totals.uploads = 2
+    plan.totals.shards = 2
+    plan.totals.bytes = 256n
+    plan.totals.bytesToMigrate = 256n
+    plan.costs.perSpace[0].bytesToMigrate = 256n
+    plan.costs.summary.totalBytes = 256n
+
+    const fetcher = /** @type {typeof fetch} */ (
+      vi.fn(async () => new Response('ok'))
+    )
+
+    transitionToApproved(state, plan.costs.perSpace)
+
+    for await (const _event of executeMigration({
+      plan,
+      state,
+      synapse: /** @type {API.Synapse} */ ({}),
+      fetcher,
+      maxCommitRetries: 0,
+    })) {
+      // drain
+    }
+
+    expect(copy0Context.store).toHaveBeenCalledTimes(1)
+    expect(copy1Context.pull).toHaveBeenCalledTimes(1)
+    expect(copy0Context.commit).toHaveBeenCalledTimes(2)
+    expect(copy0Context.commit.mock.calls[0][0].pieces).toHaveLength(1)
+    expect(copy0Context.commit.mock.calls[1][0].pieces).toHaveLength(1)
+    expect(state.spaces[spaceDID].copies[0].storedShards).toHaveProperty(
+      sharedShardCID
+    )
+    expect([...state.spaces[spaceDID].copies[0].committed]).toEqual([
+      commitKey(sharedShardCID, rootA),
+    ])
+    expect(state.spaces[spaceDID].copies[0].failedUploads.has(rootB)).toBe(true)
+    expect(state.spaces[spaceDID].phase).toBe('incomplete')
+    expect(state.phase).toBe('incomplete')
+  })
+
+  it('retries only the missing duplicate-root store commit without re-storing or re-pulling', async () => {
+    const spaceDID = /** @type {API.SpaceDID} */ (
+      'did:key:z6MkDuplicateRootStoreRetrySpace1'
+    )
+    const sharedShardCID = 'bafy-shard-store-shared-retry'
+    const rootA = createOversizedRoot('store-retry-a')
+    const rootB = createOversizedRoot('store-retry-b')
+    const state = withInventory(createMockInitialState(), {
+      did: spaceDID,
+      name: 'Duplicate Root Store Retry Space',
+      uploads: [rootA, rootB],
+      shards: [],
+      shardsToStore: [
+        {
+          root: rootA,
+          cid: sharedShardCID,
+          sourceURL: 'https://source.example/store-retry-a',
+          sizeBytes: 128n,
+        },
+        {
+          root: rootB,
+          cid: sharedShardCID,
+          sourceURL: 'https://source.example/store-retry-b',
+          sizeBytes: 128n,
+        },
+      ],
+      skippedUploads: [],
+      totalBytes: 256n,
+      totalSizeToMigrate: 256n,
+    })
+
+    const copy0Context = createStorageContext({ spaceDID, name: 'copy0' })
+    const copy1Context = createStorageContext({ spaceDID, name: 'copy1' })
+    let failRootB = true
+    let copy0DataSetId = 100n
+    copy0Context.commit.mockImplementation(
+      /**
+       * @param {{ pieces: API.CommitPiece[] }} args
+       */
+      async ({ pieces }) => {
+        const root = pieces[0]?.pieceMetadata.ipfsRootCID
+        if (root === rootB && failRootB) {
+          throw new Error('duplicate-root commit failed')
+        }
+        return { dataSetId: copy0DataSetId++, pieces }
+      }
+    )
+
+    const plan = createPlan({ spaceDID, copy0Context, copy1Context })
+    plan.totals.uploads = 2
+    plan.totals.shards = 2
+    plan.totals.bytes = 256n
+    plan.totals.bytesToMigrate = 256n
+    plan.costs.perSpace[0].bytesToMigrate = 256n
+    plan.costs.summary.totalBytes = 256n
+
+    const fetcher = /** @type {typeof fetch} */ (
+      vi.fn(async () => new Response('ok'))
+    )
+
+    transitionToApproved(state, plan.costs.perSpace)
+
+    for await (const _event of executeMigration({
+      plan,
+      state,
+      synapse: /** @type {API.Synapse} */ ({}),
+      fetcher,
+      maxCommitRetries: 0,
+    })) {
+      // drain
+    }
+
+    expect(copy0Context.store).toHaveBeenCalledTimes(1)
+    expect(copy1Context.pull).toHaveBeenCalledTimes(1)
+    expect(state.spaces[spaceDID].copies[0].failedUploads.has(rootB)).toBe(true)
+    expect([...state.spaces[spaceDID].copies[0].committed]).toEqual([
+      commitKey(sharedShardCID, rootA),
+    ])
+
+    failRootB = false
+    clearFailedUploadsForRetry(state, spaceDID)
+    copy0Context.store.mockClear()
+    copy0Context.pull.mockClear()
+    copy0Context.commit.mockClear()
+    copy1Context.pull.mockClear()
+    copy1Context.commit.mockClear()
+
+    for await (const _event of executeMigration({
+      plan,
+      state,
+      synapse: /** @type {API.Synapse} */ ({}),
+      fetcher,
+      maxCommitRetries: 0,
+    })) {
+      // drain
+    }
+
+    expect(copy0Context.store).not.toHaveBeenCalled()
+    expect(copy0Context.pull).not.toHaveBeenCalled()
+    expect(copy0Context.commit).toHaveBeenCalledTimes(1)
+    expect(
+      copy0Context.commit.mock.calls[0][0].pieces.map(
+        /**
+         * @param {API.CommitPiece} piece
+         */
+        (piece) => piece.pieceMetadata.ipfsRootCID
+      )
+    ).toEqual([rootB])
+    expect(copy1Context.pull).not.toHaveBeenCalled()
+    expect(copy1Context.commit).not.toHaveBeenCalled()
+    expect(state.spaces[spaceDID].copies[0].storedShards).toHaveProperty(
+      sharedShardCID
+    )
+    expect([...state.spaces[spaceDID].copies[0].committed].sort()).toEqual(
+      [
+        commitKey(sharedShardCID, rootA),
+        commitKey(sharedShardCID, rootB),
+      ].sort()
+    )
+    expect(state.spaces[spaceDID].copies[0].failedUploads.size).toBe(0)
+    expect(state.spaces[spaceDID].phase).toBe('complete')
+    expect(state.phase).toBe('complete')
+  })
+
+  it('commits the missing duplicate-root store entry without re-storing or re-pulling when one root is already committed on both copies', async () => {
+    const spaceDID = /** @type {API.SpaceDID} */ (
+      'did:key:z6MkDuplicateRootStoreResumeSpace1'
+    )
+    const sharedShardCID = 'bafy-shard-store-shared-resume'
+    const rootA = 'bafy-root-store-resume-a'
+    const rootB = 'bafy-root-store-resume-b'
+    const storedPieceCID = createPieceCID().toString()
+    const state = withInventory(createMockInitialState(), {
+      did: spaceDID,
+      name: 'Duplicate Root Store Resume Space',
+      uploads: [rootA, rootB],
+      shards: [],
+      shardsToStore: [
+        {
+          root: rootA,
+          cid: sharedShardCID,
+          sourceURL: 'https://source.example/store-resume-a',
+          sizeBytes: 128n,
+        },
+        {
+          root: rootB,
+          cid: sharedShardCID,
+          sourceURL: 'https://source.example/store-resume-b',
+          sizeBytes: 128n,
+        },
+      ],
+      skippedUploads: [],
+      totalBytes: 256n,
+      totalSizeToMigrate: 256n,
+    })
+
+    const copy0Context = createStorageContext({
+      spaceDID,
+      name: 'copy0',
+      dataSetId: 100n,
+    })
+    const copy1Context = createStorageContext({
+      spaceDID,
+      name: 'copy1',
+      dataSetId: 200n,
+    })
+    const plan = createPlan({ spaceDID, copy0Context, copy1Context })
+    plan.totals.uploads = 2
+    plan.totals.shards = 2
+    plan.totals.bytes = 256n
+    plan.totals.bytesToMigrate = 256n
+    plan.costs.perSpace[0].bytesToMigrate = 256n
+    plan.costs.perSpace[0].copies[0].dataSetId = 100n
+    plan.costs.perSpace[0].copies[1].dataSetId = 200n
+    plan.costs.summary.totalBytes = 256n
+
+    transitionToApproved(state, plan.costs.perSpace)
+    state.spaces[spaceDID].copies[0].storedShards[sharedShardCID] =
+      storedPieceCID
+    state.spaces[spaceDID].copies[0].committed.add(
+      commitKey(sharedShardCID, rootA)
+    )
+    state.spaces[spaceDID].copies[0].dataSetId = 100n
+    state.spaces[spaceDID].copies[1].committed.add(
+      commitKey(sharedShardCID, rootA)
+    )
+    state.spaces[spaceDID].copies[1].dataSetId = 200n
+
+    const fetcher = /** @type {typeof fetch} */ (
+      vi.fn(async () => new Response('ok'))
+    )
+
+    for await (const _event of executeMigration({
+      plan,
+      state,
+      synapse: /** @type {API.Synapse} */ ({}),
+      fetcher,
+      maxCommitRetries: 0,
+    })) {
+      // drain
+    }
+
+    expect(copy0Context.store).not.toHaveBeenCalled()
+    expect(copy1Context.pull).not.toHaveBeenCalled()
+    expect(copy0Context.commit).toHaveBeenCalledTimes(1)
+    expect(copy1Context.commit).toHaveBeenCalledTimes(1)
+    expect(copy0Context.commit.mock.calls[0][0].pieces).toHaveLength(1)
+    expect(copy1Context.commit.mock.calls[0][0].pieces).toHaveLength(1)
+    expect(
+      copy0Context.commit.mock.calls[0][0].pieces[0]?.pieceMetadata.ipfsRootCID
+    ).toBe(rootB)
+    expect(
+      copy1Context.commit.mock.calls[0][0].pieces[0]?.pieceMetadata.ipfsRootCID
+    ).toBe(rootB)
+    expect([...state.spaces[spaceDID].copies[0].committed].sort()).toEqual(
+      [
+        commitKey(sharedShardCID, rootA),
+        commitKey(sharedShardCID, rootB),
+      ].sort()
+    )
+    expect([...state.spaces[spaceDID].copies[1].committed].sort()).toEqual(
+      [
+        commitKey(sharedShardCID, rootA),
+        commitKey(sharedShardCID, rootB),
+      ].sort()
+    )
+    expect(state.spaces[spaceDID].phase).toBe('complete')
     expect(state.phase).toBe('complete')
   })
 
@@ -1334,10 +1950,14 @@ describe('executeMigration', () => {
       false
     )
     expect(
-      state.spaces[spaceDID].copies[0].committed.has('bafy-shard-success')
+      state.spaces[spaceDID].copies[0].committed.has(
+        commitKey('bafy-shard-success', sharedRoot)
+      )
     ).toBe(false)
     expect(
-      state.spaces[spaceDID].copies[1].committed.has('bafy-shard-success')
+      state.spaces[spaceDID].copies[1].committed.has(
+        commitKey('bafy-shard-success', sharedRoot)
+      )
     ).toBe(false)
     expect(state.spaces[spaceDID].phase).toBe('failed')
     expect(state.phase).toBe('incomplete')
