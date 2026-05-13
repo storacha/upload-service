@@ -3,6 +3,7 @@ import { Piece } from '@web3-storage/data-segment'
 import { base58btc } from 'multiformats/bases/base58'
 
 import { buildMigrationInventories } from '../src/reader/reader.js'
+import { deserializeState, serializeState } from '../src/state.js'
 import { ClaimsResolver, RoundaboutResolver } from '../src/reader/source-url.js'
 import {
   createTestCID,
@@ -634,6 +635,74 @@ describe('buildMigrationInventories', () => {
       // one checkpoint per page (2) + one final checkpoint after reader:complete
       expect(checkpoints.length).toBe(3)
     })
+
+    it('can checkpoint less often than every page while still checkpointing before space completion', async () => {
+      const rootA = await createTestCID('root-ckpt-throttle-a')
+      const rootB = await createTestCID('root-ckpt-throttle-b')
+      const shardA = await createTestCID('shard-ckpt-throttle-a')
+      const shardB = await createTestCID('shard-ckpt-throttle-b')
+      const pieceCid = createPieceCID()
+      const shardAB58 = base58btc.encode(shardA.multihash.bytes)
+      const shardBB58 = base58btc.encode(shardB.multihash.bytes)
+
+      const client = createMockClient(
+        [
+          { results: [{ root: rootA }], cursor: '1' },
+          { results: [{ root: rootB }] },
+        ],
+        new Map([
+          [rootA.toString(), [shardA]],
+          [rootB.toString(), [shardB]],
+        ])
+      )
+      const indexer = createMockIndexer(
+        new Map([
+          [
+            shardAB58,
+            {
+              claims: buildShardClaims(shardA, {
+                locationURLs: ['https://r2.example/throttle-a'],
+                pieceCid,
+              }),
+            },
+          ],
+          [
+            shardBB58,
+            {
+              claims: buildShardClaims(shardB, {
+                locationURLs: ['https://r2.example/throttle-b'],
+                pieceCid,
+              }),
+            },
+          ],
+        ])
+      )
+
+      const state = createMockInitialState()
+      const events = []
+      for await (const event of buildMigrationInventories({
+        client,
+        resolver: claimsResolver,
+        state,
+        spaceDIDs: [SPACE_DID],
+        options: {
+          indexer,
+          checkpointEveryPages: 5,
+        },
+      })) {
+        events.push(event.type)
+      }
+
+      expect(events).toEqual([
+        'reader:space:start',
+        'state:checkpoint',
+        'reader:space:complete',
+        'reader:complete',
+        'state:checkpoint',
+      ])
+      expect(state.spacesInventories[SPACE_DID]?.uploads).toHaveLength(2)
+      expect(state.spacesInventories[SPACE_DID]?.shards).toHaveLength(2)
+    })
   })
 
   describe('multiple spaces', () => {
@@ -981,6 +1050,168 @@ describe('buildMigrationInventories', () => {
       )
       // Cursor should be cleared after completion
       expect(state.readerProgressCursors).toBeUndefined()
+    })
+
+    it('resumes from the last persisted cursor when a crash happens between throttled checkpoints', async () => {
+      const rootA = await createTestCID('root-throttle-resume-a')
+      const rootB = await createTestCID('root-throttle-resume-b')
+      const rootC = await createTestCID('root-throttle-resume-c')
+      const rootD = await createTestCID('root-throttle-resume-d')
+      const shardA = await createTestCID('shard-throttle-resume-a')
+      const shardB = await createTestCID('shard-throttle-resume-b')
+      const shardC = await createTestCID('shard-throttle-resume-c')
+      const shardD = await createTestCID('shard-throttle-resume-d')
+      const pieceCid = createPieceCID()
+      const shardAB58 = base58btc.encode(shardA.multihash.bytes)
+      const shardBB58 = base58btc.encode(shardB.multihash.bytes)
+      const shardCB58 = base58btc.encode(shardC.multihash.bytes)
+      const shardDB58 = base58btc.encode(shardD.multihash.bytes)
+
+      const pages = [
+        { results: [{ root: rootA }], cursor: '1' },
+        { results: [{ root: rootB }], cursor: '2' },
+        { results: [{ root: rootC }], cursor: '3' },
+        { results: [{ root: rootD }] },
+      ]
+      const shardsByRoot = new Map([
+        [rootA.toString(), [shardA]],
+        [rootB.toString(), [shardB]],
+        [rootC.toString(), [shardC]],
+        [rootD.toString(), [shardD]],
+      ])
+
+      const failingClient = /** @type {import('@storacha/client').Client} */ (
+        /** @type {unknown} */ ({
+          spaces() {
+            return [{ did: () => SPACE_DID }]
+          },
+          currentSpace() {
+            return { did: () => SPACE_DID, name: 'Throttle Resume' }
+          },
+          async setCurrentSpace(/** @type {API.SpaceDID} */ _did) {},
+          capability: {
+            upload: {
+              async list(
+                /** @type {{ cursor?: string } | undefined} */ options
+              ) {
+                if (options?.cursor === '3') {
+                  throw new Error(
+                    'simulated crash after an uncheckpointed page'
+                  )
+                }
+
+                if (!options?.cursor) return pages[0]
+                return pages[Number(options.cursor)]
+              },
+              shard: {
+                async list(
+                  /** @type {API.UnknownLink} */ root,
+                  /** @type {unknown} */ _options
+                ) {
+                  const rootStr = `${root}`
+                  return { results: shardsByRoot.get(rootStr) ?? [] }
+                },
+              },
+            },
+          },
+        })
+      )
+
+      const healthyClient = createMockClient(pages, shardsByRoot)
+      const indexer = createMockIndexer(
+        new Map([
+          [
+            shardAB58,
+            {
+              claims: buildShardClaims(shardA, {
+                locationURLs: ['https://r2.example/throttle-resume-a'],
+                pieceCid,
+              }),
+            },
+          ],
+          [
+            shardBB58,
+            {
+              claims: buildShardClaims(shardB, {
+                locationURLs: ['https://r2.example/throttle-resume-b'],
+                pieceCid,
+              }),
+            },
+          ],
+          [
+            shardCB58,
+            {
+              claims: buildShardClaims(shardC, {
+                locationURLs: ['https://r2.example/throttle-resume-c'],
+                pieceCid,
+              }),
+            },
+          ],
+          [
+            shardDB58,
+            {
+              claims: buildShardClaims(shardD, {
+                locationURLs: ['https://r2.example/throttle-resume-d'],
+                pieceCid,
+              }),
+            },
+          ],
+        ])
+      )
+
+      const firstRunState = createMockInitialState()
+      let persistedState = createMockInitialState()
+
+      await expect(
+        (async () => {
+          for await (const event of buildMigrationInventories({
+            client: failingClient,
+            resolver: claimsResolver,
+            state: firstRunState,
+            spaceDIDs: [SPACE_DID],
+            options: {
+              indexer,
+              checkpointEveryPages: 2,
+            },
+          })) {
+            if (event.type === 'state:checkpoint') {
+              persistedState = deserializeState(
+                JSON.parse(JSON.stringify(serializeState(event.state)))
+              )
+            }
+          }
+        })()
+      ).rejects.toThrow('simulated crash after an uncheckpointed page')
+
+      expect(persistedState.spacesInventories[SPACE_DID]?.uploads).toEqual([
+        rootA.toString(),
+        rootB.toString(),
+      ])
+      expect(persistedState.readerProgressCursors).toEqual({ [SPACE_DID]: '2' })
+
+      const resumedInventory = await collectInventory(
+        buildMigrationInventories({
+          client: healthyClient,
+          resolver: claimsResolver,
+          state: persistedState,
+          spaceDIDs: [SPACE_DID],
+          options: {
+            indexer,
+            checkpointEveryPages: 2,
+          },
+        }),
+        persistedState,
+        SPACE_DID
+      )
+
+      expect(resumedInventory.uploads).toEqual([
+        rootA.toString(),
+        rootB.toString(),
+        rootC.toString(),
+        rootD.toString(),
+      ])
+      expect(resumedInventory.shards).toHaveLength(4)
+      expect(persistedState.readerProgressCursors).toBeUndefined()
     })
   })
 

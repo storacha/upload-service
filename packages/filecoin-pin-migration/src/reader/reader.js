@@ -2,12 +2,15 @@ import pMap from 'p-map'
 import { base58btc } from 'multiformats/bases/base58'
 import { Client as IndexingClient } from '@storacha/indexing-service-client'
 import {
+  DEFAULT_CHECKPOINT_EVERY_PAGES,
   DEFAULT_SHARD_LIST_CONCURRENCY,
   DEFAULT_STOP_ON_ERROR,
+  DEFAULT_UPLOAD_PAGE_SIZE,
 } from '../constants.js'
 import { isAbortError, throwIfAborted } from '../errors.js'
 import { checkpointInventoryPage } from '../state.js'
 import { resolveClaimsIndex } from './indexer.js'
+import { normalizePositiveInteger } from '../utils.js'
 
 /**
  * @import {
@@ -27,7 +30,7 @@ import { resolveClaimsIndex } from './indexer.js'
 
 /**
  * Build migration inventories for multiple spaces, checkpointing into state
- * after each upload.list page.
+ * every configured number of upload.list pages.
  *
  * ## Resume
  *
@@ -43,7 +46,7 @@ import { resolveClaimsIndex } from './indexer.js'
  *   reader:space:start       — before the first page of each space
  *   reader:shard:failed      — per shard that fails claim resolution
  *   reader:space:complete    — after the last page of each space
- *   state:checkpoint         — after every upload.list page (persist on this event)
+ *   state:checkpoint         — after each checkpoint interval and at reader end
  *   reader:complete          — after all spaces; state.phase set to 'planning'
  *
  * @param {BuildInventoriesInput} input
@@ -59,7 +62,21 @@ export async function* buildMigrationInventories({
   options,
 }) {
   const stopOnError = options?.stopOnError ?? DEFAULT_STOP_ON_ERROR
-  const shardListConcurrency = DEFAULT_SHARD_LIST_CONCURRENCY
+  const uploadPageSize = normalizePositiveInteger(
+    options?.uploadPageSize,
+    DEFAULT_UPLOAD_PAGE_SIZE
+  )
+  const shardListConcurrency = normalizePositiveInteger(
+    options?.shardListConcurrency,
+    DEFAULT_SHARD_LIST_CONCURRENCY
+  )
+  const checkpointEveryPages = normalizePositiveInteger(
+    options?.checkpointEveryPages,
+    DEFAULT_CHECKPOINT_EVERY_PAGES
+  )
+  const queryClaimsBatchConcurrency = options?.queryClaimsBatchConcurrency
+  const skipIPNIFallback = options?.skipIPNIFallback
+
   const fetcher = createSignalAwareFetch(
     options?.fetcher ?? globalThis.fetch,
     signal
@@ -103,6 +120,10 @@ export async function* buildMigrationInventories({
         selectedUploadRoots: uploadRootsBySpace?.[spaceDID],
         stopOnError,
         shardListConcurrency,
+        uploadPageSize,
+        checkpointEveryPages,
+        queryClaimsBatchConcurrency,
+        skipIPNIFallback,
         fetcher,
         signal,
       })
@@ -119,7 +140,8 @@ export async function* buildMigrationInventories({
 }
 
 /**
- * Paginate all uploads for one space, checkpointing into state after each page.
+ * Paginate all uploads for one space, checkpointing into state after each
+ * configured interval.
  *
  * Resumes from state.readerProgressCursors[spaceDID] if present.
  *
@@ -127,7 +149,7 @@ export async function* buildMigrationInventories({
  *   1. List shards for all uploads in the page
  *   2. Query the indexing service and repair missing claims from cid.contact
  *   3. Extract per-shard results from the claims index (pure, no I/O)
- *   4. Checkpoint flat shards + upload roots + failed roots
+ *   4. Checkpoint flat shards + upload roots + failed roots when due
  *
  * @param {object} args
  * @param {import('@storacha/client').Client} args.client
@@ -138,6 +160,10 @@ export async function* buildMigrationInventories({
  * @param {string[] | undefined} args.selectedUploadRoots
  * @param {boolean} args.stopOnError
  * @param {number} args.shardListConcurrency
+ * @param {number} args.uploadPageSize
+ * @param {number} args.checkpointEveryPages
+ * @param {number | undefined} args.queryClaimsBatchConcurrency
+ * @param {boolean | undefined} args.skipIPNIFallback
  * @param {typeof fetch | undefined} args.fetcher
  * @param {AbortSignal | undefined} args.signal
  * @returns {AsyncGenerator<MigrationEvent>}
@@ -151,6 +177,10 @@ async function* buildSpaceInventory({
   selectedUploadRoots,
   stopOnError,
   shardListConcurrency,
+  uploadPageSize,
+  checkpointEveryPages,
+  queryClaimsBatchConcurrency,
+  skipIPNIFallback,
   fetcher,
   signal,
 }) {
@@ -164,12 +194,13 @@ async function* buildSpaceInventory({
   let cursor = state.readerProgressCursors?.[spaceDID]
   const selectedRoots =
     selectedUploadRoots != null ? new Set(selectedUploadRoots) : undefined
+  let pagesSinceLastCheckpoint = 0
 
   do {
     throwIfAborted(signal)
     const page = await client.capability.upload.list({
       cursor,
-      size: 100,
+      size: uploadPageSize,
       signal,
     })
     throwIfAborted(signal)
@@ -196,6 +227,8 @@ async function* buildSpaceInventory({
     const claimsIndex = await resolveClaimsIndex({
       indexer,
       shards: allShards,
+      queryClaimsBatchConcurrency,
+      skipIPNIFallback,
       fetcher,
       signal,
     })
@@ -273,8 +306,16 @@ async function* buildSpaceInventory({
       cursor,
     })
 
-    yield /** @type {MigrationEvent} */ ({ type: 'state:checkpoint', state })
+    pagesSinceLastCheckpoint += 1
+    if (pagesSinceLastCheckpoint >= checkpointEveryPages) {
+      yield /** @type {MigrationEvent} */ ({ type: 'state:checkpoint', state })
+      pagesSinceLastCheckpoint = 0
+    }
   } while (cursor)
+
+  if (pagesSinceLastCheckpoint > 0) {
+    yield /** @type {MigrationEvent} */ ({ type: 'state:checkpoint', state })
+  }
 
   yield /** @type {MigrationEvent} */ ({
     type: 'reader:space:complete',

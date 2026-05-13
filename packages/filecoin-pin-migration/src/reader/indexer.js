@@ -5,8 +5,15 @@ import { base58btc } from 'multiformats/bases/base58'
 import { base32upper } from 'multiformats/bases/base32'
 import { CID } from 'multiformats/cid'
 import * as RAW from 'multiformats/codecs/raw'
-import { DEFAULT_CARPARK_CONCURRENCY } from '../constants.js'
+import {
+  DEFAULT_CARPARK_CONCURRENCY,
+  DEFAULT_IPNI_REQUEST_TIMEOUT_MS,
+  DEFAULT_QUERY_CLAIMS_BATCH_CONCURRENCY,
+  DEFAULT_SKIP_IPNI_FALLBACK,
+  MAX_QUERY_CLAIMS_HASHES_PER_REQUEST,
+} from '../constants.js'
 import { isAbortError, throwIfAborted } from '../errors.js'
+import { batches, normalizePositiveInteger } from '../utils.js'
 import { findCarparkLocation } from './carpark.js'
 
 /**
@@ -32,8 +39,9 @@ const LOCATION_COMMITMENT_PROTOCOL = 0x3e0002
 const EQUALS_CLAIM_PROTOCOL = 0x3e0001
 
 /**
- * Resolve shard claims via the primary indexing service, then repair any
- * missing location / piece data from cid.contact IPNI lookups.
+ * Resolve shard claims via the primary indexing service. Missing location/piece data is then repaired from
+ * cid.contact IPNI (each request capped at 10s; skip via skipIPNIFallback) and finally probed against the
+ * public carpark buckets for any entries still missing a locationURL.
  *
  * Returns a Map keyed by b58 multihash → { locationURL, piece, size }.
  *
@@ -41,70 +49,97 @@ const EQUALS_CLAIM_PROTOCOL = 0x3e0001
  * @param {IndexingServiceReader} args.indexer
  * @param {ShardEntry[]} args.shards
  * @param {typeof fetch | undefined} args.fetcher
+ * @param {number | undefined} [args.queryClaimsBatchConcurrency]
+ * @param {boolean | undefined} [args.skipIPNIFallback]
  * @param {AbortSignal | undefined} [args.signal]
  * @returns {Promise<Map<string, ClaimsEntry>>}
  */
-export async function resolveClaimsIndex({ indexer, shards, fetcher, signal }) {
+export async function resolveClaimsIndex({
+  indexer,
+  shards,
+  fetcher,
+  queryClaimsBatchConcurrency,
+  skipIPNIFallback = DEFAULT_SKIP_IPNI_FALLBACK,
+  signal,
+}) {
   /** @type {Map<string, ClaimsEntry>} */
   const index = new Map()
   if (shards.length === 0) return index
   throwIfAborted(signal)
 
   const requestedShardB58s = new Set()
-  /** @type {string[]} */
-  const requestedShardB58List = []
+  /** @type {Set<string>} */
+  const incompleteB58s = new Set()
   /** @type {MultihashDigest[]} */
   const hashes = []
   /** @type {Map<string, ShardEntry>} */
   const shardsByB58 = new Map()
+  /** @type {Map<string, string>} */
+  const claimContentB58Cache = new Map()
 
   for (const shard of shards) {
     if (requestedShardB58s.has(shard.b58)) continue
 
     requestedShardB58s.add(shard.b58)
-    requestedShardB58List.push(shard.b58)
+    incompleteB58s.add(shard.b58)
     hashes.push(shard.multihash)
     shardsByB58.set(shard.b58, shard)
   }
 
-  let primarySucceeded = false
-  try {
-    const claimsResult = await indexer.queryClaims({
-      hashes,
-      kind: 'standard',
-    })
-    throwIfAborted(signal)
+  const batchClaims = await pMap(
+    batches(hashes, MAX_QUERY_CLAIMS_HASHES_PER_REQUEST),
+    async (batch) => {
+      throwIfAborted(signal)
+      let claimsResult
 
-    if (claimsResult.ok) {
-      primarySucceeded = true
-      applyPrimaryClaims(
-        index,
-        requestedShardB58s,
-        claimsResult.ok.claims.values()
-      )
+      try {
+        claimsResult = await indexer.queryClaims({
+          hashes: batch,
+          kind: 'standard',
+        })
+      } catch (error) {
+        if (isAbortError(error, signal)) throw error
+        // Leave this batch incomplete so fallback picks it up.
+        return []
+      }
+
+      throwIfAborted(signal)
+      return claimsResult.ok ? [...claimsResult.ok.claims.values()] : []
+    },
+    {
+      concurrency: normalizePositiveInteger(
+        queryClaimsBatchConcurrency,
+        DEFAULT_QUERY_CLAIMS_BATCH_CONCURRENCY
+      ),
+      signal,
     }
-  } catch (error) {
-    if (isAbortError(error, signal)) throw error
-    // Best-effort fallback below.
+  )
+
+  for (const claims of batchClaims) {
+    applyPrimaryClaims(
+      index,
+      requestedShardB58s,
+      incompleteB58s,
+      claimContentB58Cache,
+      claims
+    )
   }
 
-  const missingB58s = primarySucceeded
-    ? requestedShardB58List.filter((b58) =>
-        isClaimsEntryIncomplete(index.get(b58))
-      )
-    : requestedShardB58List
+  const missingB58s = [...incompleteB58s]
 
   if (missingB58s.length === 0 || typeof fetcher !== 'function') {
     return index
   }
 
-  await applyIPNIFallback({
-    b58s: missingB58s,
-    index,
-    shardsByB58,
-    fetcher,
-    signal,
-  })
+  if (!skipIPNIFallback) {
+    await applyIPNIFallback({
+      b58s: missingB58s,
+      index,
+      shardsByB58,
+      fetcher,
+      signal,
+    })
+  }
 
   const missingLocationB58s = missingB58s.filter((b58) =>
     isMissingLocationUrl(index.get(b58))
@@ -129,17 +164,31 @@ export async function resolveClaimsIndex({ indexer, shards, fetcher, signal }) {
  *
  * @param {Map<string, ClaimsEntry>} index
  * @param {Set<string>} requestedShardB58s
+ * @param {Set<string>} incompleteB58s
+ * @param {Map<string, string>} claimContentB58Cache
  * @param {Iterable<unknown>} claims
  */
-function applyPrimaryClaims(index, requestedShardB58s, claims) {
+function applyPrimaryClaims(
+  index,
+  requestedShardB58s,
+  incompleteB58s,
+  claimContentB58Cache,
+  claims
+) {
   for (const claim of claims) {
-    const b58 = getClaimContentB58(claim)
+    const b58 = getClaimContentB58(claim, claimContentB58Cache)
     if (!b58 || !requestedShardB58s.has(b58)) continue
 
     if (isLocationClaim(claim)) {
       handleLocationClaim(index, b58, claim)
     } else if (isEqualsClaim(claim)) {
       handleEqualsClaim(index, b58, claim)
+    } else {
+      continue
+    }
+
+    if (!isClaimsEntryIncomplete(index.get(b58))) {
+      incompleteB58s.delete(b58)
     }
   }
 }
@@ -209,7 +258,7 @@ async function applyCarparkFallback({
       const shard = shardsByB58.get(b58)
       if (!shard) return
 
-      const match = await findCarparkLocation(shard, fetcher)
+      const match = await findCarparkLocation(shard, fetcher, signal)
       if (!match) return
 
       const entry = getOrCreateClaimsEntry(index, b58)
@@ -231,10 +280,16 @@ async function applyCarparkFallback({
  * @returns {Promise<IPNIProviderResult[]>}
  */
 async function fetchIPNIProviderResults(fetcher, b58, signal) {
+  const timeoutSignal = AbortSignal.timeout(DEFAULT_IPNI_REQUEST_TIMEOUT_MS)
+  const requestSignal = signal
+    ? AbortSignal.any([signal, timeoutSignal])
+    : timeoutSignal
+
   try {
     const value = b58.charAt(0) === 'z' ? b58.substring(1) : b58
     const response = await fetcher(`${CID_CONTACT_URL}/multihash/${value}`, {
       headers: { accept: 'application/json' },
+      signal: requestSignal,
     })
     if (!response.ok) return []
 
@@ -330,9 +385,10 @@ function parseEqualsClaimPiece(payload) {
 
 /**
  * @param {unknown} claim
+ * @param {Map<string, string>} cache
  * @returns {string | null}
  */
-function getClaimContentB58(claim) {
+function getClaimContentB58(claim, cache) {
   const content = getClaimContent(claim)
   if (!content) return null
 
@@ -340,8 +396,27 @@ function getClaimContentB58(claim) {
   const digestBytes = getClaimDigestBytes(content)
 
   const bytes = multihashBytes ?? digestBytes
+  if (!bytes) return null
 
-  return bytes ? base58btc.encode(bytes) : null
+  const key = claimContentCacheKey(bytes)
+  const cached = cache.get(key)
+  if (cached !== undefined) return cached
+
+  const b58 = base58btc.encode(bytes)
+  cache.set(key, b58)
+  return b58
+}
+
+/**
+ * @param {Uint8Array} bytes
+ * @returns {string}
+ */
+function claimContentCacheKey(bytes) {
+  if (typeof Buffer !== 'undefined') {
+    return Buffer.from(bytes).toString('hex')
+  }
+
+  return `${bytes}`
 }
 
 /**
