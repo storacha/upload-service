@@ -69,6 +69,111 @@ describe('findCarparkLocation', () => {
     })
   })
 
+  it('returns the first successful candidate that resolves in the full parallel race', async () => {
+    const shardCid = await createTestCID('carpark-race-winner')
+    const shard = createShardEntry(shardCid)
+    const slowUrl = `https://carpark-prod-0.r2.w3s.link/${shard.cidStr}/${shard.cidStr}.car`
+    const fastUrl = `https://carpark-prod-1.r2.w3s.link/${shard.b58}/${shard.b58}.blob`
+
+    const fetcher = /** @type {typeof fetch} */ (
+      async (input, init) => {
+        const url = typeof input === 'string' ? input : input.toString()
+        if ((init?.method ?? 'GET').toUpperCase() !== 'HEAD') {
+          throw new Error(`Unexpected method for ${url}`)
+        }
+
+        if (url === slowUrl) {
+          await new Promise((resolve) => setTimeout(resolve, 20))
+          return /** @type {Response} */ (
+            /** @type {unknown} */ ({
+              ok: true,
+              status: 200,
+              headers: { get: () => '1024' },
+            })
+          )
+        }
+
+        if (url === fastUrl) {
+          await new Promise((resolve) => setTimeout(resolve, 0))
+          return /** @type {Response} */ (
+            /** @type {unknown} */ ({
+              ok: true,
+              status: 200,
+              headers: { get: () => '2048' },
+            })
+          )
+        }
+
+        return /** @type {Response} */ (
+          /** @type {unknown} */ ({
+            ok: false,
+            status: 404,
+            headers: { get: () => null },
+          })
+        )
+      }
+    )
+
+    const match = await findCarparkLocation(shard, fetcher)
+
+    expect(match).toEqual({
+      locationURL: fastUrl,
+      size: 2048n,
+    })
+  })
+
+  it('aborts sibling probes after one candidate wins the race', async () => {
+    const shardCid = await createTestCID('carpark-sibling-abort')
+    const shard = createShardEntry(shardCid)
+    const winnerUrl = `https://carpark-prod-1.r2.w3s.link/${shard.b58}/${shard.b58}.blob`
+
+    /** @type {Array<{ url: string, signal: AbortSignal | null | undefined }>} */
+    const probes = []
+    const fetcher = /** @type {typeof fetch} */ (
+      async (input, init) => {
+        const url = typeof input === 'string' ? input : input.toString()
+        probes.push({ url, signal: init?.signal })
+
+        if (url === winnerUrl) {
+          return /** @type {Response} */ (
+            /** @type {unknown} */ ({
+              ok: true,
+              status: 200,
+              headers: { get: () => '256' },
+            })
+          )
+        }
+
+        return await new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener(
+            'abort',
+            () =>
+              reject(
+                new DOMException('The operation was aborted.', 'AbortError')
+              ),
+            { once: true }
+          )
+        })
+      }
+    )
+
+    const match = await findCarparkLocation(shard, fetcher)
+
+    expect(match).toEqual({
+      locationURL: winnerUrl,
+      size: 256n,
+    })
+    expect(probes).toHaveLength(4)
+    expect(
+      probes
+        .filter((probe) => probe.url !== winnerUrl)
+        .every((probe) => probe.signal?.aborted === true)
+    ).toBe(true)
+    expect(
+      probes.find((probe) => probe.url === winnerUrl)?.signal?.aborted ?? false
+    ).toBe(false)
+  })
+
   it('returns 0n when the object exists but Content-Length is missing', async () => {
     const shardCid = await createTestCID('carpark-no-content-length')
     const shard = createShardEntry(shardCid)
@@ -109,5 +214,80 @@ describe('findCarparkLocation', () => {
     const match = await findCarparkLocation(shard, fetcher)
 
     expect(match).toBeNull()
+  })
+
+  it('ignores non-abort probe failures and still returns a later success', async () => {
+    const shardCid = await createTestCID('carpark-throws-then-succeeds')
+    const shard = createShardEntry(shardCid)
+    const successUrl = `https://carpark-prod-1.r2.w3s.link/${shard.b58}/${shard.b58}.blob`
+
+    const fetcher = /** @type {typeof fetch} */ (
+      async (input, init) => {
+        const url = typeof input === 'string' ? input : input.toString()
+        if ((init?.method ?? 'GET').toUpperCase() !== 'HEAD') {
+          throw new Error(`Unexpected method for ${url}`)
+        }
+
+        if (url.includes('carpark-prod-0')) {
+          throw new Error('transient head failure')
+        }
+
+        if (url === successUrl) {
+          return /** @type {Response} */ (
+            /** @type {unknown} */ ({
+              ok: true,
+              status: 200,
+              headers: { get: () => '512' },
+            })
+          )
+        }
+
+        return /** @type {Response} */ (
+          /** @type {unknown} */ ({
+            ok: false,
+            status: 404,
+            headers: { get: () => null },
+          })
+        )
+      }
+    )
+
+    const match = await findCarparkLocation(shard, fetcher)
+
+    expect(match).toEqual({
+      locationURL: successUrl,
+      size: 512n,
+    })
+  })
+
+  it('propagates abort through concurrent candidate probes', async () => {
+    const shardCid = await createTestCID('carpark-abort')
+    const shard = createShardEntry(shardCid)
+    const ac = new AbortController()
+
+    const fetcher = /** @type {typeof fetch} */ (
+      async (_input, init) => {
+        return await new Promise((_resolve, reject) => {
+          if (init?.signal?.aborted) {
+            reject(new DOMException('The operation was aborted.', 'AbortError'))
+            return
+          }
+
+          init?.signal?.addEventListener(
+            'abort',
+            () =>
+              reject(
+                new DOMException('The operation was aborted.', 'AbortError')
+              ),
+            { once: true }
+          )
+        })
+      }
+    )
+
+    const run = findCarparkLocation(shard, fetcher, ac.signal)
+    ac.abort()
+
+    await expect(run).rejects.toMatchObject({ name: 'AbortError' })
   })
 })

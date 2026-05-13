@@ -144,6 +144,38 @@ If a caller chooses to validate staged state before resume/retry execution:
 - any corrected state should be checkpointed before the user confirms or aborts
   the run
 
+If reader execution is aborted:
+
+- only fully checkpointed upload-list pages remain persisted
+- `MigrationState.phase` stays `reading`
+- `reader:complete` is not emitted
+- resume continues from the last saved `readerProgressCursors` entry
+
+Reader tuning knobs are part of the public input surface on
+`buildMigrationInventories({ options })`:
+
+- `uploadPageSize`
+- `shardListConcurrency`
+- `checkpointEveryPages`
+- `queryClaimsBatchConcurrency`
+- `skipIPNIFallback`
+
+These affect throughput and persistence cost only. They do not change the
+reader/planner/migrator boundaries or the resume contract:
+
+- page results are still applied to in-memory `MigrationState` immediately
+- only `state:checkpoint` events are expected to be persisted by callers
+- after an ungraceful stop, up to `checkpointEveryPages - 1` pages may be
+  re-processed on resume
+
+Reader fallback behavior also includes:
+
+- `cid.contact` repair requests are bounded by an internal 10-second
+  per-request timeout
+- `skipIPNIFallback` bypasses the `cid.contact` repair step, but shards still
+  missing a `locationURL` after primary claims are still probed via the
+  carpark fallback
+
 ---
 
 ## Planner

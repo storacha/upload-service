@@ -48,6 +48,7 @@ const DEFAULT_STATE_FILE_BASENAME = 'storacha-migration'
 const CLI_SOURCE = 'storacha-cli'
 const MIN_FIL_GAS_BALANCE = parseEther('0.001')
 const DEFAULT_STORAGE_RETENTION_COPIES = 2
+const READER_SIGINT_DEBOUNCE_MS = 250
 
 /**
  * @typedef {'fresh' | 'resume' | 'retry'} MigrationStartMode
@@ -104,10 +105,38 @@ export async function spaceMigrate(opts = {}) {
 
   const ac = new AbortController()
   let stopRequested = false
+  /** @type {'reader' | 'planning' | 'migrating' | undefined} */
+  let currentRuntimePhase
+  let ignoreSigintUntil = 0
   const onSigint = () => {
-    if (stopRequested) return
-    stopRequested = true
-    console.log('\nStopping after the current step and persisting state...')
+    const now = Date.now()
+    if (now < ignoreSigintUntil) {
+      return
+    }
+
+    if (currentRuntimePhase === 'reader' && !stopRequested) {
+      stopRequested = true
+      ignoreSigintUntil = now + READER_SIGINT_DEBOUNCE_MS
+      console.log(
+        '\nWill finish the current reader page and save the current processing state before stopping.'
+      )
+      console.log(
+        'If you are ok losing the in-flight reader page, press Ctrl+C again to abort immediately.'
+      )
+      return
+    }
+
+    if (stopRequested) {
+      const tail =
+        currentRuntimePhase === 'reader'
+          ? ' The in-flight reader page may be lost if it has not been checkpointed yet.'
+          : ''
+      console.log(`\nAborting now.${tail}`)
+    } else {
+      stopRequested = true
+      console.log('\nStopping after the current step and persisting state...')
+    }
+
     saveStateSync(context.stateFile, state)
     ac.abort()
   }
@@ -128,14 +157,19 @@ export async function spaceMigrate(opts = {}) {
       minFilGasBalance: MIN_FIL_GAS_BALANCE,
     })
 
+    currentRuntimePhase = 'reader'
     const readerResult = await readInventories({
       client: context.client,
       resolver,
       state,
       stateFile: context.stateFile,
       spaceDIDs: [context.spaceDID],
+      readerOptions: config.readerOptions,
+      readerOverrideEntries: config.readerOverrideEntries,
+      isStopRequested: () => stopRequested,
       signal: ac.signal,
     })
+    currentRuntimePhase = undefined
     if (readerResult.interrupted) return
 
     const spaceInventory = state.spacesInventories[context.spaceDID]
@@ -146,12 +180,14 @@ export async function spaceMigrate(opts = {}) {
       return
     }
 
+    currentRuntimePhase = 'planning'
     const planResult = await planMigration({
       synapse,
       state,
       stateFile: context.stateFile,
       signal: ac.signal,
     })
+    currentRuntimePhase = undefined
     if (planResult.interrupted || !planResult.plan) return
     const { plan } = planResult
 
@@ -186,6 +222,7 @@ export async function spaceMigrate(opts = {}) {
       return
     }
 
+    currentRuntimePhase = 'migrating'
     const migrationResult = await runMigration({
       plan,
       state,
@@ -194,6 +231,7 @@ export async function spaceMigrate(opts = {}) {
       debug: config.debug,
       signal: ac.signal,
     })
+    currentRuntimePhase = undefined
     if (migrationResult.interrupted) return
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
@@ -258,11 +296,15 @@ export async function spaceMigrateCalc(opts = {}) {
  * @param {SpaceMigrateOptions} opts
  */
 function parseMigrationOptions(opts) {
+  const { readerOptions, readerOverrideEntries } = parseReaderOverridesFromEnv()
+
   return {
     network: parseNetwork(opts.network),
     resume: opts.resume ?? false,
     retry: opts.retry ?? false,
     debug: opts.debug ?? false,
+    readerOptions,
+    readerOverrideEntries,
   }
 }
 
@@ -476,6 +518,9 @@ function createWalletAccount(walletPk) {
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} args.state
  * @param {string} args.stateFile
  * @param {string[]} args.spaceDIDs
+ * @param {import('@storacha/filecoin-pin-migration/types').BuildInventoriesInput['options']} [args.readerOptions]
+ * @param {Array<[string, number | boolean]>} [args.readerOverrideEntries]
+ * @param {() => boolean} [args.isStopRequested]
  * @param {AbortSignal} args.signal
  */
 async function readInventories({
@@ -484,9 +529,19 @@ async function readInventories({
   state,
   stateFile,
   spaceDIDs,
+  readerOptions,
+  readerOverrideEntries,
+  isStopRequested,
   signal,
 }) {
   printPhaseTitle('Scanning Space')
+  if (readerOverrideEntries && readerOverrideEntries.length > 0) {
+    console.log(
+      `Advanced reader overrides: ${formatReaderOverrideEntries(
+        readerOverrideEntries
+      )}`
+    )
+  }
   const spinner = ora({
     text: 'Reading inventories...',
     color: 'cyan',
@@ -498,6 +553,7 @@ async function readInventories({
     state,
     spaceDIDs: /** @type {`did:key:${string}`[]} */ (spaceDIDs),
     signal,
+    options: readerOptions,
   })) {
     switch (event.type) {
       case 'reader:space:start':
@@ -528,17 +584,23 @@ async function readInventories({
         break
       case 'state:checkpoint':
         await saveState(stateFile, event.state)
+        if (isStopRequested?.()) {
+          spinner.stop()
+          return { interrupted: true }
+        }
         break
     }
 
     if (signal.aborted) {
       spinner.stop()
+      await saveState(stateFile, state)
       return { interrupted: true }
     }
   }
 
   if (signal.aborted) {
     spinner.stop()
+    await saveState(stateFile, state)
     return { interrupted: true }
   }
 
@@ -898,10 +960,7 @@ async function runMigration({
  */
 async function saveState(stateFile, state) {
   await fs.promises.mkdir(path.dirname(stateFile), { recursive: true })
-  await fs.promises.writeFile(
-    stateFile,
-    JSON.stringify(serializeState(state), null, 2)
-  )
+  await fs.promises.writeFile(stateFile, serializeStateForDisk(state))
 }
 
 /**
@@ -910,7 +969,14 @@ async function saveState(stateFile, state) {
  */
 function saveStateSync(stateFile, state) {
   fs.mkdirSync(path.dirname(stateFile), { recursive: true })
-  fs.writeFileSync(stateFile, JSON.stringify(serializeState(state), null, 2))
+  fs.writeFileSync(stateFile, serializeStateForDisk(state))
+}
+
+/**
+ * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
+ */
+function serializeStateForDisk(state) {
+  return JSON.stringify(serializeState(state))
 }
 
 /**
@@ -978,9 +1044,6 @@ function getRecommendedExistingStateAction(state) {
 }
 
 /**
- * @param {string | undefined} strategy
- */
-/**
  * @param {bigint | number | string | undefined} value
  * @param {string} flag
  */
@@ -1007,6 +1070,136 @@ function parsePositiveBigInt(value, flag) {
 
   console.error(`Error: "${flag}" must be a positive integer`)
   process.exit(1)
+}
+
+function parseReaderOverridesFromEnv() {
+  /** @type {import('@storacha/filecoin-pin-migration/types').BuildInventoriesInput['options']} */
+  const readerOptions = {}
+  /** @type {Array<[string, number | boolean]>} */
+  const readerOverrideEntries = []
+
+  setReaderOverrideFromEnv(
+    readerOptions,
+    readerOverrideEntries,
+    'uploadPageSize',
+    'STORACHA_MIGRATE_UPLOAD_PAGE_SIZE'
+  )
+  setReaderOverrideFromEnv(
+    readerOptions,
+    readerOverrideEntries,
+    'shardListConcurrency',
+    'STORACHA_MIGRATE_SHARD_LIST_CONCURRENCY'
+  )
+  setReaderOverrideFromEnv(
+    readerOptions,
+    readerOverrideEntries,
+    'checkpointEveryPages',
+    'STORACHA_MIGRATE_CHECKPOINT_EVERY_PAGES'
+  )
+  setReaderOverrideFromEnv(
+    readerOptions,
+    readerOverrideEntries,
+    'queryClaimsBatchConcurrency',
+    'STORACHA_MIGRATE_QUERYCLAIMS_BATCH_CONCURRENCY'
+  )
+  setReaderBoolOverrideFromEnv(
+    readerOptions,
+    readerOverrideEntries,
+    'skipIPNIFallback',
+    'STORACHA_MIGRATE_SKIP_IPNI_FALLBACK'
+  )
+
+  return { readerOptions, readerOverrideEntries }
+}
+
+/**
+ * @param {import('@storacha/filecoin-pin-migration/types').BuildInventoriesInput['options']} readerOptions
+ * @param {Array<[string, number | boolean]>} readerOverrideEntries
+ * @param {'uploadPageSize' | 'shardListConcurrency' | 'checkpointEveryPages' | 'queryClaimsBatchConcurrency'} optionKey
+ * @param {string} envVar
+ */
+function setReaderOverrideFromEnv(
+  readerOptions,
+  readerOverrideEntries,
+  optionKey,
+  envVar
+) {
+  const raw = process.env[envVar]
+  if (raw == null || raw === '') return
+
+  const value = parsePositiveInteger(raw, envVar)
+  readerOptions[optionKey] = value
+  readerOverrideEntries.push([optionKey, value])
+}
+
+/**
+ * @param {import('@storacha/filecoin-pin-migration/types').BuildInventoriesInput['options']} readerOptions
+ * @param {Array<[string, number | boolean]>} readerOverrideEntries
+ * @param {'skipIPNIFallback'} optionKey
+ * @param {string} envVar
+ */
+function setReaderBoolOverrideFromEnv(
+  readerOptions,
+  readerOverrideEntries,
+  optionKey,
+  envVar
+) {
+  const raw = process.env[envVar]
+  if (raw == null || raw === '') return
+
+  const normalized = raw.trim().toLowerCase()
+  if (!['1', 'true', 'yes', '0', 'false', 'no'].includes(normalized)) {
+    console.error(
+      `Error: "${envVar}" must be a boolean (1/0, true/false, yes/no)`
+    )
+    process.exit(1)
+  }
+
+  const value = ['1', 'true', 'yes'].includes(normalized)
+  readerOptions[optionKey] = value
+  readerOverrideEntries.push([optionKey, value])
+}
+
+/**
+ * @param {bigint | number | string | undefined} value
+ * @param {string} label
+ */
+function parsePositiveInteger(value, label) {
+  if (value == null || value === '') {
+    console.error(`Error: missing required value for "${label}"`)
+    process.exit(1)
+  }
+
+  if (typeof value === 'number') {
+    if (Number.isSafeInteger(value) && value > 0) {
+      return value
+    }
+
+    console.error(`Error: "${label}" must be a positive integer`)
+    process.exit(1)
+  }
+
+  const raw = String(value).trim()
+  if (!/^\d+$/.test(raw)) {
+    console.error(`Error: "${label}" must be a positive integer`)
+    process.exit(1)
+  }
+
+  const parsed = Number(raw)
+
+  if (Number.isSafeInteger(parsed) && parsed > 0) {
+    return parsed
+  }
+
+  console.error(`Error: "${label}" must be a positive integer`)
+  process.exit(1)
+}
+
+/**
+ * @param {Array<[string, number | boolean]>} entries
+ */
+function formatReaderOverrideEntries(entries) {
+  return entries.map(([key, value]) => `${key}=${value}`).join(', ')
 }
 
 /**

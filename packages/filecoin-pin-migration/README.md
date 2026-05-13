@@ -86,6 +86,27 @@ Reader output includes:
 
 The reader checkpoints progress into `state.spacesInventories` after each page.
 
+Reader tuning options are available through
+`buildMigrationInventories({ options })`:
+
+- `uploadPageSize`
+- `shardListConcurrency`
+- `checkpointEveryPages`
+- `queryClaimsBatchConcurrency`
+- `skipIPNIFallback`
+
+These are intended for large-space tuning. Keep `uploadPageSize` modest unless
+you have benchmark data: larger pages increase memory use and the amount of
+claim-resolution work done before the next persisted checkpoint. Raising
+`checkpointEveryPages` reduces checkpoint I/O, but after an ungraceful stop the
+reader may need to re-process up to `checkpointEveryPages - 1` pages on resume.
+Keep `queryClaimsBatchConcurrency` conservative unless benchmarks show primary
+claims resolution is a meaningful fraction of per-page reader time.
+`skipIPNIFallback` bypasses the `cid.contact` repair step, but shards still
+missing a `locationURL` after primary claims are still probed via the carpark
+fallback. Independently of that option, `cid.contact` requests now use an
+internal 10-second per-request timeout.
+
 ### 2. Planner
 
 `createMigrationPlan()` reads the inventories from state, creates exactly 2

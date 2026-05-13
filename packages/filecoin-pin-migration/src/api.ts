@@ -336,6 +336,34 @@ interface BuildInventoriesBaseInput {
     fetcher?: typeof fetch
     /** Stop resolving remaining shards on first failure per upload (default: true) */
     stopOnError?: boolean
+    /**
+     * Number of uploads to request per upload.list page (default: 100).
+     * Keep this modest: larger pages increase reader memory usage and the
+     * amount of claim-resolution work done before the next checkpoint.
+     */
+    uploadPageSize?: number
+    /**
+     * Number of concurrent upload.shard.list waves per upload page
+     */
+    shardListConcurrency?: number
+    /**
+     * Emit state:checkpoint every N upload pages (default: 1).
+     * Higher values reduce checkpoint I/O but can require re-processing up to
+     * N - 1 pages after an ungraceful interruption.
+     */
+    checkpointEveryPages?: number
+    /**
+     * Number of concurrent queryClaims sub-batches per upload page
+     * (default: 1).
+     */
+    queryClaimsBatchConcurrency?: number
+    /**
+     * Skip the cid.contact repair step entirely (default: false).
+     * When true, the cid.contact repair step is bypassed. Shards missing a
+     * locationURL after primary claims are still probed via the carpark
+     * fallback.
+     */
+    skipIPNIFallback?: boolean
   }
 }
 

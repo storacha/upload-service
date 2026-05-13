@@ -16,22 +16,66 @@ const CARPARK_HOSTS = [
  * It probes the known public carpark buckets with HEAD and returns the first
  * matching object URL plus its Content-Length when available.
  *
+ * This races all candidate URLs for a shard in parallel. That improves tail
+ * latency for a frequently used fallback path, at the cost of issuing more
+ * HEAD requests.
+ *
  * @param {ShardEntry} shard
  * @param {typeof fetch} fetcher
+ * @param {AbortSignal | undefined} [signal]
  * @returns {Promise<{ locationURL: string, size: bigint } | null>}
  */
-export async function findCarparkLocation(shard, fetcher) {
-  for (const url of createCarparkCandidateURLs(shard)) {
-    const response = await headObject(fetcher, url)
-    if (!response?.ok) continue
+export async function findCarparkLocation(shard, fetcher, signal) {
+  const probes = createCarparkCandidateURLs(shard).map((url) =>
+    createCarparkProbe(fetcher, url, signal)
+  )
 
-    return {
-      locationURL: url,
-      size: parseContentLength(response),
-    }
+  try {
+    return await new Promise((resolve, reject) => {
+      let settled = false
+      let pending = probes.length
+
+      for (const probe of probes) {
+        probe.promise
+          .then((response) => {
+            if (settled) return
+
+            if (response?.ok) {
+              settled = true
+              abortSiblingProbes(probes, probe)
+              resolve({
+                locationURL: probe.url,
+                size: parseContentLength(response),
+              })
+              return
+            }
+
+            pending -= 1
+            if (pending === 0) {
+              settled = true
+              resolve(null)
+            }
+          })
+          .catch((error) => {
+            if (settled) return
+            if (isAbortError(error, signal)) {
+              settled = true
+              abortSiblingProbes(probes, probe)
+              reject(error)
+              return
+            }
+
+            pending -= 1
+            if (pending === 0) {
+              settled = true
+              resolve(null)
+            }
+          })
+      }
+    })
+  } finally {
+    releaseProbeListeners(probes)
   }
-
-  return null
 }
 
 /**
@@ -53,13 +97,17 @@ function createCarparkCandidateURLs(shard) {
 /**
  * @param {typeof fetch} fetcher
  * @param {string} url
+ * @param {AbortSignal | undefined} [signal]
+ * @param {AbortSignal | undefined} [parentSignal]
  * @returns {Promise<Response | null>}
  */
-async function headObject(fetcher, url) {
+async function headObject(fetcher, url, signal, parentSignal) {
   try {
-    return await fetcher(url, { method: 'HEAD' })
+    return await fetcher(url, { method: 'HEAD', signal })
   } catch (error) {
-    if (isAbortError(error)) throw error
+    // The per-probe signal may abort because a sibling already won the race.
+    // Only propagate abort when the whole outer operation was cancelled.
+    if (parentSignal?.aborted) throw error
     return null
   }
 }
@@ -77,4 +125,58 @@ function parseContentLength(response) {
   } catch {
     return 0n
   }
+}
+
+/**
+ * @param {typeof fetch} fetcher
+ * @param {string} url
+ * @param {AbortSignal | undefined} [parentSignal]
+ */
+function createCarparkProbe(fetcher, url, parentSignal) {
+  const controller = new AbortController()
+  const release = linkAbortSignal(parentSignal, controller)
+
+  return {
+    url,
+    controller,
+    release,
+    promise: headObject(fetcher, url, controller.signal, parentSignal),
+  }
+}
+
+/**
+ * @param {Array<{ controller: AbortController }>} probes
+ * @param {{ controller: AbortController }} winner
+ */
+function abortSiblingProbes(probes, winner) {
+  for (const probe of probes) {
+    if (probe === winner) continue
+    probe.controller.abort()
+  }
+}
+
+/**
+ * @param {Array<{ release: () => void }>} probes
+ */
+function releaseProbeListeners(probes) {
+  for (const probe of probes) {
+    probe.release()
+  }
+}
+
+/**
+ * @param {AbortSignal | undefined} signal
+ * @param {AbortController} controller
+ * @returns {() => void}
+ */
+function linkAbortSignal(signal, controller) {
+  if (!signal) return () => {}
+  if (signal.aborted) {
+    controller.abort()
+    return () => {}
+  }
+
+  const abort = () => controller.abort()
+  signal.addEventListener('abort', abort, { once: true })
+  return () => signal.removeEventListener('abort', abort)
 }

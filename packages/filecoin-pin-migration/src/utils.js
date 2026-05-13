@@ -56,3 +56,14 @@ export function isAbortError(error) {
 
   return false
 }
+
+/**
+ * @param {number | undefined} value
+ * @param {number} fallback
+ * @returns {number}
+ */
+export function normalizePositiveInteger(value, fallback) {
+  if (value == null) return fallback
+  if (!Number.isFinite(value)) return fallback
+  return Math.max(1, Math.trunc(value))
+}
