@@ -1,3 +1,13 @@
+## 3.3.0 (2026-05-15)
+
+### 🚀 Features
+
+- add disable feature flag ([c753fb42](https://github.com/storacha/upload-service/commit/c753fb42))
+
+### ❤️ Thank You
+
+- hannahhoward
+
 ## 3.2.3 (2026-03-24)
 
 ### 🧱 Updated Dependencies
