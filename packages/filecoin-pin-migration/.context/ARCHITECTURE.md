@@ -151,6 +151,17 @@ If reader execution is aborted:
 - `reader:complete` is not emitted
 - resume continues from the last saved `readerProgressCursors` entry
 
+When `buildMigrationInventories()` runs in explicit-root mode via
+`uploadRootsBySpace`:
+
+- the reader skips `upload.list()` entirely and trusts the provided roots for
+  that space
+- `uploadPageSize` becomes the explicit-root chunk size
+- `readerProgressCursors[spaceDID]` stores a synthetic
+  `explicit-roots:{nextChunkIndex}` cursor
+- resume requires passing `uploadRootsBySpace` again for that space so the
+  synthetic cursor can be interpreted against the same root manifest
+
 Reader tuning knobs are part of the public input surface on
 `buildMigrationInventories({ options })`:
 
@@ -165,8 +176,8 @@ reader/planner/migrator boundaries or the resume contract:
 
 - page results are still applied to in-memory `MigrationState` immediately
 - only `state:checkpoint` events are expected to be persisted by callers
-- after an ungraceful stop, up to `checkpointEveryPages - 1` pages may be
-  re-processed on resume
+- after an ungraceful stop, up to `checkpointEveryPages - 1` pages or
+  explicit-root chunks may be re-processed on resume
 
 Reader fallback behavior also includes:
 

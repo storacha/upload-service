@@ -1213,6 +1213,317 @@ describe('buildMigrationInventories', () => {
       expect(resumedInventory.shards).toHaveLength(4)
       expect(persistedState.readerProgressCursors).toBeUndefined()
     })
+
+    it('reads trusted explicit roots without calling upload.list', async () => {
+      const rootA = await createTestCID('root-explicit-a')
+      const rootB = await createTestCID('root-explicit-b')
+      const shardA = await createTestCID('shard-explicit-a')
+      const shardB = await createTestCID('shard-explicit-b')
+      const pieceCid = createPieceCID()
+      const shardAB58 = base58btc.encode(shardA.multihash.bytes)
+      const shardBB58 = base58btc.encode(shardB.multihash.bytes)
+      const shardsByRoot = new Map([
+        [rootA.toString(), [shardA]],
+        [rootB.toString(), [shardB]],
+      ])
+
+      let uploadListCalls = 0
+      const client = /** @type {import('@storacha/client').Client} */ (
+        /** @type {unknown} */ ({
+          currentSpace() {
+            return { did: () => SPACE_DID, name: 'Explicit Root Space' }
+          },
+          async setCurrentSpace(/** @type {API.SpaceDID} */ _did) {},
+          capability: {
+            upload: {
+              async list() {
+                uploadListCalls += 1
+                throw new Error('upload.list should not be called')
+              },
+              shard: {
+                async list(
+                  /** @type {API.UnknownLink} */ root,
+                  /** @type {unknown} */ _options
+                ) {
+                  return { results: shardsByRoot.get(`${root}`) ?? [] }
+                },
+              },
+            },
+          },
+        })
+      )
+      const indexer = createMockIndexer(
+        new Map([
+          [
+            shardAB58,
+            {
+              claims: buildShardClaims(shardA, {
+                locationURLs: ['https://r2.example/explicit-a'],
+                pieceCid,
+              }),
+            },
+          ],
+          [
+            shardBB58,
+            {
+              claims: buildShardClaims(shardB, {
+                locationURLs: ['https://r2.example/explicit-b'],
+                pieceCid,
+              }),
+            },
+          ],
+        ])
+      )
+
+      const state = createMockInitialState()
+      const inventory = await collectInventory(
+        buildMigrationInventories({
+          client,
+          resolver: claimsResolver,
+          state,
+          uploadRootsBySpace: {
+            [SPACE_DID]: [rootA.toString(), rootB.toString()],
+          },
+          options: { indexer },
+        }),
+        state,
+        SPACE_DID
+      )
+
+      expect(uploadListCalls).toBe(0)
+      expect(inventory).toEqual(
+        expect.objectContaining({
+          did: SPACE_DID,
+          name: 'Explicit Root Space',
+          uploads: [rootA.toString(), rootB.toString()],
+          skippedUploads: [],
+        })
+      )
+      expect(inventory.shards).toHaveLength(2)
+    })
+
+    it('uses uploadPageSize as explicit-root chunk size for synthetic cursor checkpoints', async () => {
+      const rootA = await createTestCID('root-explicit-chunk-a')
+      const rootB = await createTestCID('root-explicit-chunk-b')
+      const rootC = await createTestCID('root-explicit-chunk-c')
+      const shardA = await createTestCID('shard-explicit-chunk-a')
+      const shardB = await createTestCID('shard-explicit-chunk-b')
+      const shardC = await createTestCID('shard-explicit-chunk-c')
+      const pieceCid = createPieceCID()
+      const shardsByRoot = new Map([
+        [rootA.toString(), [shardA]],
+        [rootB.toString(), [shardB]],
+        [rootC.toString(), [shardC]],
+      ])
+      const indexer = createMockIndexer(
+        new Map(
+          [shardA, shardB, shardC].map((shard, index) => [
+            base58btc.encode(shard.multihash.bytes),
+            {
+              claims: buildShardClaims(shard, {
+                locationURLs: [`https://r2.example/explicit-chunk-${index}`],
+                pieceCid,
+              }),
+            },
+          ])
+        )
+      )
+      const state = createMockInitialState()
+      const ac = new AbortController()
+
+      for await (const event of buildMigrationInventories({
+        client: createMockClient([], shardsByRoot),
+        resolver: claimsResolver,
+        state,
+        uploadRootsBySpace: {
+          [SPACE_DID]: [rootA.toString(), rootB.toString(), rootC.toString()],
+        },
+        signal: ac.signal,
+        options: {
+          indexer,
+          uploadPageSize: 2,
+        },
+      })) {
+        if (event.type === 'state:checkpoint') {
+          ac.abort()
+        }
+      }
+
+      expect(state.spacesInventories[SPACE_DID]?.uploads).toEqual([
+        rootA.toString(),
+        rootB.toString(),
+      ])
+      expect(state.readerProgressCursors).toEqual({
+        [SPACE_DID]: 'explicit-roots:1',
+      })
+    })
+
+    it('resumes explicit-root reads from the persisted synthetic chunk cursor', async () => {
+      const rootA = await createTestCID('root-explicit-resume-a')
+      const rootB = await createTestCID('root-explicit-resume-b')
+      const rootC = await createTestCID('root-explicit-resume-c')
+      const rootD = await createTestCID('root-explicit-resume-d')
+      const shardA = await createTestCID('shard-explicit-resume-a')
+      const shardB = await createTestCID('shard-explicit-resume-b')
+      const shardC = await createTestCID('shard-explicit-resume-c')
+      const shardD = await createTestCID('shard-explicit-resume-d')
+      const pieceCid = createPieceCID()
+      const explicitRoots = [
+        rootA.toString(),
+        rootB.toString(),
+        rootC.toString(),
+        rootD.toString(),
+      ]
+      const shardsByRoot = new Map([
+        [rootA.toString(), [shardA]],
+        [rootB.toString(), [shardB]],
+        [rootC.toString(), [shardC]],
+        [rootD.toString(), [shardD]],
+      ])
+      const indexer = createMockIndexer(
+        new Map(
+          [shardA, shardB, shardC, shardD].map((shard, index) => [
+            base58btc.encode(shard.multihash.bytes),
+            {
+              claims: buildShardClaims(shard, {
+                locationURLs: [`https://r2.example/explicit-resume-${index}`],
+                pieceCid,
+              }),
+            },
+          ])
+        )
+      )
+
+      const failingClient = /** @type {import('@storacha/client').Client} */ (
+        /** @type {unknown} */ ({
+          async setCurrentSpace(/** @type {API.SpaceDID} */ _did) {},
+          capability: {
+            upload: {
+              async list() {
+                throw new Error('upload.list should not be called')
+              },
+              shard: {
+                async list(
+                  /** @type {API.UnknownLink} */ root,
+                  /** @type {unknown} */ _options
+                ) {
+                  const rootString = `${root}`
+                  if (rootString === `${rootC}`) {
+                    throw new Error('simulated explicit-root crash')
+                  }
+                  return { results: shardsByRoot.get(rootString) ?? [] }
+                },
+              },
+            },
+          },
+        })
+      )
+
+      const firstRunState = createMockInitialState()
+      let persistedState = createMockInitialState()
+
+      await expect(
+        (async () => {
+          for await (const event of buildMigrationInventories({
+            client: failingClient,
+            resolver: claimsResolver,
+            state: firstRunState,
+            uploadRootsBySpace: { [SPACE_DID]: explicitRoots },
+            options: {
+              indexer,
+              uploadPageSize: 1,
+              checkpointEveryPages: 2,
+            },
+          })) {
+            if (event.type === 'state:checkpoint') {
+              persistedState = deserializeState(
+                JSON.parse(JSON.stringify(serializeState(event.state)))
+              )
+            }
+          }
+        })()
+      ).rejects.toThrow('simulated explicit-root crash')
+
+      expect(persistedState.spacesInventories[SPACE_DID]?.uploads).toEqual([
+        rootA.toString(),
+        rootB.toString(),
+      ])
+      expect(persistedState.readerProgressCursors).toEqual({
+        [SPACE_DID]: 'explicit-roots:2',
+      })
+
+      const resumedInventory = await collectInventory(
+        buildMigrationInventories({
+          client: createMockClient([], shardsByRoot),
+          resolver: claimsResolver,
+          state: persistedState,
+          uploadRootsBySpace: { [SPACE_DID]: explicitRoots },
+          options: {
+            indexer,
+            uploadPageSize: 1,
+            checkpointEveryPages: 2,
+          },
+        }),
+        persistedState,
+        SPACE_DID
+      )
+
+      expect(resumedInventory.uploads).toEqual(explicitRoots)
+      expect(resumedInventory.shards).toHaveLength(4)
+      expect(persistedState.readerProgressCursors).toBeUndefined()
+    })
+
+    it('rejects malformed explicit-root cursors on resume', async () => {
+      const rootA = await createTestCID('root-explicit-malformed-a')
+      const state = createMockInitialState()
+      state.readerProgressCursors = {
+        [SPACE_DID]: 'explicit-roots:2junk',
+      }
+
+      await expect(
+        collectInventory(
+          buildMigrationInventories({
+            client: createMockClient([], new Map([[rootA.toString(), []]])),
+            resolver: claimsResolver,
+            state,
+            uploadRootsBySpace: {
+              [SPACE_DID]: [rootA.toString()],
+            },
+            options: {
+              indexer: createMockIndexer(new Map()),
+            },
+          }),
+          state,
+          SPACE_DID
+        )
+      ).rejects.toThrow(
+        `buildMigrationInventories: invalid explicit-root cursor for ${SPACE_DID}: explicit-roots:2junk`
+      )
+    })
+
+    it('throws clearly for invalid explicit upload roots', async () => {
+      const state = createMockInitialState()
+
+      await expect(
+        collectInventory(
+          buildMigrationInventories({
+            client: createMockClient([], new Map()),
+            resolver: claimsResolver,
+            state,
+            uploadRootsBySpace: {
+              [SPACE_DID]: ['not-a-cid'],
+            },
+            options: {
+              indexer: createMockIndexer(new Map()),
+            },
+          }),
+          state,
+          SPACE_DID
+        )
+      ).rejects.toThrow(
+        `buildMigrationInventories: invalid explicit upload root for ${SPACE_DID}: not-a-cid`
+      )
+    })
   })
 
   describe('abort support', () => {

@@ -176,6 +176,26 @@ export const testSpace = {
     }
   ),
 
+  'storacha space migrate accepts selected-roots-file and non-interactive flags':
+    test(async (assert, context) => {
+      const { status, error } = await storacha
+        .args([
+          'space',
+          'migrate',
+          '--private-key',
+          '0x1111111111111111111111111111111111111111111111111111111111111111',
+          '--selected-roots-file',
+          '/tmp/selected-roots.ndjson',
+          '--non-interactive',
+        ])
+        .env(context.env.alice)
+        .join()
+        .catch()
+
+      assert.equal(status.code, 1)
+      assert.match(error, /no current space/i)
+    }),
+
   'storacha space create': test(async (assert, context) => {
     const command = storacha
       .args([

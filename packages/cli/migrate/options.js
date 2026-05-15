@@ -7,6 +7,8 @@ import { mainnet, calibration } from '@filoz/synapse-sdk'
  * @property {boolean} [resume]
  * @property {boolean} [retry]
  * @property {boolean} [debug]
+ * @property {string} [selectedRootsFile]
+ * @property {boolean} [nonInteractive]
  */
 
 /**
@@ -27,6 +29,8 @@ export function parseMigrationOptions(opts) {
     resume: opts.resume ?? false,
     retry: opts.retry ?? false,
     debug: opts.debug ?? false,
+    selectedRootsFile: opts.selectedRootsFile,
+    nonInteractive: opts.nonInteractive ?? false,
     readerOptions,
     readerOverrideEntries,
   }

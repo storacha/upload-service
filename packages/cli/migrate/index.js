@@ -6,7 +6,10 @@ import {
   clearFailedUploadsForRetry,
   createResolver,
 } from '@storacha/filecoin-pin-migration'
-import { pruneStagedShards } from '@storacha/filecoin-pin-migration/helpers'
+import {
+  loadSelectedRootsFile,
+  pruneStagedShards,
+} from '@storacha/filecoin-pin-migration/helpers'
 import { parseEther } from 'viem'
 import {
   createWalletAccount,
@@ -38,6 +41,8 @@ const MIN_FIL_GAS_BALANCE = parseEther('0.001')
  * @property {boolean} [resume]
  * @property {boolean} [retry]
  * @property {boolean} [debug]
+ * @property {string} [selectedRootsFile]
+ * @property {boolean} [nonInteractive]
  */
 
 /**
@@ -69,6 +74,25 @@ export async function spaceMigrate(opts = {}) {
   config.resume = startState.mode === 'resume'
   config.retry = startState.mode === 'retry'
   const state = startState.state
+  const persistedReaderCursor = state.readerProgressCursors?.[context.spaceDID]
+  const hasExplicitRootCursor =
+    typeof persistedReaderCursor === 'string' &&
+    persistedReaderCursor.startsWith('explicit-roots:')
+
+  if (hasExplicitRootCursor && !config.selectedRootsFile) {
+    throw new Error(
+      'resume requested for an explicit-root reader state; rerun with --selected-roots-file'
+    )
+  }
+  if (
+    config.selectedRootsFile &&
+    persistedReaderCursor &&
+    !hasExplicitRootCursor
+  ) {
+    throw new Error(
+      'selected-roots-file cannot resume a state created without explicit-root reader mode'
+    )
+  }
 
   if (config.retry) {
     const retriedUploads = clearFailedUploadsForRetry(state, context.spaceDID)
@@ -115,12 +139,20 @@ export async function spaceMigrate(opts = {}) {
       minFilGasBalance: MIN_FIL_GAS_BALANCE,
     })
 
+    const uploadRootsBySpace = config.selectedRootsFile
+      ? await loadSelectedRootsFile({
+          filePath: config.selectedRootsFile,
+          spaceDID: context.spaceDID,
+        })
+      : undefined
+
     const readerResult = await runPhase('reader', () =>
       readInventories({
         client: context.client,
         resolver,
         state,
-        spaceDIDs: [context.spaceDID],
+        spaceDIDs: uploadRootsBySpace ? undefined : [context.spaceDID],
+        uploadRootsBySpace,
         readerOptions: config.readerOptions,
         readerOverrideEntries: config.readerOverrideEntries,
         isStopRequested,
@@ -170,10 +202,12 @@ export async function spaceMigrate(opts = {}) {
       )
     )
 
-    const proceedWithPlan = await confirm({
-      message: 'Continue with migration?',
-      default: false,
-    }).catch(() => false)
+    const proceedWithPlan = config.nonInteractive
+      ? true
+      : await confirm({
+          message: 'Continue with migration?',
+          default: false,
+        }).catch(() => false)
 
     if (!proceedWithPlan) {
       console.log('Migration cancelled')

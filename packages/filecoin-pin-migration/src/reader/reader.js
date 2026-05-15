@@ -1,5 +1,6 @@
 import pMap from 'p-map'
 import { base58btc } from 'multiformats/bases/base58'
+import { CID } from 'multiformats/cid'
 import { Client as IndexingClient } from '@storacha/indexing-service-client'
 import {
   DEFAULT_CHECKPOINT_EVERY_PAGES,
@@ -11,6 +12,8 @@ import { isAbortError, throwIfAborted } from '../errors.js'
 import { checkpointInventoryPage } from '../state.js'
 import { resolveClaimsIndex } from './indexer.js'
 import { normalizePositiveInteger } from '../utils.js'
+
+const EXPLICIT_ROOT_CURSOR_PREFIX = 'explicit-roots:'
 
 /**
  * @import {
@@ -30,7 +33,7 @@ import { normalizePositiveInteger } from '../utils.js'
 
 /**
  * Build migration inventories for multiple spaces, checkpointing into state
- * every configured number of upload.list pages.
+ * every configured number of reader pages/chunks.
  *
  * ## Resume
  *
@@ -38,6 +41,13 @@ import { normalizePositiveInteger } from '../utils.js'
  *   - Spaces already in state.spacesInventories with no cursor → skipped entirely
  *   - Spaces with a cursor in state.readerProgressCursors → resumed from that page
  *   - Spaces absent from state.spacesInventories → started fresh
+ *
+ * When uploadRootsBySpace is provided, the reader switches to explicit-root
+ * mode for those spaces:
+ *   - upload.list is not called
+ *   - roots are chunked by uploadPageSize
+ *   - readerProgressCursors store a synthetic "explicit-roots:{index}" cursor
+ *     for the next chunk to process
  *
  * When spaceDIDs is omitted, all spaces on the client are processed.
  *
@@ -110,6 +120,14 @@ export async function* buildMigrationInventories({
       continue
     }
 
+    const explicitRoots = uploadRootsBySpace?.[spaceDID]
+    const persistedCursor = state.readerProgressCursors?.[spaceDID]
+    if (!explicitRoots && isExplicitRootCursor(persistedCursor)) {
+      throw new TypeError(
+        `buildMigrationInventories: ${spaceDID} has an explicit-root reader cursor; resume with uploadRootsBySpace for that space`
+      )
+    }
+
     try {
       yield* buildSpaceInventory({
         client,
@@ -117,7 +135,7 @@ export async function* buildMigrationInventories({
         resolver,
         spaceDID,
         state,
-        selectedUploadRoots: uploadRootsBySpace?.[spaceDID],
+        explicitUploadRoots: explicitRoots,
         stopOnError,
         shardListConcurrency,
         uploadPageSize,
@@ -140,12 +158,11 @@ export async function* buildMigrationInventories({
 }
 
 /**
- * Paginate all uploads for one space, checkpointing into state after each
- * configured interval.
+ * Read one space, checkpointing into state after each configured interval.
  *
  * Resumes from state.readerProgressCursors[spaceDID] if present.
  *
- * Per page:
+ * Per page/chunk:
  *   1. List shards for all uploads in the page
  *   2. Query the indexing service and repair missing claims from cid.contact
  *   3. Extract per-shard results from the claims index (pure, no I/O)
@@ -157,7 +174,7 @@ export async function* buildMigrationInventories({
  * @param {SourceURLResolver} args.resolver
  * @param {SpaceDID} args.spaceDID
  * @param {MigrationState} args.state - Mutated in place
- * @param {string[] | undefined} args.selectedUploadRoots
+ * @param {string[] | undefined} args.explicitUploadRoots
  * @param {boolean} args.stopOnError
  * @param {number} args.shardListConcurrency
  * @param {number} args.uploadPageSize
@@ -174,7 +191,7 @@ async function* buildSpaceInventory({
   resolver,
   spaceDID,
   state,
-  selectedUploadRoots,
+  explicitUploadRoots,
   stopOnError,
   shardListConcurrency,
   uploadPageSize,
@@ -192,23 +209,31 @@ async function* buildSpaceInventory({
   const spaceName = client.currentSpace?.()?.name || undefined
 
   let cursor = state.readerProgressCursors?.[spaceDID]
-  const selectedRoots =
-    selectedUploadRoots != null ? new Set(selectedUploadRoots) : undefined
+  let explicitRootChunkIndex =
+    explicitUploadRoots != null
+      ? parseExplicitRootCursor(cursor, spaceDID)
+      : undefined
   let pagesSinceLastCheckpoint = 0
 
   do {
     throwIfAborted(signal)
-    const page = await client.capability.upload.list({
-      cursor,
-      size: uploadPageSize,
-      signal,
-    })
+    const page =
+      explicitUploadRoots != null
+        ? listExplicitUploadPage({
+            uploadRoots: explicitUploadRoots,
+            chunkIndex: /** @type {number} */ (explicitRootChunkIndex),
+            chunkSize: uploadPageSize,
+            spaceDID,
+          })
+        : await client.capability.upload.list({
+            cursor,
+            size: uploadPageSize,
+            signal,
+          })
     throwIfAborted(signal)
-    const uploadsInPage = selectedRoots
-      ? page.results.filter((upload) =>
-          selectedRoots.has(upload.root.toString())
-        )
-      : page.results
+    const uploadsInPage = /** @type {Array<{ root: UnknownLink }>} */ (
+      page.results
+    )
 
     // Phase 1: list all shards for all uploads in the page
     const uploadsWithShards = await pMap(
@@ -293,6 +318,9 @@ async function* buildSpaceInventory({
     }
 
     cursor = page.cursor
+    if (explicitRootChunkIndex != null) {
+      explicitRootChunkIndex += 1
+    }
 
     checkpointInventoryPage(state, {
       spaceDID,
@@ -418,4 +446,99 @@ function createSignalAwareFetch(fetcher, signal) {
         signal: init.signal ?? signal,
       })
   )
+}
+
+/**
+ * @param {string | undefined} cursor
+ */
+function isExplicitRootCursor(cursor) {
+  return cursor?.startsWith(EXPLICIT_ROOT_CURSOR_PREFIX) ?? false
+}
+
+/**
+ * @param {string | undefined} cursor
+ * @param {SpaceDID} spaceDID
+ */
+function parseExplicitRootCursor(cursor, spaceDID) {
+  if (cursor == null) return 0
+  if (!isExplicitRootCursor(cursor)) {
+    throw new TypeError(
+      `buildMigrationInventories: invalid explicit-root cursor for ${spaceDID}: ${cursor}`
+    )
+  }
+
+  const suffix = cursor.slice(EXPLICIT_ROOT_CURSOR_PREFIX.length)
+  if (!/^\d+$/.test(suffix)) {
+    throw new TypeError(
+      `buildMigrationInventories: invalid explicit-root cursor for ${spaceDID}: ${cursor}`
+    )
+  }
+
+  const chunkIndex = Number(suffix)
+  if (!Number.isInteger(chunkIndex) || chunkIndex < 0) {
+    throw new TypeError(
+      `buildMigrationInventories: invalid explicit-root cursor for ${spaceDID}: ${cursor}`
+    )
+  }
+
+  return chunkIndex
+}
+
+/**
+ * @param {number} chunkIndex
+ */
+function formatExplicitRootCursor(chunkIndex) {
+  return `${EXPLICIT_ROOT_CURSOR_PREFIX}${chunkIndex}`
+}
+
+/**
+ * Build a synthetic upload page from explicit roots for one space.
+ *
+ * @param {object} args
+ * @param {string[]} args.uploadRoots
+ * @param {number} args.chunkIndex
+ * @param {number} args.chunkSize
+ * @param {SpaceDID} args.spaceDID
+ * @returns {{ results: Array<{ root: UnknownLink }>, cursor: string | undefined }}
+ */
+function listExplicitUploadPage({
+  uploadRoots,
+  chunkIndex,
+  chunkSize,
+  spaceDID,
+}) {
+  const totalChunks =
+    uploadRoots.length === 0 ? 1 : Math.ceil(uploadRoots.length / chunkSize)
+  if (chunkIndex >= totalChunks) {
+    throw new RangeError(
+      `buildMigrationInventories: explicit-root cursor for ${spaceDID} is beyond the available root chunks: ${chunkIndex}`
+    )
+  }
+
+  const start = chunkIndex * chunkSize
+  const chunk = uploadRoots.slice(start, start + chunkSize)
+
+  return {
+    results: chunk.map((root) => ({
+      root: parseExplicitRoot(root, spaceDID),
+    })),
+    cursor:
+      start + chunk.length < uploadRoots.length
+        ? formatExplicitRootCursor(chunkIndex + 1)
+        : undefined,
+  }
+}
+
+/**
+ * @param {string} root
+ * @param {SpaceDID} spaceDID
+ */
+function parseExplicitRoot(root, spaceDID) {
+  try {
+    return CID.parse(root)
+  } catch {
+    throw new TypeError(
+      `buildMigrationInventories: invalid explicit upload root for ${spaceDID}: ${root}`
+    )
+  }
 }

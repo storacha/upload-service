@@ -342,6 +342,15 @@ cli
     'When resuming, clear persisted failed upload roots for the selected space and retry them.'
   )
   .option(
+    '-R, --selected-roots-file <path>',
+    'Path to a JSON file containing an array of trusted upload root CIDs for the current selected space.'
+  )
+  .option(
+    '--non-interactive',
+    'Skip the final migration confirmation prompt.',
+    false
+  )
+  .option(
     '--debug',
     'Show verbose output including successful commit logs.',
     false
@@ -363,6 +372,8 @@ cli
       stateFile: options['state-file'],
       resume: options.resume,
       retry: options.retry,
+      selectedRootsFile: options['selected-roots-file'],
+      nonInteractive: options['non-interactive'],
       debug: options.debug,
     }
 

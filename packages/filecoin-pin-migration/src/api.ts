@@ -338,8 +338,12 @@ interface BuildInventoriesBaseInput {
     stopOnError?: boolean
     /**
      * Number of uploads to request per upload.list page (default: 100).
-     * Keep this modest: larger pages increase reader memory usage and the
-     * amount of claim-resolution work done before the next checkpoint.
+     *
+     * When `uploadRootsBySpace` is provided, this becomes the number of
+     * explicit roots to process per synthetic chunk.
+     *
+     * Keep this modest: larger pages/chunks increase reader memory usage and
+     * the amount of claim-resolution work done before the next checkpoint.
      */
     uploadPageSize?: number
     /**
@@ -348,6 +352,10 @@ interface BuildInventoriesBaseInput {
     shardListConcurrency?: number
     /**
      * Emit state:checkpoint every N upload pages (default: 1).
+     *
+     * When `uploadRootsBySpace` is provided, the same setting applies to
+     * explicit-root chunks.
+     *
      * Higher values reduce checkpoint I/O but can require re-processing up to
      * N - 1 pages after an ungraceful interruption.
      */
@@ -376,7 +384,14 @@ export type BuildInventoriesInput = BuildInventoriesBaseInput &
         uploadRootsBySpace?: never
       }
     | {
-        /** Restrict reading to explicit upload roots grouped by space. */
+        /**
+         * Read exactly these trusted upload roots grouped by space.
+         *
+         * In this mode the reader skips `upload.list()` entirely, chunks the
+         * supplied roots by `uploadPageSize`, and stores synthetic
+         * `readerProgressCursors` values to support resume within the explicit
+         * root list.
+         */
         uploadRootsBySpace: UploadRootsBySpace
         spaceDIDs?: never
       }
