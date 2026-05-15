@@ -24,6 +24,7 @@ import { createService as createFilecoinService } from '@storacha/filecoin-api/s
 import { createService as createLegacyAdminService } from '@web3-storage/upload-api/admin'
 import { createService as createLegacyStoreService } from '@web3-storage/upload-api/store'
 import { createService as createAccountUsageService } from './account/usage.js'
+import { applyWritesDisabled } from './disable-writes.js'
 import * as AgentMessage from './utils/agent-message.js'
 
 export * from './types.js'
@@ -178,37 +179,40 @@ export const run = async (agent, invocation) => {
  * @param {Types.ServiceContext} context
  * @returns {Types.Service}
  */
-export const createService = (context) => ({
-  access: createAccessService(context),
-  console: createConsoleService(context),
-  consumer: createConsumerService(context),
-  customer: createCustomerService(context),
-  provider: createProviderService(context),
-  'rate-limit': createRateLimitService(context),
-  admin: {
-    ...createAdminService(context),
-    // @ts-expect-error `uploadTable` items now have a `cause` field. This does
-    // not matter since `admin/store/inspect` handler does not use this table.
-    store: createLegacyAdminService(context).store,
-  },
-  space: createSpaceService(context),
-  subscription: createSubscriptionService(context),
-  upload: createUploadService(context),
-  ucan: createUcanService(context),
-  plan: createPlanService(context),
-  // storefront of filecoin pipeline
-  filecoin: createFilecoinService(context).filecoin,
-  usage: createUsageService(context),
-  account: {
-    usage: createAccountUsageService(context),
-  },
-  // legacy
-  store: (() => {
-    const { add: _, ...rest } = createLegacyStoreService(context)
-    return rest
-  })(),
-  'web3.storage': createLegacyW3sService(context),
-})
+export const createService = (context) => {
+  const service = {
+    access: createAccessService(context),
+    console: createConsoleService(context),
+    consumer: createConsumerService(context),
+    customer: createCustomerService(context),
+    provider: createProviderService(context),
+    'rate-limit': createRateLimitService(context),
+    admin: {
+      ...createAdminService(context),
+      // @ts-expect-error `uploadTable` items now have a `cause` field. This does
+      // not matter since `admin/store/inspect` handler does not use this table.
+      store: createLegacyAdminService(context).store,
+    },
+    space: createSpaceService(context),
+    subscription: createSubscriptionService(context),
+    upload: createUploadService(context),
+    ucan: createUcanService(context),
+    plan: createPlanService(context),
+    // storefront of filecoin pipeline
+    filecoin: createFilecoinService(context).filecoin,
+    usage: createUsageService(context),
+    account: {
+      usage: createAccountUsageService(context),
+    },
+    // legacy
+    store: (() => {
+      const { add: _, ...rest } = createLegacyStoreService(context)
+      return rest
+    })(),
+    'web3.storage': createLegacyW3sService(context),
+  }
+  return context.writesDisabled ? applyWritesDisabled(service) : service
+}
 
 /**
  * @param {object} options
