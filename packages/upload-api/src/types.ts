@@ -687,7 +687,16 @@ export interface ServiceContext
     FilecoinServiceContext,
     IndexServiceContext,
     UsageServiceContext,
-    LegacyStoreServiceContext {}
+    LegacyStoreServiceContext {
+  /**
+   * When `true`, the user-facing write capabilities listed in
+   * `./disable-writes.js#WRITE_PATHS` are short-circuited at service
+   * construction time and return a `ServiceUnavailable` failure receipt.
+   * Read capabilities, receipt-side handlers, and egress accounting
+   * remain functional. Defaults to `false` when absent.
+   */
+  writesDisabled?: boolean
+}
 
 export interface UcantoServerContext
   extends ServiceContext,

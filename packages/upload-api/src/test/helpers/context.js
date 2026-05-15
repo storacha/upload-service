@@ -20,6 +20,7 @@ import { getExternalServiceImplementations } from '../external-service/index.js'
  * @param {object} options
  * @param {Record<string, number>} [options.providers]
  * @param {boolean} [options.requirePaymentPlan]
+ * @param {boolean} [options.writesDisabled]
  * @param {import('http')} [options.http]
  * @param {{fail(error:unknown): unknown}} [options.assert]
  * @returns {Promise<Types.UcantoServerTestContext>}
@@ -28,6 +29,7 @@ export const createContext = async (
   options = { requirePaymentPlan: false }
 ) => {
   const requirePaymentPlan = options.requirePaymentPlan
+  const writesDisabled = options.writesDisabled
   const signer = await Signer.generate()
   const aggregatorSigner = await Signer.generate()
   const dealTrackerSigner = await Signer.generate()
@@ -70,6 +72,7 @@ export const createContext = async (
     signer: id,
     email,
     requirePaymentPlan,
+    writesDisabled,
     url: new URL('http://localhost:8787'),
     ...serviceStores,
     ...externalServices,

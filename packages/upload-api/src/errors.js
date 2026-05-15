@@ -38,3 +38,16 @@ export class RecordNotFound extends Server.Failure {
     return RecordNotFoundErrorName
   }
 }
+
+export const ServiceUnavailableName = /** @type {const} */ (
+  'ServiceUnavailable'
+)
+export class ServiceUnavailable extends Server.Failure {
+  get reason() {
+    return this.message
+  }
+
+  get name() {
+    return ServiceUnavailableName
+  }
+}
