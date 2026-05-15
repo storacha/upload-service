@@ -1,3 +1,10 @@
+## 2.9.103 (2026-05-15)
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/encrypt-upload-client to 1.1.83
+- Updated @storacha/ui-core to 2.4.166
+
 ## 2.9.102 (2026-03-24)
 
 ### 🧱 Updated Dependencies

@@ -1,3 +1,17 @@
+## 1.1.0 (2026-05-15)
+
+### 🚀 Features
+
+- Add reader tuning controls and improve large-space migration behavior with safer claim batching, faster  fallback resolution, bounded IPNI latency, and graceful reader interruption handling. ([fbcea2bd](https://github.com/storacha/upload-service/commit/fbcea2bd))
+
+### 🧱 Updated Dependencies
+
+- Updated @storacha/client to 2.1.4
+
+### ❤️ Thank You
+
+- bravonatalie
+
 ## 1.0.1 (2026-05-11)
 
 ### 🩹 Fixes
