@@ -37,21 +37,9 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     },
-    "./factories.node": {
-      "import": "./dist/crypto/factories.node.js",
-      "require": "./dist/crypto/factories.node.js"
-    },
-    "./factories.browser": {
-      "import": "./dist/crypto/factories.browser.js",
-      "require": "./dist/crypto/factories.browser.js"
-    },
-    "./node": {
-      "import": "./dist/crypto/symmetric/node-aes-cbc-crypto.js",
-      "require": "./dist/crypto/symmetric/node-aes-cbc-crypto.js"
-    },
-    "./browser": {
-      "import": "./dist/crypto/symmetric/generic-aes-ctr-streaming-crypto.js",
-      "require": "./dist/crypto/symmetric/generic-aes-ctr-streaming-crypto.js"
+    "./factories": {
+      "import": "./dist/crypto/factories.js",
+      "require": "./dist/crypto/factories.js"
     },
     "./types": "./dist/types.js"
   },

@@ -55,26 +55,33 @@ export function useKMSConfig(initialConfig?: KMSConfig): {
 } {
   // Merge initial config with environment variable fallbacks
   const defaultConfig = {
-    keyManagerServiceURL: process.env.NEXT_PUBLIC_UCAN_KMS_URL ?? 'https://kms.storacha.network',
-    keyManagerServiceDID: process.env.NEXT_PUBLIC_UCAN_KMS_DID ?? 'did:web:kms.storacha.network',
+    keyManagerServiceURL:
+      process.env.NEXT_PUBLIC_UCAN_KMS_URL ?? 'https://kms.storacha.network',
+    keyManagerServiceDID:
+      process.env.NEXT_PUBLIC_UCAN_KMS_DID ?? 'did:web:kms.storacha.network',
     location: process.env.NEXT_PUBLIC_UCAN_KMS_LOCATION,
     keyring: process.env.NEXT_PUBLIC_UCAN_KMS_KEYRING,
-    allowInsecureHttp: process.env.NEXT_PUBLIC_UCAN_KMS_ALLOW_INSECURE_HTTP === 'true',
+    allowInsecureHttp:
+      process.env.NEXT_PUBLIC_UCAN_KMS_ALLOW_INSECURE_HTTP === 'true',
     // Override with any provided initial config values
-    ...initialConfig
+    ...initialConfig,
   }
-  
-  const [kmsConfig, setKmsConfig] = useState<KMSConfig | undefined>(defaultConfig)
-  
+
+  const [kmsConfig, setKmsConfig] = useState<KMSConfig | undefined>(
+    defaultConfig
+  )
+
   // Helper function to create KMS adapter with fallbacks
   const createKMSAdapter = useCallback(async (): Promise<any | null> => {
     if (!kmsConfig?.keyManagerServiceURL || !kmsConfig?.keyManagerServiceDID) {
       return null
     }
-    
+
     try {
-      const { createGenericKMSAdapter } = await import('@storacha/encrypt-upload-client/factories.browser')
-      
+      const { createGenericKMSAdapter } = await import(
+        '@storacha/encrypt-upload-client/factories'
+      )
+
       return createGenericKMSAdapter(
         kmsConfig.keyManagerServiceURL,
         kmsConfig.keyManagerServiceDID,
@@ -87,12 +94,14 @@ export function useKMSConfig(initialConfig?: KMSConfig): {
       return null
     }
   }, [kmsConfig])
-  
+
   return {
     kmsConfig,
     setKmsConfig,
     createKMSAdapter,
-    isConfigured: Boolean(kmsConfig?.keyManagerServiceURL && kmsConfig?.keyManagerServiceDID)
+    isConfigured: Boolean(
+      kmsConfig?.keyManagerServiceURL && kmsConfig?.keyManagerServiceDID
+    ),
   }
 }
 
@@ -114,14 +123,14 @@ export function useDatamodel({
       connection,
       receiptsEndpoint,
     })
-    
+
     startTransition(() => {
       setClient(client)
       setEvents(events)
       setAccounts(Object.values(client.accounts()))
       setSpaces(client.spaces())
     })
-    
+
     if (!skipInitialClaim) {
       await client.capability.access.claim()
     }
