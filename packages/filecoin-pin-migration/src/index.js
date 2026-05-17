@@ -23,3 +23,5 @@ export {
   deserializeState,
   resolveUploadPhase,
 } from './state.js'
+export { createStore } from './store/factory.js'
+export { JsonFileStore } from './store/json-store.js'

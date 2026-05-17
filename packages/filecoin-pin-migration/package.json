@@ -62,7 +62,8 @@
     "@web3-storage/data-segment": "catalog:",
     "multiformats": "catalog:",
     "p-map": "^7.0.3",
-    "p-retry": "^6.2.1"
+    "p-retry": "^6.2.1",
+    "steno": "^4.0.0"
   },
   "peerDependencies": {
     "viem": "catalog:"

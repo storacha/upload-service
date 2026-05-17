@@ -115,6 +115,24 @@ export class ResumeBindingDriftError extends Error {
   }
 }
 
+export const StoreClosedErrorName = /** @type {const} */ ('StoreClosedError')
+/**
+ * Thrown when a {@link import('./api.js').MigrationStore} method is called
+ * after `close()` / `closeSync()` has begun (lifecycle outside `'open'`).
+ *
+ * This is a programmer / lifecycle invariant violation, not a domain failure —
+ * it does not flow through `Result<T,X>` and is not a `@ucanto/server` Failure.
+ */
+export class StoreClosedError extends Error {
+  /** @param {string} method */
+  constructor(method) {
+    super(`MigrationStore has been closed; cannot call ${method}()`)
+  }
+  get name() {
+    return StoreClosedErrorName
+  }
+}
+
 /**
  * Abort is cooperative control flow, not a migration failure.
  *
