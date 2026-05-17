@@ -323,8 +323,8 @@ interface BuildInventoriesBaseInput {
   client: Client
   /** Resolves the final sourceURL for each shard */
   resolver: SourceURLResolver
-  /** Mutated in place; used for resume and checkpointing */
-  state: MigrationState
+  /** Store that owns state; used for resume and checkpointing */
+  store: MigrationStore
   /** AbortSignal for cooperative cancellation during reader I/O. */
   signal?: AbortSignal
   options?: {
@@ -401,8 +401,8 @@ export type BuildInventoriesInput = BuildInventoriesBaseInput &
 export interface CreatePlanInput {
   /** Initialized @filoz/synapse-sdk Synapse instance */
   synapse: Synapse
-  /** Mutated in place; SP bindings written after cost computation */
-  state: MigrationState
+  /** Store that owns state; SP bindings written after cost computation */
+  store: MigrationStore
   /**
    * Target storage provider IDs. At least two distinct IDs are required when
    * provided so the planner can bind one provider per copy. When omitted, the
@@ -417,8 +417,8 @@ export interface CreatePlanInput {
 export interface ExecuteMigrationInput {
   /** Approved plan from createMigrationPlan() */
   plan: MigrationPlan
-  /** Mutated in place; tracks committed shards and phase */
-  state: MigrationState
+  /** Store that owns state; tracks committed shards and phase */
+  store: MigrationStore
   /** Initialized Synapse SDK instance */
   synapse: Synapse
   /** Pieces per pull batch (default: 50) */
@@ -455,8 +455,8 @@ export interface ExecuteMigrationInput {
 export interface ExecuteStoreMigrationInput {
   /** Approved plan from createMigrationPlan() */
   plan: MigrationPlan
-  /** Mutated in place; tracks stored and committed shards and phase */
-  state: MigrationState
+  /** Store that owns state; tracks stored and committed shards and phase */
+  store: MigrationStore
   /** Initialized Synapse SDK instance */
   synapse: Synapse
   /** Shards per store checkpoint batch and per secondary pull batch (default: 50) */
@@ -922,6 +922,22 @@ export interface MigrationStore {
    * @throws StoreClosedError if the store is not in `'open'` state.
    */
   checkpointInventoryPage(page: CheckpointInventoryPageInput): void
+
+  /**
+   * Transition the top-level migration phase to `'planning'`. Mirrors
+   * `state.transitionToPlanning`.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  transitionToPlanning(): void
+
+  /**
+   * Transition the top-level migration phase to `'migrating'`. Mirrors
+   * `state.transitionToMigrating`.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  transitionToMigrating(): void
 
   /**
    * Populate `state.spaces` with per-copy SP bindings from the cost result,

@@ -20,12 +20,12 @@ const LIVE_STATUS_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '�
 /**
  * @param {object} args
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationPlan} args.plan
- * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} args.state
+ * @param {import('@storacha/filecoin-pin-migration/types').MigrationStore} args.store
  * @param {import('@filoz/synapse-sdk').Synapse} args.synapse
  * @param {boolean} args.debug
  * @param {() => 'migrating' | undefined} args.consumeGracefulStopNoticePhase
  * @param {() => boolean} args.isStopRequested
- * @param {(state: import('@storacha/filecoin-pin-migration/types').MigrationState) => Promise<void>} args.persistCheckpoint
+ * @param {() => Promise<void>} args.persistCheckpoint
  * @param {AbortSignal} args.signal
  *
  * Note: inventory totals are captured once at migration start. Mutations to
@@ -34,7 +34,7 @@ const LIVE_STATUS_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '�
  */
 export async function runMigration({
   plan,
-  state,
+  store,
   synapse,
   debug,
   consumeGracefulStopNoticePhase,
@@ -42,6 +42,7 @@ export async function runMigration({
   persistCheckpoint,
   signal,
 }) {
+  const state = store.getState()
   printPhaseTitle('Migrating')
   printResumeStatus(state)
   const startedAt = Date.now()
@@ -204,7 +205,7 @@ export async function runMigration({
 
   const migrationEvents = executeMigration({
     plan,
-    state,
+    store,
     synapse,
     signal,
   })
@@ -335,7 +336,7 @@ export async function runMigration({
         break
       case 'state:checkpoint':
         markProgressDirty()
-        await persistCheckpoint(state)
+        await persistCheckpoint()
         if (signal.aborted) {
           stopHeartbeat()
           clearStatusBlock()

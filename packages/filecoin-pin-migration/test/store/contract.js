@@ -111,6 +111,25 @@ export function runStoreContractTests(name, createStore) {
       })
     })
 
+    describe('phase transitions', () => {
+      it('transitionToPlanning() sets phase to planning', async () => {
+        const store = await open()
+        expect(store.getState().phase).toBe('reading')
+        store.transitionToPlanning()
+        expect(store.getState().phase).toBe('planning')
+        await store.close()
+        untrack()
+      })
+
+      it('transitionToMigrating() sets phase to migrating', async () => {
+        const store = await open()
+        store.transitionToMigrating()
+        expect(store.getState().phase).toBe('migrating')
+        await store.close()
+        untrack()
+      })
+    })
+
     describe('post-close throws', () => {
       const spaceDID = /** @type {API.SpaceDID} */ ('did:key:zABC')
 
@@ -150,6 +169,8 @@ export function runStoreContractTests(name, createStore) {
                 })
               ),
           ],
+          ['transitionToPlanning', () => store.transitionToPlanning()],
+          ['transitionToMigrating', () => store.transitionToMigrating()],
           ['transitionToApproved', () => store.transitionToApproved([])],
           ['transitionToFunded', () => store.transitionToFunded()],
           [

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { executeMigration } from '../src/migrator/migrator.js'
 import { executeStoreMigration } from '../src/migrator/store-executor.js'
-import { createMockInitialState, createPieceCID } from './helpers.js'
+import { createTestStore, createPieceCID } from './helpers.js'
 import { DEFAULT_STORE_OPERATION_RETRIES } from '../src/constants.js'
 import {
   clearFailedUploadsForRetry,
@@ -240,12 +240,36 @@ async function readStreamBytes(stream) {
 }
 
 describe('executeMigration', () => {
+  /** @type {import('@storacha/filecoin-pin-migration/types').MigrationStore[]} */
+  let openStores = []
+
+  afterEach(async () => {
+    const stores = openStores
+    openStores = []
+    for (const s of stores) {
+      await s.close()
+    }
+  })
+
+  /**
+   * Open a test store and register it for afterEach cleanup.
+   *
+   * @param {Parameters<typeof createTestStore>[0]} [opts]
+   */
+  async function openStore(opts) {
+    const store = await createTestStore(opts)
+    openStores.push(store)
+    return store
+  }
+
   it('migrates normal shards via source pull and shardsToStore via store+pull in one commit phase per copy', async () => {
     const spaceDID = /** @type {API.SpaceDID} */ (
       'did:key:z6MkMixedMigrationSpace1'
     )
     const normalPieceCID = createPieceCID().toString()
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Mixed Space',
       uploads: ['bafy-root-pull', 'bafy-root-store'],
@@ -285,7 +309,7 @@ describe('executeMigration', () => {
 
     for await (const event of executeMigration({
       plan,
-      state,
+      store,
       synapse: /** @type {API.Synapse} */ ({}),
       fetcher,
     })) {
@@ -420,7 +444,9 @@ describe('executeMigration', () => {
     const spaceDID = /** @type {API.SpaceDID} */ (
       'did:key:z6MkStoreByteStreamSpace'
     )
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Store Byte Stream Space',
       uploads: ['bafy-root-store-bytes'],
@@ -469,7 +495,7 @@ describe('executeMigration', () => {
 
     for await (const _event of executeMigration({
       plan,
-      state,
+      store,
       synapse: /** @type {API.Synapse} */ ({}),
       fetcher,
     })) {
@@ -485,7 +511,9 @@ describe('executeMigration', () => {
     )
     const firstShardCID = 'bafy-shard-store-fast-success'
     const secondShardCID = 'bafy-shard-store-slow-success'
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Store Streaming Checkpoint Space',
       uploads: ['bafy-root-store-fast', 'bafy-root-store-slow'],
@@ -532,7 +560,7 @@ describe('executeMigration', () => {
     )
     const iterator = executeMigration({
       plan,
-      state,
+      store,
       synapse: /** @type {API.Synapse} */ ({}),
       batchSize: 2,
       storeConcurrency: 2,
@@ -592,7 +620,9 @@ describe('executeMigration', () => {
       'did:key:z6MkStoreFailureStreamingSpace'
     )
     const failedRoot = 'bafy-root-store-fast-failure'
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Store Streaming Failure Space',
       uploads: [failedRoot, 'bafy-root-store-slow'],
@@ -639,7 +669,7 @@ describe('executeMigration', () => {
     )
     const iterator = executeMigration({
       plan,
-      state,
+      store,
       synapse: /** @type {API.Synapse} */ ({}),
       batchSize: 2,
       storeConcurrency: 2,
@@ -690,7 +720,9 @@ describe('executeMigration', () => {
     const spaceDID = /** @type {API.SpaceDID} */ (
       'did:key:z6MkStoreFetchRetrySuccessSpace'
     )
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Store Fetch Retry Success Space',
       uploads: ['bafy-root-store-retry'],
@@ -738,7 +770,7 @@ describe('executeMigration', () => {
     const events = []
     for await (const event of executeMigration({
       plan,
-      state,
+      store,
       synapse: /** @type {API.Synapse} */ ({}),
       fetcher,
     })) {
@@ -758,7 +790,9 @@ describe('executeMigration', () => {
     )
     const shardCID = 'bafy-shard-store-error'
     const sourceURL = 'https://source.example/store-error'
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Store Failure Context Space',
       uploads: ['bafy-root-store-error'],
@@ -805,7 +839,7 @@ describe('executeMigration', () => {
 
     for await (const event of executeMigration({
       plan,
-      state,
+      store,
       synapse: /** @type {API.Synapse} */ ({}),
       fetcher,
     })) {
@@ -861,7 +895,9 @@ describe('executeMigration', () => {
       const spaceDID = /** @type {API.SpaceDID} */ (
         `did:key:z6MkStoreFetchStatusSpace${testCase.status}`
       )
-      const state = withInventory(createMockInitialState(), {
+      const store = await openStore()
+      const state = store.getState()
+      withInventory(state, {
         did: spaceDID,
         name: 'Store Fetch Status Space',
         uploads: ['bafy-root-store-status'],
@@ -903,7 +939,7 @@ describe('executeMigration', () => {
       const events = []
       for await (const event of executeMigration({
         plan,
-        state,
+        store,
         synapse: /** @type {API.Synapse} */ ({}),
         fetcher,
       })) {
@@ -941,7 +977,9 @@ describe('executeMigration', () => {
     const failedRoot = 'bafy-root-store-failed'
     const firstShardCID = 'bafy-shard-store-failed-1'
     const secondShardCID = 'bafy-shard-store-failed-2'
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Store Isolation Space',
       uploads: [failedRoot],
@@ -995,7 +1033,7 @@ describe('executeMigration', () => {
 
     for await (const event of executeMigration({
       plan,
-      state,
+      store,
       synapse: /** @type {API.Synapse} */ ({}),
       batchSize: 1,
       fetcher,
@@ -1038,7 +1076,9 @@ describe('executeMigration', () => {
     const cleanRoot = 'bafy-root-store-clean'
     const failedShardCID = 'bafy-shard-store-failed-1'
     const cleanShardCID = 'bafy-shard-store-clean-1'
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Mixed Store Roots Space',
       uploads: [failedRoot, cleanRoot],
@@ -1099,7 +1139,7 @@ describe('executeMigration', () => {
 
     for await (const _event of executeMigration({
       plan,
-      state,
+      store,
       synapse: /** @type {API.Synapse} */ ({}),
       batchSize: 1,
       fetcher,
@@ -1144,7 +1184,9 @@ describe('executeMigration', () => {
     const root = 'bafy-root-store-persisted'
     const shardCID = 'bafy-shard-store-persisted-1'
     const storedPieceCID = createPieceCID().toString()
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Persisted Store Root Space',
       uploads: [root],
@@ -1182,7 +1224,7 @@ describe('executeMigration', () => {
 
     for await (const _event of executeMigration({
       plan,
-      state,
+      store,
       synapse: /** @type {API.Synapse} */ ({}),
       fetcher,
     })) {
@@ -1206,7 +1248,9 @@ describe('executeMigration', () => {
     const root = 'bafy-root-store-retry'
     const shardCID = 'bafy-shard-store-retry-1'
     const storedPieceCID = createPieceCID().toString()
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Retry Reuse Store Root Space',
       uploads: [root],
@@ -1245,7 +1289,7 @@ describe('executeMigration', () => {
 
     for await (const _event of executeMigration({
       plan,
-      state,
+      store,
       synapse: /** @type {API.Synapse} */ ({}),
       fetcher,
     })) {
@@ -1273,7 +1317,9 @@ describe('executeMigration', () => {
     const sharedPieceCID = createPieceCID().toString()
     const rootA = 'bafy-root-source-a'
     const rootB = 'bafy-root-source-b'
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Duplicate Root Source Space',
       uploads: [rootA, rootB],
@@ -1313,7 +1359,7 @@ describe('executeMigration', () => {
 
     for await (const _event of executeMigration({
       plan,
-      state,
+      store,
       synapse: /** @type {API.Synapse} */ ({}),
     })) {
       // drain
@@ -1363,7 +1409,9 @@ describe('executeMigration', () => {
     const sharedPieceCID = createPieceCID().toString()
     const rootA = 'bafy-root-source-failure-a'
     const rootB = 'bafy-root-source-failure-b'
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Duplicate Root Source Failure Space',
       uploads: [rootA, rootB],
@@ -1422,7 +1470,7 @@ describe('executeMigration', () => {
     const events = []
     for await (const event of executeMigration({
       plan,
-      state,
+      store,
       synapse: /** @type {API.Synapse} */ ({}),
       batchSize: 1,
       pullConcurrency: 1,
@@ -1461,7 +1509,9 @@ describe('executeMigration', () => {
     const sharedShardCID = 'bafy-shard-store-shared'
     const rootA = 'bafy-root-store-a'
     const rootB = 'bafy-root-store-b'
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Duplicate Root Store Space',
       uploads: [rootA, rootB],
@@ -1503,7 +1553,7 @@ describe('executeMigration', () => {
 
     for await (const _event of executeMigration({
       plan,
-      state,
+      store,
       synapse: /** @type {API.Synapse} */ ({}),
       fetcher,
     })) {
@@ -1556,7 +1606,9 @@ describe('executeMigration', () => {
     const sharedShardCID = 'bafy-shard-store-shared-failure'
     const rootA = createOversizedRoot('store-failure-a')
     const rootB = createOversizedRoot('store-failure-b')
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Duplicate Root Store Failure Space',
       uploads: [rootA, rootB],
@@ -1612,7 +1664,7 @@ describe('executeMigration', () => {
 
     for await (const _event of executeMigration({
       plan,
-      state,
+      store,
       synapse: /** @type {API.Synapse} */ ({}),
       fetcher,
       maxCommitRetries: 0,
@@ -1643,7 +1695,9 @@ describe('executeMigration', () => {
     const sharedShardCID = 'bafy-shard-store-shared-retry'
     const rootA = createOversizedRoot('store-retry-a')
     const rootB = createOversizedRoot('store-retry-b')
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Duplicate Root Store Retry Space',
       uploads: [rootA, rootB],
@@ -1700,7 +1754,7 @@ describe('executeMigration', () => {
 
     for await (const _event of executeMigration({
       plan,
-      state,
+      store,
       synapse: /** @type {API.Synapse} */ ({}),
       fetcher,
       maxCommitRetries: 0,
@@ -1725,7 +1779,7 @@ describe('executeMigration', () => {
 
     for await (const _event of executeMigration({
       plan,
-      state,
+      store,
       synapse: /** @type {API.Synapse} */ ({}),
       fetcher,
       maxCommitRetries: 0,
@@ -1768,7 +1822,9 @@ describe('executeMigration', () => {
     const rootA = 'bafy-root-store-resume-a'
     const rootB = 'bafy-root-store-resume-b'
     const storedPieceCID = createPieceCID().toString()
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Duplicate Root Store Resume Space',
       uploads: [rootA, rootB],
@@ -1830,7 +1886,7 @@ describe('executeMigration', () => {
 
     for await (const _event of executeMigration({
       plan,
-      state,
+      store,
       synapse: /** @type {API.Synapse} */ ({}),
       fetcher,
       maxCommitRetries: 0,
@@ -1871,7 +1927,9 @@ describe('executeMigration', () => {
       'did:key:z6MkMixedMigrationSpace2'
     )
     const sharedRoot = 'bafy-root-shared'
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Shared Root Space',
       uploads: [sharedRoot],
@@ -1930,7 +1988,7 @@ describe('executeMigration', () => {
     const events = []
     for await (const event of executeMigration({
       plan,
-      state,
+      store,
       synapse: /** @type {API.Synapse} */ ({}),
       batchSize: 1,
       pullConcurrency: 1,
@@ -1977,7 +2035,9 @@ describe('executeMigration', () => {
       'did:key:z6MkAbortSourcePullSpace1'
     )
     const firstShardCID = 'bafy-shard-pull-1'
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Abort Source Pull Space',
       uploads: ['bafy-root-pull'],
@@ -2068,7 +2128,7 @@ describe('executeMigration', () => {
       const events = []
       for await (const event of executeMigration({
         plan,
-        state,
+        store,
         synapse: /** @type {API.Synapse} */ ({}),
         batchSize: 1,
         pullConcurrency: 2,
@@ -2102,7 +2162,9 @@ describe('executeMigration', () => {
       'did:key:z6MkAbortStoreBatchSpace1'
     )
     const firstShardCID = 'bafy-shard-store-1'
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Abort Store Space',
       uploads: ['bafy-root-store'],
@@ -2182,7 +2244,7 @@ describe('executeMigration', () => {
       const events = []
       for await (const event of executeMigration({
         plan,
-        state,
+        store,
         synapse: /** @type {API.Synapse} */ ({}),
         fetcher,
         signal: controller.signal,
@@ -2214,7 +2276,9 @@ describe('executeMigration', () => {
       'did:key:z6MkAbortSecondaryPullSpace1'
     )
     const firstShardCID = 'bafy-shard-store-secondary-1'
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Abort Secondary Pull Space',
       uploads: ['bafy-root-store-secondary'],
@@ -2307,7 +2371,7 @@ describe('executeMigration', () => {
       const events = []
       for await (const event of executeMigration({
         plan,
-        state,
+        store,
         synapse: /** @type {API.Synapse} */ ({}),
         fetcher,
         batchSize: 1,
@@ -2342,7 +2406,9 @@ describe('executeMigration', () => {
       'did:key:z6MkCommitConcurrencyWiring1'
     )
     const pieceCID = createPieceCID().toString()
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Commit Concurrency Wiring Space',
       uploads: ['bafy-root-1'],
@@ -2372,7 +2438,7 @@ describe('executeMigration', () => {
 
     for await (const _event of executeMigration({
       plan,
-      state,
+      store,
       synapse: /** @type {API.Synapse} */ ({}),
       commitConcurrency: 2,
     })) {
@@ -2388,7 +2454,9 @@ describe('executeMigration', () => {
     const spaceDID = /** @type {API.SpaceDID} */ (
       'did:key:z6MkCommitConcurrencyWiring2'
     )
-    const state = withInventory(createMockInitialState(), {
+    const store = await openStore()
+    const state = store.getState()
+    withInventory(state, {
       did: spaceDID,
       name: 'Store Commit Concurrency Wiring Space',
       uploads: ['bafy-root-store-1'],
@@ -2423,7 +2491,7 @@ describe('executeMigration', () => {
 
     for await (const _event of executeStoreMigration({
       plan,
-      state,
+      store,
       synapse: /** @type {API.Synapse} */ ({}),
       fetcher,
       commitConcurrency: 2,

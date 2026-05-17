@@ -1,28 +1,88 @@
+import fs from 'node:fs'
+import process from 'node:process'
 import chalk from 'chalk'
 import { confirm, select } from '@inquirer/prompts'
-import { createInitialState } from '@storacha/filecoin-pin-migration'
+import { deserializeState } from '@storacha/filecoin-pin-migration'
 import { printResumeStatus } from './view/resume.js'
-import { loadStateOrExit, tryLoadState } from './state-file.js'
 
 /**
+ * Probe the state file without opening a store. Preserves the same parse
+ * and deserialize pipeline as `JsonFileStore.open()` so that version-mismatch
+ * and corrupt-JSON errors surface identically.
+ *
+ * @param {string} path
+ * @returns {{ exists: false } | { exists: true, state: import('@storacha/filecoin-pin-migration/types').MigrationState, error?: undefined } | { exists: true, error: Error, state?: undefined }}
+ */
+function probeStateFile(path) {
+  if (!fs.existsSync(path)) {
+    return { exists: false }
+  }
+
+  try {
+    const raw = fs.readFileSync(path, 'utf8')
+    return { exists: true, state: deserializeState(JSON.parse(raw)) }
+  } catch (err) {
+    return {
+      exists: true,
+      error: err instanceof Error ? err : new Error(String(err)),
+    }
+  }
+}
+
+/**
+ * Probe the state file and exit with a diagnostic message when the file is
+ * required but missing or unreadable (--resume / --retry paths).
+ *
+ * @param {string} stateFile
+ * @returns {import('@storacha/filecoin-pin-migration/types').MigrationState}
+ */
+function probeStateFileOrExit(stateFile) {
+  const result = probeStateFile(stateFile)
+
+  if (!result.exists) {
+    console.error(
+      `Error: resume requested but state file was not found: ${stateFile}`
+    )
+    process.exit(1)
+  }
+
+  if (result.error) {
+    console.error(`Error: failed to read state file - ${result.error.message}`)
+    process.exit(1)
+  }
+
+  return result.state
+}
+
+/**
+ * Decide how the migration should start (fresh / resume / retry) by probing
+ * the existing state file and prompting the user when necessary.
+ *
+ * Returns the selected mode plus whether an existing state file should be
+ * replaced before opening the store. Does **not** open a store or own any
+ * state. `migrate/index.js` opens the store after the mode decision so that a
+ * user-cancelled run does not create an empty state file or leave a stale lock.
+ *
  * @param {object} args
  * @param {string} args.stateFile
  * @param {boolean} args.resume
  * @param {boolean} args.retry
- * @returns {Promise<{ mode: 'fresh' | 'resume' | 'retry', state: import('@storacha/filecoin-pin-migration/types').MigrationState } | null>}
+ * @returns {Promise<{ mode: 'fresh' | 'resume' | 'retry', replaceExisting: boolean } | null>}
  */
 export async function resolveStartState({ stateFile, resume, retry }) {
   if (resume) {
-    return { mode: 'resume', state: loadStateOrExit(stateFile) }
+    probeStateFileOrExit(stateFile)
+    return { mode: 'resume', replaceExisting: false }
   }
 
   if (retry) {
-    return { mode: 'retry', state: loadStateOrExit(stateFile) }
+    probeStateFileOrExit(stateFile)
+    return { mode: 'retry', replaceExisting: false }
   }
 
-  const existingState = tryLoadState(stateFile)
+  const existingState = probeStateFile(stateFile)
   if (!existingState.exists) {
-    return { mode: 'fresh', state: createInitialState() }
+    return { mode: 'fresh', replaceExisting: false }
   }
 
   if (existingState.error) {
@@ -41,7 +101,7 @@ export async function resolveStartState({ stateFile, resume, retry }) {
       return null
     }
 
-    return { mode: 'fresh', state: createInitialState() }
+    return { mode: 'fresh', replaceExisting: true }
   }
 
   printExistingStateSummary(stateFile, existingState.state)
@@ -62,11 +122,11 @@ export async function resolveStartState({ stateFile, resume, retry }) {
   }
 
   if (action === 'resume') {
-    return { mode: 'resume', state: existingState.state }
+    return { mode: 'resume', replaceExisting: false }
   }
 
   if (action === 'retry') {
-    return { mode: 'retry', state: existingState.state }
+    return { mode: 'retry', replaceExisting: false }
   }
 
   if (
@@ -78,7 +138,7 @@ export async function resolveStartState({ stateFile, resume, retry }) {
     return null
   }
 
-  return { mode: 'fresh', state: createInitialState() }
+  return { mode: 'fresh', replaceExisting: true }
 }
 
 /**

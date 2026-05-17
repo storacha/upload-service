@@ -502,6 +502,29 @@ export function transitionToApproved(state, perSpaceCost) {
 }
 
 /**
+ * Transition the top-level phase from 'reading' to 'planning'.
+ *
+ * Called by the reader after all spaces are inventoried and before the
+ * consumer invokes createMigrationPlan().
+ *
+ * @param {API.MigrationState} state - Mutated in place
+ */
+export function transitionToPlanning(state) {
+  state.phase = 'planning'
+}
+
+/**
+ * Transition the top-level phase from 'funded' to 'migrating'.
+ *
+ * Called by run-migration after the space loop begins executing.
+ *
+ * @param {API.MigrationState} state - Mutated in place
+ */
+export function transitionToMigrating(state) {
+  state.phase = 'migrating'
+}
+
+/**
  * Checkpoint 2: fundSync landed.
  *
  * @param {API.MigrationState} state - Mutated in place

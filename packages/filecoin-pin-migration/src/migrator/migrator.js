@@ -28,7 +28,7 @@ import { migrateSpace } from './space-runner.js'
  */
 export async function* executeMigration({
   plan,
-  state,
+  store,
   synapse,
   batchSize: batchSizeOpt,
   maxCommitRetries: maxCommitRetriesOpt,
@@ -39,6 +39,7 @@ export async function* executeMigration({
   fetcher: fetcherOpt,
   signal,
 }) {
+  const state = store.getState()
   const requiresStoreFlow = plan.costs.perSpace.some(
     (perSpaceCost) =>
       (state.spacesInventories[perSpaceCost.spaceDID]?.shardsToStore.length ??
@@ -60,7 +61,7 @@ export async function* executeMigration({
 
   yield* runMigration({
     plan,
-    state,
+    store,
     synapse,
     signal,
     totalBytes: plan.totals.bytesToMigrate,
@@ -70,7 +71,7 @@ export async function* executeMigration({
       migrateSpace({
         inventory,
         perSpaceCost,
-        state,
+        store,
         config,
       }),
   })

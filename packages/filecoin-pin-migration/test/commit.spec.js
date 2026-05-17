@@ -1,10 +1,14 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   iterateCommitPieces,
   commitPieceBatches,
 } from '../src/migrator/commit.js'
 import { commitKey, STATE_VERSION } from '../src/state.js'
-import { createMockInitialState, createPieceCID } from './helpers.js'
+import {
+  createMockInitialState,
+  createPieceCID,
+  createTestStore,
+} from './helpers.js'
 
 /**
  * @import * as API from '../src/api.js'
@@ -20,17 +24,39 @@ const SPACE_DID = /** @type {API.SpaceDID} */ (
  */
 const singleRoots = (_shardCid, root) => [root]
 
+/** @type {API.MigrationStore[]} */
+let openStores = []
+
+afterEach(async () => {
+  const stores = openStores
+  openStores = []
+  for (const store of stores) {
+    await store.close()
+  }
+})
+
+/**
+ * @param {API.MigrationState} [state]
+ */
+async function openStore(state = createMockCommitState()) {
+  const store = await createTestStore({ state })
+  openStores.push(store)
+  return store
+}
+
 describe('commit batching', () => {
   it('splits commit work into multiple batches and checkpoints each successful batch', async () => {
     const entries = createCommitEntries(30)
     const { context, presignCalls } = createMockCommitContext()
-    const state = createMockCommitState()
+    const store = await openStore()
+    const state = store.getState()
 
     /** @type {API.MigrationEvent[]} */
     const events = []
     for await (const event of commitPieceBatches({
       commitPieceIterable: iterateCommitPieces(entries),
       context,
+      store,
       state,
       spaceDID: SPACE_DID,
       copyIndex: 0,
@@ -85,11 +111,13 @@ describe('commit batching', () => {
         controller.abort()
       },
     })
-    const state = createMockCommitState()
+    const store = await openStore()
+    const state = store.getState()
 
     for await (const _ of commitPieceBatches({
       commitPieceIterable: iterateCommitPieces(entries),
       context,
+      store,
       state,
       spaceDID: SPACE_DID,
       copyIndex: 0,
@@ -117,13 +145,15 @@ describe('commit batching', () => {
     const { context } = createMockCommitContext({
       failCommit: new Error('commit exploded'),
     })
-    const state = createMockCommitState()
+    const store = await openStore()
+    const state = store.getState()
 
     /** @type {API.MigrationEvent[]} */
     const events = []
     for await (const event of commitPieceBatches({
       commitPieceIterable: iterateCommitPieces(entries),
       context,
+      store,
       state,
       spaceDID: SPACE_DID,
       copyIndex: 0,
@@ -160,22 +190,28 @@ describe('commit batching', () => {
  * @param {{ context: API.StorageContext, presignCalls: number[] }} run
  */
 async function collectCommitRun(entries, run) {
-  const state = createMockCommitState()
+  const store = await createTestStore({ state: createMockCommitState() })
+  try {
+    const state = store.getState()
 
-  for await (const _ of commitPieceBatches({
-    commitPieceIterable: iterateCommitPieces(entries),
-    context: run.context,
-    state,
-    spaceDID: SPACE_DID,
-    copyIndex: 0,
-    maxCommitRetries: 0,
-    commitRetryTimeout: 0,
-    commitConcurrency: 4,
-    signal: undefined,
-    activeFailedRoots: new Set(),
-    getShardRoots: singleRoots,
-  })) {
-    /* drain */
+    for await (const _ of commitPieceBatches({
+      commitPieceIterable: iterateCommitPieces(entries),
+      context: run.context,
+      store,
+      state,
+      spaceDID: SPACE_DID,
+      copyIndex: 0,
+      maxCommitRetries: 0,
+      commitRetryTimeout: 0,
+      commitConcurrency: 4,
+      signal: undefined,
+      activeFailedRoots: new Set(),
+      getShardRoots: singleRoots,
+    })) {
+      /* drain */
+    }
+  } finally {
+    await store.close()
   }
 
   return run
@@ -402,7 +438,8 @@ function createTwoPhaseAbortError() {
 
 describe('commitPieceBatches two-phase flow', () => {
   it('commits the first batch sequentially and the rest concurrently', async () => {
-    const state = createTwoPhaseState()
+    const store = await openStore(createTwoPhaseState())
+    const state = store.getState()
     const context = createTwoPhaseContext()
     const pieces = [0, 1, 2].map(makeTwoPhasePiece)
 
@@ -411,6 +448,7 @@ describe('commitPieceBatches two-phase flow', () => {
     for await (const event of commitPieceBatches({
       commitPieceIterable: pieces,
       context,
+      store,
       state,
       spaceDID: TWO_PHASE_SPACE_DID,
       copyIndex: TWO_PHASE_COPY_INDEX,
@@ -439,7 +477,8 @@ describe('commitPieceBatches two-phase flow', () => {
   })
 
   it('runs Phase 2 commits concurrently up to commitConcurrency', async () => {
-    const state = createTwoPhaseState()
+    const store = await openStore(createTwoPhaseState())
+    const state = store.getState()
     const context = createTwoPhaseContext()
     const pieces = [0, 1, 2, 3].map(makeTwoPhasePiece)
 
@@ -481,6 +520,7 @@ describe('commitPieceBatches two-phase flow', () => {
     for await (const _event of commitPieceBatches({
       commitPieceIterable: pieces,
       context,
+      store,
       state,
       spaceDID: TWO_PHASE_SPACE_DID,
       copyIndex: TWO_PHASE_COPY_INDEX,
@@ -499,7 +539,8 @@ describe('commitPieceBatches two-phase flow', () => {
   })
 
   it('checkpoints a settled Phase 2 wave before later waves start', async () => {
-    const state = createTwoPhaseState()
+    const store = await openStore(createTwoPhaseState())
+    const state = store.getState()
     const context = createTwoPhaseContext({ dataSetId: 100n })
     const pieces = [0, 1, 2, 3, 4].map(makeTwoPhasePiece)
     const controller = new AbortController()
@@ -550,6 +591,7 @@ describe('commitPieceBatches two-phase flow', () => {
     const iterator = commitPieceBatches({
       commitPieceIterable: pieces,
       context,
+      store,
       state,
       spaceDID: TWO_PHASE_SPACE_DID,
       copyIndex: TWO_PHASE_COPY_INDEX,
@@ -588,7 +630,8 @@ describe('commitPieceBatches two-phase flow', () => {
   })
 
   it('persists successful Phase 2 batches before any retry prompt', async () => {
-    const state = createTwoPhaseState()
+    const store = await openStore(createTwoPhaseState())
+    const state = store.getState()
     const context = createTwoPhaseContext()
     const pieces = [0, 1, 2, 3].map(makeTwoPhasePiece)
     const failingRoot = pieces[2].pieceMetadata.ipfsRootCID
@@ -610,6 +653,7 @@ describe('commitPieceBatches two-phase flow', () => {
     for await (const event of commitPieceBatches({
       commitPieceIterable: pieces,
       context,
+      store,
       state,
       spaceDID: TWO_PHASE_SPACE_DID,
       copyIndex: TWO_PHASE_COPY_INDEX,
@@ -643,7 +687,8 @@ describe('commitPieceBatches two-phase flow', () => {
   })
 
   it('emits settled events for every Phase 2 batch after a retry win', async () => {
-    const state = createTwoPhaseState()
+    const store = await openStore(createTwoPhaseState())
+    const state = store.getState()
     const context = createTwoPhaseContext()
     const pieces = [0, 1, 2].map(makeTwoPhasePiece)
     const failingRoot = pieces[2].pieceMetadata.ipfsRootCID
@@ -668,6 +713,7 @@ describe('commitPieceBatches two-phase flow', () => {
     for await (const event of commitPieceBatches({
       commitPieceIterable: pieces,
       context,
+      store,
       state,
       spaceDID: TWO_PHASE_SPACE_DID,
       copyIndex: TWO_PHASE_COPY_INDEX,
@@ -694,7 +740,8 @@ describe('commitPieceBatches two-phase flow', () => {
   })
 
   it('records failures for a Phase 2 batch whose retry is skipped', async () => {
-    const state = createTwoPhaseState()
+    const store = await openStore(createTwoPhaseState())
+    const state = store.getState()
     const context = createTwoPhaseContext()
     const pieces = [0, 1, 2].map(makeTwoPhasePiece)
     const failingRoot = pieces[2].pieceMetadata.ipfsRootCID
@@ -715,6 +762,7 @@ describe('commitPieceBatches two-phase flow', () => {
     for await (const event of commitPieceBatches({
       commitPieceIterable: pieces,
       context,
+      store,
       state,
       spaceDID: TWO_PHASE_SPACE_DID,
       copyIndex: TWO_PHASE_COPY_INDEX,
@@ -752,7 +800,8 @@ describe('commitPieceBatches two-phase flow', () => {
   })
 
   it('preserves completed Phase 2 batches when aborted mid-wave', async () => {
-    const state = createTwoPhaseState()
+    const store = await openStore(createTwoPhaseState())
+    const state = store.getState()
     const context = createTwoPhaseContext()
     const pieces = [0, 1, 2, 3].map(makeTwoPhasePiece)
     const hangingRoot = pieces[3].pieceMetadata.ipfsRootCID
@@ -801,6 +850,7 @@ describe('commitPieceBatches two-phase flow', () => {
       for await (const event of commitPieceBatches({
         commitPieceIterable: pieces,
         context,
+        store,
         state,
         spaceDID: TWO_PHASE_SPACE_DID,
         copyIndex: TWO_PHASE_COPY_INDEX,
@@ -836,13 +886,15 @@ describe('commitPieceBatches two-phase flow', () => {
   })
 
   it('commits the same set of shards when commitConcurrency is 1', async () => {
-    const state = createTwoPhaseState()
+    const store = await openStore(createTwoPhaseState())
+    const state = store.getState()
     const context = createTwoPhaseContext()
     const pieces = [0, 1, 2].map(makeTwoPhasePiece)
 
     for await (const _event of commitPieceBatches({
       commitPieceIterable: pieces,
       context,
+      store,
       state,
       spaceDID: TWO_PHASE_SPACE_DID,
       copyIndex: TWO_PHASE_COPY_INDEX,
@@ -862,7 +914,8 @@ describe('commitPieceBatches two-phase flow', () => {
   })
 
   it('skips pieces whose root is already in activeFailedRoots at pack time', async () => {
-    const state = createTwoPhaseState()
+    const store = await openStore(createTwoPhaseState())
+    const state = store.getState()
     const context = createTwoPhaseContext()
     const pieces = [0, 1, 2].map(makeTwoPhasePiece)
     const blockedRoot = pieces[1].pieceMetadata.ipfsRootCID
@@ -872,6 +925,7 @@ describe('commitPieceBatches two-phase flow', () => {
     for await (const _event of commitPieceBatches({
       commitPieceIterable: pieces,
       context,
+      store,
       state,
       spaceDID: TWO_PHASE_SPACE_DID,
       copyIndex: TWO_PHASE_COPY_INDEX,

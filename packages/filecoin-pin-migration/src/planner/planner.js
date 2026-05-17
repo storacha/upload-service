@@ -1,5 +1,5 @@
 import { computeMigrationCosts } from './compute-migration-costs.js'
-import { buildResumeState, transitionToApproved } from '../state.js'
+import { buildResumeState } from '../state.js'
 
 /**
  * @import { CreatePlanInput, MigrationEvent, MigrationPlan } from '../api.js'
@@ -44,7 +44,8 @@ const BPS_BASE = 10000n
  * @param {CreatePlanInput} input
  * @returns {AsyncGenerator<MigrationEvent>}
  */
-export async function* createMigrationPlan({ synapse, state, providerIds }) {
+export async function* createMigrationPlan({ synapse, store, providerIds }) {
+  const state = store.getState()
   const inventories = Object.values(state.spacesInventories)
 
   let totalUploads = 0
@@ -97,7 +98,7 @@ export async function* createMigrationPlan({ synapse, state, providerIds }) {
   }
 
   // ── Write SP bindings to state and checkpoint ─────────────────────────────
-  transitionToApproved(state, costs.perSpace)
+  store.transitionToApproved(costs.perSpace)
   yield /** @type {MigrationEvent} */ ({ type: 'state:checkpoint', state })
   yield /** @type {MigrationEvent} */ ({ type: 'planner:ready', plan })
 }

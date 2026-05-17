@@ -1,6 +1,5 @@
 import { ensureFunding } from './funding.js'
 import { summarizeSpaceMigration } from './summary.js'
-import { finalizeMigration } from '../state.js'
 
 /**
  * @import * as API from '../api.js'
@@ -24,7 +23,7 @@ import { finalizeMigration } from '../state.js'
  *
  * @param {object} args
  * @param {API.MigrationPlan} args.plan
- * @param {API.MigrationState} args.state
+ * @param {API.MigrationStore} args.store
  * @param {API.Synapse} args.synapse
  * @param {AbortSignal | undefined} args.signal
  * @param {bigint} args.totalBytes
@@ -41,7 +40,7 @@ import { finalizeMigration } from '../state.js'
  */
 export async function* runMigration({
   plan,
-  state,
+  store,
   synapse,
   signal,
   totalBytes,
@@ -49,9 +48,10 @@ export async function* runMigration({
   prepareInventory,
   executeSpace,
 }) {
-  yield* ensureFunding(plan.costs, plan.fundingAmount, synapse, state)
+  yield* ensureFunding(plan.costs, plan.fundingAmount, synapse, store)
 
-  state.phase = 'migrating'
+  store.transitionToMigrating()
+  const state = store.getState()
   let succeeded = 0
   let failed = 0
   let skippedUploads = 0
@@ -83,7 +83,7 @@ export async function* runMigration({
 
   if (signal?.aborted) return
 
-  finalizeMigration(state)
+  store.finalizeMigration()
   yield { type: 'state:checkpoint', state }
 
   yield {

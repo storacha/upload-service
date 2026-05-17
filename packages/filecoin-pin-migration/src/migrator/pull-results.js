@@ -1,5 +1,3 @@
-import { recordFailedUpload } from '../state.js'
-
 /**
  * Apply pull batch results to migration state and emit failure/checkpoint
  * events. Successful candidate handling is delegated to the caller.
@@ -7,6 +5,7 @@ import { recordFailedUpload } from '../state.js'
  * @template {{ root: string }} T
  * @param {object} args
  * @param {Array<import('../api.js').PullResult<T>>} args.pullResults
+ * @param {import('../api.js').MigrationStore} args.store
  * @param {import('../api.js').MigrationState} args.state
  * @param {import('../api.js').SpaceDID} args.spaceDID
  * @param {number} args.copyIndex
@@ -17,6 +16,7 @@ import { recordFailedUpload } from '../state.js'
  */
 export function* applyPullResults({
   pullResults,
+  store,
   state,
   spaceDID,
   copyIndex,
@@ -42,7 +42,7 @@ export function* applyPullResults({
       for (const root of failedRoots) {
         activeFailedRoots.add(root)
         stateChanged =
-          recordFailedUpload(state, spaceDID, copyIndex, root) || stateChanged
+          store.recordFailedUpload(spaceDID, copyIndex, root) || stateChanged
       }
 
       yield /** @type {import('../api.js').MigrationEvent} */ {

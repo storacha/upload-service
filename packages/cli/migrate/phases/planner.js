@@ -8,13 +8,13 @@ import { printPhaseTitle } from '../view/phase.js'
 /**
  * @param {object} args
  * @param {import('@filoz/synapse-sdk').Synapse} args.synapse
- * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} args.state
- * @param {(state: import('@storacha/filecoin-pin-migration/types').MigrationState) => Promise<void>} args.persistCheckpoint
+ * @param {import('@storacha/filecoin-pin-migration/types').MigrationStore} args.store
+ * @param {() => Promise<void>} args.persistCheckpoint
  * @param {AbortSignal} args.signal
  */
 export async function planMigration({
   synapse,
-  state,
+  store,
   persistCheckpoint,
   signal,
 }) {
@@ -28,10 +28,10 @@ export async function planMigration({
   let plan
 
   try {
-    for await (const event of createMigrationPlan({ synapse, state })) {
+    for await (const event of createMigrationPlan({ synapse, store })) {
       switch (event.type) {
         case 'state:checkpoint':
-          await persistCheckpoint(state)
+          await persistCheckpoint()
           break
         case 'planner:ready':
           plan = event.plan

@@ -4,7 +4,19 @@ import ora from 'ora'
 import { TOKENS } from '@filoz/synapse-sdk'
 import { privateKeyToAccount } from 'viem/accounts'
 import { getClient } from '../lib.js'
-import { defaultStateFileForSpace } from './state-file.js'
+
+const DEFAULT_STATE_FILE_BASENAME = 'storacha-migration'
+
+/**
+ * @param {string} spaceDID
+ */
+export function defaultStateFileForSpace(spaceDID) {
+  const safeSpace = spaceDID.replace(/[^a-zA-Z0-9._-]+/g, '-')
+  return path.join(
+    process.cwd(),
+    `${DEFAULT_STATE_FILE_BASENAME}-${safeSpace}.json`
+  )
+}
 
 /**
  * @param {string | undefined} stateFile

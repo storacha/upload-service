@@ -1,7 +1,7 @@
 # Architecture — `@storacha/filecoin-pin-migration`
 
 **Domain:** Storacha-to-FOC migration library  
-**Last updated:** 2026-05-08
+**Last updated:** 2026-05-17
 
 ---
 
@@ -17,8 +17,14 @@ Reader → Planner → Migrator
 - `planner` computes a `MigrationPlan`
 - `migrator` executes the approved plan and mutates `MigrationState`
 
-The library owns no UX or persistence. Callers persist `MigrationState` on
-every `state:checkpoint` event.
+The library owns no UX. Persistence is encapsulated behind `MigrationStore`.
+The store is owned by the caller, opened once before pipeline execution, and
+closed in an outer `finally`. Reader, planner, and migrator each receive the
+store and call `store.getState()` once per entry point to obtain the live
+`MigrationState` reference. `state:checkpoint` events are the explicit
+durability boundary within a run; `store.close()` / `store.closeSync()` also
+flush the latest in-memory state (used for lifecycle shutdown and SIGINT
+teardown).
 
 Helper utilities live outside the main pipeline. They are headless audit /
 estimation functions that can inspect or reconcile migration-related data
@@ -377,7 +383,10 @@ metadata.
 
 Helper contracts:
 
-- both helpers mutate `MigrationState` in place
+- both helpers still operate directly on `MigrationState`, not on `MigrationStore`.
+  Callers bridge via `store.getState()` as the `state` argument and call
+  `store.checkpoint()` after the helper returns to make any mutations durable.
+- `src/state.js` remains importable internally for these helpers and for tests.
 - `pruneStagedShards()` requires inventories plus persisted copy state; it does
   not require planner contexts
 - `reconcileMigrationState()` can still validate staged shards for staged-only

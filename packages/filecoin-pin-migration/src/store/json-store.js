@@ -257,6 +257,16 @@ export class JsonFileStore {
     State.checkpointInventoryPage(state, page)
   }
 
+  transitionToPlanning() {
+    const state = this.#requireOpenState('transitionToPlanning')
+    State.transitionToPlanning(state)
+  }
+
+  transitionToMigrating() {
+    const state = this.#requireOpenState('transitionToMigrating')
+    State.transitionToMigrating(state)
+  }
+
   /** @param {API.PerSpaceCost[]} perSpaceCost */
   transitionToApproved(perSpaceCost) {
     const state = this.#requireOpenState('transitionToApproved')

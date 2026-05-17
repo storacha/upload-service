@@ -1,3 +1,6 @@
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import * as Link from 'multiformats/link'
 import * as raw from 'multiformats/codecs/raw'
 import { sha256 } from 'multiformats/hashes/sha2'
@@ -6,7 +9,8 @@ import { base32upper } from 'multiformats/bases/base32'
 import { Piece, MIN_PAYLOAD_SIZE } from '@web3-storage/data-segment'
 import { encode as encodeDagCbor } from '@ipld/dag-cbor'
 import { CID } from 'multiformats/cid'
-import { STATE_VERSION } from '../src/state.js'
+import { STATE_VERSION, serializeState } from '../src/state.js'
+import { JsonFileStore } from '../src/store/json-store.js'
 
 /**
  * @import * as API from '../src/api.js'
@@ -408,4 +412,25 @@ export function createMockInventories(count = 1, opts = {}) {
       ...opts,
     })
   )
+}
+
+/**
+ * Open a `JsonFileStore` in a temporary directory for use in tests.
+ *
+ * Pass an existing `MigrationState` via `state` to pre-seed the store (e.g.
+ * to test resume flows). The caller is responsible for closing the store after
+ * each test — use `afterEach(() => store.close())` or await it in the test.
+ *
+ * @param {{ state?: API.MigrationState }} [opts]
+ * @returns {Promise<API.MigrationStore>}
+ */
+export async function createTestStore(opts = {}) {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'migration-test-'))
+  const stateFile = path.join(tmpDir, 'state.json')
+
+  if (opts.state) {
+    fs.writeFileSync(stateFile, JSON.stringify(serializeState(opts.state)))
+  }
+
+  return JsonFileStore.open({ path: stateFile })
 }
