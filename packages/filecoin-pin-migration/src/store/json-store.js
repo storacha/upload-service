@@ -310,6 +310,37 @@ export class JsonFileStore {
   /**
    * @param {API.SpaceDID} spaceDID
    * @param {number} copyIndex
+   * @param {string} shardCid
+   */
+  clearPullProgress(spaceDID, copyIndex, shardCid) {
+    const state = this.#requireOpenState('clearPullProgress')
+    State.clearPullProgress(state, spaceDID, copyIndex, shardCid)
+  }
+
+  /**
+   * @param {API.SpaceDID} spaceDID
+   * @param {number} copyIndex
+   * @param {string} shardCid
+   */
+  clearStoredPiece(spaceDID, copyIndex, shardCid) {
+    const state = this.#requireOpenState('clearStoredPiece')
+    State.clearStoredPiece(state, spaceDID, copyIndex, shardCid)
+  }
+
+  /**
+   * @param {API.SpaceDID} spaceDID
+   * @param {number} copyIndex
+   * @param {string} shardCid
+   * @param {string} root
+   */
+  removeCommit(spaceDID, copyIndex, shardCid, root) {
+    const state = this.#requireOpenState('removeCommit')
+    State.removeCommit(state, spaceDID, copyIndex, shardCid, root)
+  }
+
+  /**
+   * @param {API.SpaceDID} spaceDID
+   * @param {number} copyIndex
    * @param {string} root
    * @returns {boolean}
    */

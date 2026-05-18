@@ -48,6 +48,12 @@ export async function reconcileMigrationState({
 
   /** @type {API.ReconcileMigrationStateSpaceReport[]} */
   const spaces = []
+  /** @type {Array<{ spaceDID: RootAPI.SpaceDID, copyIndex: number, shardCid: string }>} */
+  const pulledDeleted = []
+  /** @type {Array<{ spaceDID: RootAPI.SpaceDID, copyIndex: number, shardCid: string }>} */
+  const storedShardsDeleted = []
+  /** @type {Array<{ spaceDID: RootAPI.SpaceDID, copyIndex: number, shardCid: string, rootCid: string }>} */
+  const committedDeleted = []
   let hasDiscrepancies = false
   let stateCorrected = false
 
@@ -88,11 +94,15 @@ export async function reconcileMigrationState({
           committedReconciliation.committedKeysForStagedCleanup,
       })
 
-      applyCopyReconciliation({
+      const replay = applyCopyReconciliation({
+        spaceDID,
         copy,
         committedReconciliation,
         stagedReconciliation,
       })
+      pulledDeleted.push(...replay.pulledDeleted)
+      storedShardsDeleted.push(...replay.storedShardsDeleted)
+      committedDeleted.push(...replay.committedDeleted)
 
       const changes = {
         ...committedReconciliation.changes,
@@ -154,6 +164,9 @@ export async function reconcileMigrationState({
     hasDiscrepancies,
     stateCorrected,
     spaces,
+    pulledDeleted,
+    storedShardsDeleted,
+    committedDeleted,
   }
 }
 
@@ -353,16 +366,28 @@ async function reconcileStagedCopyState({
 
 /**
  * @param {object} args
+ * @param {RootAPI.SpaceDID} args.spaceDID
  * @param {RootAPI.SpaceCopyState} args.copy
  * @param {ReturnType<typeof reconcileCommittedCopyState>} args.committedReconciliation
  * @param {Awaited<ReturnType<typeof reconcileStagedCopyState>>} args.stagedReconciliation
  */
 function applyCopyReconciliation({
+  spaceDID,
   copy,
   committedReconciliation,
   stagedReconciliation,
 }) {
+  /** @type {Array<{ spaceDID: RootAPI.SpaceDID, copyIndex: number, shardCid: string }>} */
+  const pulledDeleted = []
+  /** @type {Array<{ spaceDID: RootAPI.SpaceDID, copyIndex: number, shardCid: string }>} */
+  const storedShardsDeleted = []
+  /** @type {Array<{ spaceDID: RootAPI.SpaceDID, copyIndex: number, shardCid: string, rootCid: string }>} */
+  const committedDeleted = []
+
   if (committedReconciliation.reconciledCommittedCommitKeys) {
+    const committedKeysToRemove =
+      committedReconciliation.changes.committedRemoved
+
     if (committedReconciliation.shouldSuppressCommittedRemovals) {
       for (const key of committedReconciliation.changes.committedAdded) {
         copy.committed.add(key)
@@ -370,16 +395,52 @@ function applyCopyReconciliation({
     } else {
       copy.committed = committedReconciliation.reconciledCommittedCommitKeys
     }
+
+    for (const key of committedKeysToRemove) {
+      const [shardCid, rootCid] = key.split('#')
+      if (!shardCid || !rootCid) continue
+      committedDeleted.push({
+        spaceDID,
+        copyIndex: copy.copyIndex,
+        shardCid,
+        rootCid,
+      })
+    }
   }
 
   for (const shardCID of stagedReconciliation.changes
     .pulledRemovedBecauseCommitted) {
-    copy.pulled.delete(shardCID)
+    if (copy.pulled.delete(shardCID)) {
+      pulledDeleted.push({
+        spaceDID,
+        copyIndex: copy.copyIndex,
+        shardCid: shardCID,
+      })
+    }
   }
 
   for (const shardCID of stagedReconciliation.changes.removedStagedShardCIDs) {
-    copy.pulled.delete(shardCID)
-    delete copy.storedShards[shardCID]
+    if (copy.pulled.delete(shardCID)) {
+      pulledDeleted.push({
+        spaceDID,
+        copyIndex: copy.copyIndex,
+        shardCid: shardCID,
+      })
+    }
+    if (shardCID in copy.storedShards) {
+      delete copy.storedShards[shardCID]
+      storedShardsDeleted.push({
+        spaceDID,
+        copyIndex: copy.copyIndex,
+        shardCid: shardCID,
+      })
+    }
+  }
+
+  return {
+    pulledDeleted,
+    storedShardsDeleted,
+    committedDeleted,
   }
 }
 

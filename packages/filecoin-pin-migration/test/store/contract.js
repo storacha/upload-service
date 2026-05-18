@@ -204,6 +204,18 @@ export function runStoreContractTests(name, createStore) {
             () => store.recordStoredShard(spaceDID, 'cid', 'pieceCID'),
           ],
           [
+            'clearPullProgress',
+            () => store.clearPullProgress(spaceDID, 0, 'cid'),
+          ],
+          [
+            'clearStoredPiece',
+            () => store.clearStoredPiece(spaceDID, 0, 'cid'),
+          ],
+          [
+            'removeCommit',
+            () => store.removeCommit(spaceDID, 0, 'cid', 'rootCid'),
+          ],
+          [
             'recordFailedUpload',
             () => store.recordFailedUpload(spaceDID, 0, 'rootCid'),
           ],
@@ -623,21 +635,28 @@ export function runStoreContractTests(name, createStore) {
           State.serializeState(ref)
         )
 
-        // Step 6: recordFailedUpload (copy 0)
+        // Step 6: clearStoredPiece (copy 0 staged-store correction)
+        store.clearStoredPiece(spaceDID, 0, 'bafy-mut-shard-2')
+        State.clearStoredPiece(ref, spaceDID, 0, 'bafy-mut-shard-2')
+        expect(State.serializeState(store.getState())).toEqual(
+          State.serializeState(ref)
+        )
+
+        // Step 7: recordFailedUpload (copy 0)
         store.recordFailedUpload(spaceDID, 0, 'bafy-mut-root-1')
         State.recordFailedUpload(ref, spaceDID, 0, 'bafy-mut-root-1')
         expect(State.serializeState(store.getState())).toEqual(
           State.serializeState(ref)
         )
 
-        // Step 7: clearFailedUploadsForRetry
+        // Step 8: clearFailedUploadsForRetry
         store.clearFailedUploadsForRetry(spaceDID)
         State.clearFailedUploadsForRetry(ref, spaceDID)
         expect(State.serializeState(store.getState())).toEqual(
           State.serializeState(ref)
         )
 
-        // Step 8: recordCommit (copy 0, pull shard) — pulled first in step 4
+        // Step 9: recordCommit (copy 0, pull shard) — pulled first in step 4
         const commitInput = {
           spaceDID,
           copyIndex: 0,
@@ -652,14 +671,34 @@ export function runStoreContractTests(name, createStore) {
           State.serializeState(ref)
         )
 
-        // Step 9: finalizeSpace
+        // Step 10: removeCommit (helper-driven stale commit correction)
+        store.removeCommit(spaceDID, 0, 'bafy-mut-shard-1', 'bafy-mut-root-1')
+        State.removeCommit(
+          ref,
+          spaceDID,
+          0,
+          'bafy-mut-shard-1',
+          'bafy-mut-root-1'
+        )
+        expect(State.serializeState(store.getState())).toEqual(
+          State.serializeState(ref)
+        )
+
+        // Step 11: clearPullProgress (helper-driven stale pull correction)
+        store.clearPullProgress(spaceDID, 0, 'bafy-mut-shard-1')
+        State.clearPullProgress(ref, spaceDID, 0, 'bafy-mut-shard-1')
+        expect(State.serializeState(store.getState())).toEqual(
+          State.serializeState(ref)
+        )
+
+        // Step 12: finalizeSpace
         store.finalizeSpace(spaceDID)
         State.finalizeSpace(ref, spaceDID)
         expect(State.serializeState(store.getState())).toEqual(
           State.serializeState(ref)
         )
 
-        // Step 10: finalizeMigration
+        // Step 13: finalizeMigration
         store.finalizeMigration()
         State.finalizeMigration(ref)
         expect(State.serializeState(store.getState())).toEqual(

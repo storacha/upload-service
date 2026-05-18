@@ -492,9 +492,14 @@ export function transitionToApproved(state, perSpaceCost) {
       })
     })
 
+    if (existing) {
+      existing.copies = copies
+      continue
+    }
+
     state.spaces[cost.spaceDID] = {
       did: cost.spaceDID,
-      phase: existing?.phase ?? 'pending',
+      phase: 'pending',
       copies,
     }
   }
@@ -647,6 +652,75 @@ export function recordStoredShard(state, spaceDID, shardCid, pieceCID) {
     space.phase = 'migrating'
   }
   return before !== pieceCID
+}
+
+/**
+ * Clear a stale pulled-shard marker for the given copy.
+ *
+ * This is used only by helper-driven correction paths when persisted staged
+ * progress is known to be wrong. Normal migrator flow never clears pulled
+ * progress directly; it is removed by recordCommit() once a shard is fully
+ * committed.
+ *
+ * @param {API.MigrationState} state - Mutated in place
+ * @param {API.SpaceDID} spaceDID
+ * @param {number} copyIndex
+ * @param {string} shardCid
+ * @returns {boolean} true when state changed
+ */
+export function clearPullProgress(state, spaceDID, copyIndex, shardCid) {
+  const space = state.spaces[spaceDID]
+  if (!space) return false
+
+  const copy = getCopy(space, copyIndex)
+  if (!copy) return false
+
+  return copy.pulled.delete(shardCid)
+}
+
+/**
+ * Clear a stale stored-piece mapping for the given shard on copy 0.
+ *
+ * Stored-shard tracking only exists on copy 0 because that is the only copy
+ * that executes store().
+ *
+ * @param {API.MigrationState} state - Mutated in place
+ * @param {API.SpaceDID} spaceDID
+ * @param {number} _copyIndex
+ * @param {string} shardCid
+ * @returns {boolean} true when state changed
+ */
+export function clearStoredPiece(state, spaceDID, _copyIndex, shardCid) {
+  const space = state.spaces[spaceDID]
+  if (!space) return false
+
+  const copy = getCopy(space, 0)
+  if (!copy || !(shardCid in copy.storedShards)) {
+    return false
+  }
+
+  delete copy.storedShards[shardCid]
+  return true
+}
+
+/**
+ * Remove a stale committed shard-root pair from a copy.
+ *
+ * @param {API.MigrationState} state - Mutated in place
+ * @param {API.SpaceDID} spaceDID
+ * @param {number} copyIndex
+ * @param {string} shardCid
+ * @param {string} root
+ * @returns {boolean} true when state changed
+ */
+export function removeCommit(state, spaceDID, copyIndex, shardCid, root) {
+  const space = state.spaces[spaceDID]
+  if (!space) return false
+
+  const copy = getCopy(space, copyIndex)
+  if (!copy) return false
+
+  return copy.committed.delete(commitKey(shardCid, root))
 }
 
 /**

@@ -66,12 +66,20 @@
     "steno": "^4.0.0"
   },
   "peerDependencies": {
+    "better-sqlite3": "^11.8.1",
     "viem": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@storacha/eslint-config": "workspace:^",
     "@types/node": "^20.8.4",
     "@typescript-eslint/eslint-plugin": "catalog:",
+    "@types/better-sqlite3": "^7.6.12",
+    "better-sqlite3": "^11.8.1",
     "typescript": "catalog:",
     "viem": "catalog:",
     "vitest": "^3.1.1"

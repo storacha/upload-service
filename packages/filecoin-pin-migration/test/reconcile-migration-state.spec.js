@@ -97,6 +97,14 @@ describe('reconcileMigrationState', () => {
     expect([...state.spaces[SPACE_DID].copies[0].committed]).toEqual([
       commitKey('bafy-shard-1', 'bafy-root-1'),
     ])
+    expect(result.committedDeleted).toEqual([
+      {
+        spaceDID: SPACE_DID,
+        copyIndex: 0,
+        shardCid: 'bafy-shard-2',
+        rootCid: 'bafy-root-1',
+      },
+    ])
   })
 
   it('rebuilds committed state for the same piece committed under multiple roots', async () => {

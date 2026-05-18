@@ -989,6 +989,50 @@ export interface MigrationStore {
   ): boolean
 
   /**
+   * Clear a persisted pulled-shard marker for the given copy.
+   *
+   * Used only by helper-driven state correction paths that need to remove
+   * stale staged progress. Normal migrator flow never clears pull progress
+   * explicitly.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  clearPullProgress(
+    spaceDID: SpaceDID,
+    copyIndex: number,
+    shardCid: string
+  ): void
+
+  /**
+   * Clear a persisted stored-piece mapping for the given shard.
+   *
+   * Used only by helper-driven state correction paths that need to remove
+   * stale staged progress.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  clearStoredPiece(
+    spaceDID: SpaceDID,
+    copyIndex: number,
+    shardCid: string
+  ): void
+
+  /**
+   * Remove a committed shard-root pair from persisted progress.
+   *
+   * Used only by helper-driven state reconciliation paths that need to
+   * delete stale commit markers.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  removeCommit(
+    spaceDID: SpaceDID,
+    copyIndex: number,
+    shardCid: string,
+    root: string
+  ): void
+
+  /**
    * Record an upload-root failure on the given copy. Mirrors
    * `state.recordFailedUpload`.
    *

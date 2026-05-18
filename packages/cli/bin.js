@@ -336,6 +336,10 @@ cli
     '-f, --state-file <path>',
     'Path to persist migration state for resume support.'
   )
+  .option(
+    '--state-format <format>',
+    'State backend format: "json" or "sqlite". Defaults from file extension.'
+  )
   .option('--resume', 'Resume from an existing state file', false)
   .option(
     '--retry',
@@ -370,6 +374,7 @@ cli
       walletPk,
       network: options.network,
       stateFile: options['state-file'],
+      stateFormat: options['state-format'],
       resume: options.resume,
       retry: options.retry,
       selectedRootsFile: options['selected-roots-file'],

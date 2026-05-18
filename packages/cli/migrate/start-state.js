@@ -2,8 +2,20 @@ import fs from 'node:fs'
 import process from 'node:process'
 import chalk from 'chalk'
 import { confirm, select } from '@inquirer/prompts'
-import { deserializeState } from '@storacha/filecoin-pin-migration'
+import {
+  deserializeState,
+  MissingSqliteDependencyError,
+} from '@storacha/filecoin-pin-migration'
 import { printResumeStatus } from './view/resume.js'
+import { line, renderBox } from './view/layout.js'
+
+/**
+ * @typedef {{
+ *   phase: import('@storacha/filecoin-pin-migration/types').MigrationPhase
+ *   failedUploads: number
+ *   state?: import('@storacha/filecoin-pin-migration/types').MigrationState
+ * }} ProbeSummary
+ */
 
 /**
  * Probe the state file without opening a store. Preserves the same parse
@@ -11,17 +23,40 @@ import { printResumeStatus } from './view/resume.js'
  * and corrupt-JSON errors surface identically.
  *
  * @param {string} path
- * @returns {{ exists: false } | { exists: true, state: import('@storacha/filecoin-pin-migration/types').MigrationState, error?: undefined } | { exists: true, error: Error, state?: undefined }}
+ * @param {'json' | 'sqlite'} format
+ * @returns {Promise<{ exists: false } | { exists: true, summary: ProbeSummary, error?: undefined } | { exists: true, error: Error, summary?: undefined }>}
  */
-function probeStateFile(path) {
+async function probeStateForResume(path, format) {
   if (!fs.existsSync(path)) {
     return { exists: false }
   }
 
   try {
-    const raw = fs.readFileSync(path, 'utf8')
-    return { exists: true, state: deserializeState(JSON.parse(raw)) }
+    if (format === 'json') {
+      const raw = fs.readFileSync(path, 'utf8')
+      const state = deserializeState(JSON.parse(raw))
+      return {
+        exists: true,
+        summary: {
+          phase: state.phase,
+          failedUploads: countFailedUploads({
+            phase: state.phase,
+            failedUploads: 0,
+            state,
+          }),
+          state,
+        },
+      }
+    }
+
+    return {
+      exists: true,
+      summary: await probeSqliteSummary(path),
+    }
   } catch (err) {
+    if (err instanceof MissingSqliteDependencyError) {
+      throw err
+    }
     return {
       exists: true,
       error: err instanceof Error ? err : new Error(String(err)),
@@ -34,10 +69,11 @@ function probeStateFile(path) {
  * required but missing or unreadable (--resume / --retry paths).
  *
  * @param {string} stateFile
- * @returns {import('@storacha/filecoin-pin-migration/types').MigrationState}
+ * @param {'json' | 'sqlite'} stateFormat
+ * @returns {Promise<ProbeSummary>}
  */
-function probeStateFileOrExit(stateFile) {
-  const result = probeStateFile(stateFile)
+async function probeStateFileOrExit(stateFile, stateFormat) {
+  const result = await probeStateForResume(stateFile, stateFormat)
 
   if (!result.exists) {
     console.error(
@@ -51,7 +87,7 @@ function probeStateFileOrExit(stateFile) {
     process.exit(1)
   }
 
-  return result.state
+  return result.summary
 }
 
 /**
@@ -65,22 +101,28 @@ function probeStateFileOrExit(stateFile) {
  *
  * @param {object} args
  * @param {string} args.stateFile
+ * @param {'json' | 'sqlite'} args.stateFormat
  * @param {boolean} args.resume
  * @param {boolean} args.retry
  * @returns {Promise<{ mode: 'fresh' | 'resume' | 'retry', replaceExisting: boolean } | null>}
  */
-export async function resolveStartState({ stateFile, resume, retry }) {
+export async function resolveStartState({
+  stateFile,
+  stateFormat,
+  resume,
+  retry,
+}) {
   if (resume) {
-    probeStateFileOrExit(stateFile)
+    await probeStateFileOrExit(stateFile, stateFormat)
     return { mode: 'resume', replaceExisting: false }
   }
 
   if (retry) {
-    probeStateFileOrExit(stateFile)
+    await probeStateFileOrExit(stateFile, stateFormat)
     return { mode: 'retry', replaceExisting: false }
   }
 
-  const existingState = probeStateFile(stateFile)
+  const existingState = await probeStateForResume(stateFile, stateFormat)
   if (!existingState.exists) {
     return { mode: 'fresh', replaceExisting: false }
   }
@@ -104,13 +146,13 @@ export async function resolveStartState({ stateFile, resume, retry }) {
     return { mode: 'fresh', replaceExisting: true }
   }
 
-  printExistingStateSummary(stateFile, existingState.state)
+  printExistingStateSummary(stateFile, existingState.summary)
 
-  if (existingState.state.phase === 'complete') {
+  if (existingState.summary.phase === 'complete') {
     return null
   }
 
-  const action = await promptForExistingStateAction(existingState.state)
+  const action = await promptForExistingStateAction(existingState.summary)
 
   if (action === 'cancel') {
     console.log(
@@ -143,28 +185,46 @@ export async function resolveStartState({ stateFile, resume, retry }) {
 
 /**
  * @param {string} stateFile
- * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
+ * @param {ProbeSummary} summary
  */
-function printExistingStateSummary(stateFile, state) {
+function printExistingStateSummary(stateFile, summary) {
   console.log(chalk.dim(`State file: ${stateFile}`))
   console.log('')
 
-  printResumeStatus(state, {
-    title:
-      state.phase === 'complete'
+  if (summary.state) {
+    printResumeStatus(summary.state, {
+      title:
+        summary.phase === 'complete'
+          ? 'Existing Migration State (Completed)'
+          : 'Existing Migration State',
+      showWhenEmpty: true,
+    })
+    return
+  }
+
+  console.log(
+    renderBox(
+      summary.phase === 'complete'
         ? 'Existing Migration State (Completed)'
         : 'Existing Migration State',
-    showWhenEmpty: true,
-  })
+      [
+        line('Migration phase', summary.phase),
+        line('Failed uploads', String(summary.failedUploads)),
+        'SQLite resume probe used summary queries only.',
+      ],
+      chalk.cyan
+    )
+  )
+  console.log('')
 }
 
 /**
- * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
+ * @param {ProbeSummary} summary
  * @returns {Promise<'resume' | 'retry' | 'fresh' | 'cancel'>}
  */
-async function promptForExistingStateAction(state) {
-  const recommendedAction = getRecommendedExistingStateAction(state)
-  const hasFailedUploads = countFailedUploads(state) > 0
+async function promptForExistingStateAction(summary) {
+  const recommendedAction = getRecommendedExistingStateAction(summary)
+  const hasFailedUploads = summary.failedUploads > 0
   const choices = [
     {
       name:
@@ -224,12 +284,16 @@ async function confirmFreshOverwrite({
 }
 
 /**
- * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
+ * @param {ProbeSummary} state
  */
 function countFailedUploads(state) {
+  if (!state.state) {
+    return state.failedUploads
+  }
+
   let totalFailedUploads = 0
 
-  for (const space of Object.values(state.spaces)) {
+  for (const space of Object.values(state.state.spaces)) {
     for (const copy of space.copies) {
       totalFailedUploads += copy.failedUploads.size
     }
@@ -239,9 +303,59 @@ function countFailedUploads(state) {
 }
 
 /**
- * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
+ * @param {ProbeSummary} state
  * @returns {'resume' | 'retry'}
  */
 function getRecommendedExistingStateAction(state) {
   return countFailedUploads(state) > 0 ? 'retry' : 'resume'
+}
+
+/**
+ * @param {string} path
+ * @returns {Promise<ProbeSummary>}
+ */
+async function probeSqliteSummary(path) {
+  const moduleName = 'better-sqlite3'
+
+  let Database
+  try {
+    ;({ default: Database } = await import(moduleName))
+  } catch (cause) {
+    if (
+      cause instanceof Error &&
+      'code' in cause &&
+      cause.code === 'ERR_MODULE_NOT_FOUND' &&
+      cause.message.includes('better-sqlite3')
+    ) {
+      throw new MissingSqliteDependencyError()
+    }
+    throw cause
+  }
+
+  const db = /**
+     @type {{
+    prepare(source: string): {
+      get(...args: unknown[]): unknown
+      all(...args: unknown[]): unknown[]
+    }
+    close(): void
+  }} */ (new Database(path, { readonly: true, fileMustExist: true }))
+
+  try {
+    const phaseRow =
+      /** @type {{ phase?: import('@storacha/filecoin-pin-migration/types').MigrationPhase } | undefined} */ (
+        db.prepare('SELECT phase FROM migration_state WHERE id = 1').get()
+      )
+
+    const failedRows = /** @type {Array<{ count: number }>} */ (
+      db.prepare('SELECT COUNT(*) AS count FROM failed_uploads').all()
+    )
+
+    return {
+      phase: phaseRow?.phase ?? 'reading',
+      failedUploads: failedRows[0]?.count ?? 0,
+    }
+  } finally {
+    db.close()
+  }
 }

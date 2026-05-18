@@ -133,6 +133,27 @@ export class StoreClosedError extends Error {
   }
 }
 
+export const MissingSqliteDependencyErrorName = /** @type {const} */ (
+  'MissingSqliteDependencyError'
+)
+export class MissingSqliteDependencyError extends Error {
+  /** @type {string} */
+  installHint
+
+  /**
+   * @param {string} [installHint]
+   */
+  constructor(installHint = 'Install it with `pnpm add better-sqlite3`.') {
+    super(
+      `SQLite state backend requires the optional \`better-sqlite3\` dependency. ${installHint}`
+    )
+    this.installHint = installHint
+  }
+  get name() {
+    return MissingSqliteDependencyErrorName
+  }
+}
+
 /**
  * Abort is cooperative control flow, not a migration failure.
  *

@@ -20,8 +20,9 @@ export function defaultStateFileForSpace(spaceDID) {
 
 /**
  * @param {string | undefined} stateFile
+ * @param {'json' | 'sqlite' | undefined} stateFormat
  */
-export async function resolveMigrationContext(stateFile) {
+export async function resolveMigrationContext(stateFile, stateFormat) {
   const client = await getClient()
   const currentSpace = client.currentSpace()
   if (!currentSpace) {
@@ -33,11 +34,48 @@ export async function resolveMigrationContext(stateFile) {
 
   const spaceDID = currentSpace.did()
 
+  const resolvedStateFile = path.resolve(
+    stateFile ?? defaultStateFileForSpace(spaceDID)
+  )
+
   return {
     client,
     spaceDID,
-    stateFile: path.resolve(stateFile ?? defaultStateFileForSpace(spaceDID)),
+    stateFile: resolvedStateFile,
+    stateFormat: resolveStateFormat(resolvedStateFile, stateFormat),
   }
+}
+
+/**
+ * @param {string} stateFile
+ * @param {'json' | 'sqlite' | undefined} requestedFormat
+ * @returns {'json' | 'sqlite'}
+ */
+export function resolveStateFormat(stateFile, requestedFormat) {
+  const extension = path.extname(stateFile).toLowerCase()
+  const extensionFormat =
+    extension === '.db' || extension === '.sqlite'
+      ? 'sqlite'
+      : extension === '.json'
+        ? 'json'
+        : undefined
+
+  if (
+    requestedFormat &&
+    extensionFormat &&
+    requestedFormat !== extensionFormat
+  ) {
+    console.error(
+      `Error: state format "${requestedFormat}" conflicts with state file extension "${extension}". Use a matching file name or omit --state-format.`
+    )
+    process.exit(1)
+  }
+
+  if (requestedFormat) {
+    return requestedFormat
+  }
+
+  return extensionFormat ?? 'json'
 }
 
 /**

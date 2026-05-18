@@ -3,7 +3,11 @@ import process from 'node:process'
 import chalk from 'chalk'
 import { confirm } from '@inquirer/prompts'
 import { Synapse } from '@filoz/synapse-sdk'
-import { createResolver, createStore } from '@storacha/filecoin-pin-migration'
+import {
+  createResolver,
+  createStore,
+  MissingSqliteDependencyError,
+} from '@storacha/filecoin-pin-migration'
 import {
   loadSelectedRootsFile,
   pruneStagedShards,
@@ -35,6 +39,7 @@ const MIN_FIL_GAS_BALANCE = parseEther('0.001')
  * @property {string} [walletPk]
  * @property {string} [network]
  * @property {string} [stateFile]
+ * @property {'json' | 'sqlite'} [stateFormat]
  * @property {boolean} [resume]
  * @property {boolean} [retry]
  * @property {boolean} [debug]
@@ -53,23 +58,11 @@ export async function spaceMigrate(opts = {}) {
     strategy: DEFAULT_SOURCE_STRATEGY,
   })
 
-  const context = await resolveMigrationContext(opts.stateFile)
-
   const synapse = Synapse.create({
     account,
     chain: config.network,
     source: CLI_SOURCE,
   })
-
-  const startState = await resolveStartState({
-    stateFile: context.stateFile,
-    resume: config.resume,
-    retry: config.retry,
-  })
-  if (!startState) return
-
-  config.resume = startState.mode === 'resume'
-  config.retry = startState.mode === 'retry'
 
   const ac = new AbortController()
   /** @type {'reader' | 'planning' | 'migrating' | undefined} */
@@ -102,6 +95,21 @@ export async function spaceMigrate(opts = {}) {
   let teardown = () => {}
 
   try {
+    const context = await resolveMigrationContext(
+      opts.stateFile,
+      config.stateFormat
+    )
+    const startState = await resolveStartState({
+      stateFile: context.stateFile,
+      stateFormat: context.stateFormat,
+      resume: config.resume,
+      retry: config.retry,
+    })
+    if (!startState) return
+
+    config.resume = startState.mode === 'resume'
+    config.retry = startState.mode === 'retry'
+
     if (startState.mode === 'fresh' && startState.replaceExisting) {
       try {
         await fs.unlink(context.stateFile)
@@ -117,9 +125,13 @@ export async function spaceMigrate(opts = {}) {
 
     // Single store owner: open after mode decision so a user-cancelled run
     // does not create an empty state file or leave a stale lock.
-    store = await createStore({ type: 'json', path: context.stateFile })
+    store = await createStore({
+      type: context.stateFormat,
+      path: context.stateFile,
+    })
+    const activeStore = store
 
-    const state = store.getState()
+    const state = activeStore.getState()
     const persistedReaderCursor =
       state.readerProgressCursors?.[context.spaceDID]
     const hasExplicitRootCursor =
@@ -142,9 +154,11 @@ export async function spaceMigrate(opts = {}) {
     }
 
     if (config.retry) {
-      const retriedUploads = store.clearFailedUploadsForRetry(context.spaceDID)
+      const retriedUploads = activeStore.clearFailedUploadsForRetry(
+        context.spaceDID
+      )
       console.log(`Retrying ${retriedUploads} failed uploads...`)
-      await store.checkpoint()
+      await activeStore.checkpoint()
     }
 
     ;({ isStopRequested, consumeGracefulStopNoticePhase, teardown } =
@@ -176,7 +190,7 @@ export async function spaceMigrate(opts = {}) {
       readInventories({
         client: context.client,
         resolver,
-        store,
+        store: activeStore,
         spaceDIDs: uploadRootsBySpace ? undefined : [context.spaceDID],
         uploadRootsBySpace,
         readerOptions: config.readerOptions,
@@ -188,7 +202,8 @@ export async function spaceMigrate(opts = {}) {
     )
     if (readerResult.interrupted) return
 
-    const spaceInventory = store.getState().spacesInventories[context.spaceDID]
+    const spaceInventory =
+      activeStore.getState().spacesInventories[context.spaceDID]
     if (!spaceInventory || spaceInventory.uploads.length === 0) {
       console.warn(
         'No uploads are available to migrate. All uploads failed during the reader phase.'
@@ -199,7 +214,7 @@ export async function spaceMigrate(opts = {}) {
     const planResult = await runPhase('planning', () =>
       planMigration({
         synapse,
-        store,
+        store: activeStore,
         persistCheckpoint,
         signal: ac.signal,
       })
@@ -208,16 +223,17 @@ export async function spaceMigrate(opts = {}) {
     const { plan } = planResult
 
     if (config.resume || config.retry) {
-      // TODO(commit-3): pruneStagedShards is a transitional raw-state consumer.
-      // Pass store.getState() here and checkpoint after; migrate to a store
-      // iterator in Commit 3.
       const cleanupResult = await pruneStagedShards({
-        state: store.getState(),
+        state: activeStore.getState(),
         spaceDIDs: [context.spaceDID],
+        applyClearPullProgress: (spaceDID, copyIndex, shardCid) =>
+          activeStore.clearPullProgress(spaceDID, copyIndex, shardCid),
+        applyClearStoredPiece: (spaceDID, copyIndex, shardCid) =>
+          activeStore.clearStoredPiece(spaceDID, copyIndex, shardCid),
       })
 
       if (cleanupResult.stateCorrected) {
-        await store.checkpoint()
+        await activeStore.checkpoint()
       }
 
       printStagedShardCleanup(cleanupResult)
@@ -246,7 +262,7 @@ export async function spaceMigrate(opts = {}) {
     const migrationResult = await runPhase('migrating', () =>
       runMigration({
         plan,
-        store,
+        store: activeStore,
         synapse,
         debug: config.debug,
         consumeGracefulStopNoticePhase,
@@ -257,6 +273,11 @@ export async function spaceMigrate(opts = {}) {
     )
     if (migrationResult.interrupted) return
   } catch (err) {
+    if (err instanceof MissingSqliteDependencyError) {
+      console.error(`Error: ${err.message}`)
+      process.exitCode = 1
+      return
+    }
     const message = err instanceof Error ? err.message : String(err)
     console.error(`Error: migration failed - ${message}`)
     process.exitCode = 1
