@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fetchDataSetPieces } from '../src/helper/fetch-dataset-pieces.js'
 import { reconcileMigrationState } from '../src/helper/reconcile-migration-state.js'
-import { commitKey, STATE_VERSION } from '../src/state.js'
+import {
+  commitKey,
+  STATE_VERSION,
+  summarizeSpaceInventory,
+} from '../src/state.js'
 
 /**
  * @import * as API from '../src/api.js'
@@ -96,6 +100,14 @@ describe('reconcileMigrationState', () => {
     expect(state.spaces[SPACE_DID].phase).toBe('incomplete')
     expect([...state.spaces[SPACE_DID].copies[0].committed]).toEqual([
       commitKey('bafy-shard-1', 'bafy-root-1'),
+    ])
+    expect(result.committedDeleted).toEqual([
+      {
+        spaceDID: SPACE_DID,
+        copyIndex: 0,
+        shardCid: 'bafy-shard-2',
+        rootCid: 'bafy-root-1',
+      },
     ])
   })
 
@@ -229,6 +241,19 @@ describe('reconcileMigrationState', () => {
  * @returns {API.MigrationState}
  */
 function createState(input = {}) {
+  const shards = input.shards ?? [
+    createShard('bafy-root-1', 'bafy-shard-1', 'bafkz-piece-1'),
+  ]
+  const inventory = {
+    did: SPACE_DID,
+    uploads: ['bafy-root-1'],
+    shards,
+    shardsToStore: [],
+    skippedUploads: [],
+    totalBytes: BigInt(shards.length),
+    totalSizeToMigrate: BigInt(shards.length),
+  }
+
   return /** @type {API.MigrationState} */ ({
     version: STATE_VERSION,
     phase: 'migrating',
@@ -250,18 +275,11 @@ function createState(input = {}) {
         ],
       },
     },
+    spaceMigrationInventories: {
+      [SPACE_DID]: summarizeSpaceInventory(inventory),
+    },
     spacesInventories: {
-      [SPACE_DID]: {
-        did: SPACE_DID,
-        uploads: ['bafy-root-1'],
-        shards: input.shards ?? [
-          createShard('bafy-root-1', 'bafy-shard-1', 'bafkz-piece-1'),
-        ],
-        shardsToStore: [],
-        skippedUploads: [],
-        totalBytes: BigInt((input.shards ?? [1]).length),
-        totalSizeToMigrate: BigInt((input.shards ?? [1]).length),
-      },
+      [SPACE_DID]: inventory,
     },
     readerProgressCursors: undefined,
   })

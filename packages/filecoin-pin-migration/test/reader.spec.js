@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterEach } from 'vitest'
 import { Piece } from '@web3-storage/data-segment'
 import { base58btc } from 'multiformats/bases/base58'
 
@@ -13,7 +13,7 @@ import {
   createMockFetch,
   createMockFallbackFetch,
   buildShardClaims,
-  createMockInitialState,
+  createTestStore,
 } from './helpers.js'
 
 /**
@@ -47,6 +47,28 @@ function createAbortError() {
 }
 
 describe('buildMigrationInventories', () => {
+  /** @type {import('@storacha/filecoin-pin-migration/types').MigrationStore[]} */
+  let openStores = []
+
+  afterEach(async () => {
+    const stores = openStores
+    openStores = []
+    for (const s of stores) {
+      await s.close()
+    }
+  })
+
+  /**
+   * Open a test store and register it for afterEach cleanup.
+   *
+   * @param {Parameters<typeof createTestStore>[0]} [opts]
+   */
+  async function openStore(opts) {
+    const store = await createTestStore(opts)
+    openStores.push(store)
+    return store
+  }
+
   describe('single space — basic inventory', () => {
     it('resolves shards and builds flat inventory with root on each shard', async () => {
       const rootCid = await createTestCID('root-a')
@@ -72,12 +94,13 @@ describe('buildMigrationInventories', () => {
         ])
       )
 
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       const inventory = await collectInventory(
         buildMigrationInventories({
           client,
           resolver: claimsResolver,
-          state,
+          store,
           spaceDIDs: [SPACE_DID],
           options: { indexer },
         }),
@@ -132,12 +155,13 @@ describe('buildMigrationInventories', () => {
       ])
       const indexer = createMockIndexer(new Map([[shardB58, { claims }]]))
 
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       const inventory = await collectInventory(
         buildMigrationInventories({
           client,
           resolver: claimsResolver,
-          state,
+          store,
           spaceDIDs: [SPACE_DID],
           options: { indexer },
         }),
@@ -173,12 +197,13 @@ describe('buildMigrationInventories', () => {
         ])
       )
 
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       const inventory = await collectInventory(
         buildMigrationInventories({
           client,
           resolver: claimsResolver,
-          state,
+          store,
           spaceDIDs: [SPACE_DID],
           options: { indexer },
         }),
@@ -213,12 +238,13 @@ describe('buildMigrationInventories', () => {
         ])
       )
 
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       const inventory = await collectInventory(
         buildMigrationInventories({
           client,
           resolver: claimsResolver,
-          state,
+          store,
           spaceDIDs: [SPACE_DID],
           options: { indexer },
         }),
@@ -252,13 +278,14 @@ describe('buildMigrationInventories', () => {
         ])
       )
 
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       /** @type {API.MigrationEvent[]} */
       const events = []
       for await (const event of buildMigrationInventories({
         client,
         resolver: claimsResolver,
-        state,
+        store,
         spaceDIDs: [SPACE_DID],
         options: { indexer },
       })) {
@@ -293,13 +320,14 @@ describe('buildMigrationInventories', () => {
       )
       const fetcher = createMockFetch(new Map())
 
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       /** @type {API.MigrationEvent[]} */
       const events = []
       for await (const event of buildMigrationInventories({
         client,
         resolver: claimsResolver,
-        state,
+        store,
         spaceDIDs: [SPACE_DID],
         options: { indexer, fetcher },
       })) {
@@ -335,13 +363,14 @@ describe('buildMigrationInventories', () => {
         headResponses: new Map([[blobUrl, { contentLength: 4096 }]]),
       })
 
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       /** @type {API.MigrationEvent[]} */
       const events = []
       for await (const event of buildMigrationInventories({
         client,
         resolver: claimsResolver,
-        state,
+        store,
         spaceDIDs: [SPACE_DID],
         options: { indexer, fetcher },
       })) {
@@ -399,12 +428,13 @@ describe('buildMigrationInventories', () => {
         headResponses: new Map([[carUrl, { contentLength: 4096 }]]),
       })
 
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       const inventory = await collectInventory(
         buildMigrationInventories({
           client,
           resolver: claimsResolver,
-          state,
+          store,
           spaceDIDs: [SPACE_DID],
           options: { indexer, fetcher },
         }),
@@ -450,12 +480,13 @@ describe('buildMigrationInventories', () => {
         ])
       )
 
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       const inventory = await collectInventory(
         buildMigrationInventories({
           client,
           resolver: new ClaimsResolver(),
-          state,
+          store,
           spaceDIDs: [SPACE_DID],
           options: { indexer },
         }),
@@ -492,12 +523,13 @@ describe('buildMigrationInventories', () => {
         ])
       )
 
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       const inventory = await collectInventory(
         buildMigrationInventories({
           client,
           resolver: new RoundaboutResolver(),
-          state,
+          store,
           spaceDIDs: [SPACE_DID],
           options: { indexer },
         }),
@@ -558,12 +590,13 @@ describe('buildMigrationInventories', () => {
         ])
       )
 
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       const inventory = await collectInventory(
         buildMigrationInventories({
           client,
           resolver: claimsResolver,
-          state,
+          store,
           spaceDIDs: [SPACE_DID],
           options: { indexer },
         }),
@@ -620,12 +653,13 @@ describe('buildMigrationInventories', () => {
         ])
       )
 
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       const checkpoints = []
       for await (const event of buildMigrationInventories({
         client,
         resolver: claimsResolver,
-        state,
+        store,
         spaceDIDs: [SPACE_DID],
         options: { indexer },
       })) {
@@ -678,12 +712,13 @@ describe('buildMigrationInventories', () => {
         ])
       )
 
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       const events = []
       for await (const event of buildMigrationInventories({
         client,
         resolver: claimsResolver,
-        state,
+        store,
         spaceDIDs: [SPACE_DID],
         options: {
           indexer,
@@ -789,11 +824,12 @@ describe('buildMigrationInventories', () => {
         ])
       )
 
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       for await (const _ of buildMigrationInventories({
         client,
         resolver: claimsResolver,
-        state,
+        store,
         options: { indexer },
       })) {
         /* drain */
@@ -839,11 +875,12 @@ describe('buildMigrationInventories', () => {
         ])
       )
 
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       for await (const _ of buildMigrationInventories({
         client,
         resolver: claimsResolver,
-        state,
+        store,
         spaceDIDs: [spaceA],
         options: { indexer },
       })) {
@@ -880,11 +917,12 @@ describe('buildMigrationInventories', () => {
         ])
       )
 
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       for await (const _ of buildMigrationInventories({
         client,
         resolver: claimsResolver,
-        state,
+        store,
         spaceDIDs: [SPACE_DID],
         options: { indexer },
       })) {
@@ -898,12 +936,13 @@ describe('buildMigrationInventories', () => {
       const client = createMockClient([{ results: [] }])
       const indexer = createMockIndexer(new Map())
 
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       const events = []
       for await (const event of buildMigrationInventories({
         client,
         resolver: claimsResolver,
-        state,
+        store,
         spaceDIDs: [SPACE_DID],
         options: { indexer },
       })) {
@@ -941,7 +980,8 @@ describe('buildMigrationInventories', () => {
       )
       const indexer = createMockIndexer(new Map())
 
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       // Pre-populate as complete (no cursor)
       state.spacesInventories[spaceA] = {
         did: spaceA,
@@ -956,7 +996,7 @@ describe('buildMigrationInventories', () => {
       for await (const _ of buildMigrationInventories({
         client,
         resolver: claimsResolver,
-        state,
+        store,
         spaceDIDs: [spaceA],
         options: { indexer },
       })) {
@@ -1009,7 +1049,8 @@ describe('buildMigrationInventories', () => {
         ])
       )
 
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       // Simulate a prior partial run: page 0 was processed, cursor '1' was saved
       state.spacesInventories[SPACE_DID] = {
         did: SPACE_DID,
@@ -1034,7 +1075,7 @@ describe('buildMigrationInventories', () => {
         buildMigrationInventories({
           client,
           resolver: claimsResolver,
-          state,
+          store,
           spaceDIDs: [SPACE_DID],
           options: { indexer },
         }),
@@ -1159,15 +1200,16 @@ describe('buildMigrationInventories', () => {
         ])
       )
 
-      const firstRunState = createMockInitialState()
-      let persistedState = createMockInitialState()
+      const firstRunStore = await openStore()
+      /** @type {import('../src/api.js').MigrationState | undefined} */
+      let persistedState
 
       await expect(
         (async () => {
           for await (const event of buildMigrationInventories({
             client: failingClient,
             resolver: claimsResolver,
-            state: firstRunState,
+            store: firstRunStore,
             spaceDIDs: [SPACE_DID],
             options: {
               indexer,
@@ -1183,26 +1225,37 @@ describe('buildMigrationInventories', () => {
         })()
       ).rejects.toThrow('simulated crash after an uncheckpointed page')
 
+      await firstRunStore.close()
+
+      expect(persistedState).toBeDefined()
+      if (!persistedState) {
+        throw new Error('expected a checkpointed state before the crash')
+      }
+
       expect(persistedState.spacesInventories[SPACE_DID]?.uploads).toEqual([
         rootA.toString(),
         rootB.toString(),
       ])
       expect(persistedState.readerProgressCursors).toEqual({ [SPACE_DID]: '2' })
 
+      const resumeStore = await openStore({ state: persistedState })
+      const resumeState = resumeStore.getState()
       const resumedInventory = await collectInventory(
         buildMigrationInventories({
           client: healthyClient,
           resolver: claimsResolver,
-          state: persistedState,
+          store: resumeStore,
           spaceDIDs: [SPACE_DID],
           options: {
             indexer,
             checkpointEveryPages: 2,
           },
         }),
-        persistedState,
+        resumeState,
         SPACE_DID
       )
+
+      await resumeStore.close()
 
       expect(resumedInventory.uploads).toEqual([
         rootA.toString(),
@@ -1211,7 +1264,7 @@ describe('buildMigrationInventories', () => {
         rootD.toString(),
       ])
       expect(resumedInventory.shards).toHaveLength(4)
-      expect(persistedState.readerProgressCursors).toBeUndefined()
+      expect(resumeState.readerProgressCursors).toBeUndefined()
     })
 
     it('reads trusted explicit roots without calling upload.list', async () => {
@@ -1275,12 +1328,13 @@ describe('buildMigrationInventories', () => {
         ])
       )
 
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       const inventory = await collectInventory(
         buildMigrationInventories({
           client,
           resolver: claimsResolver,
-          state,
+          store,
           uploadRootsBySpace: {
             [SPACE_DID]: [rootA.toString(), rootB.toString()],
           },
@@ -1328,13 +1382,14 @@ describe('buildMigrationInventories', () => {
           ])
         )
       )
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       const ac = new AbortController()
 
       for await (const event of buildMigrationInventories({
         client: createMockClient([], shardsByRoot),
         resolver: claimsResolver,
-        state,
+        store,
         uploadRootsBySpace: {
           [SPACE_DID]: [rootA.toString(), rootB.toString(), rootC.toString()],
         },
@@ -1419,15 +1474,16 @@ describe('buildMigrationInventories', () => {
         })
       )
 
-      const firstRunState = createMockInitialState()
-      let persistedState = createMockInitialState()
+      const firstRunStore = await openStore()
+      /** @type {import('../src/api.js').MigrationState | undefined} */
+      let persistedState
 
       await expect(
         (async () => {
           for await (const event of buildMigrationInventories({
             client: failingClient,
             resolver: claimsResolver,
-            state: firstRunState,
+            store: firstRunStore,
             uploadRootsBySpace: { [SPACE_DID]: explicitRoots },
             options: {
               indexer,
@@ -1444,6 +1500,13 @@ describe('buildMigrationInventories', () => {
         })()
       ).rejects.toThrow('simulated explicit-root crash')
 
+      await firstRunStore.close()
+
+      expect(persistedState).toBeDefined()
+      if (!persistedState) {
+        throw new Error('expected a checkpointed state before the crash')
+      }
+
       expect(persistedState.spacesInventories[SPACE_DID]?.uploads).toEqual([
         rootA.toString(),
         rootB.toString(),
@@ -1452,11 +1515,13 @@ describe('buildMigrationInventories', () => {
         [SPACE_DID]: 'explicit-roots:2',
       })
 
+      const resumeStore = await openStore({ state: persistedState })
+      const resumeState = resumeStore.getState()
       const resumedInventory = await collectInventory(
         buildMigrationInventories({
           client: createMockClient([], shardsByRoot),
           resolver: claimsResolver,
-          state: persistedState,
+          store: resumeStore,
           uploadRootsBySpace: { [SPACE_DID]: explicitRoots },
           options: {
             indexer,
@@ -1464,18 +1529,21 @@ describe('buildMigrationInventories', () => {
             checkpointEveryPages: 2,
           },
         }),
-        persistedState,
+        resumeState,
         SPACE_DID
       )
 
+      await resumeStore.close()
+
       expect(resumedInventory.uploads).toEqual(explicitRoots)
       expect(resumedInventory.shards).toHaveLength(4)
-      expect(persistedState.readerProgressCursors).toBeUndefined()
+      expect(resumeState.readerProgressCursors).toBeUndefined()
     })
 
     it('rejects malformed explicit-root cursors on resume', async () => {
       const rootA = await createTestCID('root-explicit-malformed-a')
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       state.readerProgressCursors = {
         [SPACE_DID]: 'explicit-roots:2junk',
       }
@@ -1485,7 +1553,7 @@ describe('buildMigrationInventories', () => {
           buildMigrationInventories({
             client: createMockClient([], new Map([[rootA.toString(), []]])),
             resolver: claimsResolver,
-            state,
+            store,
             uploadRootsBySpace: {
               [SPACE_DID]: [rootA.toString()],
             },
@@ -1502,14 +1570,15 @@ describe('buildMigrationInventories', () => {
     })
 
     it('throws clearly for invalid explicit upload roots', async () => {
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
 
       await expect(
         collectInventory(
           buildMigrationInventories({
             client: createMockClient([], new Map()),
             resolver: claimsResolver,
-            state,
+            store,
             uploadRootsBySpace: {
               [SPACE_DID]: ['not-a-cid'],
             },
@@ -1570,14 +1639,15 @@ describe('buildMigrationInventories', () => {
       )
 
       const ac = new AbortController()
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       /** @type {API.MigrationEvent[]} */
       const events = []
 
       for await (const event of buildMigrationInventories({
         client,
         resolver: claimsResolver,
-        state,
+        store,
         spaceDIDs: [SPACE_DID],
         signal: ac.signal,
         options: { indexer },
@@ -1638,7 +1708,8 @@ describe('buildMigrationInventories', () => {
       )
 
       const ac = new AbortController()
-      const state = createMockInitialState()
+      const store = await openStore()
+      const state = store.getState()
       /** @type {API.MigrationEvent[]} */
       const events = []
 
@@ -1646,7 +1717,7 @@ describe('buildMigrationInventories', () => {
         for await (const event of buildMigrationInventories({
           client,
           resolver: claimsResolver,
-          state,
+          store,
           spaceDIDs: [SPACE_DID],
           signal: ac.signal,
           options: { indexer: createMockIndexer(new Map()) },

@@ -22,7 +22,7 @@ const EMPTY_SHARDS = /** @type {API.ResolvedShard[]} */ (
  */
 export async function* executeStoreMigration({
   plan,
-  state,
+  store,
   synapse,
   batchSize: batchSizeOpt,
   fetcher: fetcherOpt,
@@ -48,7 +48,7 @@ export async function* executeStoreMigration({
 
   yield* runMigration({
     plan,
-    state,
+    store,
     synapse,
     signal,
     totalBytes: plan.totals.bytesToMigrate,
@@ -61,7 +61,7 @@ export async function* executeStoreMigration({
       migrateSpace({
         inventory,
         perSpaceCost,
-        state,
+        store,
         config,
       }),
   })

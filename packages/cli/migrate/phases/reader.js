@@ -9,19 +9,19 @@ import { printReaderShardFailed } from '../view/reader.js'
  * @param {object} args
  * @param {import('@storacha/client').Client} args.client
  * @param {import('@storacha/filecoin-pin-migration/types').SourceURLResolver} args.resolver
- * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} args.state
+ * @param {import('@storacha/filecoin-pin-migration/types').MigrationStore} args.store
  * @param {string[]} [args.spaceDIDs]
  * @param {import('@storacha/filecoin-pin-migration/types').UploadRootsBySpace} [args.uploadRootsBySpace]
  * @param {import('@storacha/filecoin-pin-migration/types').BuildInventoriesInput['options']} [args.readerOptions]
  * @param {Array<[string, number | boolean]>} [args.readerOverrideEntries]
  * @param {() => boolean} [args.isStopRequested]
- * @param {(state: import('@storacha/filecoin-pin-migration/types').MigrationState) => Promise<void>} args.persistCheckpoint
+ * @param {() => Promise<void>} args.persistCheckpoint
  * @param {AbortSignal} args.signal
  */
 export async function readInventories({
   client,
   resolver,
-  state,
+  store,
   spaceDIDs,
   uploadRootsBySpace,
   readerOptions,
@@ -48,7 +48,7 @@ export async function readInventories({
     ? {
         client,
         resolver,
-        state,
+        store,
         uploadRootsBySpace,
         signal,
         options: readerOptions,
@@ -56,7 +56,7 @@ export async function readInventories({
     : {
         client,
         resolver,
-        state,
+        store,
         spaceDIDs: /** @type {`did:key:${string}`[]} */ (spaceDIDs),
         signal,
         options: readerOptions,
@@ -98,8 +98,8 @@ export async function readInventories({
         break
       case 'reader:space:complete': {
         clearSpaceElapsedTimer()
-        const inventory = state.spacesInventories[event.spaceDID]
-        if (!inventory) {
+        const inventorySummary = store.getSpaceInventorySummary(event.spaceDID)
+        if (!inventorySummary) {
           spinner.fail(
             `Reader completed space ${truncateDID(event.spaceDID)} without an inventory result`
           )
@@ -109,11 +109,11 @@ export async function readInventories({
         }
         spinner.stopAndPersist({
           symbol: '✔',
-          text: ` Completed ${inventory.uploads.length} uploads, ${
-            inventory.shards.length
+          text: ` Completed ${inventorySummary.uploadsCount} uploads, ${
+            inventorySummary.shardsCount
           } shards, ${
-            inventory.skippedUploads.length
-          } skipped uploads, ${formatBytes(inventory.totalBytes)}`,
+            inventorySummary.skippedUploadsCount
+          } skipped uploads, ${formatBytes(inventorySummary.totalBytes)}`,
         })
         activeSpaceDID = undefined
         activeSpaceStartedAt = undefined
@@ -131,7 +131,7 @@ export async function readInventories({
         renderActiveSpaceText()
         break
       case 'state:checkpoint':
-        await persistCheckpoint(state)
+        await persistCheckpoint()
         if (isStopRequested?.()) {
           clearSpaceElapsedTimer()
           spinner.stop()
@@ -143,7 +143,7 @@ export async function readInventories({
     if (signal.aborted) {
       clearSpaceElapsedTimer()
       spinner.stop()
-      await persistCheckpoint(state)
+      await persistCheckpoint()
       return { interrupted: true }
     }
   }
@@ -152,7 +152,7 @@ export async function readInventories({
 
   if (signal.aborted) {
     spinner.stop()
-    await persistCheckpoint(state)
+    await persistCheckpoint()
     return { interrupted: true }
   }
 

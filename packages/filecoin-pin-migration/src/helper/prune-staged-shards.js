@@ -3,9 +3,13 @@ import {
   checkPiecesOnSP,
   buildStatusBreakdown,
 } from './sp-piece-status.js'
+import { iteratePullShards } from './inventory-iterators.js'
 import {
   buildInventoryCommitView,
+  clearPullProgress as clearPullProgressState,
+  clearStoredPiece as clearStoredPieceState,
   getFullyCommittedShardCIDs,
+  getInventorySummaryMap,
 } from '../state.js'
 
 /**
@@ -29,30 +33,55 @@ const ACKNOWLEDGED_STAGED_STATUSES = new Set([
  *
  * @param {object} args
  * @param {RootAPI.MigrationState} args.state
+ * @param {RootAPI.MigrationStore} [args.store]
  * @param {RootAPI.SpaceDID[]} [args.spaceDIDs]
  * @param {number} [args.providerStatusConcurrency]
  * @param {typeof fetch} [args.fetcher]
+ * @param {(spaceDID: RootAPI.SpaceDID, copyIndex: number, shardCid: string) => void} [args.applyClearPullProgress]
+ * @param {(spaceDID: RootAPI.SpaceDID, copyIndex: number, shardCid: string) => void} [args.applyClearStoredPiece]
  * @returns {Promise<API.PruneStagedShardsResult>}
  */
 export async function pruneStagedShards({
   state,
+  store,
   spaceDIDs,
   providerStatusConcurrency = 10,
   fetcher = fetch,
+  applyClearPullProgress = (spaceDID, copyIndex, shardCid) => {
+    clearPullProgressState(state, spaceDID, copyIndex, shardCid)
+  },
+  applyClearStoredPiece = (spaceDID, copyIndex, shardCid) => {
+    clearStoredPieceState(state, spaceDID, copyIndex, shardCid)
+  },
 }) {
   const targetSpaceDIDs =
     spaceDIDs ??
-    /** @type {RootAPI.SpaceDID[]} */ (Object.keys(state.spacesInventories))
+    /** @type {RootAPI.SpaceDID[]} */ (
+      Object.keys(getInventorySummaryMap(state))
+    )
 
   /** @type {API.PruneStagedShardsSpaceReport[]} */
   const spaces = []
+  /** @type {Array<{ spaceDID: RootAPI.SpaceDID, copyIndex: number, shardCid: string }>} */
+  const pulledDeleted = []
+  /** @type {Array<{ spaceDID: RootAPI.SpaceDID, copyIndex: number, shardCid: string }>} */
+  const storedShardsDeleted = []
   let stateCorrected = false
 
   for (const spaceDID of targetSpaceDIDs) {
-    const inventory = state.spacesInventories[spaceDID]
+    const inventory = state.spacesInventories?.[spaceDID]
     const spaceState = state.spaces[spaceDID]
-    if (!inventory || !spaceState) continue
-    const inventoryCommitView = buildInventoryCommitView(inventory)
+    if (!spaceState) continue
+    const inventoryBuckets = inventory
+      ? inventory
+      : store
+      ? {
+          shards: iteratePullShards(store, spaceDID),
+          shardsToStore: store.iterateShardsToStore(spaceDID),
+        }
+      : undefined
+    if (!inventoryBuckets) continue
+    const inventoryCommitView = buildInventoryCommitView(inventoryBuckets)
     /** @type {Array<{ copy: RootAPI.SpaceCopyState, stagedShardCIDs: Set<string> }>} */
     const stagedCopies = []
 
@@ -76,7 +105,10 @@ export async function pruneStagedShards({
 
     if (stagedCopies.length === 0) continue
 
-    const shardCIDToPieceCID = buildShardCIDToPieceIndex(spaceState, inventory)
+    const shardCIDToPieceCID = buildShardCIDToPieceIndex(
+      spaceState,
+      inventoryBuckets
+    )
     /** @type {API.PruneStagedShardsCopyReport[]} */
     const copies = []
     let removedAnyForSpace = false
@@ -133,8 +165,22 @@ export async function pruneStagedShards({
       }
 
       for (const shardCID of removedStagedShardCIDs) {
-        copy.pulled.delete(shardCID)
-        delete copy.storedShards[shardCID]
+        if (copy.pulled.has(shardCID)) {
+          applyClearPullProgress(spaceDID, copy.copyIndex, shardCID)
+          pulledDeleted.push({
+            spaceDID,
+            copyIndex: copy.copyIndex,
+            shardCid: shardCID,
+          })
+        }
+        if (Object.hasOwn(copy.storedShards, shardCID)) {
+          applyClearStoredPiece(spaceDID, copy.copyIndex, shardCID)
+          storedShardsDeleted.push({
+            spaceDID,
+            copyIndex: copy.copyIndex,
+            shardCid: shardCID,
+          })
+        }
       }
 
       if (removedStagedShardCIDs.length > 0) {
@@ -174,6 +220,8 @@ export async function pruneStagedShards({
   return {
     stateCorrected,
     spaces,
+    pulledDeleted,
+    storedShardsDeleted,
   }
 }
 

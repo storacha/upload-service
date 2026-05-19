@@ -54,7 +54,8 @@ export async function runRetried({ retries, signal, shouldRetry, attempt }) {
     throwIfAborted(signal)
 
     try {
-      return await attempt(attemptNumber)
+      const r = await attempt(attemptNumber)
+      return r
     } catch (error) {
       if (signal?.aborted || isAbortError(error)) {
         throw error

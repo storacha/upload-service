@@ -115,6 +115,45 @@ export class ResumeBindingDriftError extends Error {
   }
 }
 
+export const StoreClosedErrorName = /** @type {const} */ ('StoreClosedError')
+/**
+ * Thrown when a {@link import('./api.js').MigrationStore} method is called
+ * after `close()` / `closeSync()` has begun (lifecycle outside `'open'`).
+ *
+ * This is a programmer / lifecycle invariant violation, not a domain failure —
+ * it does not flow through `Result<T,X>` and is not a `@ucanto/server` Failure.
+ */
+export class StoreClosedError extends Error {
+  /** @param {string} method */
+  constructor(method) {
+    super(`MigrationStore has been closed; cannot call ${method}()`)
+  }
+  get name() {
+    return StoreClosedErrorName
+  }
+}
+
+export const MissingSqliteDependencyErrorName = /** @type {const} */ (
+  'MissingSqliteDependencyError'
+)
+export class MissingSqliteDependencyError extends Error {
+  /** @type {string} */
+  installHint
+
+  /**
+   * @param {string} [installHint]
+   */
+  constructor(installHint = 'Install it with `pnpm add better-sqlite3`.') {
+    super(
+      `SQLite state backend requires the optional \`better-sqlite3\` dependency. ${installHint}`
+    )
+    this.installHint = installHint
+  }
+  get name() {
+    return MissingSqliteDependencyErrorName
+  }
+}
+
 /**
  * Abort is cooperative control flow, not a migration failure.
  *

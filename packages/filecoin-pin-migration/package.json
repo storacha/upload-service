@@ -46,7 +46,8 @@
     "clean": "rm -rf dist *.tsbuildinfo coverage",
     "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
-    "build": "tsc --build",
+    "build": "tsc --build && pnpm run copy-migrations",
+    "copy-migrations": "mkdir -p dist/store/sqlite/migrations && cp src/store/sqlite/migrations/*.sql dist/store/sqlite/migrations/",
     "test": "npm run test:node",
     "test:node": "vitest --run"
   },
@@ -62,15 +63,24 @@
     "@web3-storage/data-segment": "catalog:",
     "multiformats": "catalog:",
     "p-map": "^7.0.3",
-    "p-retry": "^6.2.1"
+    "p-retry": "^6.2.1",
+    "steno": "^4.0.0"
   },
   "peerDependencies": {
+    "better-sqlite3": "^11.8.1",
     "viem": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@storacha/eslint-config": "workspace:^",
     "@types/node": "^20.8.4",
     "@typescript-eslint/eslint-plugin": "catalog:",
+    "@types/better-sqlite3": "^7.6.12",
+    "better-sqlite3": "^11.8.1",
     "typescript": "catalog:",
     "viem": "catalog:",
     "vitest": "^3.1.1"

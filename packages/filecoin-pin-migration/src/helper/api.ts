@@ -1,5 +1,18 @@
 import type { SpaceDID } from '../api.js'
 
+export interface ProgressDeletion {
+  spaceDID: SpaceDID
+  copyIndex: number
+  shardCid: string
+}
+
+export interface CommitDeletion {
+  spaceDID: SpaceDID
+  copyIndex: number
+  shardCid: string
+  rootCid: string
+}
+
 export interface StorageRetentionCostInput {
   sizeBytes: bigint
   months: bigint
@@ -83,6 +96,8 @@ export interface PruneStagedShardsSpaceReport {
 export interface PruneStagedShardsResult {
   stateCorrected: boolean
   spaces: PruneStagedShardsSpaceReport[]
+  pulledDeleted: ProgressDeletion[]
+  storedShardsDeleted: ProgressDeletion[]
 }
 
 export interface ReconcileMigrationStateChanges {
@@ -124,4 +139,22 @@ export interface ReconcileMigrationStateResult {
   hasDiscrepancies: boolean
   stateCorrected: boolean
   spaces: ReconcileMigrationStateSpaceReport[]
+  pulledDeleted: ProgressDeletion[]
+  storedShardsDeleted: ProgressDeletion[]
+  committedDeleted: CommitDeletion[]
+}
+
+export interface JsonToSqliteConversionResult {
+  sourcePath: string
+  targetPath: string
+  spaces: number
+  uploads: number
+  skippedUploads: number
+  shards: number
+  shardsToStore: number
+  copies: number
+  pulledProgress: number
+  storedShards: number
+  commits: number
+  failedUploads: number
 }

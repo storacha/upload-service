@@ -11,8 +11,6 @@ import {
   getActionableRootsForRun,
   hasAnyCommittedRootForShard,
   isShardFullyCommitted,
-  recordPull,
-  finalizeSpace,
 } from '../state.js'
 import { batches, toPieceCID } from '../utils.js'
 import { PRIMARY_COPY_INDEX } from '../constants.js'
@@ -58,17 +56,18 @@ const COMMIT_PHASE = 'commit'
  * @param {object} args
  * @param {API.SpaceInventory} args.inventory
  * @param {API.PerSpaceCost} args.perSpaceCost
- * @param {API.MigrationState} args.state
+ * @param {API.MigrationStore} args.store
  * @param {MigrationExecutionConfig} args.config
  * @returns {AsyncGenerator<API.MigrationEvent>}
  */
 export async function* migrateSpace({
   inventory,
   perSpaceCost,
-  state,
+  store,
   config,
 }) {
   const { signal } = config
+  const state = store.getState()
   const space = state.spaces[perSpaceCost.spaceDID]
   if (!space) return
 
@@ -104,6 +103,7 @@ export async function* migrateSpace({
     representativeStoreShardByCid,
     copyState: copy0State,
     copyCost: copy0Cost,
+    store,
     state,
     config,
     activeFailedRoots: copy0FailedRoots,
@@ -112,7 +112,7 @@ export async function* migrateSpace({
 
   if (!copy0StoreEntries.completed || signal?.aborted) {
     if (!signal?.aborted) {
-      yield* finalizeSpaceExecution(state, perSpaceCost.spaceDID)
+      yield* finalizeSpaceExecution(store, state, perSpaceCost.spaceDID)
     }
     return
   }
@@ -123,6 +123,7 @@ export async function* migrateSpace({
     copyCost: copy1Cost,
     sourceContext: copy0Cost.context,
     copy0StoreEntries: copy0StoreEntries.storeEntries,
+    store,
     state,
     config,
     activeFailedRoots: copy1FailedRoots,
@@ -131,12 +132,12 @@ export async function* migrateSpace({
 
   if (!copy1Completed.completed || signal?.aborted) {
     if (!signal?.aborted) {
-      yield* finalizeSpaceExecution(state, perSpaceCost.spaceDID)
+      yield* finalizeSpaceExecution(store, state, perSpaceCost.spaceDID)
     }
     return
   }
 
-  yield* finalizeSpaceExecution(state, perSpaceCost.spaceDID)
+  yield* finalizeSpaceExecution(store, state, perSpaceCost.spaceDID)
 }
 
 /**
@@ -150,6 +151,7 @@ export async function* migrateSpace({
  * @param {Map<string, API.StoreShard>} args.representativeStoreShardByCid
  * @param {API.SpaceCopyState} args.copyState
  * @param {API.PerCopyCost} args.copyCost
+ * @param {API.MigrationStore} args.store
  * @param {API.MigrationState} args.state
  * @param {MigrationExecutionConfig} args.config
  * @param {Set<string>} args.activeFailedRoots
@@ -161,6 +163,7 @@ async function* runCopy0({
   representativeStoreShardByCid,
   copyState,
   copyCost,
+  store,
   state,
   config,
   activeFailedRoots,
@@ -190,6 +193,7 @@ async function* runCopy0({
       representativeStoreShardByCid,
       copyState,
       copyCost,
+      store,
       state,
       fetcher: /** @type {typeof fetch} */ (fetcher),
       batchSize,
@@ -210,6 +214,7 @@ async function* runCopy0({
     representativeResolvedShardByCid,
     copyState,
     copyCost,
+    store,
     state,
     config,
     activeFailedRoots,
@@ -237,6 +242,7 @@ async function* runCopy0({
       multiRootShards,
     }),
     context: copyCost.context,
+    store,
     state,
     spaceDID: copyCost.spaceDID,
     copyIndex: copyCost.copyIndex,
@@ -272,6 +278,7 @@ async function* runCopy0({
  * @param {API.PerCopyCost} args.copyCost
  * @param {API.StorageContext} args.sourceContext
  * @param {Map<string, API.CommitEntry>} args.copy0StoreEntries
+ * @param {API.MigrationStore} args.store
  * @param {API.MigrationState} args.state
  * @param {MigrationExecutionConfig} args.config
  * @param {Set<string>} args.activeFailedRoots
@@ -284,6 +291,7 @@ async function* runCopy1({
   copyCost,
   sourceContext,
   copy0StoreEntries,
+  store,
   state,
   config,
   activeFailedRoots,
@@ -308,6 +316,7 @@ async function* runCopy1({
     representativeResolvedShardByCid,
     copyState,
     copyCost,
+    store,
     state,
     config,
     activeFailedRoots,
@@ -334,6 +343,7 @@ async function* runCopy1({
       copyState,
       sourceContext,
       copyCost,
+      store,
       state,
       batchSize,
       pullConcurrency,
@@ -359,6 +369,7 @@ async function* runCopy1({
       multiRootShards,
     }),
     context: copyCost.context,
+    store,
     state,
     spaceDID: copyCost.spaceDID,
     copyIndex: copyCost.copyIndex,
@@ -389,6 +400,7 @@ async function* runCopy1({
  * @param {Map<string, API.ResolvedShard>} args.representativeResolvedShardByCid
  * @param {API.SpaceCopyState} args.copyState
  * @param {API.PerCopyCost} args.copyCost
+ * @param {API.MigrationStore} args.store
  * @param {API.MigrationState} args.state
  * @param {MigrationExecutionConfig} args.config
  * @param {Set<string>} args.activeFailedRoots
@@ -399,6 +411,7 @@ async function* pullSourceShardsForCopy({
   representativeResolvedShardByCid,
   copyState,
   copyCost,
+  store,
   state,
   config,
   activeFailedRoots,
@@ -450,6 +463,7 @@ async function* pullSourceShardsForCopy({
     const { aborted } = yield* drainConcurrentStream(stream, (pullResult) =>
       applyPullResults({
         pullResults: [pullResult],
+        store,
         state,
         spaceDID,
         copyIndex,
@@ -457,7 +471,7 @@ async function* pullSourceShardsForCopy({
         getFailureRoots: (shard) =>
           expandShardRoots(shard.cid, shard.root, multiRootShards),
         onPulledCandidate: (shard) =>
-          recordPull(state, {
+          store.recordPull({
             spaceDID,
             copyIndex,
             shardCid: shard.cid,
@@ -518,12 +532,13 @@ async function presignAndPull({ batch, context, phase, signal }) {
 }
 
 /**
+ * @param {API.MigrationStore} store
  * @param {API.MigrationState} state
  * @param {API.SpaceDID} spaceDID
  * @returns {AsyncGenerator<API.MigrationEvent>}
  */
-async function* finalizeSpaceExecution(state, spaceDID) {
-  finalizeSpace(state, spaceDID)
+async function* finalizeSpaceExecution(store, state, spaceDID) {
+  store.finalizeSpace(spaceDID)
   const phase = state.spaces[spaceDID]?.phase
   if (phase) {
     yield {

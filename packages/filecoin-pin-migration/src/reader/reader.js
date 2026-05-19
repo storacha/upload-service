@@ -9,18 +9,19 @@ import {
   DEFAULT_UPLOAD_PAGE_SIZE,
 } from '../constants.js'
 import { isAbortError, throwIfAborted } from '../errors.js'
-import { checkpointInventoryPage } from '../state.js'
 import { resolveClaimsIndex } from './indexer.js'
 import { normalizePositiveInteger } from '../utils.js'
+
+import { getInventorySummaryMap } from '../state.js'
 
 const EXPLICIT_ROOT_CURSOR_PREFIX = 'explicit-roots:'
 
 /**
  * @import {
  *  BuildInventoriesInput,
+ *  MigrationStore,
  *  SpaceDID,
  *  MigrationEvent,
- *  MigrationState,
  *  IndexingServiceReader,
  *  SourceURLResolver,
  *  ResolvedShard,
@@ -38,9 +39,9 @@ const EXPLICIT_ROOT_CURSOR_PREFIX = 'explicit-roots:'
  * ## Resume
  *
  * Pass a previously persisted MigrationState to resume an interrupted read:
- *   - Spaces already in state.spacesInventories with no cursor → skipped entirely
+ *   - Spaces already in state.spaceMigrationInventories with no cursor → skipped entirely
  *   - Spaces with a cursor in state.readerProgressCursors → resumed from that page
- *   - Spaces absent from state.spacesInventories → started fresh
+ *   - Spaces absent from state.spaceMigrationInventories → started fresh
  *
  * When uploadRootsBySpace is provided, the reader switches to explicit-root
  * mode for those spaces:
@@ -65,7 +66,7 @@ const EXPLICIT_ROOT_CURSOR_PREFIX = 'explicit-roots:'
 export async function* buildMigrationInventories({
   client,
   resolver,
-  state,
+  store,
   spaceDIDs,
   uploadRootsBySpace,
   signal,
@@ -103,6 +104,8 @@ export async function* buildMigrationInventories({
     )
   }
 
+  const state = store.getState()
+
   const dids = /** @type {SpaceDID[]} */ (
     uploadRootsBySpace
       ? Object.keys(uploadRootsBySpace)
@@ -114,7 +117,7 @@ export async function* buildMigrationInventories({
     const spaceDID = /** @type {SpaceDID} */ (did)
     // Space already fully read — skip
     if (
-      state.spacesInventories[spaceDID] &&
+      getInventorySummaryMap(state)[spaceDID] &&
       !state.readerProgressCursors?.[spaceDID]
     ) {
       continue
@@ -134,6 +137,7 @@ export async function* buildMigrationInventories({
         indexer,
         resolver,
         spaceDID,
+        store,
         state,
         explicitUploadRoots: explicitRoots,
         stopOnError,
@@ -152,7 +156,7 @@ export async function* buildMigrationInventories({
   }
 
   if (signal?.aborted) return
-  state.phase = 'planning'
+  store.transitionToPlanning()
   yield { type: 'reader:complete' }
   yield { type: 'state:checkpoint', state }
 }
@@ -173,7 +177,8 @@ export async function* buildMigrationInventories({
  * @param {IndexingServiceReader} args.indexer
  * @param {SourceURLResolver} args.resolver
  * @param {SpaceDID} args.spaceDID
- * @param {MigrationState} args.state - Mutated in place
+ * @param {MigrationStore} args.store
+ * @param {import('../api.js').MigrationState} args.state - Live ref from store.getState(), used for reads and event payload
  * @param {string[] | undefined} args.explicitUploadRoots
  * @param {boolean} args.stopOnError
  * @param {number} args.shardListConcurrency
@@ -190,6 +195,7 @@ async function* buildSpaceInventory({
   indexer,
   resolver,
   spaceDID,
+  store,
   state,
   explicitUploadRoots,
   stopOnError,
@@ -322,7 +328,7 @@ async function* buildSpaceInventory({
       explicitRootChunkIndex += 1
     }
 
-    checkpointInventoryPage(state, {
+    store.checkpointInventoryPage({
       spaceDID,
       name: spaceName,
       shards: pageShards,

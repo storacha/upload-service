@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { pruneStagedShards } from '../src/helper/prune-staged-shards.js'
-import { commitKey, STATE_VERSION } from '../src/state.js'
+import {
+  clearPullProgress,
+  clearStoredPiece,
+  commitKey,
+  STATE_VERSION,
+  summarizeSpaceInventory,
+} from '../src/state.js'
 
 /**
  * @import * as API from '../src/api.js'
@@ -25,6 +31,8 @@ describe('pruneStagedShards', () => {
     expect(result).toEqual({
       stateCorrected: false,
       spaces: [],
+      pulledDeleted: [],
+      storedShardsDeleted: [],
     })
   })
 
@@ -71,6 +79,14 @@ describe('pruneStagedShards', () => {
         ],
       },
     ])
+    expect(result.pulledDeleted).toEqual([
+      {
+        spaceDID: SPACE_DID,
+        copyIndex: 0,
+        shardCid: 'bafy-shard-1',
+      },
+    ])
+    expect(result.storedShardsDeleted).toEqual([])
     expect(state.spaces[SPACE_DID].copies[0].pulled.has('bafy-shard-1')).toBe(
       false
     )
@@ -101,6 +117,65 @@ describe('pruneStagedShards', () => {
     expect(result.stateCorrected).toBe(true)
     expect(state.spaces[SPACE_DID].phase).toBe('pending')
     expect(state.spaces[SPACE_DID].copies[0].pulled.size).toBe(0)
+    expect(result.pulledDeleted).toEqual([
+      {
+        spaceDID: SPACE_DID,
+        copyIndex: 0,
+        shardCid: 'bafy-shard-1',
+      },
+    ])
+  })
+
+  it('supports injected mutators so callers can route cleanup through a store', async () => {
+    const state = createState({
+      phase: 'migrating',
+      copy0Pulled: ['bafy-shard-1'],
+      copy0StoredShards: {
+        'bafy-shard-3': 'bafkz-piece-3',
+      },
+      copy0ProviderURL: 'https://sp.example',
+    })
+
+    /** @type {string[]} */
+    const calls = []
+
+    const result = await pruneStagedShards({
+      state,
+      spaceDIDs: [SPACE_DID],
+      fetcher: createStatusFetcher({
+        'bafkz-piece-1': { status: 404 },
+        'bafkz-piece-3': { status: 404 },
+      }),
+      applyClearPullProgress: (spaceDID, copyIndex, shardCid) => {
+        calls.push(`pull:${spaceDID}:${copyIndex}:${shardCid}`)
+        clearPullProgress(state, spaceDID, copyIndex, shardCid)
+      },
+      applyClearStoredPiece: (spaceDID, copyIndex, shardCid) => {
+        calls.push(`store:${spaceDID}:${copyIndex}:${shardCid}`)
+        clearStoredPiece(state, spaceDID, copyIndex, shardCid)
+      },
+    })
+
+    expect(result.pulledDeleted).toEqual([
+      {
+        spaceDID: SPACE_DID,
+        copyIndex: 0,
+        shardCid: 'bafy-shard-1',
+      },
+    ])
+    expect(result.storedShardsDeleted).toEqual([
+      {
+        spaceDID: SPACE_DID,
+        copyIndex: 0,
+        shardCid: 'bafy-shard-3',
+      },
+    ])
+    expect(calls).toEqual([
+      `pull:${SPACE_DID}:0:bafy-shard-1`,
+      `store:${SPACE_DID}:0:bafy-shard-3`,
+    ])
+    expect(state.spaces[SPACE_DID].copies[0].pulled.size).toBe(0)
+    expect(state.spaces[SPACE_DID].copies[0].storedShards).toEqual({})
   })
 })
 
@@ -114,6 +189,38 @@ describe('pruneStagedShards', () => {
  * @returns {API.MigrationState}
  */
 function createState(input = {}) {
+  const inventory = {
+    did: SPACE_DID,
+    uploads: ['bafy-root-1'],
+    shards: [
+      {
+        root: 'bafy-root-1',
+        cid: 'bafy-shard-1',
+        pieceCID: 'bafkz-piece-1',
+        sourceURL: 'https://source.example/shard-1',
+        sizeBytes: 1n,
+      },
+      {
+        root: 'bafy-root-1',
+        cid: 'bafy-shard-2',
+        pieceCID: 'bafkz-piece-2',
+        sourceURL: 'https://source.example/shard-2',
+        sizeBytes: 1n,
+      },
+    ],
+    shardsToStore: [
+      {
+        root: 'bafy-root-2',
+        cid: 'bafy-shard-3',
+        sourceURL: 'https://source.example/shard-3',
+        sizeBytes: 1n,
+      },
+    ],
+    skippedUploads: [],
+    totalBytes: 3n,
+    totalSizeToMigrate: 3n,
+  }
+
   return /** @type {API.MigrationState} */ ({
     version: STATE_VERSION,
     phase: 'migrating',
@@ -135,38 +242,11 @@ function createState(input = {}) {
         ],
       },
     },
+    spaceMigrationInventories: {
+      [SPACE_DID]: summarizeSpaceInventory(inventory),
+    },
     spacesInventories: {
-      [SPACE_DID]: {
-        did: SPACE_DID,
-        uploads: ['bafy-root-1'],
-        shards: [
-          {
-            root: 'bafy-root-1',
-            cid: 'bafy-shard-1',
-            pieceCID: 'bafkz-piece-1',
-            sourceURL: 'https://source.example/shard-1',
-            sizeBytes: 1n,
-          },
-          {
-            root: 'bafy-root-1',
-            cid: 'bafy-shard-2',
-            pieceCID: 'bafkz-piece-2',
-            sourceURL: 'https://source.example/shard-2',
-            sizeBytes: 1n,
-          },
-        ],
-        shardsToStore: [
-          {
-            root: 'bafy-root-2',
-            cid: 'bafy-shard-3',
-            sourceURL: 'https://source.example/shard-3',
-            sizeBytes: 1n,
-          },
-        ],
-        skippedUploads: [],
-        totalBytes: 3n,
-        totalSizeToMigrate: 3n,
-      },
+      [SPACE_DID]: inventory,
     },
     readerProgressCursors: undefined,
   })

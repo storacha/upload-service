@@ -1,0 +1,66 @@
+{
+  "version": 2,
+  "phase": "reading",
+  "spaces": {
+    "did:key:zCompatStoreFixture": {
+      "did": "did:key:zCompatStoreFixture",
+      "phase": "incomplete",
+      "copies": [
+        {
+          "copyIndex": 0,
+          "providerId": "101",
+          "serviceProvider": "0x1111111111111111111111111111111111111111",
+          "providerURL": "https://provider-0.example.test",
+          "dataSetId": "9001",
+          "pulled": ["bafycompatpullshard", "bafycompatstoreshard"],
+          "committed": ["bafycompatpullshard#bafycompatrootpull"],
+          "failedUploads": ["bafycompatfailedroot"],
+          "storedShards": {
+            "bafycompatstoreshard": "bafkzcompatstoredpiece"
+          }
+        },
+        {
+          "copyIndex": 1,
+          "providerId": "202",
+          "serviceProvider": "0x2222222222222222222222222222222222222222",
+          "providerURL": "https://provider-1.example.test",
+          "dataSetId": null,
+          "pulled": [],
+          "committed": [],
+          "failedUploads": [],
+          "storedShards": {}
+        }
+      ]
+    }
+  },
+  "spacesInventories": {
+    "did:key:zCompatStoreFixture": {
+      "did": "did:key:zCompatStoreFixture",
+      "name": "Compatibility Fixture Space",
+      "uploads": ["bafycompatrootpull", "bafycompatrootstore"],
+      "shards": [
+        {
+          "root": "bafycompatrootpull",
+          "cid": "bafycompatpullshard",
+          "pieceCID": "bafkzcompatpullpiece",
+          "sourceURL": "https://source.example.test/pull.car",
+          "sizeBytes": "111"
+        }
+      ],
+      "shardsToStore": [
+        {
+          "root": "bafycompatrootstore",
+          "cid": "bafycompatstoreshard",
+          "sourceURL": "https://source.example.test/store.car",
+          "sizeBytes": "222"
+        }
+      ],
+      "skippedUploads": ["bafycompatfailedroot"],
+      "totalBytes": "333",
+      "totalSizeToMigrate": "333"
+    }
+  },
+  "readerProgressCursors": {
+    "did:key:zCompatStoreFixture": "cursor-compat-1"
+  }
+}

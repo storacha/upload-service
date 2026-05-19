@@ -59,6 +59,45 @@ export interface SpaceInventory {
 }
 
 /**
+ * Heap-bounded in-memory summary for one space's inventory.
+ *
+ * The full upload/shard arrays remain available through store iterators or
+ * backend-private side caches; this summary is the public in-memory shape held
+ * on `MigrationState`.
+ */
+export interface SpaceInventorySummary {
+  did: SpaceDID
+  name?: string
+  totalBytes: bigint
+  totalSizeToMigrate: bigint
+  uploadsCount: number
+  shardsCount: number
+  shardsToStoreCount: number
+  skippedUploadsCount: number
+}
+
+/**
+ * Minimal per-space input required for migration cost computation.
+ *
+ * Cost planning does not need the full reader output arrays; it only needs
+ * stable identity plus the aggregate bytes that will be migrated.
+ */
+export interface MigrationCostSpace {
+  did: SpaceDID
+  name?: string
+  totalSizeToMigrate: bigint
+}
+
+/**
+ * Plain iterable shard buckets used by pure state/helpers that should not know
+ * about a store implementation.
+ */
+export interface InventoryShardBuckets {
+  shards: Iterable<ResolvedShard>
+  shardsToStore: Iterable<StoreShard>
+}
+
+/**
  * Precomputed inventory view used by helper/state logic that needs shard-root
  * expansion without rescanning the full inventory repeatedly.
  */
@@ -73,9 +112,10 @@ export interface InventoryCommitView {
  * Carries the live `MigrationCostResult` (with live StorageContext handles in
  * `costs.perSpace[].copies[].context`) for in-process hand-off to the migrator.
  *
- * Space-level upload data lives in `MigrationState.spacesInventories` — the
- * migrator reads from there directly, so `MigrationPlan` carries only what is
- * needed for display/approval and execution.
+ * Space-level upload data lives in the store-backed inventory layer; the
+ * migrator reads through store iterators / summaries directly, so
+ * `MigrationPlan` carries only what is needed for display/approval and
+ * execution.
  */
 export interface MigrationPlan {
   totals: {
@@ -285,15 +325,29 @@ export interface SpaceState {
  * Persisted resume state for a migration. Serializable to JSON via
  * serializeState() / deserializeState().
  *
- * spacesInventories holds reader output — completed spaces have no cursor entry;
- * in-progress spaces have a matching entry in readerProgressCursors.
+ * `spaceMigrationInventories` holds the in-memory summary of reader output.
+ * Completed spaces have no cursor entry; in-progress spaces have a matching
+ * entry in `readerProgressCursors`.
+ *
+ * `spacesInventories` is now deprecated at runtime. Summary-first backends
+ * such as SQLite may leave entries missing from this map to avoid retaining
+ * large inventory arrays in memory. The persisted JSON state file still uses
+ * the legacy `spacesInventories` wire format for compatibility.
  */
 export interface MigrationState {
   /** Persisted state schema version. */
   version: number
   phase: MigrationPhase
   spaces: Record<SpaceDID, SpaceState>
-  /** Reader output keyed by space DID. Completed + in-progress spaces. */
+  /** Reader output summaries keyed by space DID. Authoritative in-memory inventory shape. */
+  spaceMigrationInventories?: Record<SpaceDID, SpaceInventorySummary>
+  /**
+   * Full reader output keyed by space DID.
+   *
+   * Deprecated at runtime. Present in the legacy JSON wire format and still
+   * available on backends that keep full arrays in memory, but summary-first
+   * backends may omit entries from this map.
+   */
   spacesInventories: Record<SpaceDID, SpaceInventory>
   /** Pagination cursor per space — present only while reading that space. */
   readerProgressCursors?: Record<SpaceDID, string>
@@ -323,8 +377,8 @@ interface BuildInventoriesBaseInput {
   client: Client
   /** Resolves the final sourceURL for each shard */
   resolver: SourceURLResolver
-  /** Mutated in place; used for resume and checkpointing */
-  state: MigrationState
+  /** Store that owns state; used for resume and checkpointing */
+  store: MigrationStore
   /** AbortSignal for cooperative cancellation during reader I/O. */
   signal?: AbortSignal
   options?: {
@@ -401,8 +455,8 @@ export type BuildInventoriesInput = BuildInventoriesBaseInput &
 export interface CreatePlanInput {
   /** Initialized @filoz/synapse-sdk Synapse instance */
   synapse: Synapse
-  /** Mutated in place; SP bindings written after cost computation */
-  state: MigrationState
+  /** Store that owns state; SP bindings written after cost computation */
+  store: MigrationStore
   /**
    * Target storage provider IDs. At least two distinct IDs are required when
    * provided so the planner can bind one provider per copy. When omitted, the
@@ -417,8 +471,8 @@ export interface CreatePlanInput {
 export interface ExecuteMigrationInput {
   /** Approved plan from createMigrationPlan() */
   plan: MigrationPlan
-  /** Mutated in place; tracks committed shards and phase */
-  state: MigrationState
+  /** Store that owns state; tracks committed shards and phase */
+  store: MigrationStore
   /** Initialized Synapse SDK instance */
   synapse: Synapse
   /** Pieces per pull batch (default: 50) */
@@ -455,8 +509,8 @@ export interface ExecuteMigrationInput {
 export interface ExecuteStoreMigrationInput {
   /** Approved plan from createMigrationPlan() */
   plan: MigrationPlan
-  /** Mutated in place; tracks stored and committed shards and phase */
-  state: MigrationState
+  /** Store that owns state; tracks stored and committed shards and phase */
+  store: MigrationStore
   /** Initialized Synapse SDK instance */
   synapse: Synapse
   /** Shards per store checkpoint batch and per secondary pull batch (default: 50) */
@@ -519,7 +573,7 @@ export interface ExecuteStoreMigrationInput {
  * Progress is derived from MigrationState on each state:checkpoint.
  * Upload progress (committed vs total shards) is computed from each
  * copy.committed set plus the actionable shard buckets in
- * spacesInventories[did] (`shards` and `shardsToStore`).
+ * store-backed shard iterators for that space.
  */
 export type MigrationEvent =
   | { type: 'reader:space:start'; spaceDID: SpaceDID }
@@ -746,4 +800,384 @@ export interface PullResult<T = ResolvedShard> {
   stage?: MigrationExecutionPhase
   /** Error from the failed stage, if any */
   error?: Error
+}
+
+// ── Migration store ──────────────────────────────────────────────────────────
+
+/**
+ * Bucket a shard belongs to in the inventory.
+ *   pull  — entry from `SpaceInventory.shards` (source-pull flow; pieceCID known)
+ *   store — entry from `SpaceInventory.shardsToStore` (store() flow; pieceCID may be absent)
+ */
+export type ShardKind = 'pull' | 'store'
+
+/**
+ * Persistence implementation selector for {@link CreateStoreOptions}.
+ *
+ * `sqlite` is reserved for the future SQLite backend. Until that backend
+ * lands, any factory using this type must fail explicitly for `'sqlite'`
+ * instead of silently falling back.
+ */
+export type StoreType = 'json' | 'sqlite'
+
+/**
+ * A row yielded by {@link MigrationStore.iterateShards} / iterateCommittableShards.
+ *
+ * Discriminated by `kind`:
+ *   - `pull` rows always carry a known pieceCID.
+ *   - `store` rows may have `pieceCID: null` until copy-0 store() resolves one.
+ */
+export type StoreShardRow =
+  | {
+      kind: 'pull'
+      spaceDID: SpaceDID
+      shardCid: string
+      root: string
+      sourceURL: string
+      sizeBytes: bigint
+      pieceCID: string
+    }
+  | {
+      kind: 'store'
+      spaceDID: SpaceDID
+      shardCid: string
+      root: string
+      sourceURL: string
+      sizeBytes: bigint
+      pieceCID: string | null
+    }
+
+/**
+ * Backend-selection options for the store factory.
+ *
+ * `type` selects the persistence implementation; `path` is the on-disk
+ * path (file for JSON, file for SQLite).
+ */
+export interface CreateStoreOptions {
+  type: StoreType
+  path: string
+}
+
+/** Reader-stage checkpoint input — mirrors `state.checkpointInventoryPage`. */
+export interface CheckpointInventoryPageInput {
+  spaceDID: SpaceDID
+  name?: string
+  shards: ResolvedShard[]
+  shardsToStore: StoreShard[]
+  uploads: string[]
+  skippedUploads: string[]
+  totalBytes: bigint
+  totalSizeToMigrate: bigint
+  cursor: string | undefined
+}
+
+/** Pull-checkpoint input — mirrors `state.recordPull`. */
+export interface RecordPullInput {
+  spaceDID: SpaceDID
+  copyIndex: number
+  shardCid: string
+  shardRoots: string[]
+}
+
+/** Commit-checkpoint input — mirrors `state.recordCommit`. */
+export interface RecordCommitInput {
+  spaceDID: SpaceDID
+  copyIndex: number
+  shardCid: string
+  root: string
+  dataSetId: bigint
+  shardRoots: string[]
+}
+
+/**
+ * Persistence boundary for migration state.
+ *
+ * The store **owns** a {@link MigrationState} internally; callers do not pass
+ * it in. The mutation surface is a 1:1 wrap of `src/state.js` (less the
+ * leading `state` argument) so swapping call sites onto the store is purely
+ * mechanical.
+ *
+ * Mixed sync/async contract:
+ *
+ *   - Mutations and queries are **synchronous** so the migrator can stay on
+ *     the same tick as state-machine transitions. Durability is a separate
+ *     concern handled by `checkpoint()`.
+ *   - `checkpoint()` is **async** — it is the explicit durability barrier and
+ *     awaits a real flush to disk.
+ *   - `close()` is **async** — graceful shutdown, drains in-flight writes.
+ *   - `closeSync()` is **sync** — emergency shutdown for signal handlers
+ *     (SIGINT/SIGTERM) where the event loop cannot be relied on. Best-effort
+ *     flush of the current in-memory state.
+ *
+ * Lifecycle FSM: `'open' → 'closing' → 'closed'`.
+ * Outside `'open'`, mutations / queries / `checkpoint()` throw `StoreClosedError`.
+ * Both `close()` and `closeSync()` are idempotent.
+ */
+export interface MigrationStore {
+  // ── Read access ──────────────────────────────────────────────────────────
+
+  /**
+   * getState() returns the live in-memory state cache
+   * summary-first backends may omit large spacesInventories[did] entries
+   * new code should still prefer narrow queries/iterators
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  getState(): MigrationState
+
+  /**
+   * Return the identity-stable in-memory inventory summary for a space, if any.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  getSpaceInventorySummary(
+    spaceDID: SpaceDID
+  ): SpaceInventorySummary | undefined
+
+  /**
+   * Return the number of distinct shard CIDs known for the space across both
+   * pull and store buckets.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  getSpaceDistinctShardCount(spaceDID: SpaceDID): number
+
+  /**
+   * Iterate successful upload roots for a space.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state at iteration time.
+   */
+  iterateUploads(spaceDID: SpaceDID): Iterable<string>
+
+  /**
+   * Iterate skipped upload roots for a space.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state at iteration time.
+   */
+  iterateSkippedUploads(spaceDID: SpaceDID): Iterable<string>
+
+  /**
+   * Iterate store-path shard rows for a space.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state at iteration time.
+   */
+  iterateShardsToStore(spaceDID: SpaceDID): Iterable<StoreShard>
+
+  /**
+   * Iterate over shards for a space.
+   *
+   * The iterator validates the store is `'open'` both at creation **and** on
+   * each `.next()` — closing the store mid-iteration causes the next pull to
+   * throw `StoreClosedError`.
+   *
+   * @param spaceDID Space whose inventory rows should be yielded.
+   * @param options Optional iterator controls.
+   * @param options.kind Restrict iteration to one bucket; omit to iterate both.
+   * @throws StoreClosedError if the store is not in `'open'` state at iteration time.
+   */
+  iterateShards(
+    spaceDID: SpaceDID,
+    options?: { kind?: ShardKind }
+  ): Iterable<StoreShardRow>
+
+  /**
+   * Iterate over shards eligible for commit on the given copy: every shard
+   * that has been pulled and has a known pieceCID, minus shards already
+   * committed for that copy.
+   *
+   * Filters out `store`-kind rows whose pieceCID is still `null`.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state at iteration time.
+   */
+  iterateCommittableShards(
+    spaceDID: SpaceDID,
+    copyIndex: number
+  ): Iterable<StoreShardRow & { pieceCID: string }>
+
+  // ── Mutations (1:1 with state.js) ────────────────────────────────────────
+
+  /**
+   * Append a reader page into the space's inventory entry. Mirrors
+   * `state.checkpointInventoryPage`.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  checkpointInventoryPage(page: CheckpointInventoryPageInput): void
+
+  /**
+   * Transition the top-level migration phase to `'planning'`. Mirrors
+   * `state.transitionToPlanning`.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  transitionToPlanning(): void
+
+  /**
+   * Transition the top-level migration phase to `'migrating'`. Mirrors
+   * `state.transitionToMigrating`.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  transitionToMigrating(): void
+
+  /**
+   * Populate `state.spaces` with per-copy SP bindings from the cost result,
+   * then transition the top-level phase to `'approved'`. Mirrors
+   * `state.transitionToApproved`.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   * @throws ResumeBindingDriftError if a planned copy disagrees with the
+   *   persisted provider / dataset binding for the same copy index.
+   */
+  transitionToApproved(perSpaceCost: PerSpaceCost[]): void
+
+  /**
+   * Transition the top-level migration phase to `'funded'`. Mirrors
+   * `state.transitionToFunded`.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  transitionToFunded(): void
+
+  /**
+   * Mark a shard as pulled for the given copy. Mirrors `state.recordPull`.
+   *
+   * @returns true when the in-memory state actually changed.
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  recordPull(input: RecordPullInput): boolean
+
+  /**
+   * Record a successful commit for a shard+root pair on the given copy.
+   * Mirrors `state.recordCommit`.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  recordCommit(input: RecordCommitInput): void
+
+  /**
+   * Record a successful store() on copy 0 — captures the pieceCID returned
+   * by the SDK so secondary pulls can address the durable piece. Mirrors
+   * `state.recordStoredShard`.
+   *
+   * @returns true when the in-memory state actually changed.
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  recordStoredShard(
+    spaceDID: SpaceDID,
+    shardCid: string,
+    pieceCID: string
+  ): boolean
+
+  /**
+   * Clear a persisted pulled-shard marker for the given copy.
+   *
+   * Used only by helper-driven state correction paths that need to remove
+   * stale staged progress. Normal migrator flow never clears pull progress
+   * explicitly.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  clearPullProgress(
+    spaceDID: SpaceDID,
+    copyIndex: number,
+    shardCid: string
+  ): void
+
+  /**
+   * Clear a persisted stored-piece mapping for the given shard.
+   *
+   * Used only by helper-driven state correction paths that need to remove
+   * stale staged progress.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  clearStoredPiece(
+    spaceDID: SpaceDID,
+    copyIndex: number,
+    shardCid: string
+  ): void
+
+  /**
+   * Remove a committed shard-root pair from persisted progress.
+   *
+   * Used only by helper-driven state reconciliation paths that need to
+   * delete stale commit markers.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  removeCommit(
+    spaceDID: SpaceDID,
+    copyIndex: number,
+    shardCid: string,
+    root: string
+  ): void
+
+  /**
+   * Record an upload-root failure on the given copy. Mirrors
+   * `state.recordFailedUpload`.
+   *
+   * @returns true when the in-memory state actually changed.
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  recordFailedUpload(
+    spaceDID: SpaceDID,
+    copyIndex: number,
+    root: string
+  ): boolean
+
+  /**
+   * Clear persisted failed upload roots for a space so a resumed run can
+   * retry them again on both copies. Mirrors
+   * `state.clearFailedUploadsForRetry`.
+   *
+   * @returns count of unique failed roots cleared across both copies.
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  clearFailedUploadsForRetry(spaceDID: SpaceDID): number
+
+  /**
+   * Resolve the terminal {@link SpacePhase} for a space from its per-copy
+   * committed counts versus inventory shard counts, and write it. Mirrors
+   * `state.finalizeSpace` — the store computes the phase; callers do not
+   * pass it in.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  finalizeSpace(spaceDID: SpaceDID): void
+
+  /**
+   * Resolve the terminal top-level {@link MigrationPhase} and write it.
+   * Mirrors `state.finalizeMigration`.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  finalizeMigration(): void
+
+  // ── Durability + lifecycle ───────────────────────────────────────────────
+
+  /**
+   * Durability barrier. Resolves once the latest in-memory state has been
+   * flushed to the backing storage.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  checkpoint(): Promise<void>
+
+  /**
+   * Graceful shutdown. Drains in-flight writes, releases the on-disk lock,
+   * then transitions the lifecycle to `'closed'`. Idempotent — subsequent
+   * calls resolve immediately.
+   */
+  close(): Promise<void>
+
+  /**
+   * Emergency synchronous shutdown for signal handlers (SIGINT/SIGTERM) where
+   * the event loop cannot be trusted to run microtasks. Best-effort sync
+   * flush of current in-memory state, then transitions to `'closed'`.
+   *
+   * Do NOT call from normal application flow — use `close()` instead.
+   * Idempotent — subsequent calls are no-ops.
+   */
+  closeSync(): void
 }

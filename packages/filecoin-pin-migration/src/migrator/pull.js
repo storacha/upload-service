@@ -47,6 +47,9 @@ export async function presignAndPullBatch({
   })
   if (presignResult.failure) return presignResult.failure
 
+  console.time(
+    `Pulling batch of ${payload.pieces.length} pieces ${presignResult.extraData.substring(0,40)}`
+  )
   const pullResult = await runPullWithRetries({
     context,
     payload,
@@ -56,6 +59,11 @@ export async function presignAndPullBatch({
     phase,
     signal,
   })
+  console.timeEnd(
+    `Pulling batch of ${
+      payload.pieces.length
+    } pieces ${presignResult.extraData.substring(0, 40)}`
+  )
   if (pullResult.failure) return pullResult.failure
 
   return reconcilePullResult({

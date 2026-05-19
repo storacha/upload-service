@@ -1,4 +1,5 @@
 import { fetchDataSetPieces } from './fetch-dataset-pieces.js'
+import { iteratePullShards } from './inventory-iterators.js'
 import {
   buildShardMappings,
   checkPiecesOnSP,
@@ -8,6 +9,7 @@ import {
   buildInventoryCommitView,
   commitKey,
   getFullyCommittedShardCIDs,
+  getInventorySummaryMap,
 } from '../state.js'
 
 /**
@@ -29,6 +31,7 @@ const PULLED_STATUSES = new Set([
  *
  * @param {object} args
  * @param {RootAPI.MigrationState} args.state
+ * @param {RootAPI.MigrationStore} [args.store]
  * @param {import('viem').Client<import('viem').Transport, import('viem').Chain>} args.client
  * @param {RootAPI.SpaceDID[]} [args.spaceDIDs]
  * @param {number} [args.providerStatusConcurrency]
@@ -37,6 +40,7 @@ const PULLED_STATUSES = new Set([
  */
 export async function reconcileMigrationState({
   state,
+  store,
   client,
   spaceDIDs,
   providerStatusConcurrency = 10,
@@ -44,20 +48,38 @@ export async function reconcileMigrationState({
 }) {
   const targetSpaceDIDs =
     spaceDIDs ??
-    /** @type {RootAPI.SpaceDID[]} */ (Object.keys(state.spacesInventories))
+    /** @type {RootAPI.SpaceDID[]} */ (
+      Object.keys(getInventorySummaryMap(state))
+    )
 
   /** @type {API.ReconcileMigrationStateSpaceReport[]} */
   const spaces = []
+  /** @type {Array<{ spaceDID: RootAPI.SpaceDID, copyIndex: number, shardCid: string }>} */
+  const pulledDeleted = []
+  /** @type {Array<{ spaceDID: RootAPI.SpaceDID, copyIndex: number, shardCid: string }>} */
+  const storedShardsDeleted = []
+  /** @type {Array<{ spaceDID: RootAPI.SpaceDID, copyIndex: number, shardCid: string, rootCid: string }>} */
+  const committedDeleted = []
   let hasDiscrepancies = false
   let stateCorrected = false
 
   for (const spaceDID of targetSpaceDIDs) {
-    const inventory = state.spacesInventories[spaceDID]
+    const inventory = state.spacesInventories?.[spaceDID]
     const spaceState = state.spaces[spaceDID]
-    if (!inventory || !spaceState) continue
+    if (!spaceState) continue
 
-    const inventoryCommitView = buildInventoryCommitView(inventory)
-    const mappings = buildShardMappings(spaceState, inventory)
+    const inventoryBuckets = inventory
+      ? inventory
+      : store
+      ? {
+          shards: iteratePullShards(store, spaceDID),
+          shardsToStore: store.iterateShardsToStore(spaceDID),
+        }
+      : undefined
+    if (!inventoryBuckets) continue
+
+    const inventoryCommitView = buildInventoryCommitView(inventoryBuckets)
+    const mappings = buildShardMappings(spaceState, inventoryBuckets)
 
     /** @type {API.ReconcileMigrationStateCopyReport[]} */
     const copies = []
@@ -88,11 +110,15 @@ export async function reconcileMigrationState({
           committedReconciliation.committedKeysForStagedCleanup,
       })
 
-      applyCopyReconciliation({
+      const replay = applyCopyReconciliation({
+        spaceDID,
         copy,
         committedReconciliation,
         stagedReconciliation,
       })
+      pulledDeleted.push(...replay.pulledDeleted)
+      storedShardsDeleted.push(...replay.storedShardsDeleted)
+      committedDeleted.push(...replay.committedDeleted)
 
       const changes = {
         ...committedReconciliation.changes,
@@ -131,7 +157,7 @@ export async function reconcileMigrationState({
     }
 
     if (correctedAnyForSpace) {
-      normalizeReconciledSpacePhase(spaceState, inventory)
+      normalizeReconciledSpacePhase(spaceState, inventoryCommitView)
     }
 
     if (
@@ -154,6 +180,9 @@ export async function reconcileMigrationState({
     hasDiscrepancies,
     stateCorrected,
     spaces,
+    pulledDeleted,
+    storedShardsDeleted,
+    committedDeleted,
   }
 }
 
@@ -353,16 +382,28 @@ async function reconcileStagedCopyState({
 
 /**
  * @param {object} args
+ * @param {RootAPI.SpaceDID} args.spaceDID
  * @param {RootAPI.SpaceCopyState} args.copy
  * @param {ReturnType<typeof reconcileCommittedCopyState>} args.committedReconciliation
  * @param {Awaited<ReturnType<typeof reconcileStagedCopyState>>} args.stagedReconciliation
  */
 function applyCopyReconciliation({
+  spaceDID,
   copy,
   committedReconciliation,
   stagedReconciliation,
 }) {
+  /** @type {Array<{ spaceDID: RootAPI.SpaceDID, copyIndex: number, shardCid: string }>} */
+  const pulledDeleted = []
+  /** @type {Array<{ spaceDID: RootAPI.SpaceDID, copyIndex: number, shardCid: string }>} */
+  const storedShardsDeleted = []
+  /** @type {Array<{ spaceDID: RootAPI.SpaceDID, copyIndex: number, shardCid: string, rootCid: string }>} */
+  const committedDeleted = []
+
   if (committedReconciliation.reconciledCommittedCommitKeys) {
+    const committedKeysToRemove =
+      committedReconciliation.changes.committedRemoved
+
     if (committedReconciliation.shouldSuppressCommittedRemovals) {
       for (const key of committedReconciliation.changes.committedAdded) {
         copy.committed.add(key)
@@ -370,16 +411,52 @@ function applyCopyReconciliation({
     } else {
       copy.committed = committedReconciliation.reconciledCommittedCommitKeys
     }
+
+    for (const key of committedKeysToRemove) {
+      const [shardCid, rootCid] = key.split('#')
+      if (!shardCid || !rootCid) continue
+      committedDeleted.push({
+        spaceDID,
+        copyIndex: copy.copyIndex,
+        shardCid,
+        rootCid,
+      })
+    }
   }
 
   for (const shardCID of stagedReconciliation.changes
     .pulledRemovedBecauseCommitted) {
-    copy.pulled.delete(shardCID)
+    if (copy.pulled.delete(shardCID)) {
+      pulledDeleted.push({
+        spaceDID,
+        copyIndex: copy.copyIndex,
+        shardCid: shardCID,
+      })
+    }
   }
 
   for (const shardCID of stagedReconciliation.changes.removedStagedShardCIDs) {
-    copy.pulled.delete(shardCID)
-    delete copy.storedShards[shardCID]
+    if (copy.pulled.delete(shardCID)) {
+      pulledDeleted.push({
+        spaceDID,
+        copyIndex: copy.copyIndex,
+        shardCid: shardCID,
+      })
+    }
+    if (shardCID in copy.storedShards) {
+      delete copy.storedShards[shardCID]
+      storedShardsDeleted.push({
+        spaceDID,
+        copyIndex: copy.copyIndex,
+        shardCid: shardCID,
+      })
+    }
+  }
+
+  return {
+    pulledDeleted,
+    storedShardsDeleted,
+    committedDeleted,
   }
 }
 
@@ -401,10 +478,18 @@ function hasCopyReportData(changes, warnings) {
 
 /**
  * @param {RootAPI.SpaceState} space
- * @param {RootAPI.SpaceInventory} inventory
+ * @param {RootAPI.InventoryCommitView} inventoryCommitView
  */
-function normalizeReconciledSpacePhase(space, inventory) {
-  const totalShards = inventory.shards.length + inventory.shardsToStore.length
+function normalizeReconciledSpacePhase(space, inventoryCommitView) {
+  // Derive totalShards from the already-built commit view so this function
+  // never re-iterates the shard buckets (which may be single-pass generators).
+  // Count: unique CIDs with 1 root = 1 each; CIDs with N roots = N each.
+  // This equals shards.length + shardsToStore.length for well-formed inventory.
+  let totalShards = 0
+  for (const shardCid of inventoryCommitView.representativeRootByShardCid.keys()) {
+    const multiRoots = inventoryCommitView.multiRootShards.get(shardCid)
+    totalShards += multiRoots ? multiRoots.length : 1
+  }
   const hasCommitted = space.copies.some((copy) => copy.committed.size > 0)
   const hasStaged = space.copies.some(
     (copy) => copy.pulled.size > 0 || Object.keys(copy.storedShards).length > 0

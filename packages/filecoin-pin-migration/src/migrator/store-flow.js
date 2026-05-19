@@ -17,9 +17,6 @@ import {
   expandShardRoots,
   getActionableRootsForRun,
   hasAnyCommittedRootForShard,
-  recordFailedUpload,
-  recordPull,
-  recordStoredShard,
 } from '../state.js'
 import { extractRetryDiagnostics, runRetried } from './retried-operation.js'
 
@@ -35,6 +32,7 @@ import { extractRetryDiagnostics, runRetried } from './retried-operation.js'
  * @param {Map<string, API.StoreShard>} args.representativeStoreShardByCid
  * @param {API.SpaceCopyState} args.copyState
  * @param {API.PerCopyCost} args.copyCost
+ * @param {API.MigrationStore} args.store
  * @param {API.MigrationState} args.state
  * @param {typeof fetch} args.fetcher
  * @param {number} args.batchSize
@@ -48,6 +46,7 @@ export async function* storeShardsOnPrimaryCopy({
   representativeStoreShardByCid,
   copyState,
   copyCost,
+  store,
   state,
   fetcher,
   batchSize,
@@ -108,6 +107,7 @@ export async function* storeShardsOnPrimaryCopy({
       batch,
       context,
       fetcher,
+      store,
       state,
       spaceDID,
       copyState,
@@ -153,6 +153,7 @@ export async function* storeShardsOnPrimaryCopy({
  * @param {API.SpaceCopyState} args.copyState
  * @param {API.StorageContext} args.sourceContext
  * @param {API.PerCopyCost} args.copyCost
+ * @param {API.MigrationStore} args.store
  * @param {API.MigrationState} args.state
  * @param {number} args.batchSize
  * @param {number} args.pullConcurrency
@@ -166,6 +167,7 @@ export async function* pullStoredShardsOnSecondaryCopy({
   copyState,
   sourceContext,
   copyCost,
+  store,
   state,
   batchSize,
   pullConcurrency,
@@ -245,6 +247,7 @@ export async function* pullStoredShardsOnSecondaryCopy({
     const { aborted } = yield* drainConcurrentStream(stream, (pullResult) =>
       applyPullResults({
         pullResults: [pullResult],
+        store,
         state,
         spaceDID,
         copyIndex,
@@ -253,7 +256,7 @@ export async function* pullStoredShardsOnSecondaryCopy({
           expandShardRoots(entry.shardCid, entry.root, multiRootShards),
         onPulledCandidate: (entry) => {
           pulledEntriesByShardCid.set(entry.shardCid, entry)
-          return recordPull(state, {
+          return store.recordPull({
             spaceDID,
             copyIndex,
             shardCid: entry.shardCid,
@@ -306,6 +309,7 @@ export async function* pullStoredShardsOnSecondaryCopy({
  * @param {API.StoreShard[]} args.batch
  * @param {API.StorageContext} args.context
  * @param {typeof fetch} args.fetcher
+ * @param {API.MigrationStore} args.store
  * @param {API.MigrationState} args.state
  * @param {API.SpaceDID} args.spaceDID
  * @param {API.SpaceCopyState} args.copyState
@@ -320,6 +324,7 @@ async function* processStoreBatch({
   batch,
   context,
   fetcher,
+  store,
   state,
   spaceDID,
   copyState,
@@ -345,8 +350,7 @@ async function* processStoreBatch({
     if (result.ok) {
       entriesByShardCid.set(result.ok.shardCid, result.ok)
       stateChanged =
-        recordStoredShard(
-          state,
+        store.recordStoredShard(
           spaceDID,
           result.ok.shardCid,
           result.ok.pieceCID
@@ -364,7 +368,7 @@ async function* processStoreBatch({
         activeFailedRoots.add(root)
         emittedRoots.add(root)
         stateChanged =
-          recordFailedUpload(state, spaceDID, copyState.copyIndex, root) ||
+          store.recordFailedUpload(spaceDID, copyState.copyIndex, root) ||
           stateChanged
         if (isFirstRootFailure) {
           emittedFailureRoots.push(root)

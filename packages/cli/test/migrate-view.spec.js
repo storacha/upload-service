@@ -194,4 +194,70 @@ export const testMigrateView = {
       assert.match(output, /committed 2\/2/)
       assert.ok(!/prepared 3\/2/.test(output))
     },
+
+  'printResumeStatus requires a store for summary-only runtime state': (
+    assert
+  ) => {
+    const spaceDID = /** @type {`did:key:${string}`} */ (
+      'did:key:z6MkgMigrateViewSummaryOnly'
+    )
+
+    /** @type {import('@storacha/filecoin-pin-migration/types').MigrationState} */
+    const state = {
+      version: 2,
+      phase: 'migrating',
+      readerProgressCursors: {},
+      spaces: {
+        [spaceDID]: {
+          did: spaceDID,
+          phase: 'migrating',
+          copies: [
+            {
+              copyIndex: 0,
+              providerId: 1n,
+              serviceProvider: '0x1111111111111111111111111111111111111111',
+              providerURL: null,
+              dataSetId: null,
+              pulled: new Set(),
+              committed: new Set(),
+              failedUploads: new Set(),
+              storedShards: {},
+            },
+            {
+              copyIndex: 1,
+              providerId: 2n,
+              serviceProvider: '0x2222222222222222222222222222222222222222',
+              providerURL: null,
+              dataSetId: null,
+              pulled: new Set(),
+              committed: new Set(),
+              failedUploads: new Set(),
+              storedShards: {},
+            },
+          ],
+        },
+      },
+      spaceMigrationInventories: {
+        [spaceDID]: {
+          did: spaceDID,
+          uploadsCount: 1,
+          skippedUploadsCount: 0,
+          shardsCount: 1,
+          shardsToStoreCount: 1,
+          totalBytes: 2n,
+          totalSizeToMigrate: 2n,
+        },
+      },
+      spacesInventories: {},
+    }
+
+    assert.throws(
+      () =>
+        printResumeStatus(state, {
+          title: 'Summary Only',
+          showWhenEmpty: true,
+        }),
+      /summary-only runtime states require a MigrationStore/
+    )
+  },
 }

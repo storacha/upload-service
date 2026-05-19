@@ -7,14 +7,24 @@ import { summarizeProgress } from './progress-model.js'
  * Print a status box showing progress from the persisted migration state.
  *
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
+ * @param {import('@storacha/filecoin-pin-migration/types').MigrationStore | { title?: string, showWhenEmpty?: boolean } | undefined} [storeOrOptions]
  * @param {object} [options]
  * @param {string} [options.title]
  * @param {boolean} [options.showWhenEmpty]
  */
-export function printResumeStatus(
-  state,
-  { title = 'Resuming From', showWhenEmpty = false } = {}
-) {
+export function printResumeStatus(state, storeOrOptions, options) {
+  const store =
+    storeOrOptions != null &&
+    typeof storeOrOptions === 'object' &&
+    typeof (/** @type {any} */ (storeOrOptions).getState) === 'function'
+      ? /** @type {import('@storacha/filecoin-pin-migration/types').MigrationStore} */ (
+          storeOrOptions
+        )
+      : undefined
+  const resolvedOptions =
+    store === undefined ? (storeOrOptions ?? {}) : (options ?? {})
+  const { title = 'Resuming From', showWhenEmpty = false } = resolvedOptions
+
   const {
     copies,
     totalCommittedPairs,
@@ -22,7 +32,7 @@ export function printResumeStatus(
     totalFailedUploads,
     inventoryPartial,
     inventoryCount,
-  } = summarizeProgress(state)
+  } = summarizeProgress(state, store)
 
   const hasProgress = copies.some(
     (copy) => copy.committedPairs > 0 || copy.preparedShards > 0

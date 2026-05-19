@@ -9,9 +9,17 @@ import { formatCopyProgressLine, summarizeProgress } from './progress-model.js'
  * @param {number} [durationMs]
  * @param {number} [chainId]
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} [state]
+ * @param {import('@storacha/filecoin-pin-migration/types').MigrationStore} [store]
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationPlan} [_plan]
  */
-export function printSummary(summary, durationMs, chainId, state, _plan) {
+export function printSummary(
+  summary,
+  durationMs,
+  chainId,
+  state,
+  store,
+  _plan
+) {
   const hasSucceeded = summary.succeeded > 0
   const hasFailed = summary.failed > 0
 
@@ -30,7 +38,7 @@ export function printSummary(summary, durationMs, chainId, state, _plan) {
         : chalk.red
 
   const copyLines = state
-    ? buildCopySummaryLines(state)
+    ? buildCopySummaryLines(state, store)
     : [
         line('Succeeded', String(summary.succeeded)),
         line('Failed', String(summary.failed)),
@@ -63,14 +71,15 @@ export function printSummary(summary, durationMs, chainId, state, _plan) {
 
 /**
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
+ * @param {import('@storacha/filecoin-pin-migration/types').MigrationStore} [store]
  */
-function buildCopySummaryLines(state) {
+function buildCopySummaryLines(state, store) {
   const {
     copies,
     totalPreparedShards,
     totalCommittedPairs,
     totalFailedUploads,
-  } = summarizeProgress(state)
+  } = summarizeProgress(state, store)
   const copyLines = copies
     .sort((a, b) => a.copyIndex - b.copyIndex)
     .map((copy) =>

@@ -5,7 +5,6 @@ import {
   MAX_CREATE_DATASET_COMMIT_BATCH_PIECES,
 } from '../constants.js'
 import { runConcurrentTasks } from './concurrent.js'
-import { recordCommit, recordFailedUpload } from '../state.js'
 import { toPieceCID } from '../utils.js'
 
 /**
@@ -76,6 +75,7 @@ export function* iterateCommitPieces(entries, include) {
  * @param {object} args
  * @param {Iterable<API.CommitPiece>} args.commitPieceIterable
  * @param {API.StorageContext} args.context
+ * @param {API.MigrationStore} args.store
  * @param {API.MigrationState} args.state
  * @param {API.SpaceDID} args.spaceDID
  * @param {number} args.copyIndex
@@ -90,6 +90,7 @@ export function* iterateCommitPieces(entries, include) {
 export async function* commitPieceBatches({
   commitPieceIterable,
   context,
+  store,
   state,
   spaceDID,
   copyIndex,
@@ -128,6 +129,7 @@ export async function* commitPieceBatches({
     yield* finalizeCommitBatchResult({
       result,
       context,
+      store,
       state,
       spaceDID,
       copyIndex,
@@ -173,6 +175,7 @@ export async function* commitPieceBatches({
       commitIndex = yield* finalizeConcurrentCommitWave({
         results,
         context,
+        store,
         state,
         spaceDID,
         copyIndex,
@@ -242,6 +245,7 @@ function takeNextCommitWave({ iterator, pending, size, activeFailedRoots }) {
  * @param {object} args
  * @param {API.BatchResult[]} args.results
  * @param {API.StorageContext} args.context
+ * @param {API.MigrationStore} args.store
  * @param {API.MigrationState} args.state
  * @param {API.SpaceDID} args.spaceDID
  * @param {number} args.copyIndex
@@ -256,6 +260,7 @@ function takeNextCommitWave({ iterator, pending, size, activeFailedRoots }) {
 async function* finalizeConcurrentCommitWave({
   results,
   context,
+  store,
   state,
   spaceDID,
   copyIndex,
@@ -281,7 +286,7 @@ async function* finalizeConcurrentCommitWave({
       dataSetId !== undefined
     ) {
       for (const entry of result.committed) {
-        recordCommit(state, {
+        store.recordCommit({
           spaceDID,
           copyIndex,
           shardCid: entry.shardCid,
@@ -323,6 +328,7 @@ async function* finalizeConcurrentCommitWave({
     yield* finalizeCommitBatchResult({
       result: failedCommit.result,
       context,
+      store,
       state,
       spaceDID,
       copyIndex,
@@ -376,6 +382,7 @@ async function commitPreparedBatch({ context, commitPieces }) {
  * @param {object} args
  * @param {API.BatchResult} args.result
  * @param {API.StorageContext} args.context
+ * @param {API.MigrationStore} args.store
  * @param {API.MigrationState} args.state
  * @param {API.SpaceDID} args.spaceDID
  * @param {number} args.copyIndex
@@ -389,6 +396,7 @@ async function commitPreparedBatch({ context, commitPieces }) {
 async function* finalizeCommitBatchResult({
   result,
   context,
+  store,
   state,
   spaceDID,
   copyIndex,
@@ -430,7 +438,7 @@ async function* finalizeCommitBatchResult({
 
   if (result.failedUploads.size > 0) {
     for (const root of result.failedUploads) {
-      recordFailedUpload(state, spaceDID, copyIndex, root)
+      store.recordFailedUpload(spaceDID, copyIndex, root)
     }
 
     yield /** @type {API.MigrationEvent} */ ({
@@ -447,7 +455,7 @@ async function* finalizeCommitBatchResult({
   if (result.committed.length > 0) {
     if (dataSetId !== undefined) {
       for (const entry of result.committed) {
-        recordCommit(state, {
+        store.recordCommit({
           spaceDID,
           copyIndex,
           shardCid: entry.shardCid,

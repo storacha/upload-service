@@ -38,7 +38,7 @@ export function parseCommitKey(key) {
  * reconciliation. This is intentionally separate from migrator execution
  * context because helpers work from persisted state, not live execution state.
  *
- * @param {API.SpaceInventory} inventory
+ * @param {API.InventoryShardBuckets | API.SpaceInventory} inventory
  * @returns {API.InventoryCommitView}
  */
 export function buildInventoryCommitView(inventory) {
@@ -89,7 +89,7 @@ export function buildInventoryCommitView(inventory) {
 /**
  * Build a sparse shardCid -> roots map containing only duplicate-root shards.
  *
- * @param {API.SpaceInventory} inventory
+ * @param {API.InventoryShardBuckets | API.SpaceInventory} inventory
  * @returns {Map<string, string[]>}
  */
 export function buildMultiRootShards(inventory) {
@@ -170,7 +170,7 @@ export function getActionableRootsForRun(
  * one copy within one inventory.
  *
  * @param {API.SpaceCopyState} copyState
- * @param {API.SpaceInventory | API.InventoryCommitView} inventory
+ * @param {API.InventoryShardBuckets | API.SpaceInventory | API.InventoryCommitView} inventory
  */
 export function getFullyCommittedShardCIDs(copyState, inventory) {
   const inventoryCommitView = isInventoryCommitView(inventory)
@@ -196,7 +196,7 @@ export function getFullyCommittedShardCIDs(copyState, inventory) {
 }
 
 /**
- * @param {API.SpaceInventory | API.InventoryCommitView} inventory
+ * @param {API.InventoryShardBuckets | API.SpaceInventory | API.InventoryCommitView} inventory
  * @returns {inventory is API.InventoryCommitView}
  */
 function isInventoryCommitView(inventory) {
@@ -358,9 +358,67 @@ export function createInitialState() {
     version: STATE_VERSION,
     phase: 'reading',
     spaces: {},
+    spaceMigrationInventories: {},
     spacesInventories: {},
     readerProgressCursors: undefined,
   })
+}
+
+/**
+ * @param {API.SpaceDID} spaceDID
+ * @param {string | undefined} name
+ * @returns {API.SpaceInventorySummary}
+ */
+function createSpaceInventorySummary(spaceDID, name) {
+  return {
+    did: spaceDID,
+    ...(name !== undefined ? { name } : {}),
+    totalBytes: 0n,
+    totalSizeToMigrate: 0n,
+    uploadsCount: 0,
+    shardsCount: 0,
+    shardsToStoreCount: 0,
+    skippedUploadsCount: 0,
+  }
+}
+
+/**
+ * @param {API.SpaceInventory} inventory
+ * @returns {API.SpaceInventorySummary}
+ */
+export function summarizeSpaceInventory(inventory) {
+  return {
+    did: inventory.did,
+    ...(inventory.name !== undefined ? { name: inventory.name } : {}),
+    totalBytes: inventory.totalBytes,
+    totalSizeToMigrate: inventory.totalSizeToMigrate,
+    uploadsCount: inventory.uploads.length,
+    shardsCount: inventory.shards.length,
+    shardsToStoreCount: inventory.shardsToStore.length,
+    skippedUploadsCount: inventory.skippedUploads.length,
+  }
+}
+
+/**
+ * Returns the active inventory summary map from state, preferring the
+ * scalars-only `spaceMigrationInventories` form when populated, and falling
+ * back to the full `spacesInventories` map for older states that do not yet
+ * carry summaries.
+ *
+ * Use this accessor everywhere instead of branching on state shape directly.
+ *
+ * @param {API.MigrationState} state
+ * @returns {Record<API.SpaceDID, API.SpaceInventorySummary | API.SpaceInventory>}
+ */
+export function getInventorySummaryMap(state) {
+  const summaries = state.spaceMigrationInventories
+  const inventories = state.spacesInventories ?? {}
+  if (!summaries) return inventories
+  if (Object.keys(inventories).length === 0) return summaries
+  return {
+    ...inventories,
+    ...summaries,
+  }
 }
 
 // ── Reader checkpoint ──────────────────────────────────────────────────────────
@@ -401,7 +459,18 @@ export function checkpointInventoryPage(
     cursor,
   }
 ) {
-  let inventory = state.spacesInventories[spaceDID]
+  const summaries =
+    state.spaceMigrationInventories ?? (state.spaceMigrationInventories = {})
+  const inventories = state.spacesInventories ?? (state.spacesInventories = {})
+  let summary = summaries[spaceDID]
+  if (!summary) {
+    summary = createSpaceInventorySummary(spaceDID, name)
+    summaries[spaceDID] = summary
+  } else if (name !== undefined) {
+    summary.name = name
+  }
+
+  let inventory = inventories[spaceDID]
   if (!inventory) {
     inventory = {
       did: spaceDID,
@@ -413,7 +482,7 @@ export function checkpointInventoryPage(
       totalBytes: 0n,
       totalSizeToMigrate: 0n,
     }
-    state.spacesInventories[spaceDID] = inventory
+    inventories[spaceDID] = inventory
   } else if (name !== undefined) {
     inventory.name = name
   }
@@ -424,6 +493,13 @@ export function checkpointInventoryPage(
   inventory.skippedUploads.push(...skippedUploads)
   inventory.totalBytes += totalBytes
   inventory.totalSizeToMigrate += totalSizeToMigrate
+
+  summary.shardsCount += shards.length
+  summary.shardsToStoreCount += shardsToStore.length
+  summary.uploadsCount += uploads.length
+  summary.skippedUploadsCount += skippedUploads.length
+  summary.totalBytes += totalBytes
+  summary.totalSizeToMigrate += totalSizeToMigrate
 
   if (cursor) {
     if (!state.readerProgressCursors) state.readerProgressCursors = {}
@@ -492,13 +568,41 @@ export function transitionToApproved(state, perSpaceCost) {
       })
     })
 
+    if (existing) {
+      existing.copies = copies
+      continue
+    }
+
     state.spaces[cost.spaceDID] = {
       did: cost.spaceDID,
-      phase: existing?.phase ?? 'pending',
+      phase: 'pending',
       copies,
     }
   }
   state.phase = 'approved'
+}
+
+/**
+ * Transition the top-level phase from 'reading' to 'planning'.
+ *
+ * Called by the reader after all spaces are inventoried and before the
+ * consumer invokes createMigrationPlan().
+ *
+ * @param {API.MigrationState} state - Mutated in place
+ */
+export function transitionToPlanning(state) {
+  state.phase = 'planning'
+}
+
+/**
+ * Transition the top-level phase from 'funded' to 'migrating'.
+ *
+ * Called by run-migration after the space loop begins executing.
+ *
+ * @param {API.MigrationState} state - Mutated in place
+ */
+export function transitionToMigrating(state) {
+  state.phase = 'migrating'
 }
 
 /**
@@ -627,6 +731,75 @@ export function recordStoredShard(state, spaceDID, shardCid, pieceCID) {
 }
 
 /**
+ * Clear a stale pulled-shard marker for the given copy.
+ *
+ * This is used only by helper-driven correction paths when persisted staged
+ * progress is known to be wrong. Normal migrator flow never clears pulled
+ * progress directly; it is removed by recordCommit() once a shard is fully
+ * committed.
+ *
+ * @param {API.MigrationState} state - Mutated in place
+ * @param {API.SpaceDID} spaceDID
+ * @param {number} copyIndex
+ * @param {string} shardCid
+ * @returns {boolean} true when state changed
+ */
+export function clearPullProgress(state, spaceDID, copyIndex, shardCid) {
+  const space = state.spaces[spaceDID]
+  if (!space) return false
+
+  const copy = getCopy(space, copyIndex)
+  if (!copy) return false
+
+  return copy.pulled.delete(shardCid)
+}
+
+/**
+ * Clear a stale stored-piece mapping for the given shard on copy 0.
+ *
+ * Stored-shard tracking only exists on copy 0 because that is the only copy
+ * that executes store().
+ *
+ * @param {API.MigrationState} state - Mutated in place
+ * @param {API.SpaceDID} spaceDID
+ * @param {number} _copyIndex
+ * @param {string} shardCid
+ * @returns {boolean} true when state changed
+ */
+export function clearStoredPiece(state, spaceDID, _copyIndex, shardCid) {
+  const space = state.spaces[spaceDID]
+  if (!space) return false
+
+  const copy = getCopy(space, 0)
+  if (!copy || !(shardCid in copy.storedShards)) {
+    return false
+  }
+
+  delete copy.storedShards[shardCid]
+  return true
+}
+
+/**
+ * Remove a stale committed shard-root pair from a copy.
+ *
+ * @param {API.MigrationState} state - Mutated in place
+ * @param {API.SpaceDID} spaceDID
+ * @param {number} copyIndex
+ * @param {string} shardCid
+ * @param {string} root
+ * @returns {boolean} true when state changed
+ */
+export function removeCommit(state, spaceDID, copyIndex, shardCid, root) {
+  const space = state.spaces[spaceDID]
+  if (!space) return false
+
+  const copy = getCopy(space, copyIndex)
+  if (!copy) return false
+
+  return copy.committed.delete(commitKey(shardCid, root))
+}
+
+/**
  * Checkpoint 6: a shard was successfully committed.
  *
  * Sets the shard CID in the committed set for a specific copy.
@@ -678,8 +851,15 @@ export function finalizeSpace(state, spaceDID) {
   const space = state.spaces[spaceDID]
   if (!space) return
 
-  const inventory = state.spacesInventories[spaceDID]
-  if (!inventory) {
+  const inventory = state.spacesInventories?.[spaceDID]
+  const summary = state.spaceMigrationInventories?.[spaceDID]
+  const totalShards = inventory
+    ? inventory.shards.length + inventory.shardsToStore.length
+    : summary
+    ? summary.shardsCount + summary.shardsToStoreCount
+    : undefined
+
+  if (totalShards === undefined) {
     space.phase = 'failed'
     return
   }
@@ -690,7 +870,6 @@ export function finalizeSpace(state, spaceDID) {
     return
   }
 
-  const totalShards = inventory.shards.length + inventory.shardsToStore.length
   const allComplete = copyStates.every(
     (copy) => copy.committed.size === totalShards
   )
@@ -765,8 +944,9 @@ export function buildResumeState(state) {
  *   - spacesInventories[did].shards[].sizeBytes → decimal string
  *
  * @param {API.MigrationState} state
+ * @param {{ spacesInventories?: Record<API.SpaceDID, API.SpaceInventory> }} [options]
  */
-export function serializeState(state) {
+export function serializeState(state, options = {}) {
   /** @type {Record<string, unknown>} */
   const spaces = {}
   for (const [did, space] of Object.entries(state.spaces)) {
@@ -789,7 +969,9 @@ export function serializeState(state) {
 
   /** @type {Record<string, unknown>} */
   const spacesInventories = {}
-  for (const [did, inventory] of Object.entries(state.spacesInventories)) {
+  for (const [did, inventory] of Object.entries(
+    resolveInventoriesForSerialization(state, options.spacesInventories)
+  )) {
     spacesInventories[did] = {
       did: inventory.did,
       ...(inventory.name !== undefined ? { name: inventory.name } : {}),
@@ -823,6 +1005,29 @@ export function serializeState(state) {
       ? { ...state.readerProgressCursors }
       : undefined,
   }
+}
+
+/**
+ * Resolve the full inventory map required by the persisted JSON wire format.
+ *
+ * Summary-first runtime states may no longer retain `spacesInventories` in
+ * memory. Those callers must pass a fully materialized inventory map
+ * explicitly.
+ *
+ * @param {API.MigrationState} state
+ * @param {Record<API.SpaceDID, API.SpaceInventory> | undefined} provided
+ * @returns {Record<API.SpaceDID, API.SpaceInventory>}
+ */
+function resolveInventoriesForSerialization(state, provided) {
+  const inventories = provided ?? state.spacesInventories ?? {}
+  for (const spaceDID of Object.keys(state.spaceMigrationInventories ?? {})) {
+    if (!inventories[/** @type {API.SpaceDID} */ (spaceDID)]) {
+      throw new TypeError(
+        `serializeState: missing full inventory for ${spaceDID}; summary-only runtime states must pass a fully materialized spacesInventories map`
+      )
+    }
+  }
+  return inventories
 }
 
 /**
@@ -993,6 +1198,8 @@ export function deserializeState(obj) {
 
   /** @type {API.MigrationState['spacesInventories']} */
   const spacesInventories = {}
+  /** @type {API.MigrationState['spaceMigrationInventories']} */
+  const spaceMigrationInventories = {}
   for (const [did, rawInv] of Object.entries(
     /** @type {Record<string, Record<string, unknown>>} */ (
       raw.spacesInventories
@@ -1004,7 +1211,7 @@ export function deserializeState(obj) {
     const rawShardsToStore = /** @type {Array<Record<string, unknown>>} */ (
       rawInv.shardsToStore
     )
-    spacesInventories[/** @type {API.SpaceDID} */ (did)] = {
+    const inventory = {
       did: /** @type {API.SpaceDID} */ (rawInv.did),
       ...(typeof rawInv.name === 'string' ? { name: rawInv.name } : {}),
       uploads: /** @type {string[]} */ (rawInv.uploads ?? []),
@@ -1044,6 +1251,9 @@ export function deserializeState(obj) {
         `inventory "${did}"`
       ),
     }
+    spacesInventories[/** @type {API.SpaceDID} */ (did)] = inventory
+    spaceMigrationInventories[/** @type {API.SpaceDID} */ (did)] =
+      summarizeSpaceInventory(inventory)
   }
 
   /** @type {Record<API.SpaceDID, string> | undefined} */
@@ -1058,6 +1268,7 @@ export function deserializeState(obj) {
     version: STATE_VERSION,
     phase: /** @type {API.MigrationPhase} */ (raw.phase),
     spaces,
+    spaceMigrationInventories,
     spacesInventories,
     readerProgressCursors,
   }

@@ -1,5 +1,4 @@
 import { FundingFailedFailure } from '../errors.js'
-import { transitionToFunded } from '../state.js'
 
 /**
  * @import * as API from '../api.js'
@@ -18,12 +17,12 @@ import { transitionToFunded } from '../state.js'
  * @param {API.MigrationCostResult} costs
  * @param {bigint} fundingAmount
  * @param {API.Synapse} synapse
- * @param {API.MigrationState} state
+ * @param {API.MigrationStore} store
  * @returns {AsyncGenerator<API.MigrationEvent>}
  */
-export async function* ensureFunding(costs, fundingAmount, synapse, state) {
+export async function* ensureFunding(costs, fundingAmount, synapse, store) {
   if (costs.ready) {
-    if (state.phase === 'approved') transitionToFunded(state)
+    if (store.getState().phase === 'approved') store.transitionToFunded()
     return
   }
 
@@ -50,6 +49,6 @@ export async function* ensureFunding(costs, fundingAmount, synapse, state) {
     throw error
   }
 
-  transitionToFunded(state)
+  store.transitionToFunded()
   yield { type: 'funding:complete', txHash }
 }

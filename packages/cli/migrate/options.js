@@ -7,6 +7,7 @@ import { mainnet, calibration } from '@filoz/synapse-sdk'
  * @property {boolean} [resume]
  * @property {boolean} [retry]
  * @property {boolean} [debug]
+ * @property {string} [stateFormat]
  * @property {string} [selectedRootsFile]
  * @property {boolean} [nonInteractive]
  */
@@ -23,9 +24,11 @@ import { mainnet, calibration } from '@filoz/synapse-sdk'
  */
 export function parseMigrationOptions(opts) {
   const { readerOptions, readerOverrideEntries } = parseReaderOverridesFromEnv()
+  const stateFormat = parseStateFormat(opts.stateFormat)
 
   return {
     network: parseNetwork(opts.network),
+    stateFormat,
     resume: opts.resume ?? false,
     retry: opts.retry ?? false,
     debug: opts.debug ?? false,
@@ -34,6 +37,25 @@ export function parseMigrationOptions(opts) {
     readerOptions,
     readerOverrideEntries,
   }
+}
+
+/**
+ * @param {string | undefined} stateFormat
+ * @returns {'json' | 'sqlite' | undefined}
+ */
+function parseStateFormat(stateFormat) {
+  if (stateFormat == null || stateFormat === '') {
+    return undefined
+  }
+
+  if (stateFormat === 'json' || stateFormat === 'sqlite') {
+    return stateFormat
+  }
+
+  console.error(
+    `Error: invalid state format "${stateFormat}". Expected "json" or "sqlite".`
+  )
+  process.exit(1)
 }
 
 /**

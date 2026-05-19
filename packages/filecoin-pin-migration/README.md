@@ -35,6 +35,28 @@ approval UX, or debugging/integration hooks around the migration flow.
 npm install @storacha/filecoin-pin-migration
 ```
 
+### Storage Backends
+
+JSON remains the default state backend.
+
+- `*.json` files use the existing `JsonFileStore`
+- `*.db` / `*.sqlite` files use `SqliteStore`
+- callers can override extension-based detection via the CLI `--state-format`
+  flag
+
+SQLite support uses the optional `better-sqlite3` dependency:
+
+```bash
+pnpm add better-sqlite3
+```
+
+Use SQLite when checkpoint rewrite cost starts dominating runtime. Commit 3
+reduces write amplification by persisting per-row SQL changes instead of
+rewriting the full JSON state file at each checkpoint. It does **not** yet
+reduce heap usage: the SQLite backend still preserves the live in-memory
+`MigrationState` cache so existing reader/planner/migrator call sites remain
+correct. Heap-bounded execution stays a follow-up step.
+
 ---
 
 ## Recommended Usage
@@ -84,7 +106,10 @@ Reader output includes:
 - `shardsToStore` for shards that must go through the store flow
 - total byte counts used by planning
 
-The reader checkpoints progress into `state.spacesInventories` after each page.
+The reader checkpoints progress into the store-backed migration state after each
+page. Summary-first backends such as SQLite keep authoritative per-space reader
+totals in `state.spaceMigrationInventories` and expose the full shard/upload
+surface through store query methods and explicit materialization helpers.
 
 Reader tuning options are available through
 `buildMigrationInventories({ options })`:
@@ -183,12 +208,17 @@ Resume is driven entirely by persisted state:
 - stored shard mappings are reused
 - provider and dataset bindings are pinned per copy
 
-The core state helpers are:
+The core runtime state helpers are:
 
 - `createInitialState()`
 - `serializeState()`
 - `deserializeState()`
 - `clearFailedUploadsForRetry()`
+
+`serializeState(state)` now assumes the runtime state still has full
+`spacesInventories` entries available. Summary-first backends may omit those
+large arrays from live memory; use `serializeStoreState(store)` when exporting a
+store-backed state file while preserving the legacy JSON format.
 
 ---
 
@@ -203,6 +233,7 @@ import {
   createMigrationPlan,
   executeMigration,
   serializeState,
+  serializeStoreState,
   deserializeState,
 } from '@storacha/filecoin-pin-migration'
 ```
@@ -212,6 +243,8 @@ Additional advanced exports:
 - `computeMigrationCosts()` for lower-level planning/cost usage
 - `ensureFunding()` for explicit funding orchestration
 - `executeStoreMigration()` for the standalone all-store execution path
+- `serializeStoreState()` for exporting summary-first stores back into the
+  legacy JSON state-file shape
 - `RoundaboutResolver`, `ClaimsResolver`, and `createResolver()` for custom
   reader integration
 
