@@ -20,8 +20,11 @@ import * as State from '../../src/state.js'
  *
  * @param {string} name
  * @param {(path: string) => Promise<API.MigrationStore>} createStore
+ * @param {{ compareSerializedInventoryState?: boolean }} [options]
  */
-export function runStoreContractTests(name, createStore) {
+export function runStoreContractTests(name, createStore, options = {}) {
+  const compareSerializedInventoryState =
+    options.compareSerializedInventoryState ?? true
   describe(name, () => {
     /** @type {string} */
     let dir
@@ -69,6 +72,34 @@ export function runStoreContractTests(name, createStore) {
     /** Clear the tracked handle so afterEach does not try to close it again. */
     function untrack() {
       activeStore = undefined
+    }
+
+    /**
+     * Compare the backend state against the pure state.js reference.
+     *
+     * JSON keeps the legacy full inventory arrays in the live state cache, so
+     * it can assert serialized parity end-to-end. SQLite intentionally retains
+     * only summary inventory state in memory and exposes the full shard/upload
+     * surface through store iterators instead.
+     *
+     * @param {API.MigrationState} actual
+     * @param {API.MigrationState} expected
+     */
+    function expectStateParity(actual, expected) {
+      expect(actual.phase).toEqual(expected.phase)
+      expect(actual.spaces).toEqual(expected.spaces)
+      expect(actual.readerProgressCursors).toEqual(
+        expected.readerProgressCursors
+      )
+      expect(actual.spaceMigrationInventories).toEqual(
+        expected.spaceMigrationInventories
+      )
+
+      if (compareSerializedInventoryState) {
+        expect(State.serializeState(actual)).toEqual(
+          State.serializeState(expected)
+        )
+      }
     }
 
     describe('lifecycle FSM', () => {
@@ -388,6 +419,31 @@ export function runStoreContractTests(name, createStore) {
         expect(() => iter.next()).toThrow(StoreClosedError)
       })
 
+      it('iterateUploads() mid-iteration .next() throws after closeSync()', async () => {
+        const store = await open()
+
+        store.checkpointInventoryPage({
+          spaceDID,
+          shards: [pullShard1, pullShard2],
+          shardsToStore: [],
+          uploads: ['bafy-root-1', 'bafy-root-2'],
+          skippedUploads: [],
+          totalBytes: 300n,
+          totalSizeToMigrate: 300n,
+          cursor: undefined,
+        })
+
+        const iter = store.iterateUploads(spaceDID)[Symbol.iterator]()
+
+        const first = iter.next()
+        expect(first.done).toBe(false)
+
+        store.closeSync()
+        untrack()
+
+        expect(() => iter.next()).toThrow(StoreClosedError)
+      })
+
       it('iterateCommittableShards() excludes store-kind rows with null pieceCID', async () => {
         const store = await open()
 
@@ -486,6 +542,138 @@ export function runStoreContractTests(name, createStore) {
         expect(rows[0].kind).toBe('pull')
         expect(rows[0].shardCid).toBe('bafy-shard-1')
         expect(rows[0].pieceCID).toBe('bafkz-piece-1')
+      })
+    })
+
+    describe('inventory summary surface', () => {
+      const spaceDID = /** @type {API.SpaceDID} */ ('did:key:zSummaryTest')
+
+      /** @type {API.ResolvedShard} */
+      const pullShard = {
+        root: 'bafy-summary-root-1',
+        cid: 'bafy-summary-shard-1',
+        pieceCID: 'bafkz-summary-piece-1',
+        sourceURL: 'https://example.com/summary/1',
+        sizeBytes: 100n,
+      }
+
+      /** @type {API.StoreShard} */
+      const storeShard = {
+        root: 'bafy-summary-root-2',
+        cid: 'bafy-summary-shard-2',
+        sourceURL: 'https://example.com/summary/2',
+        sizeBytes: 200n,
+      }
+
+      it('getSpaceInventorySummary() returns stable per-space summary identity across mutations', async () => {
+        const store = await open()
+
+        store.checkpointInventoryPage({
+          spaceDID,
+          shards: [pullShard],
+          shardsToStore: [],
+          uploads: ['bafy-summary-root-1'],
+          skippedUploads: [],
+          totalBytes: 100n,
+          totalSizeToMigrate: 100n,
+          cursor: 'cursor-1',
+        })
+
+        const state1 = store.getState()
+        const summary1 = store.getSpaceInventorySummary(spaceDID)
+        expect(summary1).toBeDefined()
+        expect(summary1).toEqual({
+          did: spaceDID,
+          totalBytes: 100n,
+          totalSizeToMigrate: 100n,
+          uploadsCount: 1,
+          shardsCount: 1,
+          shardsToStoreCount: 0,
+          skippedUploadsCount: 0,
+        })
+
+        store.checkpointInventoryPage({
+          spaceDID,
+          shards: [],
+          shardsToStore: [storeShard],
+          uploads: [],
+          skippedUploads: ['bafy-summary-root-3'],
+          totalBytes: 200n,
+          totalSizeToMigrate: 200n,
+          cursor: undefined,
+        })
+
+        const state2 = store.getState()
+        const summary2 = store.getSpaceInventorySummary(spaceDID)
+
+        expect(state2).toBe(state1)
+        expect(summary2).toBe(summary1)
+        expect(summary2).toEqual({
+          did: spaceDID,
+          totalBytes: 300n,
+          totalSizeToMigrate: 300n,
+          uploadsCount: 1,
+          shardsCount: 1,
+          shardsToStoreCount: 1,
+          skippedUploadsCount: 1,
+        })
+      })
+
+      it('iterateUploads(), iterateSkippedUploads(), and iterateShardsToStore() expose the stored reader output', async () => {
+        const store = await open()
+
+        store.checkpointInventoryPage({
+          spaceDID,
+          shards: [pullShard],
+          shardsToStore: [storeShard],
+          uploads: ['bafy-summary-root-1'],
+          skippedUploads: ['bafy-summary-root-9'],
+          totalBytes: 300n,
+          totalSizeToMigrate: 300n,
+          cursor: undefined,
+        })
+
+        expect([...store.iterateUploads(spaceDID)]).toEqual([
+          'bafy-summary-root-1',
+        ])
+        expect([...store.iterateSkippedUploads(spaceDID)]).toEqual([
+          'bafy-summary-root-9',
+        ])
+        expect([...store.iterateShardsToStore(spaceDID)]).toEqual([storeShard])
+      })
+
+      it('getSpaceDistinctShardCount() counts unique shard CIDs across pull and store buckets', async () => {
+        const store = await open()
+
+        store.checkpointInventoryPage({
+          spaceDID,
+          shards: [
+            pullShard,
+            {
+              root: 'bafy-summary-root-3',
+              cid: 'bafy-summary-shard-1',
+              pieceCID: 'bafkz-summary-piece-1',
+              sourceURL: 'https://example.com/summary/3',
+              sizeBytes: 50n,
+            },
+          ],
+          shardsToStore: [
+            storeShard,
+            {
+              root: 'bafy-summary-root-4',
+              cid: 'bafy-summary-shard-2',
+              sourceURL: 'https://example.com/summary/4',
+              sizeBytes: 75n,
+            },
+          ],
+          uploads: ['bafy-summary-root-1', 'bafy-summary-root-3'],
+          skippedUploads: [],
+          totalBytes: 425n,
+          totalSizeToMigrate: 425n,
+          cursor: undefined,
+        })
+
+        expect(store.getSpaceDistinctShardCount(spaceDID)).toBe(2)
       })
     })
 
@@ -588,23 +776,17 @@ export function runStoreContractTests(name, createStore) {
         // Step 1: checkpointInventoryPage
         store.checkpointInventoryPage(pageInput)
         State.checkpointInventoryPage(ref, pageInput)
-        expect(State.serializeState(store.getState())).toEqual(
-          State.serializeState(ref)
-        )
+        expectStateParity(store.getState(), ref)
 
         // Step 2: transitionToApproved
         store.transitionToApproved(perSpaceCost)
         State.transitionToApproved(ref, perSpaceCost)
-        expect(State.serializeState(store.getState())).toEqual(
-          State.serializeState(ref)
-        )
+        expectStateParity(store.getState(), ref)
 
         // Step 3: transitionToFunded
         store.transitionToFunded()
         State.transitionToFunded(ref)
-        expect(State.serializeState(store.getState())).toEqual(
-          State.serializeState(ref)
-        )
+        expectStateParity(store.getState(), ref)
 
         // Step 4: recordPull (copy 0, pull shard)
         const pullInput = {
@@ -615,9 +797,7 @@ export function runStoreContractTests(name, createStore) {
         }
         store.recordPull(pullInput)
         State.recordPull(ref, pullInput)
-        expect(State.serializeState(store.getState())).toEqual(
-          State.serializeState(ref)
-        )
+        expectStateParity(store.getState(), ref)
 
         // Step 5: recordStoredShard (copy 0, store shard)
         store.recordStoredShard(
@@ -631,30 +811,22 @@ export function runStoreContractTests(name, createStore) {
           'bafy-mut-shard-2',
           'bafkz-mut-piece-2'
         )
-        expect(State.serializeState(store.getState())).toEqual(
-          State.serializeState(ref)
-        )
+        expectStateParity(store.getState(), ref)
 
         // Step 6: clearStoredPiece (copy 0 staged-store correction)
         store.clearStoredPiece(spaceDID, 0, 'bafy-mut-shard-2')
         State.clearStoredPiece(ref, spaceDID, 0, 'bafy-mut-shard-2')
-        expect(State.serializeState(store.getState())).toEqual(
-          State.serializeState(ref)
-        )
+        expectStateParity(store.getState(), ref)
 
         // Step 7: recordFailedUpload (copy 0)
         store.recordFailedUpload(spaceDID, 0, 'bafy-mut-root-1')
         State.recordFailedUpload(ref, spaceDID, 0, 'bafy-mut-root-1')
-        expect(State.serializeState(store.getState())).toEqual(
-          State.serializeState(ref)
-        )
+        expectStateParity(store.getState(), ref)
 
         // Step 8: clearFailedUploadsForRetry
         store.clearFailedUploadsForRetry(spaceDID)
         State.clearFailedUploadsForRetry(ref, spaceDID)
-        expect(State.serializeState(store.getState())).toEqual(
-          State.serializeState(ref)
-        )
+        expectStateParity(store.getState(), ref)
 
         // Step 9: recordCommit (copy 0, pull shard) — pulled first in step 4
         const commitInput = {
@@ -667,9 +839,7 @@ export function runStoreContractTests(name, createStore) {
         }
         store.recordCommit(commitInput)
         State.recordCommit(ref, commitInput)
-        expect(State.serializeState(store.getState())).toEqual(
-          State.serializeState(ref)
-        )
+        expectStateParity(store.getState(), ref)
 
         // Step 10: removeCommit (helper-driven stale commit correction)
         store.removeCommit(spaceDID, 0, 'bafy-mut-shard-1', 'bafy-mut-root-1')
@@ -680,30 +850,22 @@ export function runStoreContractTests(name, createStore) {
           'bafy-mut-shard-1',
           'bafy-mut-root-1'
         )
-        expect(State.serializeState(store.getState())).toEqual(
-          State.serializeState(ref)
-        )
+        expectStateParity(store.getState(), ref)
 
         // Step 11: clearPullProgress (helper-driven stale pull correction)
         store.clearPullProgress(spaceDID, 0, 'bafy-mut-shard-1')
         State.clearPullProgress(ref, spaceDID, 0, 'bafy-mut-shard-1')
-        expect(State.serializeState(store.getState())).toEqual(
-          State.serializeState(ref)
-        )
+        expectStateParity(store.getState(), ref)
 
         // Step 12: finalizeSpace
         store.finalizeSpace(spaceDID)
         State.finalizeSpace(ref, spaceDID)
-        expect(State.serializeState(store.getState())).toEqual(
-          State.serializeState(ref)
-        )
+        expectStateParity(store.getState(), ref)
 
         // Step 13: finalizeMigration
         store.finalizeMigration()
         State.finalizeMigration(ref)
-        expect(State.serializeState(store.getState())).toEqual(
-          State.serializeState(ref)
-        )
+        expectStateParity(store.getState(), ref)
 
         await store.close()
         untrack()
@@ -898,7 +1060,7 @@ export function runStoreContractTests(name, createStore) {
 
         // ── Reopen and capture serialized state + iterator output ────────────
         const reopened = await open()
-        const reopenedSerialized = State.serializeState(reopened.getState())
+        const reopenedState = reopened.getState()
         // Iterator output is the public contract surface — assert it survives
         // the round-trip alongside the state snapshot.
         const reopenedRows = [...reopened.iterateShards(spaceDID)]
@@ -913,7 +1075,7 @@ export function runStoreContractTests(name, createStore) {
         State.recordPull(ref, pullInput)
         State.recordCommit(ref, commitInput)
 
-        expect(reopenedSerialized).toEqual(State.serializeState(ref))
+        expectStateParity(reopenedState, ref)
 
         // 1 pull shard + 1 store shard survives reopen; pull row's pieceCID
         // matches the seed.

@@ -25,12 +25,17 @@
  *   insertFailedUpload: SqliteStatement
  *   deleteFailedUploadsForSpace: SqliteStatement
  *   selectSpaces: SqliteStatement
- *   selectUploads: SqliteStatement
- *   selectShards: SqliteStatement
+ *   selectShardCountsBySpace: SqliteStatement
+ *   selectUploadCountsBySpace: SqliteStatement
  *   selectSpaceCopies: SqliteStatement
- *   selectShardProgress: SqliteStatement
+ *   selectStoredPieces: SqliteStatement
+ *   selectPendingPulledShards: SqliteStatement
  *   selectCommitProgress: SqliteStatement
  *   selectFailedUploads: SqliteStatement
+ *   iterateUploads: SqliteStatement
+ *   iterateSkippedUploads: SqliteStatement
+ *   iterateShardsToStore: SqliteStatement
+ *   countDistinctShardsForSpace: SqliteStatement
  *   iterateShardsAll: SqliteStatement
  *   iterateShardsByKind: SqliteStatement
  *   iterateCommittableShards: SqliteStatement
@@ -182,19 +187,46 @@ export function prepareStatements(db) {
   `)
   )
 
-  const selectUploads = db.prepare(`
-    SELECT rowid, space_did, root_cid, skipped
-    FROM uploads
-    ORDER BY rowid
+  const selectShardCountsBySpace = db.prepare(`
+    SELECT
+      space_did,
+      SUM(CASE WHEN kind = 'pull' THEN 1 ELSE 0 END) AS shards_count,
+      SUM(CASE WHEN kind = 'store' THEN 1 ELSE 0 END) AS shards_to_store_count
+    FROM shards
+    GROUP BY space_did
+    ORDER BY space_did
   `)
 
-  const selectShards = bigintSafe(
-    db.prepare(`
-    SELECT rowid, space_did, shard_cid, root_cid, piece_cid, source_url, size_bytes, kind
-    FROM shards
-    ORDER BY rowid
+  const selectUploadCountsBySpace = db.prepare(`
+    SELECT
+      u.space_did,
+      SUM(
+        CASE
+          WHEN u.skipped = 0
+           AND (
+             NOT EXISTS (
+               SELECT 1
+               FROM shards AS s
+               WHERE s.space_did = u.space_did
+                 AND s.root_cid = u.root_cid
+             )
+             OR EXISTS (
+               SELECT 1
+               FROM shards AS s
+               WHERE s.space_did = u.space_did
+                 AND s.root_cid = u.root_cid
+                 AND s.kind = 'pull'
+             )
+           )
+          THEN 1
+          ELSE 0
+        END
+      ) AS uploads_count,
+      SUM(CASE WHEN u.skipped = 1 THEN 1 ELSE 0 END) AS skipped_uploads_count
+    FROM uploads AS u
+    GROUP BY u.space_did
+    ORDER BY u.space_did
   `)
-  )
 
   const selectSpaceCopies = db.prepare(`
     SELECT space_did, copy_index, provider_id, service_provider, provider_url, data_set_id
@@ -202,10 +234,32 @@ export function prepareStatements(db) {
     ORDER BY space_did, copy_index
   `)
 
-  const selectShardProgress = db.prepare(`
-    SELECT rowid, space_did, copy_index, shard_cid, pulled, stored_piece
+  const selectStoredPieces = db.prepare(`
+    SELECT space_did, copy_index, shard_cid, stored_piece
     FROM shard_progress
+    WHERE stored_piece IS NOT NULL
     ORDER BY rowid
+  `)
+
+  const selectPendingPulledShards = db.prepare(`
+    SELECT sp.space_did, sp.copy_index, sp.shard_cid
+    FROM shard_progress AS sp
+    WHERE sp.pulled = 1
+      AND EXISTS (
+        SELECT 1
+        FROM shards AS s
+        WHERE s.space_did = sp.space_did
+          AND s.shard_cid = sp.shard_cid
+          AND NOT EXISTS (
+            SELECT 1
+            FROM commit_progress AS cp
+            WHERE cp.space_did = s.space_did
+              AND cp.copy_index = sp.copy_index
+              AND cp.shard_cid = s.shard_cid
+              AND cp.root_cid = s.root_cid
+          )
+      )
+    ORDER BY sp.space_did, sp.copy_index, sp.shard_cid
   `)
 
   const selectCommitProgress = db.prepare(`
@@ -218,6 +272,50 @@ export function prepareStatements(db) {
     SELECT rowid, space_did, copy_index, root_cid
     FROM failed_uploads
     ORDER BY rowid
+  `)
+
+  const iterateUploads = db.prepare(`
+    SELECT u.root_cid
+    FROM uploads AS u
+    WHERE u.space_did = ? AND u.skipped = 0
+      AND (
+        NOT EXISTS (
+          SELECT 1
+          FROM shards AS s
+          WHERE s.space_did = u.space_did
+            AND s.root_cid = u.root_cid
+        )
+        OR EXISTS (
+          SELECT 1
+          FROM shards AS s
+          WHERE s.space_did = u.space_did
+            AND s.root_cid = u.root_cid
+            AND s.kind = 'pull'
+        )
+      )
+    ORDER BY u.rowid
+  `)
+
+  const iterateSkippedUploads = db.prepare(`
+    SELECT root_cid
+    FROM uploads
+    WHERE space_did = ? AND skipped = 1
+    ORDER BY rowid
+  `)
+
+  const iterateShardsToStore = bigintSafe(
+    db.prepare(`
+    SELECT root_cid, shard_cid, piece_cid, source_url, size_bytes
+    FROM shards
+    WHERE space_did = ? AND kind = 'store'
+    ORDER BY rowid
+  `)
+  )
+
+  const countDistinctShardsForSpace = db.prepare(`
+    SELECT COUNT(DISTINCT shard_cid) AS count
+    FROM shards
+    WHERE space_did = ?
   `)
 
   const iterateShardsAll = bigintSafe(
@@ -248,22 +346,22 @@ export function prepareStatements(db) {
       s.size_bytes,
       s.kind,
       COALESCE(s.piece_cid, sp0.stored_piece) AS piece_cid
-    FROM shards s
-    JOIN shard_progress sp
-      ON sp.space_did = s.space_did
-     AND sp.copy_index = ?
-     AND sp.shard_cid = s.shard_cid
-     AND sp.pulled = 1
+    FROM shard_progress sp
+    JOIN shards s
+      ON s.space_did = sp.space_did
+     AND s.shard_cid = sp.shard_cid
     LEFT JOIN commit_progress cp
-      ON cp.space_did = s.space_did
-     AND cp.copy_index = ?
-     AND cp.shard_cid = s.shard_cid
+      ON cp.space_did = sp.space_did
+     AND cp.copy_index = sp.copy_index
+     AND cp.shard_cid = sp.shard_cid
      AND cp.root_cid = s.root_cid
     LEFT JOIN shard_progress sp0
       ON sp0.space_did = s.space_did
      AND sp0.copy_index = 0
      AND sp0.shard_cid = s.shard_cid
-    WHERE s.space_did = ?
+    WHERE sp.space_did = ?
+      AND sp.copy_index = ?
+      AND sp.pulled = 1
       AND cp.shard_cid IS NULL
       AND COALESCE(s.piece_cid, sp0.stored_piece) IS NOT NULL
     ORDER BY s.rowid
@@ -288,12 +386,17 @@ export function prepareStatements(db) {
     insertFailedUpload,
     deleteFailedUploadsForSpace,
     selectSpaces,
-    selectUploads,
-    selectShards,
+    selectShardCountsBySpace,
+    selectUploadCountsBySpace,
     selectSpaceCopies,
-    selectShardProgress,
+    selectStoredPieces,
+    selectPendingPulledShards,
     selectCommitProgress,
     selectFailedUploads,
+    iterateUploads,
+    iterateSkippedUploads,
+    iterateShardsToStore,
+    countDistinctShardsForSpace,
     iterateShardsAll,
     iterateShardsByKind,
     iterateCommittableShards,

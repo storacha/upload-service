@@ -9,7 +9,11 @@ import { base32upper } from 'multiformats/bases/base32'
 import { Piece, MIN_PAYLOAD_SIZE } from '@web3-storage/data-segment'
 import { encode as encodeDagCbor } from '@ipld/dag-cbor'
 import { CID } from 'multiformats/cid'
-import { STATE_VERSION, serializeState } from '../src/state.js'
+import {
+  STATE_VERSION,
+  serializeState,
+  summarizeSpaceInventory,
+} from '../src/state.js'
 import { JsonFileStore } from '../src/store/json-store.js'
 
 /**
@@ -393,6 +397,7 @@ export function createMockInitialState() {
     version: STATE_VERSION,
     phase: 'reading',
     spaces: {},
+    spaceMigrationInventories: {},
     spacesInventories: {},
     readerProgressCursors: undefined,
   })
@@ -429,6 +434,13 @@ export async function createTestStore(opts = {}) {
   const stateFile = path.join(tmpDir, 'state.json')
 
   if (opts.state) {
+    for (const [did, inventory] of Object.entries(
+      opts.state.spacesInventories
+    )) {
+      opts.state.spaceMigrationInventories ??= {}
+      opts.state.spaceMigrationInventories[/** @type {API.SpaceDID} */ (did)] =
+        summarizeSpaceInventory(inventory)
+    }
     fs.writeFileSync(stateFile, JSON.stringify(serializeState(opts.state)))
   }
 

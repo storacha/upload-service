@@ -6,6 +6,7 @@ import { DEFAULT_STORE_OPERATION_RETRIES } from '../src/constants.js'
 import {
   clearFailedUploadsForRetry,
   commitKey,
+  summarizeSpaceInventory,
   transitionToApproved,
 } from '../src/state.js'
 
@@ -19,6 +20,9 @@ import {
  */
 function withInventory(state, inventory) {
   state.spacesInventories[inventory.did] = inventory
+  state.spaceMigrationInventories ??= {}
+  state.spaceMigrationInventories[inventory.did] =
+    summarizeSpaceInventory(inventory)
   return state
 }
 

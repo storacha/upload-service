@@ -1,4 +1,5 @@
 import { fetchDataSetPieces } from './fetch-dataset-pieces.js'
+import { iteratePullShards } from './inventory-iterators.js'
 import {
   buildShardMappings,
   checkPiecesOnSP,
@@ -8,6 +9,7 @@ import {
   buildInventoryCommitView,
   commitKey,
   getFullyCommittedShardCIDs,
+  getInventorySummaryMap,
 } from '../state.js'
 
 /**
@@ -29,6 +31,7 @@ const PULLED_STATUSES = new Set([
  *
  * @param {object} args
  * @param {RootAPI.MigrationState} args.state
+ * @param {RootAPI.MigrationStore} [args.store]
  * @param {import('viem').Client<import('viem').Transport, import('viem').Chain>} args.client
  * @param {RootAPI.SpaceDID[]} [args.spaceDIDs]
  * @param {number} [args.providerStatusConcurrency]
@@ -37,6 +40,7 @@ const PULLED_STATUSES = new Set([
  */
 export async function reconcileMigrationState({
   state,
+  store,
   client,
   spaceDIDs,
   providerStatusConcurrency = 10,
@@ -44,7 +48,9 @@ export async function reconcileMigrationState({
 }) {
   const targetSpaceDIDs =
     spaceDIDs ??
-    /** @type {RootAPI.SpaceDID[]} */ (Object.keys(state.spacesInventories))
+    /** @type {RootAPI.SpaceDID[]} */ (
+      Object.keys(getInventorySummaryMap(state))
+    )
 
   /** @type {API.ReconcileMigrationStateSpaceReport[]} */
   const spaces = []
@@ -58,12 +64,22 @@ export async function reconcileMigrationState({
   let stateCorrected = false
 
   for (const spaceDID of targetSpaceDIDs) {
-    const inventory = state.spacesInventories[spaceDID]
+    const inventory = state.spacesInventories?.[spaceDID]
     const spaceState = state.spaces[spaceDID]
-    if (!inventory || !spaceState) continue
+    if (!spaceState) continue
 
-    const inventoryCommitView = buildInventoryCommitView(inventory)
-    const mappings = buildShardMappings(spaceState, inventory)
+    const inventoryBuckets = inventory
+      ? inventory
+      : store
+      ? {
+          shards: iteratePullShards(store, spaceDID),
+          shardsToStore: store.iterateShardsToStore(spaceDID),
+        }
+      : undefined
+    if (!inventoryBuckets) continue
+
+    const inventoryCommitView = buildInventoryCommitView(inventoryBuckets)
+    const mappings = buildShardMappings(spaceState, inventoryBuckets)
 
     /** @type {API.ReconcileMigrationStateCopyReport[]} */
     const copies = []
@@ -141,7 +157,7 @@ export async function reconcileMigrationState({
     }
 
     if (correctedAnyForSpace) {
-      normalizeReconciledSpacePhase(spaceState, inventory)
+      normalizeReconciledSpacePhase(spaceState, inventoryCommitView)
     }
 
     if (
@@ -462,10 +478,18 @@ function hasCopyReportData(changes, warnings) {
 
 /**
  * @param {RootAPI.SpaceState} space
- * @param {RootAPI.SpaceInventory} inventory
+ * @param {RootAPI.InventoryCommitView} inventoryCommitView
  */
-function normalizeReconciledSpacePhase(space, inventory) {
-  const totalShards = inventory.shards.length + inventory.shardsToStore.length
+function normalizeReconciledSpacePhase(space, inventoryCommitView) {
+  // Derive totalShards from the already-built commit view so this function
+  // never re-iterates the shard buckets (which may be single-pass generators).
+  // Count: unique CIDs with 1 root = 1 each; CIDs with N roots = N each.
+  // This equals shards.length + shardsToStore.length for well-formed inventory.
+  let totalShards = 0
+  for (const shardCid of inventoryCommitView.representativeRootByShardCid.keys()) {
+    const multiRoots = inventoryCommitView.multiRootShards.get(shardCid)
+    totalShards += multiRoots ? multiRoots.length : 1
+  }
   const hasCommitted = space.copies.some((copy) => copy.committed.size > 0)
   const hasStaged = space.copies.some(
     (copy) => copy.pulled.size > 0 || Object.keys(copy.storedShards).length > 0

@@ -5,6 +5,7 @@ import {
   clearStoredPiece,
   commitKey,
   STATE_VERSION,
+  summarizeSpaceInventory,
 } from '../src/state.js'
 
 /**
@@ -188,6 +189,38 @@ describe('pruneStagedShards', () => {
  * @returns {API.MigrationState}
  */
 function createState(input = {}) {
+  const inventory = {
+    did: SPACE_DID,
+    uploads: ['bafy-root-1'],
+    shards: [
+      {
+        root: 'bafy-root-1',
+        cid: 'bafy-shard-1',
+        pieceCID: 'bafkz-piece-1',
+        sourceURL: 'https://source.example/shard-1',
+        sizeBytes: 1n,
+      },
+      {
+        root: 'bafy-root-1',
+        cid: 'bafy-shard-2',
+        pieceCID: 'bafkz-piece-2',
+        sourceURL: 'https://source.example/shard-2',
+        sizeBytes: 1n,
+      },
+    ],
+    shardsToStore: [
+      {
+        root: 'bafy-root-2',
+        cid: 'bafy-shard-3',
+        sourceURL: 'https://source.example/shard-3',
+        sizeBytes: 1n,
+      },
+    ],
+    skippedUploads: [],
+    totalBytes: 3n,
+    totalSizeToMigrate: 3n,
+  }
+
   return /** @type {API.MigrationState} */ ({
     version: STATE_VERSION,
     phase: 'migrating',
@@ -209,38 +242,11 @@ function createState(input = {}) {
         ],
       },
     },
+    spaceMigrationInventories: {
+      [SPACE_DID]: summarizeSpaceInventory(inventory),
+    },
     spacesInventories: {
-      [SPACE_DID]: {
-        did: SPACE_DID,
-        uploads: ['bafy-root-1'],
-        shards: [
-          {
-            root: 'bafy-root-1',
-            cid: 'bafy-shard-1',
-            pieceCID: 'bafkz-piece-1',
-            sourceURL: 'https://source.example/shard-1',
-            sizeBytes: 1n,
-          },
-          {
-            root: 'bafy-root-1',
-            cid: 'bafy-shard-2',
-            pieceCID: 'bafkz-piece-2',
-            sourceURL: 'https://source.example/shard-2',
-            sizeBytes: 1n,
-          },
-        ],
-        shardsToStore: [
-          {
-            root: 'bafy-root-2',
-            cid: 'bafy-shard-3',
-            sourceURL: 'https://source.example/shard-3',
-            sizeBytes: 1n,
-          },
-        ],
-        skippedUploads: [],
-        totalBytes: 3n,
-        totalSizeToMigrate: 3n,
-      },
+      [SPACE_DID]: inventory,
     },
     readerProgressCursors: undefined,
   })

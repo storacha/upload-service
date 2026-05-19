@@ -28,9 +28,10 @@ const LIVE_STATUS_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '�
  * @param {() => Promise<void>} args.persistCheckpoint
  * @param {AbortSignal} args.signal
  *
- * Note: inventory totals are captured once at migration start. Mutations to
- * state.spacesInventories after this call are not reflected in the live status
- * block.
+ * Note: inventory totals are captured once at migration start from the store
+ * summary/query surface. Later mutations to any legacy in-memory
+ * `state.spacesInventories` entries are not authoritative and are not
+ * reflected in the live status block.
  */
 export async function runMigration({
   plan,
@@ -44,7 +45,7 @@ export async function runMigration({
 }) {
   const state = store.getState()
   printPhaseTitle('Migrating')
-  printResumeStatus(state)
+  printResumeStatus(state, store)
   const startedAt = Date.now()
   const canRedraw = process.stdout.isTTY === true
   let statusBlockPrinted = 0
@@ -62,8 +63,8 @@ export async function runMigration({
    * }}
    */
   const liveStatus = {}
-  const inventoryTotals = summarizeInventoryTotals(state)
-  let progress = summarizeProgress(state, inventoryTotals)
+  const inventoryTotals = summarizeInventoryTotals(state, store)
+  let progress = summarizeProgress(state, store, inventoryTotals)
   let progressDirty = false
 
   const markProgressDirty = () => {
@@ -72,7 +73,7 @@ export async function runMigration({
 
   const getProgress = () => {
     if (progressDirty) {
-      progress = summarizeProgress(state, inventoryTotals)
+      progress = summarizeProgress(state, store, inventoryTotals)
       progressDirty = false
     }
     return progress
@@ -363,6 +364,7 @@ export async function runMigration({
           Date.now() - startedAt,
           synapse.chain.id,
           state,
+          store,
           plan
         )
         break

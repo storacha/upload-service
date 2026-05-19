@@ -46,7 +46,8 @@
     "clean": "rm -rf dist *.tsbuildinfo coverage",
     "lint": "eslint '**/*.{js,ts}' && prettier --check '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
     "lint:fix": "eslint --fix '**/*.{js,ts}' && prettier --write '**/*.{js,ts,yml,json}' --ignore-path ../../.gitignore",
-    "build": "tsc --build",
+    "build": "tsc --build && pnpm run copy-migrations",
+    "copy-migrations": "mkdir -p dist/store/sqlite/migrations && cp src/store/sqlite/migrations/*.sql dist/store/sqlite/migrations/",
     "test": "npm run test:node",
     "test:node": "vitest --run"
   },

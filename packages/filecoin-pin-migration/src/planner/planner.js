@@ -1,5 +1,5 @@
 import { computeMigrationCosts } from './compute-migration-costs.js'
-import { buildResumeState } from '../state.js'
+import { buildResumeState, getInventorySummaryMap } from '../state.js'
 
 /**
  * @import { CreatePlanInput, MigrationEvent, MigrationPlan } from '../api.js'
@@ -10,12 +10,10 @@ const SAFETY_BUFFER_BPS = 500n
 const BPS_BASE = 10000n
 
 /**
- * Build a migration plan from space inventories held in state.
+ * Build a migration plan from the store-owned reader output.
  *
- * Inventories are read from `state.spacesInventories` — populated by
- * `buildMigrationInventories` before the planner runs. The planner aggregates
- * totals, computes costs via the Synapse SDK, writes SP bindings to state, and
- * yields:
+ * The planner aggregates inventory totals from the in-memory summaries,
+ * computes costs via the Synapse SDK, writes SP bindings to state, and yields:
  *   state:checkpoint — SP bindings written; state.phase → 'approved'
  *   planner:ready       — carries the MigrationPlan for consumer display/approval
  *
@@ -46,7 +44,12 @@ const BPS_BASE = 10000n
  */
 export async function* createMigrationPlan({ synapse, store, providerIds }) {
   const state = store.getState()
-  const inventories = Object.values(state.spacesInventories)
+  const summaries = Object.values(getInventorySummaryMap(state))
+  const costSpaces = summaries.map((inv) => ({
+    did: inv.did,
+    ...(inv.name !== undefined ? { name: inv.name } : {}),
+    totalSizeToMigrate: inv.totalSizeToMigrate,
+  }))
 
   let totalUploads = 0
   let totalShards = 0
@@ -55,21 +58,29 @@ export async function* createMigrationPlan({ synapse, store, providerIds }) {
   /** @type {string[]} */
   const warnings = []
 
-  for (const inv of inventories) {
-    totalUploads += inv.uploads.length
-    totalShards += inv.shards.length + inv.shardsToStore.length
+  for (const inv of summaries) {
+    totalUploads +=
+      'uploadsCount' in inv ? inv.uploadsCount : inv.uploads.length
+    totalShards +=
+      'shardsCount' in inv && 'shardsToStoreCount' in inv
+        ? inv.shardsCount + inv.shardsToStoreCount
+        : inv.shards.length + inv.shardsToStore.length
     totalBytes += inv.totalBytes
     bytesToMigrate += inv.totalSizeToMigrate
 
-    if (inv.skippedUploads.length > 0) {
+    const skippedUploadsCount =
+      'skippedUploadsCount' in inv
+        ? inv.skippedUploadsCount
+        : inv.skippedUploads.length
+    if (skippedUploadsCount > 0) {
       warnings.push(
-        `${inv.did}: ${inv.skippedUploads.length} upload(s) have unresolvable shards and will be skipped`
+        `${inv.did}: ${skippedUploadsCount} upload(s) have unresolvable shards and will be skipped`
       )
     }
   }
 
   // ── Cost aggregation (creates contexts + reads chain in one batch) ────────
-  const costs = await computeMigrationCosts(inventories, synapse, {
+  const costs = await computeMigrationCosts(costSpaces, synapse, {
     resumeState: buildResumeState(state),
     configuredProviderIds: providerIds,
   })

@@ -9,6 +9,7 @@ import {
   MissingSqliteDependencyError,
 } from '@storacha/filecoin-pin-migration'
 import {
+  convertJsonStateFileToSqlite,
   loadSelectedRootsFile,
   pruneStagedShards,
 } from '@storacha/filecoin-pin-migration/helpers'
@@ -99,6 +100,21 @@ export async function spaceMigrate(opts = {}) {
       opts.stateFile,
       config.stateFormat
     )
+
+    if (
+      context.stateFormat === 'sqlite' &&
+      context.stateFile.endsWith('.json')
+    ) {
+      const sqliteTarget = context.stateFile.slice(0, -'.json'.length) + '.db'
+      console.log(chalk.dim(`Converting JSON state file to SQLite`))
+      await convertJsonStateFileToSqlite({
+        sourcePath: context.stateFile,
+        targetPath: sqliteTarget,
+      })
+      console.log(chalk.dim('Conversion complete.'))
+      context.stateFile = sqliteTarget
+    }
+
     const startState = await resolveStartState({
       stateFile: context.stateFile,
       stateFormat: context.stateFormat,
@@ -129,7 +145,7 @@ export async function spaceMigrate(opts = {}) {
       type: context.stateFormat,
       path: context.stateFile,
     })
-    const activeStore = store
+    let activeStore = store
 
     const state = activeStore.getState()
     const persistedReaderCursor =
@@ -202,9 +218,10 @@ export async function spaceMigrate(opts = {}) {
     )
     if (readerResult.interrupted) return
 
-    const spaceInventory =
-      activeStore.getState().spacesInventories[context.spaceDID]
-    if (!spaceInventory || spaceInventory.uploads.length === 0) {
+    const spaceInventorySummary = activeStore.getSpaceInventorySummary(
+      context.spaceDID
+    )
+    if (!spaceInventorySummary || spaceInventorySummary.uploadsCount === 0) {
       console.warn(
         'No uploads are available to migrate. All uploads failed during the reader phase.'
       )
@@ -225,6 +242,7 @@ export async function spaceMigrate(opts = {}) {
     if (config.resume || config.retry) {
       const cleanupResult = await pruneStagedShards({
         state: activeStore.getState(),
+        store: activeStore,
         spaceDIDs: [context.spaceDID],
         applyClearPullProgress: (spaceDID, copyIndex, shardCid) =>
           activeStore.clearPullProgress(spaceDID, copyIndex, shardCid),
@@ -247,6 +265,15 @@ export async function spaceMigrate(opts = {}) {
       )
     )
 
+    if (!config.nonInteractive) {
+      // The reader/planner phases have already checkpointed every persisted
+      // change needed to resume from here. Close the store before waiting for
+      // interactive confirmation so Ctrl+C at the prompt cannot leave behind
+      // an open lock or an in-flight JSON `.tmp` write.
+      await activeStore.close()
+      store = undefined
+    }
+
     const proceedWithPlan = config.nonInteractive
       ? true
       : await confirm({
@@ -257,6 +284,14 @@ export async function spaceMigrate(opts = {}) {
     if (!proceedWithPlan) {
       console.log('Migration cancelled')
       return
+    }
+
+    if (!config.nonInteractive) {
+      activeStore = await createStore({
+        type: context.stateFormat,
+        path: context.stateFile,
+      })
+      store = activeStore
     }
 
     const migrationResult = await runPhase('migrating', () =>

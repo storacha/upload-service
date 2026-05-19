@@ -10,6 +10,15 @@ import * as State from '../state.js'
  */
 
 /**
+ * @typedef {{
+ *   uploads: string[]
+ *   shards: API.ResolvedShard[]
+ *   shardsToStore: API.StoreShard[]
+ *   skippedUploads: string[]
+ * }} InventoryArrays
+ */
+
+/**
  * @typedef {'open' | 'closing' | 'closed'} StoreStatus
  */
 
@@ -26,6 +35,12 @@ import * as State from '../state.js'
  * @implements {API.MigrationStore}
  */
 export class JsonFileStore {
+  /** @type {Map<API.SpaceDID, InventoryArrays>} */
+  #inventoryArrays = new Map()
+
+  /** @type {Map<API.SpaceDID, number>} */
+  #distinctShardCountCache = new Map()
+
   /** @type {API.MigrationState | undefined} */
   #state
 
@@ -79,6 +94,7 @@ export class JsonFileStore {
     acquireLock(store.#lockPath)
     try {
       store.#state = loadOrInitState(path)
+      store.#seedInventoryArraysFromState(store.#state)
       store.#writer = new Writer(path)
       store.#status = 'open'
     } catch (cause) {
@@ -103,24 +119,171 @@ export class JsonFileStore {
     return this.#state
   }
 
+  /**
+   * @param {API.MigrationState} state
+   */
+  #seedInventoryArraysFromState(state) {
+    this.#inventoryArrays.clear()
+    this.#distinctShardCountCache.clear()
+    for (const [did, inventory] of Object.entries(
+      state.spacesInventories ?? {}
+    )) {
+      this.#setInventoryArraysFromInventory(
+        /** @type {API.SpaceDID} */ (did),
+        inventory
+      )
+    }
+  }
+
+  /**
+   * @param {API.SpaceDID} spaceDID
+   * @param {API.SpaceInventory} inventory
+   */
+  #setInventoryArraysFromInventory(spaceDID, inventory) {
+    this.#inventoryArrays.set(spaceDID, {
+      uploads: inventory.uploads,
+      shards: inventory.shards,
+      shardsToStore: inventory.shardsToStore,
+      skippedUploads: inventory.skippedUploads,
+    })
+  }
+
+  /**
+   * @param {API.SpaceDID} spaceDID
+   * @returns {InventoryArrays | undefined}
+   */
+  #getInventoryArrays(spaceDID) {
+    return this.#inventoryArrays.get(spaceDID)
+  }
+
   // ── Read access ──────────────────────────────────────────────────────────
 
   /**
    * Return the live in-memory state owned by this store.
    *
-   * Transitional read seam for Commit 2 call-site rewiring — prefer narrow
-   * store queries and iterators for new code. On SQLite-backed stores this
-   * rematerializes the full state on every call.
+   * Transitional read seam for call-site rewiring. New code should
+   * prefer narrow store queries and iterators over `getState()`, especially for
+   * inventory-heavy reads. Summary-first backends may omit full
+   * `spacesInventories` entries from the returned runtime state.
    *
-   * **Callers MUST NOT mutate the returned object.** The store cannot detect
-   * external mutations and they will not be persisted by `checkpoint()`. Use
-   * the `record*` / `transitionTo*` / `finalize*` methods instead.
+   * Callers should treat the returned object as read-only. Normal mutations must
+   * go through the store's `record*` / `transitionTo*` / `finalize*` methods so
+   * persistence stays correct. Direct mutation is only tolerated in a small
+   * number of internal transitional helper flows and is not part of the public
+   * contract.
    *
    * @returns {API.MigrationState}
    * @throws {StoreClosedError} If the store is not in `'open'` state.
    */
   getState() {
     return this.#requireOpenState('getState')
+  }
+
+  /**
+   * @param {API.SpaceDID} spaceDID
+   * @returns {API.SpaceInventorySummary | undefined}
+   */
+  getSpaceInventorySummary(spaceDID) {
+    const state = this.#requireOpenState('getSpaceInventorySummary')
+    return (
+      state.spaceMigrationInventories?.[spaceDID] ??
+      (state.spacesInventories?.[spaceDID]
+        ? State.summarizeSpaceInventory(state.spacesInventories[spaceDID])
+        : undefined)
+    )
+  }
+
+  /**
+   * @param {API.SpaceDID} spaceDID
+   * @returns {number}
+   */
+  getSpaceDistinctShardCount(spaceDID) {
+    this.#requireOpenState('getSpaceDistinctShardCount')
+    const cached = this.#distinctShardCountCache.get(spaceDID)
+    if (cached !== undefined) return cached
+
+    const inventory = this.#getInventoryArrays(spaceDID)
+    if (!inventory) return 0
+
+    const shardCIDs = new Set()
+    for (const shard of inventory.shards) shardCIDs.add(shard.cid)
+    for (const shard of inventory.shardsToStore) shardCIDs.add(shard.cid)
+
+    const count = shardCIDs.size
+    this.#distinctShardCountCache.set(spaceDID, count)
+    return count
+  }
+
+  /**
+   * @param {API.SpaceDID} spaceDID
+   * @returns {Iterable<string>}
+   */
+  iterateUploads(spaceDID) {
+    this.#requireOpenState('iterateUploads')
+    return this.#iterateUploadsGenerator(spaceDID)
+  }
+
+  /**
+   * @param {API.SpaceDID} spaceDID
+   * @returns {Generator<string>}
+   */
+  *#iterateUploadsGenerator(spaceDID) {
+    this.#requireOpenState('iterateUploads')
+    const inventory = this.#getInventoryArrays(spaceDID)
+    if (!inventory) return
+
+    for (const root of inventory.uploads) {
+      this.#requireOpenState('iterateUploads')
+      yield root
+    }
+  }
+
+  /**
+   * @param {API.SpaceDID} spaceDID
+   * @returns {Iterable<string>}
+   */
+  iterateSkippedUploads(spaceDID) {
+    this.#requireOpenState('iterateSkippedUploads')
+    return this.#iterateSkippedUploadsGenerator(spaceDID)
+  }
+
+  /**
+   * @param {API.SpaceDID} spaceDID
+   * @returns {Generator<string>}
+   */
+  *#iterateSkippedUploadsGenerator(spaceDID) {
+    this.#requireOpenState('iterateSkippedUploads')
+    const inventory = this.#getInventoryArrays(spaceDID)
+    if (!inventory) return
+
+    for (const root of inventory.skippedUploads) {
+      this.#requireOpenState('iterateSkippedUploads')
+      yield root
+    }
+  }
+
+  /**
+   * @param {API.SpaceDID} spaceDID
+   * @returns {Iterable<API.StoreShard>}
+   */
+  iterateShardsToStore(spaceDID) {
+    this.#requireOpenState('iterateShardsToStore')
+    return this.#iterateShardsToStoreGenerator(spaceDID)
+  }
+
+  /**
+   * @param {API.SpaceDID} spaceDID
+   * @returns {Generator<API.StoreShard>}
+   */
+  *#iterateShardsToStoreGenerator(spaceDID) {
+    this.#requireOpenState('iterateShardsToStore')
+    const inventory = this.#getInventoryArrays(spaceDID)
+    if (!inventory) return
+
+    for (const shard of inventory.shardsToStore) {
+      this.#requireOpenState('iterateShardsToStore')
+      yield shard
+    }
   }
 
   /**
@@ -139,8 +302,8 @@ export class JsonFileStore {
    * @returns {Generator<API.StoreShardRow>}
    */
   *#iterateRowsGenerator(spaceDID, kindFilter) {
-    const state = this.#requireOpenState('iterateShards')
-    const inventory = state.spacesInventories[spaceDID]
+    this.#requireOpenState('iterateShards')
+    const inventory = this.#getInventoryArrays(spaceDID)
     if (!inventory) return
 
     if (!kindFilter || kindFilter === 'pull') {
@@ -191,7 +354,7 @@ export class JsonFileStore {
    */
   *#iterateCommittableRowsGenerator(spaceDID, copyIndex) {
     const state = this.#requireOpenState('iterateCommittableShards')
-    const inventory = state.spacesInventories[spaceDID]
+    const inventory = this.#getInventoryArrays(spaceDID)
     if (!inventory) return
 
     const space = state.spaces[spaceDID]
@@ -255,6 +418,11 @@ export class JsonFileStore {
   checkpointInventoryPage(page) {
     const state = this.#requireOpenState('checkpointInventoryPage')
     State.checkpointInventoryPage(state, page)
+    const inventory = state.spacesInventories?.[page.spaceDID]
+    if (inventory && !this.#inventoryArrays.has(page.spaceDID)) {
+      this.#setInventoryArraysFromInventory(page.spaceDID, inventory)
+    }
+    this.#distinctShardCountCache.delete(page.spaceDID)
   }
 
   transitionToPlanning() {

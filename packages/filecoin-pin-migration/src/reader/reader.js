@@ -12,6 +12,8 @@ import { isAbortError, throwIfAborted } from '../errors.js'
 import { resolveClaimsIndex } from './indexer.js'
 import { normalizePositiveInteger } from '../utils.js'
 
+import { getInventorySummaryMap } from '../state.js'
+
 const EXPLICIT_ROOT_CURSOR_PREFIX = 'explicit-roots:'
 
 /**
@@ -37,9 +39,9 @@ const EXPLICIT_ROOT_CURSOR_PREFIX = 'explicit-roots:'
  * ## Resume
  *
  * Pass a previously persisted MigrationState to resume an interrupted read:
- *   - Spaces already in state.spacesInventories with no cursor → skipped entirely
+ *   - Spaces already in state.spaceMigrationInventories with no cursor → skipped entirely
  *   - Spaces with a cursor in state.readerProgressCursors → resumed from that page
- *   - Spaces absent from state.spacesInventories → started fresh
+ *   - Spaces absent from state.spaceMigrationInventories → started fresh
  *
  * When uploadRootsBySpace is provided, the reader switches to explicit-root
  * mode for those spaces:
@@ -115,7 +117,7 @@ export async function* buildMigrationInventories({
     const spaceDID = /** @type {SpaceDID} */ (did)
     // Space already fully read — skip
     if (
-      state.spacesInventories[spaceDID] &&
+      getInventorySummaryMap(state)[spaceDID] &&
       !state.readerProgressCursors?.[spaceDID]
     ) {
       continue

@@ -4,11 +4,14 @@ import {
   buildInventoryCommitView,
   clearFailedUploadsForRetry,
   commitKey,
+  serializeState,
   deserializeState,
   getFullyCommittedShardCIDs,
   STATE_VERSION,
+  summarizeSpaceInventory,
   transitionToApproved,
 } from '../src/state.js'
+import { serializeStoreState } from '../src/store/serialize-store-state.js'
 
 /**
  * @import * as API from '../src/api.js'
@@ -171,6 +174,113 @@ describe('deserializeState', () => {
         spacesInventories: {},
       })
     ).toThrow(/expected state version/)
+  })
+})
+
+describe('serializeState', () => {
+  it('throws for summary-only runtime states without full inventories', () => {
+    const inventory = {
+      did: SPACE_DID,
+      uploads: ['bafy-root-1'],
+      shards: [
+        {
+          root: 'bafy-root-1',
+          cid: 'bafy-shard-1',
+          pieceCID: 'bafkz-piece-1',
+          sourceURL: 'https://source.example/shard-1',
+          sizeBytes: 1n,
+        },
+      ],
+      shardsToStore: [],
+      skippedUploads: [],
+      totalBytes: 1n,
+      totalSizeToMigrate: 1n,
+    }
+    const state = /** @type {API.MigrationState} */ ({
+      version: STATE_VERSION,
+      phase: 'reading',
+      spaces: {},
+      spaceMigrationInventories: {
+        [SPACE_DID]: summarizeSpaceInventory(inventory),
+      },
+      spacesInventories: {},
+    })
+
+    expect(() => serializeState(state)).toThrow(
+      /summary-only runtime states must pass a fully materialized spacesInventories map/
+    )
+  })
+
+  it('serializeStoreState preserves the legacy state-file shape from store iterators', () => {
+    const inventory = {
+      did: SPACE_DID,
+      uploads: ['bafy-root-1'],
+      shards: [
+        {
+          root: 'bafy-root-1',
+          cid: 'bafy-shard-1',
+          pieceCID: 'bafkz-piece-1',
+          sourceURL: 'https://source.example/shard-1',
+          sizeBytes: 1n,
+        },
+      ],
+      shardsToStore: [
+        {
+          root: 'bafy-root-2',
+          cid: 'bafy-store-shard-1',
+          sourceURL: 'https://source.example/store-shard-1',
+          sizeBytes: 2n,
+        },
+      ],
+      skippedUploads: ['bafy-root-9'],
+      totalBytes: 3n,
+      totalSizeToMigrate: 3n,
+    }
+    const state = /** @type {API.MigrationState} */ ({
+      version: STATE_VERSION,
+      phase: 'reading',
+      spaces: {},
+      spaceMigrationInventories: {
+        [SPACE_DID]: summarizeSpaceInventory(inventory),
+      },
+      spacesInventories: {},
+    })
+    const expected = serializeState(
+      /** @type {API.MigrationState} */ ({
+        ...state,
+        spacesInventories: {
+          [SPACE_DID]: inventory,
+        },
+      })
+    )
+    const getSpaceInventorySummary =
+      /** @type {API.MigrationStore['getSpaceInventorySummary']} */ (
+        (spaceDID) =>
+          spaceDID === SPACE_DID
+            ? state.spaceMigrationInventories?.[SPACE_DID]
+            : undefined
+      )
+    const store = /** @type {API.MigrationStore} */ (
+      /** @type {unknown} */ ({
+        getState: () => state,
+        getSpaceInventorySummary,
+        iterateUploads: () => inventory.uploads,
+        iterateSkippedUploads: () => inventory.skippedUploads,
+        iterateShardsToStore: () => inventory.shardsToStore,
+        iterateShards: () =>
+          inventory.shards.map((shard) => ({
+            kind: 'pull',
+            spaceDID: SPACE_DID,
+            shardCid: shard.cid,
+            root: shard.root,
+            sourceURL: shard.sourceURL,
+            sizeBytes: shard.sizeBytes,
+            pieceCID: shard.pieceCID,
+          })),
+      })
+    )
+
+    expect(serializeStoreState(store)).toEqual(expected)
   })
 })
 

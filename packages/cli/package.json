@@ -47,6 +47,7 @@
     "@ucanto/server": "catalog:",
     "@web-std/blob": "catalog:",
     "@web3-storage/sigv4": "catalog:",
+    "better-sqlite3": "^11.8.1",
     "entail": "^2.1.1",
     "multiformats": "catalog:",
     "prettier": "^3.0.3",

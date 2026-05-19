@@ -45,7 +45,7 @@ function resolveConfiguredCopyProviders(spaceDID, configuredProviderIds) {
 }
 
 /**
- * @param {API.SpaceInventory} space
+ * @param {API.MigrationCostSpace} space
  * @param {number} copyIndex
  * @param {API.Synapse} synapse
  * @param {bigint | undefined} providerId
@@ -108,7 +108,7 @@ async function createCopyContext(
  * Fail-fast on createContext rejection: a plan with a silently missing space is
  * a trap that lets users approve a partial migration.
  *
- * @param {API.SpaceInventory[]} spaces
+ * @param {API.MigrationCostSpace[]} spaces
  * @param {API.Synapse} synapse
  * @param {object} [opts]
  * @param {API.ResumeState} [opts.resumeState]

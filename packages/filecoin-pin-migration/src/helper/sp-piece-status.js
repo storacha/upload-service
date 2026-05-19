@@ -16,7 +16,7 @@
  * probing. This intentionally omits the reverse map and inventory gap scan.
  *
  * @param {RootAPI.SpaceState} spaceState
- * @param {RootAPI.SpaceInventory} inventory
+ * @param {RootAPI.InventoryShardBuckets} inventory
  */
 export function buildShardCIDToPieceIndex(spaceState, inventory) {
   const shardCIDToPieceCID = new Map()
@@ -40,7 +40,7 @@ export function buildShardCIDToPieceIndex(spaceState, inventory) {
 
 /**
  * @param {RootAPI.SpaceState} spaceState
- * @param {RootAPI.SpaceInventory} inventory
+ * @param {RootAPI.InventoryShardBuckets} inventory
  */
 export function buildShardMappings(spaceState, inventory) {
   const pieceCIDToShardEntries = new Map()

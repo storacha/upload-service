@@ -39,6 +39,7 @@ CREATE TABLE shards (
 );
 
 CREATE INDEX idx_shards_kind ON shards(space_did, kind);
+CREATE INDEX idx_shards_root ON shards(space_did, root_cid);
 
 CREATE TABLE space_copies (
   space_did         TEXT NOT NULL,
@@ -61,6 +62,9 @@ CREATE TABLE shard_progress (
   CHECK (stored_piece IS NULL OR copy_index = 0),
   FOREIGN KEY (space_did, copy_index) REFERENCES space_copies(space_did, copy_index)
 );
+
+CREATE INDEX idx_shard_progress_pulled ON shard_progress(space_did, copy_index, shard_cid)
+  WHERE pulled = 1;
 
 CREATE TABLE commit_progress (
   space_did   TEXT NOT NULL,

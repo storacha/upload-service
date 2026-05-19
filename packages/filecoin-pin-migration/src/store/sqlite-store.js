@@ -1,6 +1,7 @@
 import { StoreClosedError } from '../errors.js'
 import * as State from '../state.js'
 import { materializeState } from './sqlite/materialize-state.js'
+import { applySqlitePragmas } from './sqlite/pragmas.js'
 import { runMigrations } from './sqlite/run-migrations.js'
 import { prepareStatements } from './sqlite/statements.js'
 
@@ -16,9 +17,9 @@ import { prepareStatements } from './sqlite/statements.js'
 /**
  * SQLite-backed implementation of {@link API.MigrationStore}.
  *
- * Preserves Commit 2's live-state semantics by keeping an identity-stable
- * in-memory {@link API.MigrationState} cache while writing each mutation
- * through to SQLite synchronously.
+ * Preserves the live-state semantics expected by the reader/planner/migrator
+ * pipeline by keeping an identity-stable in-memory {@link API.MigrationState}
+ * cache while writing each mutation through to SQLite synchronously.
  *
  * @implements {API.MigrationStore}
  */
@@ -37,6 +38,9 @@ export class SqliteStore {
 
   /** @type {ReturnType<typeof prepareStatements> | undefined} */
   #stmts
+
+  /** @type {Set<() => void>} */
+  #activeIteratorFinalizers = new Set()
 
   /**
    * @param {object} args
@@ -61,7 +65,7 @@ export class SqliteStore {
     const db = /** @type {BetterSqlite3.Database} */ (new Database(path))
 
     try {
-      applyPragmas(db)
+      applySqlitePragmas(db)
       await runMigrations(db)
       const stmts = prepareStatements(db)
       stmts.ensureMigrationStateRow.run()
@@ -116,16 +120,104 @@ export class SqliteStore {
 
   /**
    * @param {API.SpaceDID} spaceDID
+   * @returns {API.SpaceInventorySummary | undefined}
+   */
+  getSpaceInventorySummary(spaceDID) {
+    const state = this.#requireOpenState('getSpaceInventorySummary')
+    return state.spaceMigrationInventories?.[spaceDID]
+  }
+
+  /**
+   * @param {API.SpaceDID} spaceDID
+   * @returns {number}
+   */
+  getSpaceDistinctShardCount(spaceDID) {
+    this.#requireOpenState('getSpaceDistinctShardCount')
+    const row = /** @type {{ count: number } | undefined} */ (
+      this.#requireStatements(
+        'getSpaceDistinctShardCount'
+      ).countDistinctShardsForSpace.get(spaceDID)
+    )
+    return row?.count ?? 0
+  }
+
+  /**
+   * @param {API.SpaceDID} spaceDID
+   * @returns {Iterable<string>}
+   */
+  iterateUploads(spaceDID) {
+    this.#requireOpenState('iterateUploads')
+    const iterable =
+      this.#requireStatements('iterateUploads').iterateUploads.iterate(spaceDID)
+    const iterator = iterable[Symbol.iterator]()
+    return this.#wrapStringIterator(
+      'iterateUploads',
+      iterator,
+      /** @param {{ root_cid: string }} row */ (row) => row.root_cid
+    )
+  }
+
+  /**
+   * @param {API.SpaceDID} spaceDID
+   * @returns {Iterable<string>}
+   */
+  iterateSkippedUploads(spaceDID) {
+    this.#requireOpenState('iterateSkippedUploads')
+    const iterable =
+      this.#requireStatements(
+        'iterateSkippedUploads'
+      ).iterateSkippedUploads.iterate(spaceDID)
+    const iterator = iterable[Symbol.iterator]()
+    return this.#wrapStringIterator(
+      'iterateSkippedUploads',
+      iterator,
+      /** @param {{ root_cid: string }} row */ (row) => row.root_cid
+    )
+  }
+
+  /**
+   * @param {API.SpaceDID} spaceDID
+   * @returns {Iterable<API.StoreShard>}
+   */
+  iterateShardsToStore(spaceDID) {
+    this.#requireOpenState('iterateShardsToStore')
+    const iterable =
+      this.#requireStatements(
+        'iterateShardsToStore'
+      ).iterateShardsToStore.iterate(spaceDID)
+    const iterator = iterable[Symbol.iterator]()
+    return this.#wrapStoreShardIterator(
+      iterator,
+      /**
+         @param {{
+        root_cid: string
+        shard_cid: string
+        piece_cid: string | null
+        source_url: string
+        size_bytes: bigint
+      }} row */ (row) => ({
+        root: row.root_cid,
+        cid: row.shard_cid,
+        ...(row.piece_cid != null ? { pieceCID: row.piece_cid } : {}),
+        sourceURL: row.source_url,
+        sizeBytes: row.size_bytes,
+      })
+    )
+  }
+
+  /**
+   * @param {API.SpaceDID} spaceDID
    * @param {{ kind?: API.ShardKind }} [options]
    */
   iterateShards(spaceDID, options) {
     this.#requireOpenState('iterateShards')
     const stmts = this.#requireStatements('iterateShards')
-    // Read eagerly so close()/closeSync() never contend with a live SQLite cursor.
-    const rows = options?.kind
-      ? stmts.iterateShardsByKind.all(spaceDID, options.kind)
-      : stmts.iterateShardsAll.all(spaceDID)
-    return this.#wrapShardIterator('iterateShards', rows)
+    const iterator = options?.kind
+      ? stmts.iterateShardsByKind.iterate(spaceDID, options.kind)[
+          Symbol.iterator
+        ]()
+      : stmts.iterateShardsAll.iterate(spaceDID)[Symbol.iterator]()
+    return this.#wrapShardIterator('iterateShards', iterator)
   }
 
   /**
@@ -136,17 +228,16 @@ export class SqliteStore {
     this.#requireOpenState('iterateCommittableShards')
     const stmts = this.#requireStatements('iterateCommittableShards')
     return this.#wrapCommittableIterator(
-      stmts.iterateCommittableShards.all(copyIndex, copyIndex, spaceDID)
+      stmts.iterateCommittableShards.iterate(spaceDID, copyIndex)
     )
   }
 
   /**
    * @param {string} method
-   * @param {Iterable<unknown>} iterable
+   * @param {Iterator<unknown>} iterator
    */
-  *#wrapShardIterator(method, iterable) {
-    for (const row of iterable) {
-      this.#requireOpenState(method)
+  #wrapShardIterator(method, iterator) {
+    return this.#createStreamingIterator(method, iterator, (row) => {
       const shard = /**
          @type {{
         kind: API.ShardKind
@@ -158,28 +249,32 @@ export class SqliteStore {
         piece_cid: string | null
       }} */ (row)
 
-      yield /** @type {API.StoreShardRow} */ ({
+      if (shard.kind === 'pull' && shard.piece_cid == null) {
+        throw new Error(
+          `pull shard ${shard.shard_cid} (space ${shard.space_did}) is missing piece_cid — data integrity violation`
+        )
+      }
+      return /** @type {API.StoreShardRow} */ ({
         kind: shard.kind,
         spaceDID: shard.space_did,
         shardCid: shard.shard_cid,
         root: shard.root_cid,
         sourceURL: shard.source_url,
         sizeBytes: shard.size_bytes,
-        pieceCID:
-          shard.kind === 'pull'
-            ? /** @type {string} */ (shard.piece_cid)
-            : shard.piece_cid,
+        pieceCID: shard.piece_cid,
       })
-    }
+    })
   }
 
   /**
-   * @param {Iterable<unknown>} iterable
+   * @param {Iterator<unknown>} iterator
    */
-  *#wrapCommittableIterator(iterable) {
-    for (const row of iterable) {
-      this.#requireOpenState('iterateCommittableShards')
-      const shard = /**
+  #wrapCommittableIterator(iterator) {
+    return this.#createStreamingIterator(
+      'iterateCommittableShards',
+      iterator,
+      (row) => {
+        const shard = /**
          @type {{
         kind: API.ShardKind
         space_did: API.SpaceDID
@@ -190,15 +285,112 @@ export class SqliteStore {
         piece_cid: string
       }} */ (row)
 
-      yield /** @type {API.StoreShardRow & { pieceCID: string }} */ ({
-        kind: shard.kind,
-        spaceDID: shard.space_did,
-        shardCid: shard.shard_cid,
-        root: shard.root_cid,
-        sourceURL: shard.source_url,
-        sizeBytes: shard.size_bytes,
-        pieceCID: shard.piece_cid,
-      })
+        return /** @type {API.StoreShardRow & { pieceCID: string }} */ ({
+          kind: shard.kind,
+          spaceDID: shard.space_did,
+          shardCid: shard.shard_cid,
+          root: shard.root_cid,
+          sourceURL: shard.source_url,
+          sizeBytes: shard.size_bytes,
+          pieceCID: shard.piece_cid,
+        })
+      }
+    )
+  }
+
+  /**
+   * @param {string} method
+   * @param {Iterator<unknown>} iterator
+   * @param {(row: any) => string} map
+   */
+  #wrapStringIterator(method, iterator, map) {
+    return this.#createStreamingIterator(method, iterator, map)
+  }
+
+  /**
+   * @param {Iterator<unknown>} iterator
+   * @param {(row: any) => API.StoreShard} map
+   */
+  #wrapStoreShardIterator(iterator, map) {
+    return this.#createStreamingIterator('iterateShardsToStore', iterator, map)
+  }
+
+  /**
+   * @template TRow, TValue
+   * @param {string} method
+   * @param {Iterator<TRow>} iterator
+   * @param {(row: TRow) => TValue} map
+   * @returns {IterableIterator<TValue>}
+   */
+  #createStreamingIterator(method, iterator, map) {
+    const finalizer = this.#trackActiveIterator(iterator)
+
+    return {
+      [Symbol.iterator]() {
+        return this
+      },
+      next: () => {
+        try {
+          this.#requireOpenState(method)
+        } catch (cause) {
+          finalizer()
+          throw cause
+        }
+
+        const result = iterator.next()
+        if (result.done) {
+          finalizer()
+          return /** @type {IteratorReturnResult<TValue>} */ ({
+            done: true,
+            value: /** @type {undefined} */ (undefined),
+          })
+        }
+
+        try {
+          return /** @type {IteratorYieldResult<TValue>} */ ({
+            done: false,
+            value: map(result.value),
+          })
+        } catch (cause) {
+          finalizer()
+          throw cause
+        }
+      },
+      return: (value) => {
+        finalizer()
+        return /** @type {IteratorReturnResult<TValue>} */ ({
+          done: true,
+          value: /** @type {TValue} */ (value),
+        })
+      },
+      throw: (error) => {
+        finalizer()
+        throw error
+      },
+    }
+  }
+
+  /**
+   * @param {Iterator<unknown>} iterator
+   * @returns {() => void}
+   */
+  #trackActiveIterator(iterator) {
+    let active = true
+    const finalizer = () => {
+      if (!active) return
+      active = false
+      this.#activeIteratorFinalizers.delete(finalizer)
+      if (typeof iterator.return === 'function') {
+        iterator.return()
+      }
+    }
+    this.#activeIteratorFinalizers.add(finalizer)
+    return finalizer
+  }
+
+  #closeActiveIterators() {
+    for (const finalizer of [...this.#activeIteratorFinalizers]) {
+      finalizer()
     }
   }
 
@@ -251,6 +443,8 @@ export class SqliteStore {
         )
       }
     })()
+
+    delete state.spacesInventories?.[page.spaceDID]
   }
 
   transitionToPlanning() {
@@ -311,20 +505,16 @@ export class SqliteStore {
    */
   recordPull(input) {
     const state = this.#requireOpenState('recordPull')
-    const db = this.#requireOpenDb('recordPull')
     const stmts = this.#requireStatements('recordPull')
 
     const changed = State.recordPull(state, input)
     if (!state.spaces[input.spaceDID]) return changed
 
-    db.transaction(() => {
-      stmts.upsertPulledProgress.run(
-        input.spaceDID,
-        input.copyIndex,
-        input.shardCid
-      )
-      stmts.upsertSpace.run(toSpaceRow(state, input.spaceDID))
-    })()
+    stmts.upsertPulledProgress.run(
+      input.spaceDID,
+      input.copyIndex,
+      input.shardCid
+    )
 
     return changed
   }
@@ -334,36 +524,17 @@ export class SqliteStore {
    */
   recordCommit(input) {
     const state = this.#requireOpenState('recordCommit')
-    const db = this.#requireOpenDb('recordCommit')
     const stmts = this.#requireStatements('recordCommit')
 
     State.recordCommit(state, input)
-    const space = state.spaces[input.spaceDID]
-    if (!space) return
+    if (!state.spaces[input.spaceDID]) return
 
-    db.transaction(() => {
-      stmts.insertCommitProgress.run(
-        input.spaceDID,
-        input.copyIndex,
-        input.shardCid,
-        input.root
-      )
-      const copy = space.copies.find(
-        /** @param {API.SpaceCopyState} item */
-        (item) => item.copyIndex === input.copyIndex
-      )
-      if (copy) {
-        stmts.upsertSpaceCopy.run(
-          input.spaceDID,
-          copy.copyIndex,
-          copy.providerId.toString(10),
-          copy.serviceProvider,
-          copy.providerURL,
-          copy.dataSetId != null ? copy.dataSetId.toString(10) : null
-        )
-      }
-      stmts.upsertSpace.run(toSpaceRow(state, input.spaceDID))
-    })()
+    stmts.insertCommitProgress.run(
+      input.spaceDID,
+      input.copyIndex,
+      input.shardCid,
+      input.root
+    )
   }
 
   /**
@@ -374,18 +545,14 @@ export class SqliteStore {
    */
   recordStoredShard(spaceDID, shardCid, pieceCID) {
     const state = this.#requireOpenState('recordStoredShard')
-    const db = this.#requireOpenDb('recordStoredShard')
     const stmts = this.#requireStatements('recordStoredShard')
 
     const changed = State.recordStoredShard(state, spaceDID, shardCid, pieceCID)
     if (!state.spaces[spaceDID]) return changed
 
-    db.transaction(() => {
-      if (changed) {
-        stmts.upsertStoredPiece.run(spaceDID, 0, shardCid, pieceCID)
-      }
-      stmts.upsertSpace.run(toSpaceRow(state, spaceDID))
-    })()
+    if (changed) {
+      stmts.upsertStoredPiece.run(spaceDID, 0, shardCid, pieceCID)
+    }
 
     return changed
   }
@@ -404,9 +571,6 @@ export class SqliteStore {
     db.transaction(() => {
       stmts.clearPullProgress.run(spaceDID, copyIndex, shardCid)
       stmts.deleteShardProgressIfEmpty.run(spaceDID, copyIndex, shardCid)
-      if (state.spaces[spaceDID]) {
-        stmts.upsertSpace.run(toSpaceRow(state, spaceDID))
-      }
     })()
   }
 
@@ -417,16 +581,11 @@ export class SqliteStore {
    */
   clearStoredPiece(spaceDID, copyIndex, shardCid) {
     const state = this.#requireOpenState('clearStoredPiece')
-    const db = this.#requireOpenDb('clearStoredPiece')
     const stmts = this.#requireStatements('clearStoredPiece')
 
     State.clearStoredPiece(state, spaceDID, copyIndex, shardCid)
-    db.transaction(() => {
-      stmts.clearStoredPiece.run(spaceDID, copyIndex, shardCid)
-      if (state.spaces[spaceDID]) {
-        stmts.upsertSpace.run(toSpaceRow(state, spaceDID))
-      }
-    })()
+    if (!state.spaces[spaceDID]) return
+    stmts.clearStoredPiece.run(spaceDID, copyIndex, shardCid)
   }
 
   /**
@@ -437,16 +596,11 @@ export class SqliteStore {
    */
   removeCommit(spaceDID, copyIndex, shardCid, root) {
     const state = this.#requireOpenState('removeCommit')
-    const db = this.#requireOpenDb('removeCommit')
     const stmts = this.#requireStatements('removeCommit')
 
     State.removeCommit(state, spaceDID, copyIndex, shardCid, root)
-    db.transaction(() => {
-      stmts.deleteCommitProgress.run(spaceDID, copyIndex, shardCid, root)
-      if (state.spaces[spaceDID]) {
-        stmts.upsertSpace.run(toSpaceRow(state, spaceDID))
-      }
-    })()
+    if (!state.spaces[spaceDID]) return
+    stmts.deleteCommitProgress.run(spaceDID, copyIndex, shardCid, root)
   }
 
   /**
@@ -457,18 +611,14 @@ export class SqliteStore {
    */
   recordFailedUpload(spaceDID, copyIndex, root) {
     const state = this.#requireOpenState('recordFailedUpload')
-    const db = this.#requireOpenDb('recordFailedUpload')
     const stmts = this.#requireStatements('recordFailedUpload')
 
     const changed = State.recordFailedUpload(state, spaceDID, copyIndex, root)
     if (!state.spaces[spaceDID]) return changed
 
-    db.transaction(() => {
-      if (changed) {
-        stmts.insertFailedUpload.run(spaceDID, copyIndex, root)
-      }
-      stmts.upsertSpace.run(toSpaceRow(state, spaceDID))
-    })()
+    if (changed) {
+      stmts.insertFailedUpload.run(spaceDID, copyIndex, root)
+    }
 
     return changed
   }
@@ -479,16 +629,11 @@ export class SqliteStore {
    */
   clearFailedUploadsForRetry(spaceDID) {
     const state = this.#requireOpenState('clearFailedUploadsForRetry')
-    const db = this.#requireOpenDb('clearFailedUploadsForRetry')
     const stmts = this.#requireStatements('clearFailedUploadsForRetry')
 
     const cleared = State.clearFailedUploadsForRetry(state, spaceDID)
-    db.transaction(() => {
-      stmts.deleteFailedUploadsForSpace.run(spaceDID)
-      if (state.spaces[spaceDID]) {
-        stmts.upsertSpace.run(toSpaceRow(state, spaceDID))
-      }
-    })()
+    if (!state.spaces[spaceDID]) return cleared
+    stmts.deleteFailedUploadsForSpace.run(spaceDID)
     return cleared
   }
 
@@ -592,20 +737,10 @@ export class SqliteStore {
     if (!db) {
       throw new StoreClosedError(method)
     }
+    this.#closeActiveIterators()
     db.pragma('wal_checkpoint(TRUNCATE)')
     db.close()
   }
-}
-
-/**
- * @param {BetterSqlite3.Database} db
- */
-function applyPragmas(db) {
-  db.pragma('journal_mode = WAL')
-  db.pragma('synchronous = NORMAL')
-  db.pragma('temp_store = MEMORY')
-  db.pragma('cache_size = -64000')
-  db.pragma('foreign_keys = ON')
 }
 
 /**
@@ -613,17 +748,17 @@ function applyPragmas(db) {
  * @param {API.SpaceDID} spaceDID
  */
 function toSpaceRow(state, spaceDID) {
-  const inventory = state.spacesInventories[spaceDID]
-  if (!inventory) {
-    throw new Error(`Missing inventory for space ${spaceDID}`)
+  const summary = state.spaceMigrationInventories?.[spaceDID]
+  if (!summary) {
+    throw new Error(`Missing inventory summary for space ${spaceDID}`)
   }
 
   return {
     did: spaceDID,
-    name: inventory.name ?? null,
+    name: summary.name ?? null,
     phase: state.spaces[spaceDID]?.phase ?? 'pending',
-    totalBytes: inventory.totalBytes,
-    totalSizeToMigrate: inventory.totalSizeToMigrate,
+    totalBytes: summary.totalBytes,
+    totalSizeToMigrate: summary.totalSizeToMigrate,
     readerCursor: state.readerProgressCursors?.[spaceDID] ?? null,
   }
 }

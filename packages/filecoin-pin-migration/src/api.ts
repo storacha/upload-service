@@ -59,6 +59,45 @@ export interface SpaceInventory {
 }
 
 /**
+ * Heap-bounded in-memory summary for one space's inventory.
+ *
+ * The full upload/shard arrays remain available through store iterators or
+ * backend-private side caches; this summary is the public in-memory shape held
+ * on `MigrationState`.
+ */
+export interface SpaceInventorySummary {
+  did: SpaceDID
+  name?: string
+  totalBytes: bigint
+  totalSizeToMigrate: bigint
+  uploadsCount: number
+  shardsCount: number
+  shardsToStoreCount: number
+  skippedUploadsCount: number
+}
+
+/**
+ * Minimal per-space input required for migration cost computation.
+ *
+ * Cost planning does not need the full reader output arrays; it only needs
+ * stable identity plus the aggregate bytes that will be migrated.
+ */
+export interface MigrationCostSpace {
+  did: SpaceDID
+  name?: string
+  totalSizeToMigrate: bigint
+}
+
+/**
+ * Plain iterable shard buckets used by pure state/helpers that should not know
+ * about a store implementation.
+ */
+export interface InventoryShardBuckets {
+  shards: Iterable<ResolvedShard>
+  shardsToStore: Iterable<StoreShard>
+}
+
+/**
  * Precomputed inventory view used by helper/state logic that needs shard-root
  * expansion without rescanning the full inventory repeatedly.
  */
@@ -73,9 +112,10 @@ export interface InventoryCommitView {
  * Carries the live `MigrationCostResult` (with live StorageContext handles in
  * `costs.perSpace[].copies[].context`) for in-process hand-off to the migrator.
  *
- * Space-level upload data lives in `MigrationState.spacesInventories` — the
- * migrator reads from there directly, so `MigrationPlan` carries only what is
- * needed for display/approval and execution.
+ * Space-level upload data lives in the store-backed inventory layer; the
+ * migrator reads through store iterators / summaries directly, so
+ * `MigrationPlan` carries only what is needed for display/approval and
+ * execution.
  */
 export interface MigrationPlan {
   totals: {
@@ -285,15 +325,29 @@ export interface SpaceState {
  * Persisted resume state for a migration. Serializable to JSON via
  * serializeState() / deserializeState().
  *
- * spacesInventories holds reader output — completed spaces have no cursor entry;
- * in-progress spaces have a matching entry in readerProgressCursors.
+ * `spaceMigrationInventories` holds the in-memory summary of reader output.
+ * Completed spaces have no cursor entry; in-progress spaces have a matching
+ * entry in `readerProgressCursors`.
+ *
+ * `spacesInventories` is now deprecated at runtime. Summary-first backends
+ * such as SQLite may leave entries missing from this map to avoid retaining
+ * large inventory arrays in memory. The persisted JSON state file still uses
+ * the legacy `spacesInventories` wire format for compatibility.
  */
 export interface MigrationState {
   /** Persisted state schema version. */
   version: number
   phase: MigrationPhase
   spaces: Record<SpaceDID, SpaceState>
-  /** Reader output keyed by space DID. Completed + in-progress spaces. */
+  /** Reader output summaries keyed by space DID. Authoritative in-memory inventory shape. */
+  spaceMigrationInventories?: Record<SpaceDID, SpaceInventorySummary>
+  /**
+   * Full reader output keyed by space DID.
+   *
+   * Deprecated at runtime. Present in the legacy JSON wire format and still
+   * available on backends that keep full arrays in memory, but summary-first
+   * backends may omit entries from this map.
+   */
   spacesInventories: Record<SpaceDID, SpaceInventory>
   /** Pagination cursor per space — present only while reading that space. */
   readerProgressCursors?: Record<SpaceDID, string>
@@ -519,7 +573,7 @@ export interface ExecuteStoreMigrationInput {
  * Progress is derived from MigrationState on each state:checkpoint.
  * Upload progress (committed vs total shards) is computed from each
  * copy.committed set plus the actionable shard buckets in
- * spacesInventories[did] (`shards` and `shardsToStore`).
+ * store-backed shard iterators for that space.
  */
 export type MigrationEvent =
   | { type: 'reader:space:start'; spaceDID: SpaceDID }
@@ -863,24 +917,51 @@ export interface MigrationStore {
   // ── Read access ──────────────────────────────────────────────────────────
 
   /**
-   * Return the live in-memory {@link MigrationState} the store owns.
-   *
-   * Temporary migration seam for Commit 2 call-site rewiring. Do not add new
-   * long-term call sites to `getState()`; prefer narrow store queries and
-   * iterators instead.
-   *
-   * SQLite-backed stores will materialize the full state from rows on each
-   * call, which is expensive on large migrations — another reason to use
-   * iterator/query methods for new code.
-   *
-   * **Callers MUST NOT mutate the returned object.** All mutations must go
-   * through the `record*` / `transitionTo*` / `finalize*` methods so the
-   * store can persist them. Direct mutation will not be flushed and will be
-   * lost on the next reload.
+   * getState() returns the live in-memory state cache
+   * summary-first backends may omit large spacesInventories[did] entries
+   * new code should still prefer narrow queries/iterators
    *
    * @throws StoreClosedError if the store is not in `'open'` state.
    */
   getState(): MigrationState
+
+  /**
+   * Return the identity-stable in-memory inventory summary for a space, if any.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  getSpaceInventorySummary(
+    spaceDID: SpaceDID
+  ): SpaceInventorySummary | undefined
+
+  /**
+   * Return the number of distinct shard CIDs known for the space across both
+   * pull and store buckets.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state.
+   */
+  getSpaceDistinctShardCount(spaceDID: SpaceDID): number
+
+  /**
+   * Iterate successful upload roots for a space.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state at iteration time.
+   */
+  iterateUploads(spaceDID: SpaceDID): Iterable<string>
+
+  /**
+   * Iterate skipped upload roots for a space.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state at iteration time.
+   */
+  iterateSkippedUploads(spaceDID: SpaceDID): Iterable<string>
+
+  /**
+   * Iterate store-path shard rows for a space.
+   *
+   * @throws StoreClosedError if the store is not in `'open'` state at iteration time.
+   */
+  iterateShardsToStore(spaceDID: SpaceDID): Iterable<StoreShard>
 
   /**
    * Iterate over shards for a space.

@@ -42,7 +42,12 @@ export async function* executeMigration({
   const state = store.getState()
   const requiresStoreFlow = plan.costs.perSpace.some(
     (perSpaceCost) =>
-      (state.spacesInventories[perSpaceCost.spaceDID]?.shardsToStore.length ??
+      // Transitional fallback for tests / remaining call sites that still
+      // mutate state.spacesInventories directly after opening the store.
+      (store.getSpaceInventorySummary(perSpaceCost.spaceDID)
+        ?.shardsToStoreCount ??
+        state.spacesInventories?.[perSpaceCost.spaceDID]?.shardsToStore
+          .length ??
         0) > 0
   )
   const config = createExecutionConfig({

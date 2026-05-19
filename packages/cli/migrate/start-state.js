@@ -192,7 +192,7 @@ function printExistingStateSummary(stateFile, summary) {
   console.log('')
 
   if (summary.state) {
-    printResumeStatus(summary.state, {
+    printResumeStatus(summary.state, undefined, {
       title:
         summary.phase === 'complete'
           ? 'Existing Migration State (Completed)'

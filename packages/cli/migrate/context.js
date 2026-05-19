@@ -9,12 +9,14 @@ const DEFAULT_STATE_FILE_BASENAME = 'storacha-migration'
 
 /**
  * @param {string} spaceDID
+ * @param {'json' | 'sqlite' | undefined} stateFormat
  */
-export function defaultStateFileForSpace(spaceDID) {
+export function defaultStateFileForSpace(spaceDID, stateFormat) {
   const safeSpace = spaceDID.replace(/[^a-zA-Z0-9._-]+/g, '-')
+  const extension = stateFormat === 'sqlite' ? '.db' : '.json'
   return path.join(
     process.cwd(),
-    `${DEFAULT_STATE_FILE_BASENAME}-${safeSpace}.json`
+    `${DEFAULT_STATE_FILE_BASENAME}-${safeSpace}${extension}`
   )
 }
 
@@ -35,7 +37,7 @@ export async function resolveMigrationContext(stateFile, stateFormat) {
   const spaceDID = currentSpace.did()
 
   const resolvedStateFile = path.resolve(
-    stateFile ?? defaultStateFileForSpace(spaceDID)
+    stateFile ?? defaultStateFileForSpace(spaceDID, stateFormat)
   )
 
   return {
@@ -60,10 +62,14 @@ export function resolveStateFormat(stateFile, requestedFormat) {
         ? 'json'
         : undefined
 
+  const isConversionRequest =
+    requestedFormat === 'sqlite' && extensionFormat === 'json'
+
   if (
     requestedFormat &&
     extensionFormat &&
-    requestedFormat !== extensionFormat
+    requestedFormat !== extensionFormat &&
+    !isConversionRequest
   ) {
     console.error(
       `Error: state format "${requestedFormat}" conflicts with state file extension "${extension}". Use a matching file name or omit --state-format.`

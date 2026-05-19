@@ -7,6 +7,7 @@ import {
   createMockInitialState,
   createTestStore,
 } from './helpers.js'
+import { summarizeSpaceInventory } from '../src/state.js'
 
 /**
  * @import * as API from '../src/api.js'
@@ -104,6 +105,8 @@ async function collectPlan(gen) {
 function withInventories(state, inventories) {
   for (const inv of inventories) {
     state.spacesInventories[inv.did] = inv
+    state.spaceMigrationInventories ??= {}
+    state.spaceMigrationInventories[inv.did] = summarizeSpaceInventory(inv)
   }
   return state
 }
@@ -137,12 +140,9 @@ async function openStore(state) {
 
 describe('createMigrationPlan', () => {
   it('returns correct totals from a single inventory', async () => {
-    const seededState = withInventories(
-      createMockInitialState(),
-      createMockInventories(1)
-    )
+    const [inventory] = createMockInventories(1)
+    const seededState = withInventories(createMockInitialState(), [inventory])
     const store = await openStore(seededState)
-    const state = store.getState()
     const { plan } = await collectPlan(
       createMigrationPlan({ synapse: mockSynapse, store })
     )
@@ -150,6 +150,16 @@ describe('createMigrationPlan', () => {
     expect(plan.totals.uploads).toBe(1)
     expect(plan.totals.shards).toBe(2)
     expect(plan.totals.bytes).toBe(1024n + 2048n)
+    expect(vi.mocked(computeMigrationCosts)).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          did: inventory.did,
+          totalSizeToMigrate: 3072n,
+        }),
+      ],
+      mockSynapse,
+      expect.any(Object)
+    )
   })
 
   it('counts both shards and shardsToStore in plan totals', async () => {

@@ -1,5 +1,6 @@
 import { ensureFunding } from './funding.js'
 import { summarizeSpaceMigration } from './summary.js'
+import { materializeSpaceInventory } from '../store/materialize-space-inventory.js'
 
 /**
  * @import * as API from '../api.js'
@@ -61,7 +62,10 @@ export async function* runMigration({
   for (const perSpaceCost of plan.costs.perSpace) {
     if (signal?.aborted) return
 
-    const sourceInventory = state.spacesInventories[perSpaceCost.spaceDID]
+    const sourceInventory = buildSpaceInventoryFromStore(
+      store,
+      perSpaceCost.spaceDID
+    )
     if (!sourceInventory) continue
 
     const inventory = prepareInventory({ sourceInventory, perSpaceCost })
@@ -96,4 +100,18 @@ export async function* runMigration({
       totalBytes,
     },
   }
+}
+
+/**
+ * Rebuild one space inventory from the store-backed summary and iterators.
+ *
+ * This keeps the shared migration loop independent from any backend that might
+ * stop caching full inventory arrays in `MigrationState`.
+ *
+ * @param {API.MigrationStore} store
+ * @param {API.SpaceDID} spaceDID
+ * @returns {API.SpaceInventory | undefined}
+ */
+export function buildSpaceInventoryFromStore(store, spaceDID) {
+  return materializeSpaceInventory(store, spaceDID)
 }

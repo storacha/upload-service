@@ -3,11 +3,13 @@ import {
   checkPiecesOnSP,
   buildStatusBreakdown,
 } from './sp-piece-status.js'
+import { iteratePullShards } from './inventory-iterators.js'
 import {
   buildInventoryCommitView,
   clearPullProgress as clearPullProgressState,
   clearStoredPiece as clearStoredPieceState,
   getFullyCommittedShardCIDs,
+  getInventorySummaryMap,
 } from '../state.js'
 
 /**
@@ -31,6 +33,7 @@ const ACKNOWLEDGED_STAGED_STATUSES = new Set([
  *
  * @param {object} args
  * @param {RootAPI.MigrationState} args.state
+ * @param {RootAPI.MigrationStore} [args.store]
  * @param {RootAPI.SpaceDID[]} [args.spaceDIDs]
  * @param {number} [args.providerStatusConcurrency]
  * @param {typeof fetch} [args.fetcher]
@@ -40,6 +43,7 @@ const ACKNOWLEDGED_STAGED_STATUSES = new Set([
  */
 export async function pruneStagedShards({
   state,
+  store,
   spaceDIDs,
   providerStatusConcurrency = 10,
   fetcher = fetch,
@@ -52,7 +56,9 @@ export async function pruneStagedShards({
 }) {
   const targetSpaceDIDs =
     spaceDIDs ??
-    /** @type {RootAPI.SpaceDID[]} */ (Object.keys(state.spacesInventories))
+    /** @type {RootAPI.SpaceDID[]} */ (
+      Object.keys(getInventorySummaryMap(state))
+    )
 
   /** @type {API.PruneStagedShardsSpaceReport[]} */
   const spaces = []
@@ -63,10 +69,19 @@ export async function pruneStagedShards({
   let stateCorrected = false
 
   for (const spaceDID of targetSpaceDIDs) {
-    const inventory = state.spacesInventories[spaceDID]
+    const inventory = state.spacesInventories?.[spaceDID]
     const spaceState = state.spaces[spaceDID]
-    if (!inventory || !spaceState) continue
-    const inventoryCommitView = buildInventoryCommitView(inventory)
+    if (!spaceState) continue
+    const inventoryBuckets = inventory
+      ? inventory
+      : store
+      ? {
+          shards: iteratePullShards(store, spaceDID),
+          shardsToStore: store.iterateShardsToStore(spaceDID),
+        }
+      : undefined
+    if (!inventoryBuckets) continue
+    const inventoryCommitView = buildInventoryCommitView(inventoryBuckets)
     /** @type {Array<{ copy: RootAPI.SpaceCopyState, stagedShardCIDs: Set<string> }>} */
     const stagedCopies = []
 
@@ -90,7 +105,10 @@ export async function pruneStagedShards({
 
     if (stagedCopies.length === 0) continue
 
-    const shardCIDToPieceCID = buildShardCIDToPieceIndex(spaceState, inventory)
+    const shardCIDToPieceCID = buildShardCIDToPieceIndex(
+      spaceState,
+      inventoryBuckets
+    )
     /** @type {API.PruneStagedShardsCopyReport[]} */
     const copies = []
     let removedAnyForSpace = false

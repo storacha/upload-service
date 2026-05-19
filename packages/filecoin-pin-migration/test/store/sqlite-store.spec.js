@@ -6,10 +6,12 @@ import { SqliteStore } from '../../src/store/sqlite-store.js'
 import { runStoreContractTests } from './contract.js'
 
 const require = createRequire(import.meta.url)
-const hasBetterSqlite3 = hasOptionalDependency('better-sqlite3')
+const hasBetterSqlite3 = hasUsableOptionalDependency('better-sqlite3')
 
 if (hasBetterSqlite3) {
-  runStoreContractTests('SqliteStore', (path) => SqliteStore.open({ path }))
+  runStoreContractTests('SqliteStore', (path) => SqliteStore.open({ path }), {
+    compareSerializedInventoryState: false,
+  })
 }
 
 describe('sqlite factory', () => {
@@ -31,9 +33,11 @@ describe('sqlite factory', () => {
 /**
  * @param {string} specifier
  */
-function hasOptionalDependency(specifier) {
+function hasUsableOptionalDependency(specifier) {
   try {
-    require.resolve(specifier)
+    const Database = require(specifier)
+    const db = new Database(':memory:')
+    db.close()
     return true
   } catch {
     return false

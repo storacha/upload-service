@@ -143,3 +143,18 @@ export interface ReconcileMigrationStateResult {
   storedShardsDeleted: ProgressDeletion[]
   committedDeleted: CommitDeletion[]
 }
+
+export interface JsonToSqliteConversionResult {
+  sourcePath: string
+  targetPath: string
+  spaces: number
+  uploads: number
+  skippedUploads: number
+  shards: number
+  shardsToStore: number
+  copies: number
+  pulledProgress: number
+  storedShards: number
+  commits: number
+  failedUploads: number
+}

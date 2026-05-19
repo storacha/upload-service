@@ -1,3 +1,13 @@
+import { getInventorySummaryMap } from '@storacha/filecoin-pin-migration'
+
+/**
+ * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
+ * @returns {Iterable<import('@storacha/filecoin-pin-migration/types').SpaceInventorySummary | import('@storacha/filecoin-pin-migration/types').SpaceInventory>}
+ */
+function getInventorySummaries(state) {
+  return Object.values(getInventorySummaryMap(state))
+}
+
 /**
  * @param {{ copyIndex: number, committedPairs: number, preparedShards: number, failedUploads: number }} copy
  * @param {{ totalPreparedShards: number, totalCommittedPairs: number }} totals
@@ -8,16 +18,32 @@ export function formatCopyProgressLine(copy, totals) {
 
 /**
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
+ * @param {import('@storacha/filecoin-pin-migration/types').MigrationStore} [store]
  */
-export function summarizeInventoryTotals(state) {
+export function summarizeInventoryTotals(state, store) {
   let totalCommittedPairs = 0
   let inventoryCount = 0
-  const uniqueShardCIDs = new Set()
+  let totalPreparedShards = 0
+  const uniqueShardCIDs = store ? undefined : new Set()
 
-  for (const inventory of Object.values(state.spacesInventories)) {
+  for (const inventory of getInventorySummaries(state)) {
     inventoryCount += 1
-    totalCommittedPairs +=
-      inventory.shards.length + inventory.shardsToStore.length
+    const isSummaryInventory =
+      'shardsCount' in inventory && 'shardsToStoreCount' in inventory
+    totalCommittedPairs += isSummaryInventory
+      ? inventory.shardsCount + inventory.shardsToStoreCount
+      : inventory.shards.length + inventory.shardsToStore.length
+
+    if (store) {
+      totalPreparedShards += store.getSpaceDistinctShardCount(inventory.did)
+      continue
+    }
+
+    if (isSummaryInventory) {
+      throw new TypeError(
+        'summarizeInventoryTotals: summary-only runtime states require a MigrationStore to derive total prepared shards'
+      )
+    }
 
     for (const shard of inventory.shards) {
       uniqueShardCIDs.add(shard.cid)
@@ -29,7 +55,7 @@ export function summarizeInventoryTotals(state) {
   }
 
   return {
-    totalPreparedShards: uniqueShardCIDs.size,
+    totalPreparedShards: store ? totalPreparedShards : uniqueShardCIDs.size,
     totalCommittedPairs,
     inventoryPartial: state.phase === 'reading',
     inventoryCount,
@@ -71,11 +97,13 @@ export function summarizeCopyProgress(state) {
 
 /**
  * @param {import('@storacha/filecoin-pin-migration/types').MigrationState} state
+ * @param {import('@storacha/filecoin-pin-migration/types').MigrationStore} [store]
  * @param {ReturnType<typeof summarizeInventoryTotals>} [inventoryTotals]
  */
 export function summarizeProgress(
   state,
-  inventoryTotals = summarizeInventoryTotals(state)
+  store,
+  inventoryTotals = summarizeInventoryTotals(state, store)
 ) {
   const { copies, totalFailedUploads } = summarizeCopyProgress(state)
 

@@ -98,8 +98,8 @@ export async function readInventories({
         break
       case 'reader:space:complete': {
         clearSpaceElapsedTimer()
-        const inventory = store.getState().spacesInventories[event.spaceDID]
-        if (!inventory) {
+        const inventorySummary = store.getSpaceInventorySummary(event.spaceDID)
+        if (!inventorySummary) {
           spinner.fail(
             `Reader completed space ${truncateDID(event.spaceDID)} without an inventory result`
           )
@@ -109,11 +109,11 @@ export async function readInventories({
         }
         spinner.stopAndPersist({
           symbol: '✔',
-          text: ` Completed ${inventory.uploads.length} uploads, ${
-            inventory.shards.length
+          text: ` Completed ${inventorySummary.uploadsCount} uploads, ${
+            inventorySummary.shardsCount
           } shards, ${
-            inventory.skippedUploads.length
-          } skipped uploads, ${formatBytes(inventory.totalBytes)}`,
+            inventorySummary.skippedUploadsCount
+          } skipped uploads, ${formatBytes(inventorySummary.totalBytes)}`,
         })
         activeSpaceDID = undefined
         activeSpaceStartedAt = undefined

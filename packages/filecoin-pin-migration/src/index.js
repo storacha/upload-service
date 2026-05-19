@@ -19,9 +19,11 @@ export {
   finalizeSpace,
   finalizeMigration,
   buildResumeState,
+  getInventorySummaryMap,
   serializeState,
   deserializeState,
   resolveUploadPhase,
 } from './state.js'
 export { createStore } from './store/factory.js'
 export { JsonFileStore } from './store/json-store.js'
+export { serializeStoreState } from './store/serialize-store-state.js'

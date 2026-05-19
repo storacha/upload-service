@@ -21,10 +21,21 @@ The library owns no UX. Persistence is encapsulated behind `MigrationStore`.
 The store is owned by the caller, opened once before pipeline execution, and
 closed in an outer `finally`. Reader, planner, and migrator each receive the
 store and call `store.getState()` once per entry point to obtain the live
-`MigrationState` reference. `state:checkpoint` events are the explicit
-durability boundary within a run; `store.close()` / `store.closeSync()` also
-flush the latest in-memory state (used for lifecycle shutdown and SIGINT
-teardown).
+`MigrationState` reference.
+
+Two backends now exist:
+
+- `JsonFileStore` persists the live state to a single JSON file and flushes it
+  on `checkpoint()` / `close()`
+- `SqliteStore` keeps the same identity-stable in-memory `MigrationState`
+  cache, but writes each mutation through to SQLite synchronously and uses
+  `checkpoint()` for WAL housekeeping
+
+`state:checkpoint` events are the explicit durability boundary within a run;
+`store.close()` / `store.closeSync()` also flush the latest in-memory state
+(used for lifecycle shutdown and SIGINT teardown). The SQLite backend preserves
+Commit 2's live-state contract intentionally, so Commit 3 reduces write
+amplification but does not yet make execution heap-bounded.
 
 Helper utilities live outside the main pipeline. They are headless audit /
 estimation functions that can inspect or reconcile migration-related data
@@ -34,6 +45,9 @@ On `resume` / `retry`, a caller may optionally run a staged-shard validation
 preflight before migration starts. This is also helper-driven logic outside the
 pipeline: it probes persisted `pulled` / `storedShards` entries against the
 provider PDP endpoint and can prune stale entries from state before execution.
+When those helpers correct state, the caller must replay the returned deletion
+lists back through `MigrationStore` so SQLite stays consistent with the mutated
+cache before the next `checkpoint()`.
 
 ---
 
@@ -53,7 +67,8 @@ provider PDP endpoint and can prune stale entries from state before execution.
 - `planner` is pure apart from writing approved bindings into `MigrationState`
 - `migrator` is the only stage that performs FOC writes
 - `MigrationState` is mutated in place
-- Reader output is treated as immutable once written to `state.spacesInventories`
+- Reader output is treated as immutable once checkpointed into store-backed
+  inventory state
 - Resume behavior is driven only by persisted `MigrationState`
 - Every space always has exactly 2 copies
 - The 2 copies for a space must bind to 2 distinct providers
@@ -69,6 +84,7 @@ interface MigrationState {
   version: number
   phase: MigrationPhase
   spaces: Record<SpaceDID, SpaceState>
+  spaceMigrationInventories?: Record<SpaceDID, SpaceInventorySummary>
   spacesInventories: Record<SpaceDID, SpaceInventory>
   readerProgressCursors?: Record<SpaceDID, string>
 }
@@ -94,6 +110,15 @@ interface SpaceCopyState {
 
 State uses `Set<string>` at runtime for O(1) membership checks and cheap
 iteration. Serialization converts these sets to arrays.
+
+`spaceMigrationInventories` is the authoritative in-memory reader summary
+surface. Backends that optimize for heap, such as SQLite, may omit
+`spacesInventories[did]` entries from the live runtime state after the reader
+phase and instead expose full uploads/shards through the store query surface.
+The persisted JSON state-file format remains unchanged and still uses the
+legacy `spacesInventories` wire shape; summary-first callers should export via
+`serializeStoreState(store)` rather than assuming `serializeState(state)` can
+always serialize the live runtime object by itself.
 
 State is versioned. `deserializeState()` rejects missing or unknown schema
 versions; callers must restart without `--resume` when the persisted format no
